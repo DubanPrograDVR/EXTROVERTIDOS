@@ -1,11 +1,9 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
+import Navbar from "./components/Home/Navbar";
 
 function App() {
   return (
     <>
-      <h1>ksjdksjldskdjl</h1>
+      <Navbar />
     </>
   );
 }
