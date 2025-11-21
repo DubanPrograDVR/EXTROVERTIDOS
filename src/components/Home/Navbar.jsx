@@ -13,10 +13,11 @@ import {
 import logo from "../../../public/img/Logo_extrovertidos.png";
 
 const NAV_LINKS = [
-  { href: "#panoramas", label: "Panoramas", icon: faMapMarkedAlt },
-  { href: "#superguia", label: "Superguía", icon: faCompass },
-  { href: "#publicar-panorama", label: "Publicar Panorama", icon: faCamera },
-  { href: "#publicar-negocio", label: "Publicar Negocio", icon: faStore },
+  { href: "/", label: "Inicio", icon: faMapMarkedAlt },
+  { href: "/eventos", label: "Eventos", icon: faCompass },
+  { href: "/crear-negocio", label: "Crea tu negocio", icon: faStore },
+  { href: "/iniciar-sesion", label: "Iniciar sesión", icon: faUser },
+  { href: "/registrarse", label: "Registrarse", icon: faCamera },
 ];
 
 export default function Navbar() {
@@ -26,6 +27,12 @@ export default function Navbar() {
     setIsMenuOpen(false);
   };
 
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      setIsMenuOpen(false);
+    }
+  };
+
   return (
     <header className="navbar">
       <div className="navbar-container">
@@ -33,12 +40,17 @@ export default function Navbar() {
           <img src={logo} alt="Extrovertidos" className="logo" />
         </div>
 
+        {/* Overlay para cerrar el menú */}
+        {isMenuOpen && (
+          <div className="navbar-overlay" onClick={handleOverlayClick}></div>
+        )}
+
         <nav className={`navbar-menu ${isMenuOpen ? "active" : ""}`}>
           {NAV_LINKS.map((link, index) => (
             <a
               key={index}
               href={link.href}
-              className="nav-link"
+              className={`nav-link ${index === 0 ? "active" : ""}`}
               onClick={handleLinkClick}
             >
               <FontAwesomeIcon icon={link.icon} className="nav-icon" />
