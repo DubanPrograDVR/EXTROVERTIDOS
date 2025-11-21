@@ -389,7 +389,7 @@
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .navbar {
-    position: relative;
+    position: static;
   }
 
   .navbar-container {
