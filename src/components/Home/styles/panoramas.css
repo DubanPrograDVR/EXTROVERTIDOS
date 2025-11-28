@@ -1,0 +1,384 @@
+/* ===== PANORAMAS SECTION ===== */
+.panoramas-wrapper {
+  background-color: #000000;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Línea naranja superior */
+.panoramas-wrapper::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    #ff6600 0%,
+    #ff8833 25%,
+    #ffaa00 50%,
+    #ff8833 75%,
+    #ff6600 100%
+  );
+  box-shadow: 0 1px 8px rgba(255, 102, 0, 0.5);
+}
+
+/* ===== HEADER CON TEXTO DESTACADO ===== */
+.panoramas__header {
+  text-align: center;
+  padding: 60px 20px 40px;
+  position: relative;
+}
+
+.panoramas__header-text {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin: 0;
+}
+
+.panoramas__highlight {
+  color: #ff6600;
+  position: relative;
+  display: inline-block;
+}
+
+.panoramas__highlight::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #ff6600, #ff8833, #ffaa00);
+  border-radius: 2px;
+}
+
+.panoramas {
+  display: flex;
+  width: 100%;
+  min-height: 450px;
+  background-color: #000000;
+  overflow: visible;
+  justify-content: center;
+  align-items: center;
+  gap: 100px;
+  padding: 20px 80px 60px;
+  position: relative;
+}
+
+/* Decoración de fondo */
+.panoramas::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(
+    circle,
+    rgba(255, 102, 0, 0.08) 0%,
+    transparent 60%
+  );
+  pointer-events: none;
+}
+
+/* ===== LÍNEA DIVISORIA NARANJA ===== */
+.panoramas__divider {
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #ff6600 10%,
+    #ff8833 50%,
+    #ff6600 90%,
+    transparent 100%
+  );
+  box-shadow: 0 0 15px rgba(255, 102, 0, 0.5);
+}
+
+/* ===== IMAGEN DE PERSONAS ===== */
+.panoramas__image-side {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.panoramas__image-side::after {
+  content: "";
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 30px;
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.5) 0%, transparent 70%);
+  filter: blur(10px);
+}
+
+.panoramas__people-img {
+  height: auto;
+  max-height: 480px;
+  width: auto;
+  object-fit: contain;
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.4));
+}
+
+/* ===== CONTENIDO ===== */
+.panoramas__content-side {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panoramas__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 25px;
+}
+
+/* ===== LOGO ===== */
+.panoramas__logo-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.panoramas__logo-wrapper::before {
+  content: "";
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(
+    circle,
+    rgba(255, 102, 0, 0.2) 0%,
+    transparent 60%
+  );
+  filter: blur(20px);
+}
+
+.panoramas__logo {
+  width: 160px;
+  height: auto;
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 0 25px rgba(255, 102, 0, 0.5));
+}
+
+/* ===== TÍTULO ===== */
+.panoramas__title {
+  font-size: 4.5rem;
+  font-weight: 900;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 6px;
+  margin: 0;
+  line-height: 1;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* ===== SUBTÍTULO ===== */
+.panoramas__subtitle {
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin: 0;
+  max-width: 420px;
+  line-height: 1.6;
+}
+
+/* ===== BOTÓN ===== */
+.panoramas__btn {
+  margin-top: 15px;
+  padding: 16px 40px;
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #000;
+  background: linear-gradient(135deg, #ff6600 0%, #ff8833 50%, #ffaa00 100%);
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 5px 25px rgba(255, 102, 0, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.panoramas__btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  transition: left 0.5s ease;
+}
+
+.panoramas__btn:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 10px 40px rgba(255, 102, 0, 0.6);
+}
+
+.panoramas__btn:hover::before {
+  left: 100%;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+  .panoramas__header {
+    padding: 50px 20px 30px;
+  }
+
+  .panoramas__header-text {
+    font-size: 2rem;
+  }
+
+  .panoramas {
+    gap: 60px;
+    padding: 20px 40px 50px;
+  }
+
+  .panoramas__people-img {
+    max-height: 380px;
+  }
+
+  .panoramas__logo {
+    width: 130px;
+  }
+
+  .panoramas__title {
+    font-size: 3.5rem;
+    letter-spacing: 4px;
+  }
+
+  .panoramas__subtitle {
+    font-size: 1rem;
+  }
+
+  .panoramas__btn {
+    padding: 14px 35px;
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .panoramas__header {
+    padding: 40px 20px 25px;
+  }
+
+  .panoramas__header-text {
+    font-size: 1.6rem;
+    letter-spacing: 2px;
+  }
+
+  .panoramas {
+    flex-direction: column;
+    min-height: auto;
+    gap: 30px;
+    padding: 20px 20px 40px;
+  }
+
+  .panoramas::before {
+    width: 400px;
+    height: 400px;
+  }
+
+  .panoramas__image-side {
+    justify-content: center;
+  }
+
+  .panoramas__people-img {
+    max-height: 300px;
+  }
+
+  .panoramas__content-side {
+    justify-content: center;
+  }
+
+  .panoramas__logo {
+    width: 120px;
+  }
+
+  .panoramas__logo-wrapper::before {
+    width: 150px;
+    height: 150px;
+  }
+
+  .panoramas__title {
+    font-size: 2.8rem;
+    letter-spacing: 3px;
+  }
+
+  .panoramas__subtitle {
+    font-size: 0.95rem;
+    max-width: 320px;
+  }
+
+  .panoramas__btn {
+    padding: 14px 30px;
+  }
+}
+
+@media (max-width: 480px) {
+  .panoramas__header {
+    padding: 30px 15px 20px;
+  }
+
+  .panoramas__header-text {
+    font-size: 1.3rem;
+    letter-spacing: 1px;
+  }
+
+  .panoramas {
+    padding: 15px 15px 35px;
+    gap: 25px;
+  }
+
+  .panoramas__people-img {
+    max-height: 240px;
+  }
+
+  .panoramas__logo {
+    width: 100px;
+  }
+
+  .panoramas__title {
+    font-size: 2rem;
+    letter-spacing: 2px;
+  }
+
+  .panoramas__subtitle {
+    font-size: 0.85rem;
+    max-width: 280px;
+  }
+
+  .panoramas__btn {
+    padding: 12px 25px;
+    font-size: 0.85rem;
+  }
+
+  .panoramas__divider {
+    height: 3px;
+  }
+}

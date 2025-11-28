@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMapMarkedAlt, faCompass } from "@fortawesome/free-solid-svg-icons";
 import panoramasImg from "../../../public/img/Home1.png";
 import superguiaImg from "../../../public/img/Home2.png";
+import pExtroIcon from "../../../public/img/SG_Extro.png";
 
 // ===== DATOS DE LAS SECCIONES =====
 const sectionsData = [
@@ -21,7 +22,8 @@ const sectionsData = [
   //   },
   {
     id: 2,
-    icon: faCompass,
+    icon: null,
+    customIcon: pExtroIcon,
     title: "SUPERGUÍA EXTROVERTIDOS",
     subtitle: "¿UN UBER, UN VETERINARIO O UN MECÁNICO?",
     description:
@@ -92,12 +94,23 @@ export default function Secciones({ customSections }) {
             {/* Contenedor de contenido */}
             <div className="secciones__content">
               {/* Icono */}
-              <div className="secciones__icon-wrapper">
-                <FontAwesomeIcon
-                  icon={section.icon}
-                  className="secciones__icon"
-                  aria-hidden="true"
-                />
+              <div
+                className={`secciones__icon-wrapper ${
+                  section.customIcon ? "secciones__icon-wrapper--custom" : ""
+                }`}>
+                {section.customIcon ? (
+                  <img
+                    src={section.customIcon}
+                    alt="Icono Extrovertidos"
+                    className="secciones__custom-icon"
+                  />
+                ) : (
+                  <FontAwesomeIcon
+                    icon={section.icon}
+                    className="secciones__icon"
+                    aria-hidden="true"
+                  />
+                )}
               </div>
 
               {/* Textos */}

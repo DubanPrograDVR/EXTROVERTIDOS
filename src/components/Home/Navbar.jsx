@@ -1,27 +1,30 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import "./styles/navbar.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUser,
   faBars,
   faTimes,
-  faMapMarkedAlt,
-  faCompass,
-  faCamera,
-  faStore,
+  faSignInAlt,
+  faUserPlus,
 } from "@fortawesome/free-solid-svg-icons";
 import logo from "../../../public/img/Logo_extrovertidos.png";
+import manchaExtro from "../../../public/img/Mancha_Extro.png";
+import AuthModal from "../Auth/AuthModal";
 
 const NAV_LINKS = [
-  { href: "/", label: "Inicio", icon: faMapMarkedAlt },
-  { href: "/eventos", label: "Eventos", icon: faCompass },
-  { href: "/crear-negocio", label: "Crea tu negocio", icon: faStore },
-  { href: "/iniciar-sesion", label: "Iniciar sesión", icon: faUser },
-  { href: "/registrarse", label: "Registrarse", icon: faCamera },
+  { href: "/panoramas", label: "Panoramas" },
+  { href: "/superguia", label: "Superguía Extrovertidos" },
+  { href: "/publicar-panorama", label: "Publicar Panorama" },
+  { href: "/publicar-negocio", label: "Publicar Negocio" },
 ];
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState("login");
+  const userDropdownRef = useRef(null);
 
   const handleLinkClick = () => {
     setIsMenuOpen(false);
@@ -32,6 +35,44 @@ export default function Navbar() {
       setIsMenuOpen(false);
     }
   };
+
+  const toggleUserDropdown = (e) => {
+    e.preventDefault();
+    setIsUserDropdownOpen(!isUserDropdownOpen);
+  };
+
+  const openLoginModal = (e) => {
+    e.preventDefault();
+    setAuthModalMode("login");
+    setIsAuthModalOpen(true);
+    setIsUserDropdownOpen(false);
+  };
+
+  const openRegisterModal = (e) => {
+    e.preventDefault();
+    setAuthModalMode("register");
+    setIsAuthModalOpen(true);
+    setIsUserDropdownOpen(false);
+  };
+
+  const closeAuthModal = () => {
+    setIsAuthModalOpen(false);
+  };
+
+  // Cerrar dropdown al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        userDropdownRef.current &&
+        !userDropdownRef.current.contains(event.target)
+      ) {
+        setIsUserDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <header className="navbar">
@@ -50,28 +91,60 @@ export default function Navbar() {
             <a
               key={index}
               href={link.href}
-              className={`nav-link ${index === 0 ? "active" : ""}`}
-              onClick={handleLinkClick}
-            >
-              <FontAwesomeIcon icon={link.icon} className="nav-icon" />
-              <span>{link.label}</span>
+              className="nav-link"
+              onClick={handleLinkClick}>
+              {link.label}
             </a>
           ))}
         </nav>
 
+        {/* Separador y botón de usuario */}
+        <div className="navbar-user-section">
+          <div className="navbar-divider"></div>
+          <div className="navbar-user-wrapper" ref={userDropdownRef}>
+            <button className="navbar-user-btn" onClick={toggleUserDropdown}>
+              <img src={manchaExtro} alt="" className="navbar-user-mancha" />
+              <FontAwesomeIcon icon={faUser} className="navbar-user-icon" />
+            </button>
+
+            {/* Dropdown de usuario */}
+            {isUserDropdownOpen && (
+              <div className="navbar-user-dropdown">
+                <button onClick={openLoginModal} className="navbar-dropdown-item">
+                  <FontAwesomeIcon
+                    icon={faSignInAlt}
+                    className="navbar-dropdown-icon"
+                  />
+                  <span>Iniciar sesión</span>
+                </button>
+                <button onClick={openRegisterModal} className="navbar-dropdown-item">
+                  <FontAwesomeIcon
+                    icon={faUserPlus}
+                    className="navbar-dropdown-icon"
+                  />
+                  <span>Registrarse</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="navbar-actions">
-          <button className="user-btn" aria-label="Usuario">
-            <FontAwesomeIcon icon={faUser} />
-          </button>
           <button
             className="menu-toggle"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label="Toggle menu"
-          >
+            aria-label="Toggle menu">
             <FontAwesomeIcon icon={isMenuOpen ? faTimes : faBars} />
           </button>
         </div>
       </div>
+
+      {/* Modal de Autenticación */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={closeAuthModal}
+        initialMode={authModalMode}
+      />
     </header>
   );
 }

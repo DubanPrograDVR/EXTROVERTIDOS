@@ -79,6 +79,7 @@
 .secciones__item {
   position: relative;
   padding: var(--spacing-lg) var(--spacing-md);
+  padding-bottom: calc(var(--spacing-lg) + 20px);
   margin: 0 auto;
   max-width: 1400px;
   display: grid;
@@ -106,11 +107,7 @@
   width: 600px;
   height: 600px;
   border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(255, 102, 0, 0.1),
-    transparent 70%
-  );
+  background: radial-gradient(circle, rgba(255, 102, 0, 0.1), transparent 70%);
   filter: blur(100px);
   pointer-events: none;
   z-index: 0;
@@ -193,7 +190,11 @@
 
 /* ===== ICONO ===== */
 .secciones__icon-wrapper {
-  background: linear-gradient(135deg, var(--primary-orange), var(--secondary-orange));
+  background: linear-gradient(
+    135deg,
+    var(--primary-orange),
+    var(--secondary-orange)
+  );
   width: 120px;
   height: 120px;
   border-radius: 50%;
@@ -218,6 +219,48 @@
   animation: iconPulse 2s ease-in-out infinite;
 }
 
+.secciones__custom-icon {
+  width: 200px;
+  height: auto;
+  filter: drop-shadow(0 0 25px rgba(255, 102, 0, 0.9))
+    drop-shadow(0 0 50px rgba(255, 102, 0, 0.6))
+    drop-shadow(0 0 80px rgba(255, 102, 0, 0.4));
+  object-fit: contain;
+}
+
+.secciones__custom-icon:hover {
+  transform: none;
+  filter: drop-shadow(0 0 25px rgba(255, 102, 0, 0.9))
+    drop-shadow(0 0 50px rgba(255, 102, 0, 0.6))
+    drop-shadow(0 0 80px rgba(255, 102, 0, 0.4));
+}
+
+/* Wrapper sin círculo para custom icons */
+.secciones__icon-wrapper--custom {
+  background: transparent;
+  box-shadow: none;
+  animation: none;
+}
+
+.secciones__icon-wrapper--custom:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+@keyframes customIconGlow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 20px rgba(255, 102, 0, 0.8))
+      drop-shadow(0 0 40px rgba(255, 102, 0, 0.5))
+      drop-shadow(0 0 60px rgba(255, 102, 0, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 30px rgba(255, 102, 0, 1))
+      drop-shadow(0 0 50px rgba(255, 102, 0, 0.7))
+      drop-shadow(0 0 80px rgba(255, 102, 0, 0.5));
+  }
+}
+
 /* ===== TEXTOS ===== */
 .secciones__text {
   display: flex;
@@ -239,8 +282,7 @@
 
 .secciones__item--highlight .secciones__title {
   color: var(--primary-orange);
-  text-shadow: 0 0 20px rgba(255, 102, 0, 0.6),
-    0 4px 12px rgba(0, 0, 0, 0.6);
+  text-shadow: 0 0 20px rgba(255, 102, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.6);
 }
 
 .secciones__subtitle {
@@ -265,21 +307,20 @@
 
 /* ===== LÍNEA DIVISORIA ===== */
 .secciones__divider {
+  position: absolute;
+  bottom: 0;
+  left: 0;
   width: 100%;
-  height: 3px;
+  height: 6px;
   background: linear-gradient(
     90deg,
-    transparent,
-    var(--primary-orange),
-    var(--secondary-orange),
-    var(--accent-orange),
-    var(--secondary-orange),
-    var(--primary-orange),
-    transparent
+    transparent 0%,
+    #ff6600 15%,
+    #ff8833 50%,
+    #ff6600 85%,
+    transparent 100%
   );
-  margin-top: var(--spacing-lg);
-  border-radius: 2px;
-  box-shadow: 0 0 15px rgba(255, 102, 0, 0.5);
+  box-shadow: 0 0 20px rgba(255, 102, 0, 0.6), 0 0 40px rgba(255, 102, 0, 0.3);
 }
 
 .secciones__item:last-child .secciones__divider {

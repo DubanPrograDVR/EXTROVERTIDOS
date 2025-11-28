@@ -11,6 +11,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import logo from "../../../public/img/Logo_extrovertidos.png";
 import Secciones from "./Secciones";
+import Panoramas from "./Panoramas";
 import Footer from "./Footer";
 
 const CITIES = [
@@ -44,9 +45,9 @@ export default function Home() {
             <h1 className="home-title">
               <span className="title-highlight">¡ENCUENTRA!</span>
               <span className="title-main">
-                LOS PANORAMAS, ACTIVIDADES Y EVENTOS
+                LOS <span className="text-panoramas">PANORAMAS</span>, <span className="text-actividades">ACTIVIDADES</span> Y <span className="text-eventos">EVENTOS</span>
               </span>
-              <span className="title-accent">DE TU CIUDAD</span>
+              <span className="title-accent">DE TU <span className="title-ciudad">CIUDAD</span></span>
             </h1>
           </div>
 
@@ -99,14 +100,6 @@ export default function Home() {
               </span>
             </button>
           </div>
-
-          {/* Texto Final */}
-          <div className="home-footer">
-            <h2 className="footer-text">
-              ¡LO MEJOR ESTÁ EN{" "}
-              <span className="text-highlight">EXTROVERTIDOS!</span>
-            </h2>
-          </div>
         </div>
 
         {/* Elementos decorativos */}
@@ -116,6 +109,8 @@ export default function Home() {
 
         {/* Secciones principales */}
       </section>
+
+      <Panoramas />
 
       <Secciones />
 
