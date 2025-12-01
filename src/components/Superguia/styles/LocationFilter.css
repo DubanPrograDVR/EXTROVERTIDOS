@@ -1,0 +1,136 @@
+/* ===== LOCATION FILTER ===== */
+
+.location-filter {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.location-filter__dropdown {
+  position: relative;
+}
+
+.location-filter__dropdown.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.location-filter__btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #111;
+  border: 1px solid #333;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  min-width: 150px;
+  justify-content: space-between;
+}
+
+.location-filter__btn:hover {
+  border-color: #ff6600;
+}
+
+.location-filter__btn.active {
+  border-color: #ff6600;
+  color: #ff6600;
+}
+
+.location-filter__arrow {
+  font-size: 0.8rem;
+  transition: transform 0.3s;
+}
+
+.location-filter__arrow.open {
+  transform: rotate(180deg);
+}
+
+/* Menú desplegable */
+.location-filter__menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  background: #111;
+  border: 1px solid #ff6600;
+  border-radius: 8px;
+  min-width: 180px;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 100;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.location-filter__option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #fff;
+  padding: 12px 15px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.location-filter__option:hover {
+  background: rgba(255, 102, 0, 0.1);
+  color: #ff6600;
+}
+
+.location-filter__option.selected {
+  background: rgba(255, 102, 0, 0.2);
+  color: #ff6600;
+}
+
+.location-filter__icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+/* Scrollbar personalizada */
+.location-filter__menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.location-filter__menu::-webkit-scrollbar-track {
+  background: #222;
+}
+
+.location-filter__menu::-webkit-scrollbar-thumb {
+  background: #ff6600;
+  border-radius: 3px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .location-filter {
+    flex-direction: column;
+  }
+
+  .location-filter__btn {
+    width: 100%;
+  }
+
+  .location-filter__menu {
+    width: 100%;
+  }
+}

@@ -1,0 +1,121 @@
+/* ===== SUPERGUIA CONTAINER ===== */
+
+.superguia {
+  background: #000;
+  min-height: 100vh;
+  padding-top: 80px;
+}
+
+/* Header naranja */
+.superguia__header {
+  background: #ff6600;
+  padding: 15px 30px;
+  text-align: center;
+}
+
+.superguia__title {
+  color: #fff;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* Hero Banner */
+.superguia__hero {
+  position: relative;
+  height: 300px;
+  background: url("/img/Home1.png") center/cover no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.superguia__hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.6) 100%
+  );
+}
+
+.superguia__hero-text {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+.superguia__hero-text h2 {
+  color: #fff;
+  font-size: 3rem;
+  font-weight: 800;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  text-shadow: 2px 2px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Container principal */
+.superguia__container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px 20px 60px;
+}
+
+/* Empty state */
+.superguia__empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #888;
+}
+
+.superguia__empty p {
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+}
+
+.superguia__empty button {
+  background: #ff6600;
+  color: #fff;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 25px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.superguia__empty button:hover {
+  background: #ff8533;
+  transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .superguia {
+    padding-top: 70px;
+  }
+
+  .superguia__header {
+    padding: 12px 20px;
+  }
+
+  .superguia__title {
+    font-size: 1rem;
+  }
+
+  .superguia__hero {
+    height: 200px;
+  }
+
+  .superguia__hero-text h2 {
+    font-size: 1.8rem;
+  }
+
+  .superguia__container {
+    padding: 30px 15px 40px;
+  }
+}
