@@ -4,6 +4,7 @@ import FilterBar from "./FilterBar";
 import SearchBar from "./SearchBar";
 import PublicationGrid from "./PublicationGrid";
 import Pagination from "./Pagination";
+import Footer from "../Home/Footer";
 import { CATEGORIES, LOCATIONS, MOCK_PUBLICATIONS } from "./data";
 
 const ITEMS_PER_PAGE = 16;
@@ -95,61 +96,65 @@ export default function SuperguiaContainer() {
   }, [selectedCity]);
 
   return (
-    <section className="superguia">
-      {/* Header naranja */}
-      <header className="superguia__header">
-        <h1 className="superguia__title">SUPERGUIA EXTROVERTIDOS</h1>
-      </header>
+    <>
+      <section className="superguia">
+        {/* Header naranja */}
+        <header className="superguia__header">
+          <h1 className="superguia__title">SUPERGUIA EXTROVERTIDOS</h1>
+        </header>
 
-      {/* Barra de filtros */}
-      <FilterBar
-        categories={CATEGORIES}
-        locations={LOCATIONS}
-        selectedCategory={selectedCategory}
-        selectedCity={selectedCity}
-        selectedComuna={selectedComuna}
-        availableComunas={availableComunas}
-        activeCategoriesCount={CATEGORIES.length}
-        onCategoryChange={handleCategoryChange}
-        onCityChange={handleCityChange}
-        onComunaChange={handleComunaChange}
-        onClearFilters={handleClearFilters}
-        onApplyFilters={handleApplyFilters}
-      />
+        {/* Barra de filtros */}
+        <FilterBar
+          categories={CATEGORIES}
+          locations={LOCATIONS}
+          selectedCategory={selectedCategory}
+          selectedCity={selectedCity}
+          selectedComuna={selectedComuna}
+          availableComunas={availableComunas}
+          activeCategoriesCount={CATEGORIES.length}
+          onCategoryChange={handleCategoryChange}
+          onCityChange={handleCityChange}
+          onComunaChange={handleComunaChange}
+          onClearFilters={handleClearFilters}
+          onApplyFilters={handleApplyFilters}
+        />
 
-      {/* Banner Hero */}
-      <div className="superguia__hero">
-        <div className="superguia__hero-overlay"></div>
-        <div className="superguia__hero-text">
-          <h2>¿QUÉ HACEMOS HOY?</h2>
-        </div>
-      </div>
-
-      {/* Contenedor principal */}
-      <div className="superguia__container">
-        {/* Buscador */}
-        <SearchBar value={searchQuery} onChange={handleSearch} />
-
-        {/* Grid de publicaciones */}
-        <PublicationGrid publications={paginatedPublications} />
-
-        {/* Paginación */}
-        {totalPages > 1 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
-        )}
-
-        {/* Estado vacío */}
-        {filteredPublications.length === 0 && (
-          <div className="superguia__empty">
-            <p>No se encontraron publicaciones.</p>
-            <button onClick={handleClearFilters}>Limpiar filtros</button>
+        {/* Banner Hero */}
+        <div className="superguia__hero">
+          <div className="superguia__hero-overlay"></div>
+          <div className="superguia__hero-text">
+            <h2>¿QUÉ HACEMOS HOY?</h2>
           </div>
-        )}
-      </div>
-    </section>
+        </div>
+
+        {/* Contenedor principal */}
+        <div className="superguia__container">
+          {/* Buscador */}
+          <SearchBar value={searchQuery} onChange={handleSearch} />
+
+          {/* Grid de publicaciones */}
+          <PublicationGrid publications={paginatedPublications} />
+
+          {/* Paginación */}
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          )}
+
+          {/* Estado vacío */}
+          {filteredPublications.length === 0 && (
+            <div className="superguia__empty">
+              <p>No se encontraron publicaciones.</p>
+              <button onClick={handleClearFilters}>Limpiar filtros</button>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <Footer />
+    </>
   );
 }

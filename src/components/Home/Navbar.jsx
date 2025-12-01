@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { Link } from "react-router-dom";
 import "./styles/navbar.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -77,9 +78,9 @@ export default function Navbar() {
   return (
     <header className="navbar">
       <div className="navbar-container">
-        <div className="navbar-logo">
+        <Link to="/" className="navbar-logo">
           <img src={logo} alt="Extrovertidos" className="logo" />
-        </div>
+        </Link>
 
         {/* Overlay para cerrar el menú */}
         {isMenuOpen && (
@@ -110,14 +111,18 @@ export default function Navbar() {
             {/* Dropdown de usuario */}
             {isUserDropdownOpen && (
               <div className="navbar-user-dropdown">
-                <button onClick={openLoginModal} className="navbar-dropdown-item">
+                <button
+                  onClick={openLoginModal}
+                  className="navbar-dropdown-item">
                   <FontAwesomeIcon
                     icon={faSignInAlt}
                     className="navbar-dropdown-icon"
                   />
                   <span>Iniciar sesión</span>
                 </button>
-                <button onClick={openRegisterModal} className="navbar-dropdown-item">
+                <button
+                  onClick={openRegisterModal}
+                  className="navbar-dropdown-item">
                   <FontAwesomeIcon
                     icon={faUserPlus}
                     className="navbar-dropdown-icon"
