@@ -1,0 +1,334 @@
+/* ============================================
+   EXTROVERTIDOS - DESIGN SYSTEM
+   Sistema de diseño centralizado
+   ============================================ */
+
+/* ===== GOOGLE FONTS ===== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ===== ROOT VARIABLES ===== */
+:root {
+  /* ----- TIPOGRAFÍA ----- */
+  --font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-family-heading: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  
+  /* ----- ESCALA BASE ----- */
+  /* Cambiar este valor escala TODO el sitio proporcionalmente */
+  --base-size: 14px;
+  
+  /* ----- ESCALA TIPOGRÁFICA (Minor Third - 1.2) ----- */
+  --text-xs: 0.694rem;      /* ~10px - Caption pequeño */
+  --text-sm: 0.833rem;      /* ~12px - Caption, labels */
+  --text-base: 1rem;        /* 14px - Párrafos */
+  --text-md: 1.1rem;        /* ~15px - Párrafos destacados */
+  --text-lg: 1.2rem;        /* ~17px - Lead text */
+  --text-xl: 1.44rem;       /* ~20px - H4 */
+  --text-2xl: 1.728rem;     /* ~24px - H3 */
+  --text-3xl: 2.074rem;     /* ~29px - H2 */
+  --text-4xl: 2.488rem;     /* ~35px - H1 */
+  --text-5xl: 2.986rem;     /* ~42px - Display */
+  
+  /* ----- FONT WEIGHTS ----- */
+  --font-light: 300;
+  --font-regular: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  --font-extrabold: 800;
+  --font-black: 900;
+  
+  /* ----- LINE HEIGHTS ----- */
+  --leading-none: 1;
+  --leading-tight: 1.15;
+  --leading-snug: 1.3;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.65;
+  --leading-loose: 1.8;
+  
+  /* ----- LETTER SPACING ----- */
+  --tracking-tighter: -0.03em;
+  --tracking-tight: -0.015em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.025em;
+  --tracking-wider: 0.05em;
+  --tracking-widest: 0.1em;
+  
+  /* ----- ESPACIADO (basado en 4px grid) ----- */
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.25rem;   /* 20px */
+  --space-6: 1.5rem;    /* 24px */
+  --space-8: 2rem;      /* 32px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-12: 3rem;     /* 48px */
+  --space-16: 4rem;     /* 64px */
+  --space-20: 5rem;     /* 80px */
+  --space-24: 6rem;     /* 96px */
+  
+  /* ----- COLORES ----- */
+  --color-primary: #ff6600;
+  --color-primary-light: #ff8833;
+  --color-primary-lighter: #ffaa00;
+  --color-primary-dark: #e55c00;
+  
+  --color-bg-primary: #000000;
+  --color-bg-secondary: #0a0a0a;
+  --color-bg-tertiary: #111111;
+  --color-bg-card: #1a1a1a;
+  --color-bg-elevated: #222222;
+  
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #b3b3b3;
+  --color-text-tertiary: #888888;
+  --color-text-muted: #666666;
+  
+  --color-border: #333333;
+  --color-border-light: #444444;
+  
+  /* ----- BORDER RADIUS ----- */
+  --radius-sm: 0.25rem;   /* 4px */
+  --radius-md: 0.5rem;    /* 8px */
+  --radius-lg: 0.75rem;   /* 12px */
+  --radius-xl: 1rem;      /* 16px */
+  --radius-2xl: 1.5rem;   /* 24px */
+  --radius-full: 9999px;
+  
+  /* ----- SHADOWS ----- */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 20px rgba(255, 102, 0, 0.3);
+  --shadow-glow-lg: 0 0 40px rgba(255, 102, 0, 0.4);
+  
+  /* ----- TRANSITIONS ----- */
+  --transition-fast: 150ms ease;
+  --transition-base: 200ms ease;
+  --transition-slow: 300ms ease;
+  --transition-slower: 500ms ease;
+  
+  /* ----- BREAKPOINTS (para referencia en media queries) ----- */
+  /* Mobile: < 576px */
+  /* Tablet: 576px - 992px */
+  /* Desktop: > 992px */
+  /* Large: > 1200px */
+}
+
+/* ===== BASE RESET ===== */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ===== HTML & BODY ===== */
+html {
+  font-size: var(--base-size);
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-family-base);
+  font-size: var(--text-base);
+  font-weight: var(--font-regular);
+  line-height: var(--leading-normal);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-primary);
+}
+
+/* ===== HEADINGS ===== */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family-heading);
+  font-weight: var(--font-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text-primary);
+}
+
+h1 {
+  font-size: var(--text-4xl);
+  font-weight: var(--font-extrabold);
+  letter-spacing: var(--tracking-tighter);
+}
+
+h2 {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
+}
+
+h3 {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-semibold);
+}
+
+h4 {
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+}
+
+h5 {
+  font-size: var(--text-lg);
+  font-weight: var(--font-medium);
+}
+
+h6 {
+  font-size: var(--text-md);
+  font-weight: var(--font-medium);
+}
+
+/* ===== PÁRRAFOS Y TEXTO ===== */
+p {
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-secondary);
+}
+
+.text-lead {
+  font-size: var(--text-lg);
+  line-height: var(--leading-relaxed);
+}
+
+small, .text-small {
+  font-size: var(--text-sm);
+}
+
+.text-caption {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  letter-spacing: var(--tracking-wide);
+}
+
+/* ===== LINKS ===== */
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-primary-light);
+}
+
+/* ===== UTILIDADES TIPOGRÁFICAS ===== */
+.font-light { font-weight: var(--font-light); }
+.font-regular { font-weight: var(--font-regular); }
+.font-medium { font-weight: var(--font-medium); }
+.font-semibold { font-weight: var(--font-semibold); }
+.font-bold { font-weight: var(--font-bold); }
+.font-extrabold { font-weight: var(--font-extrabold); }
+
+.text-uppercase {
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.text-primary { color: var(--color-text-primary); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-muted { color: var(--color-text-muted); }
+.text-accent { color: var(--color-primary); }
+
+/* ===== RESPONSIVE TYPOGRAPHY ===== */
+@media (max-width: 768px) {
+  :root {
+    --base-size: 13px;
+    
+    /* Reducir escala en mobile */
+    --text-4xl: 2rem;       /* ~26px */
+    --text-3xl: 1.75rem;    /* ~23px */
+    --text-2xl: 1.5rem;     /* ~20px */
+    --text-xl: 1.25rem;     /* ~16px */
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --base-size: 12px;
+    
+    --text-4xl: 1.75rem;    /* ~21px */
+    --text-3xl: 1.5rem;     /* ~18px */
+    --text-2xl: 1.35rem;    /* ~16px */
+  }
+}
+
+/* ===== COMPONENTES BASE ===== */
+
+/* Botones */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  font-family: var(--font-family-base);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  border: none;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-text-primary);
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-light);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-light);
+}
+
+.btn-secondary:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* Inputs */
+.input {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-family-base);
+  font-size: var(--text-base);
+  color: var(--color-text-primary);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.input::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* Cards */
+.card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+}

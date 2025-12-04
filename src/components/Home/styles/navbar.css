@@ -1,9 +1,5 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: "Roboto", sans-serif;
-}
+/* ===== NAVBAR - EXTROVERTIDOS ===== */
+/* Usa variables de design-system.css */
 
 /* ===== KEYFRAMES ===== */
 @keyframes glow-pulse {
@@ -49,7 +45,7 @@
 
 /* ===== NAVBAR ===== */
 .navbar {
-  background: linear-gradient(180deg, #000 0%, #050505 100%);
+  background: linear-gradient(180deg, var(--color-bg-primary) 0%, #050505 100%);
   position: sticky;
   top: 0;
   z-index: 1000;
@@ -65,11 +61,11 @@
   height: 2px;
   background: linear-gradient(
     90deg,
-    #ff6600 0%,
-    #ff8833 25%,
-    #ffaa00 50%,
-    #ff8833 75%,
-    #ff6600 100%
+    var(--color-primary) 0%,
+    var(--color-primary-light) 25%,
+    var(--color-primary-lighter) 50%,
+    var(--color-primary-light) 75%,
+    var(--color-primary) 100%
   );
   box-shadow: 0 1px 8px rgba(255, 102, 0, 0.5);
 }
@@ -77,11 +73,11 @@
 .navbar-container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0.7rem 3rem;
+  padding: var(--space-2) var(--space-6);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 2rem;
+  gap: var(--space-6);
 }
 
 /* ===== LOGO ===== */
@@ -91,9 +87,9 @@
 }
 
 .logo {
-  height: 50px;
+  height: 40px;
   width: auto;
-  transition: filter 0.3s ease;
+  transition: filter var(--transition-base);
 }
 
 .logo:hover {
@@ -104,22 +100,22 @@
 .navbar-menu {
   display: flex;
   align-items: center;
-  gap: 3rem;
+  gap: var(--space-8);
   position: relative;
   margin-left: auto;
   padding: 0;
 }
 
 .nav-link {
-  color: #fff;
+  color: var(--color-text-primary);
   text-decoration: none;
-  font-weight: 600;
-  font-size: 1rem;
-  padding: 0.8rem 0;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: var(--font-medium);
+  font-size: var(--text-sm);
+  padding: var(--space-2) 0;
+  transition: all var(--transition-base);
   white-space: nowrap;
   position: relative;
-  letter-spacing: 0.5px;
+  letter-spacing: var(--tracking-wide);
   text-transform: capitalize;
 }
 
@@ -130,10 +126,14 @@
   left: 50%;
   transform: translateX(-50%);
   width: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #ff6600, #ff8833);
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    var(--color-primary),
+    var(--color-primary-light)
+  );
   border-radius: 3px;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width var(--transition-base);
 }
 
 .nav-link::after {
@@ -143,15 +143,15 @@
   left: 50%;
   transform: translateX(-50%);
   width: 0;
-  height: 6px;
+  height: 4px;
   background: rgba(255, 102, 0, 0.4);
   filter: blur(4px);
   border-radius: 50%;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width var(--transition-base);
 }
 
 .nav-link:hover {
-  color: #ff6600;
+  color: var(--color-primary);
 }
 
 .nav-link:hover::before {
@@ -163,7 +163,7 @@
 }
 
 .nav-link.active {
-  color: #ff6600;
+  color: var(--color-primary);
 }
 
 .nav-link.active::before {
@@ -178,8 +178,8 @@
 .navbar-user-section {
   display: flex;
   align-items: center;
-  gap: 2rem;
-  margin-left: 3rem;
+  gap: var(--space-6);
+  margin-left: var(--space-6);
 }
 
 .navbar-user-wrapper {
@@ -191,7 +191,7 @@
 
 .navbar-divider {
   width: 2px;
-  height: 35px;
+  height: 28px;
   background: linear-gradient(
     180deg,
     transparent 0%,
@@ -205,13 +205,13 @@
 
 .navbar-user-btn {
   position: relative;
-  width: 90px;
-  height: 90px;
+  width: 70px;
+  height: 70px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-base);
   background: transparent;
   border: none;
   padding: 0;
@@ -223,7 +223,7 @@
   inset: -5px;
   background: radial-gradient(circle, rgba(255, 102, 0, 0.3), transparent 70%);
   opacity: 0;
-  transition: opacity 0.4s ease;
+  transition: opacity var(--transition-base);
   border-radius: 50%;
 }
 
@@ -240,7 +240,7 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  transition: filter 0.3s ease;
+  transition: filter var(--transition-base);
 }
 
 .navbar-user-btn:hover .navbar-user-mancha {
@@ -250,9 +250,9 @@
 .navbar-user-icon {
   position: relative;
   z-index: 1;
-  font-size: 1.1rem;
-  color: #fff;
-  transition: transform 0.3s ease;
+  font-size: var(--text-base);
+  color: var(--color-text-primary);
+  transition: transform var(--transition-base);
 }
 
 .navbar-user-btn:hover .navbar-user-icon {
@@ -262,15 +262,15 @@
 /* ===== DROPDOWN DE USUARIO ===== */
 .navbar-user-dropdown {
   position: absolute;
-  top: calc(100% + 10px);
+  top: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+  background: linear-gradient(135deg, var(--color-bg-card) 0%, #0d0d0d 100%);
   border: 1px solid rgba(255, 102, 0, 0.3);
-  border-radius: 12px;
-  padding: 8px 0;
-  min-width: 180px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 102, 0, 0.15);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2) 0;
+  min-width: 160px;
+  box-shadow: var(--shadow-xl), 0 0 20px rgba(255, 102, 0, 0.15);
   z-index: 1001;
   animation: dropdownFadeIn 0.3s ease;
   overflow: hidden;
@@ -282,9 +282,9 @@
   top: -8px;
   left: 50%;
   transform: translateX(-50%) rotate(45deg);
-  width: 16px;
-  height: 16px;
-  background: #1a1a1a;
+  width: 14px;
+  height: 14px;
+  background: var(--color-bg-card);
   border-left: 1px solid rgba(255, 102, 0, 0.3);
   border-top: 1px solid rgba(255, 102, 0, 0.3);
 }
@@ -292,13 +292,13 @@
 .navbar-dropdown-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 20px;
-  color: #fff;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-text-primary);
   text-decoration: none;
-  font-size: 0.95rem;
-  font-weight: 500;
-  transition: all 0.3s ease;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  transition: all var(--transition-base);
   position: relative;
   background: transparent;
   border: none;
@@ -314,14 +314,14 @@
   top: 0;
   width: 3px;
   height: 100%;
-  background: #ff6600;
+  background: var(--color-primary);
   transform: scaleY(0);
-  transition: transform 0.3s ease;
+  transition: transform var(--transition-base);
 }
 
 .navbar-dropdown-item:hover {
   background: rgba(255, 102, 0, 0.1);
-  color: #ff6600;
+  color: var(--color-primary);
 }
 
 .navbar-dropdown-item:hover::before {
@@ -329,10 +329,10 @@
 }
 
 .navbar-dropdown-icon {
-  font-size: 1rem;
-  width: 20px;
+  font-size: var(--text-sm);
+  width: 18px;
   text-align: center;
-  transition: transform 0.3s ease;
+  transition: transform var(--transition-base);
 }
 
 .navbar-dropdown-item:hover .navbar-dropdown-icon {
@@ -342,11 +342,11 @@
 @keyframes dropdownFadeIn {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateX(-50%) translateY(-10px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(-50%) translateY(0);
   }
 }
 

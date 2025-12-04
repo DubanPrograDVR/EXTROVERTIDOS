@@ -27,12 +27,12 @@
 /* ===== HEADER CON TEXTO DESTACADO ===== */
 .panoramas__header {
   text-align: center;
-  padding: 60px 20px 40px;
+  padding: 25px 20px 15px;
   position: relative;
 }
 
 .panoramas__header-text {
-  font-size: 2.5rem;
+  font-size: 1.5rem;
   font-weight: 800;
   color: #ffffff;
   text-transform: uppercase;
@@ -60,13 +60,13 @@
 .panoramas {
   display: flex;
   width: 100%;
-  min-height: 450px;
+  min-height: 320px;
   background-color: #000000;
   overflow: visible;
   justify-content: center;
   align-items: center;
-  gap: 100px;
-  padding: 20px 80px 60px;
+  gap: 60px;
+  padding: 15px 60px 30px;
   position: relative;
 }
 
@@ -124,7 +124,7 @@
 
 .panoramas__people-img {
   height: auto;
-  max-height: 480px;
+  max-height: 320px;
   width: auto;
   object-fit: contain;
   position: relative;
@@ -144,7 +144,7 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 25px;
+  gap: 15px;
 }
 
 /* ===== LOGO ===== */
@@ -169,7 +169,7 @@
 }
 
 .panoramas__logo {
-  width: 160px;
+  width: 100px;
   height: auto;
   position: relative;
   z-index: 1;
@@ -178,11 +178,11 @@
 
 /* ===== TÍTULO ===== */
 .panoramas__title {
-  font-size: 4.5rem;
+  font-size: 2.8rem;
   font-weight: 900;
   color: #ffffff;
   text-transform: uppercase;
-  letter-spacing: 6px;
+  letter-spacing: 4px;
   margin: 0;
   line-height: 1;
   text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
@@ -190,21 +190,21 @@
 
 /* ===== SUBTÍTULO ===== */
 .panoramas__subtitle {
-  font-size: 1.15rem;
+  font-size: 0.9rem;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.85);
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 1.5px;
   margin: 0;
-  max-width: 420px;
-  line-height: 1.6;
+  max-width: 350px;
+  line-height: 1.5;
 }
 
 /* ===== BOTÓN ===== */
 .panoramas__btn {
-  margin-top: 15px;
-  padding: 16px 40px;
-  font-size: 1rem;
+  margin-top: 10px;
+  padding: 12px 28px;
+  font-size: 0.85rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 2px;
@@ -247,56 +247,57 @@
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1024px) {
   .panoramas__header {
-    padding: 50px 20px 30px;
+    padding: 20px 20px 10px;
   }
 
   .panoramas__header-text {
-    font-size: 2rem;
+    font-size: 1.3rem;
   }
 
   .panoramas {
-    gap: 60px;
-    padding: 20px 40px 50px;
+    gap: 40px;
+    padding: 15px 30px 25px;
+    min-height: 260px;
   }
 
   .panoramas__people-img {
-    max-height: 380px;
+    max-height: 260px;
   }
 
   .panoramas__logo {
-    width: 130px;
+    width: 80px;
   }
 
   .panoramas__title {
-    font-size: 3.5rem;
-    letter-spacing: 4px;
+    font-size: 2.2rem;
+    letter-spacing: 3px;
   }
 
   .panoramas__subtitle {
-    font-size: 1rem;
+    font-size: 0.8rem;
   }
 
   .panoramas__btn {
-    padding: 14px 35px;
-    font-size: 0.95rem;
+    padding: 10px 24px;
+    font-size: 0.8rem;
   }
 }
 
 @media (max-width: 768px) {
   .panoramas__header {
-    padding: 40px 20px 25px;
+    padding: 15px 15px 10px;
   }
 
   .panoramas__header-text {
-    font-size: 1.6rem;
+    font-size: 1.1rem;
     letter-spacing: 2px;
   }
 
   .panoramas {
     flex-direction: column;
     min-height: auto;
-    gap: 30px;
-    padding: 20px 20px 40px;
+    gap: 20px;
+    padding: 15px 15px 20px;
   }
 
   .panoramas::before {
@@ -309,7 +310,7 @@
   }
 
   .panoramas__people-img {
-    max-height: 300px;
+    max-height: 200px;
   }
 
   .panoramas__content-side {
@@ -317,68 +318,73 @@
   }
 
   .panoramas__logo {
-    width: 120px;
+    width: 70px;
   }
 
   .panoramas__logo-wrapper::before {
-    width: 150px;
-    height: 150px;
+    width: 100px;
+    height: 100px;
   }
 
   .panoramas__title {
-    font-size: 2.8rem;
-    letter-spacing: 3px;
+    font-size: 1.8rem;
+    letter-spacing: 2px;
   }
 
   .panoramas__subtitle {
-    font-size: 0.95rem;
-    max-width: 320px;
+    font-size: 0.75rem;
+    max-width: 280px;
   }
 
   .panoramas__btn {
-    padding: 14px 30px;
+    padding: 10px 22px;
+    font-size: 0.75rem;
+  }
+
+  .panoramas__content {
+    gap: 10px;
   }
 }
 
 @media (max-width: 480px) {
   .panoramas__header {
-    padding: 30px 15px 20px;
+    padding: 12px 10px 8px;
   }
 
   .panoramas__header-text {
-    font-size: 1.3rem;
+    font-size: 0.95rem;
     letter-spacing: 1px;
   }
 
   .panoramas {
-    padding: 15px 15px 35px;
-    gap: 25px;
+    padding: 10px 10px 15px;
+    gap: 15px;
   }
 
   .panoramas__people-img {
-    max-height: 240px;
+    max-height: 160px;
   }
 
   .panoramas__logo {
-    width: 100px;
+    width: 60px;
   }
 
   .panoramas__title {
-    font-size: 2rem;
+    font-size: 1.4rem;
     letter-spacing: 2px;
   }
 
   .panoramas__subtitle {
-    font-size: 0.85rem;
-    max-width: 280px;
+    font-size: 0.7rem;
+    max-width: 240px;
   }
 
   .panoramas__btn {
-    padding: 12px 25px;
-    font-size: 0.85rem;
+    padding: 8px 18px;
+    font-size: 0.7rem;
   }
 
   .panoramas__divider {
-    height: 3px;
+    height: 2px;
   }
 }
