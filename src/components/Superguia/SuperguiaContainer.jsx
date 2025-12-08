@@ -2,7 +2,9 @@ import { useState, useCallback, useMemo } from "react";
 import "./styles/SuperguiaContainer.css";
 import FilterBar from "./FilterBar";
 import SearchBar from "./SearchBar";
+import Carousel from "./Carousel";
 import PublicationGrid from "./PublicationGrid";
+import PublicationModal from "./PublicationModal";
 import Pagination from "./Pagination";
 import Footer from "../Home/Footer";
 import { CATEGORIES, LOCATIONS, MOCK_PUBLICATIONS } from "./data";
@@ -16,6 +18,21 @@ export default function SuperguiaContainer() {
   const [selectedComuna, setSelectedComuna] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Estado del modal
+  const [selectedPublication, setSelectedPublication] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Handlers para el modal
+  const handlePublicationClick = useCallback((publication) => {
+    setSelectedPublication(publication);
+    setIsModalOpen(true);
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    setIsModalOpen(false);
+    setSelectedPublication(null);
+  }, []);
 
   // Handlers
   const handleCityChange = useCallback((city) => {
@@ -133,7 +150,10 @@ export default function SuperguiaContainer() {
           <SearchBar value={searchQuery} onChange={handleSearch} />
 
           {/* Grid de publicaciones */}
-          <PublicationGrid publications={paginatedPublications} />
+          <PublicationGrid
+            publications={paginatedPublications}
+            onPublicationClick={handlePublicationClick}
+          />
 
           {/* Paginación */}
           {totalPages > 1 && (
@@ -153,6 +173,25 @@ export default function SuperguiaContainer() {
           )}
         </div>
       </section>
+
+      {MOCK_PUBLICATIONS.length > 0 && (
+        <div className="superguia__carousel-section">
+          <h3 className="superguia__carousel-title">Destacados</h3>
+          <Carousel
+            publications={MOCK_PUBLICATIONS}
+            onPublicationClick={handlePublicationClick}
+          />
+        </div>
+      )}
+
+      {/* Carrusel de publicaciones destacadas */}
+
+      {/* Modal de publicación */}
+      <PublicationModal
+        publication={selectedPublication}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
 
       <Footer />
     </>

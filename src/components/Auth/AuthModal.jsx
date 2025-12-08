@@ -1,27 +1,13 @@
 import { useState, useEffect } from "react";
 import "./styles/authModal.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faTimes,
-  faEnvelope,
-  faLock,
-  faUser,
-  faEye,
-  faEyeSlash,
-} from "@fortawesome/free-solid-svg-icons";
-import { faGoogle, faFacebookF } from "@fortawesome/free-brands-svg-icons";
+import { faTimes } from "@fortawesome/free-solid-svg-icons";
+import { faGoogle } from "@fortawesome/free-brands-svg-icons";
+import { useAuth } from "../../context/AuthContext";
 
 export default function AuthModal({ isOpen, onClose, initialMode = "login" }) {
-  const [mode, setMode] = useState(initialMode);
-  const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
-
-  useEffect(() => setMode(initialMode), [initialMode]);
+  const { signInWithGoogle } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "unset";
@@ -34,17 +20,20 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }) {
     return () => window.removeEventListener("keydown", handleEsc);
   }, [onClose]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (mode === "register" && formData.password !== formData.confirmPassword) {
-      alert("Las contraseñas no coinciden");
-      return;
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) {
+        console.error("Error al iniciar sesión con Google:", error);
+        alert("Error al iniciar sesión con Google. Intenta nuevamente.");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      setIsLoading(false);
     }
-    console.log(mode === "login" ? "Login:" : "Register:", formData);
   };
-
-  const updateForm = (field, value) =>
-    setFormData({ ...formData, [field]: value });
 
   if (!isOpen) return null;
 
@@ -52,7 +41,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }) {
     <div
       className="auth-modal-overlay"
       onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="auth-modal">
+      <div className="auth-modal auth-modal--simple">
         <button className="auth-modal__close" onClick={onClose}>
           <FontAwesomeIcon icon={faTimes} />
         </button>
@@ -61,113 +50,24 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }) {
           <img src="/img/Logo_extrovertidos.png" alt="Extrovertidos" />
         </div>
 
-        <div className="auth-modal__tabs">
-          <button
-            className={`auth-modal__tab ${mode === "login" ? "active" : ""}`}
-            onClick={() => setMode("login")}>
-            Iniciar Sesión
-          </button>
-          <button
-            className={`auth-modal__tab ${mode === "register" ? "active" : ""}`}
-            onClick={() => setMode("register")}>
-            Registrarse
-          </button>
-        </div>
+        <h2 className="auth-modal__title">¡Bienvenido a Extrovertidos!</h2>
+        <p className="auth-modal__subtitle">
+          Inicia sesión para acceder a todas las funcionalidades
+        </p>
 
-        <form className="auth-form" onSubmit={handleSubmit}>
-          {mode === "register" && (
-            <div className="auth-form__input-wrapper">
-              <FontAwesomeIcon icon={faUser} className="auth-form__icon" />
-              <input
-                type="text"
-                placeholder="Nombre completo"
-                value={formData.name}
-                onChange={(e) => updateForm("name", e.target.value)}
-                required
-              />
-            </div>
-          )}
+        <button
+          type="button"
+          className="auth-form__google-btn"
+          onClick={handleGoogleLogin}
+          disabled={isLoading}>
+          <FontAwesomeIcon icon={faGoogle} />
+          {isLoading ? "Conectando..." : "Continuar con Google"}
+        </button>
 
-          <div className="auth-form__input-wrapper">
-            <FontAwesomeIcon icon={faEnvelope} className="auth-form__icon" />
-            <input
-              type="email"
-              placeholder="Correo electrónico"
-              value={formData.email}
-              onChange={(e) => updateForm("email", e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="auth-form__input-wrapper">
-            <FontAwesomeIcon icon={faLock} className="auth-form__icon" />
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Contraseña"
-              value={formData.password}
-              onChange={(e) => updateForm("password", e.target.value)}
-              required
-            />
-            <button
-              type="button"
-              className="auth-form__toggle-password"
-              onClick={() => setShowPassword(!showPassword)}>
-              <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
-            </button>
-          </div>
-
-          {mode === "register" && (
-            <div className="auth-form__input-wrapper">
-              <FontAwesomeIcon icon={faLock} className="auth-form__icon" />
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Confirmar contraseña"
-                value={formData.confirmPassword}
-                onChange={(e) => updateForm("confirmPassword", e.target.value)}
-                required
-              />
-            </div>
-          )}
-
-          {mode === "login" && (
-            <div className="auth-form__options">
-              <label className="auth-form__checkbox">
-                <input type="checkbox" /> Recordarme
-              </label>
-              <a href="#" className="auth-form__forgot">
-                ¿Olvidaste tu contraseña?
-              </a>
-            </div>
-          )}
-
-          {mode === "register" && (
-            <div className="auth-form__options">
-              <label className="auth-form__checkbox">
-                <input type="checkbox" required /> Acepto los{" "}
-                <a href="#" className="auth-form__link">
-                  términos y condiciones
-                </a>
-              </label>
-            </div>
-          )}
-
-          <button type="submit" className="auth-form__submit">
-            {mode === "login" ? "Iniciar Sesión" : "Crear Cuenta"}
-          </button>
-
-          <div className="auth-form__divider">
-            <span>o continúa con</span>
-          </div>
-
-          <div className="auth-form__social">
-            <button type="button" className="auth-form__social-btn google">
-              <FontAwesomeIcon icon={faGoogle} /> Google
-            </button>
-            <button type="button" className="auth-form__social-btn facebook">
-              <FontAwesomeIcon icon={faFacebookF} /> Facebook
-            </button>
-          </div>
-        </form>
+        <p className="auth-modal__terms">
+          Al continuar, aceptas nuestros <a href="#">Términos de Servicio</a> y{" "}
+          <a href="#">Política de Privacidad</a>
+        </p>
       </div>
     </div>
   );

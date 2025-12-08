@@ -2,14 +2,18 @@ import "./styles/PublicationCard.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMapMarkerAlt } from "@fortawesome/free-solid-svg-icons";
 
-export default function PublicationCard({ publication }) {
+export default function PublicationCard({ publication, onClick }) {
   const { titulo, imagen, ciudad, categoria, fecha } = publication;
 
   // Imagen de placeholder si no hay imagen
   const imageUrl = imagen || "/img/placeholder.jpg";
 
+  const handleClick = () => {
+    if (onClick) onClick(publication);
+  };
+
   return (
-    <article className="publication-card">
+    <article className="publication-card" onClick={handleClick}>
       <div className="publication-card__image-container">
         <img
           src={imageUrl}

@@ -7,10 +7,9 @@ import {
   faMapMarkerAlt,
 } from "@fortawesome/free-solid-svg-icons";
 
-export default function Carousel({ publications }) {
+export default function Carousel({ publications, onPublicationClick }) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const carouselRef = useRef(null);
+  const [isPaused, setIsPaused] = useState(false);
   const autoPlayRef = useRef(null);
 
   const itemsToShow = 5; // Cantidad visible a la vez
@@ -18,31 +17,32 @@ export default function Carousel({ publications }) {
 
   // Navegar al siguiente
   const goToNext = useCallback(() => {
-    if (isAnimating) return;
-    setIsAnimating(true);
     setCurrentIndex((prev) => (prev + 1) % totalItems);
-    setTimeout(() => setIsAnimating(false), 300);
-  }, [isAnimating, totalItems]);
+  }, [totalItems]);
 
   // Navegar al anterior
   const goToPrev = useCallback(() => {
-    if (isAnimating) return;
-    setIsAnimating(true);
     setCurrentIndex((prev) => (prev - 1 + totalItems) % totalItems);
-    setTimeout(() => setIsAnimating(false), 300);
-  }, [isAnimating, totalItems]);
+  }, [totalItems]);
 
-  // Auto-play
+  // Auto-play con control de pausa
   useEffect(() => {
-    autoPlayRef.current = setInterval(goToNext, 4000);
-    return () => clearInterval(autoPlayRef.current);
-  }, [goToNext]);
+    if (isPaused || totalItems === 0) return;
 
-  // Pausar auto-play al hover
-  const pauseAutoPlay = () => clearInterval(autoPlayRef.current);
-  const resumeAutoPlay = () => {
-    autoPlayRef.current = setInterval(goToNext, 4000);
-  };
+    autoPlayRef.current = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % totalItems);
+    }, 4000);
+
+    return () => {
+      if (autoPlayRef.current) {
+        clearInterval(autoPlayRef.current);
+      }
+    };
+  }, [isPaused, totalItems]);
+
+  // Pausar/Reanudar auto-play al hover
+  const handleMouseEnter = () => setIsPaused(true);
+  const handleMouseLeave = () => setIsPaused(false);
 
   // Obtener items visibles con efecto circular
   const getVisibleItems = () => {
@@ -61,9 +61,8 @@ export default function Carousel({ publications }) {
   return (
     <div
       className="carousel"
-      ref={carouselRef}
-      onMouseEnter={pauseAutoPlay}
-      onMouseLeave={resumeAutoPlay}>
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}>
       {/* Botón anterior */}
       <button
         className="carousel__nav carousel__nav--prev"
@@ -79,7 +78,8 @@ export default function Carousel({ publications }) {
             key={`${item.id}-${index}`}
             className={`carousel__item ${
               index === Math.floor(itemsToShow / 2) ? "active" : ""
-            }`}>
+            }`}
+            onClick={() => onPublicationClick && onPublicationClick(item)}>
             <div className="carousel__card">
               <img
                 src={item.imagen || "/img/placeholder.jpg"}

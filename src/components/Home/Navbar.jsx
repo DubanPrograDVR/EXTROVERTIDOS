@@ -97,6 +97,22 @@ export default function Navbar() {
               {link.label}
             </a>
           ))}
+
+          {/* Botones de autenticación en menú móvil */}
+          <div className="navbar-mobile-auth">
+            <button
+              onClick={openLoginModal}
+              className="navbar-mobile-auth-btn navbar-mobile-auth-btn--login">
+              <FontAwesomeIcon icon={faSignInAlt} />
+              <span>Iniciar sesión</span>
+            </button>
+            <button
+              onClick={openRegisterModal}
+              className="navbar-mobile-auth-btn navbar-mobile-auth-btn--register">
+              <FontAwesomeIcon icon={faUserPlus} />
+              <span>Registrarse</span>
+            </button>
+          </div>
         </nav>
 
         {/* Separador y botón de usuario */}
