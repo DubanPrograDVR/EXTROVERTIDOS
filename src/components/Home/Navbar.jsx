@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./styles/navbar.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -8,10 +8,13 @@ import {
   faTimes,
   faSignInAlt,
   faUserPlus,
+  faSignOutAlt,
+  faCog,
 } from "@fortawesome/free-solid-svg-icons";
 import logo from "../../../public/img/Logo_extrovertidos.png";
 import manchaExtro from "../../../public/img/Mancha_Extro.png";
 import AuthModal from "../Auth/AuthModal";
+import { useAuth } from "../../context/AuthContext";
 
 const NAV_LINKS = [
   { href: "/panoramas", label: "Panoramas" },
@@ -21,11 +24,19 @@ const NAV_LINKS = [
 ];
 
 export default function Navbar() {
+  const { user, isAuthenticated, signOut, loading } = useAuth();
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState("login");
   const userDropdownRef = useRef(null);
+
+  // Obtener datos del usuario
+  const userAvatar =
+    user?.user_metadata?.avatar_url || user?.user_metadata?.picture || null;
+  const userName =
+    user?.user_metadata?.full_name || user?.user_metadata?.name || "Usuario";
 
   const handleLinkClick = () => {
     setIsMenuOpen(false);
@@ -58,6 +69,17 @@ export default function Navbar() {
 
   const closeAuthModal = () => {
     setIsAuthModalOpen(false);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    setIsUserDropdownOpen(false);
+    navigate("/");
+  };
+
+  const goToProfile = () => {
+    setIsUserDropdownOpen(false);
+    navigate("/perfil");
   };
 
   // Cerrar dropdown al hacer click fuera
@@ -100,18 +122,38 @@ export default function Navbar() {
 
           {/* Botones de autenticación en menú móvil */}
           <div className="navbar-mobile-auth">
-            <button
-              onClick={openLoginModal}
-              className="navbar-mobile-auth-btn navbar-mobile-auth-btn--login">
-              <FontAwesomeIcon icon={faSignInAlt} />
-              <span>Iniciar sesión</span>
-            </button>
-            <button
-              onClick={openRegisterModal}
-              className="navbar-mobile-auth-btn navbar-mobile-auth-btn--register">
-              <FontAwesomeIcon icon={faUserPlus} />
-              <span>Registrarse</span>
-            </button>
+            {isAuthenticated ? (
+              <>
+                <div className="navbar-mobile-user-info">
+                  <img
+                    src={userAvatar}
+                    alt={userName}
+                    className="navbar-mobile-user-avatar"
+                    referrerPolicy="no-referrer"
+                  />
+                  <span className="navbar-mobile-user-name">{userName}</span>
+                </div>
+                <button
+                  onClick={goToProfile}
+                  className="navbar-mobile-auth-btn navbar-mobile-auth-btn--profile">
+                  <FontAwesomeIcon icon={faUser} />
+                  <span>Mi Perfil</span>
+                </button>
+                <button
+                  onClick={handleSignOut}
+                  className="navbar-mobile-auth-btn navbar-mobile-auth-btn--logout">
+                  <FontAwesomeIcon icon={faSignOutAlt} />
+                  <span>Cerrar Sesión</span>
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={openLoginModal}
+                className="navbar-mobile-auth-btn navbar-mobile-auth-btn--login">
+                <FontAwesomeIcon icon={faSignInAlt} />
+                <span>Iniciar sesión</span>
+              </button>
+            )}
           </div>
         </nav>
 
@@ -121,30 +163,80 @@ export default function Navbar() {
           <div className="navbar-user-wrapper" ref={userDropdownRef}>
             <button className="navbar-user-btn" onClick={toggleUserDropdown}>
               <img src={manchaExtro} alt="" className="navbar-user-mancha" />
-              <FontAwesomeIcon icon={faUser} className="navbar-user-icon" />
+              {isAuthenticated && userAvatar ? (
+                <img
+                  src={userAvatar}
+                  alt={userName}
+                  className="navbar-user-avatar"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <FontAwesomeIcon icon={faUser} className="navbar-user-icon" />
+              )}
             </button>
 
             {/* Dropdown de usuario */}
             {isUserDropdownOpen && (
               <div className="navbar-user-dropdown">
-                <button
-                  onClick={openLoginModal}
-                  className="navbar-dropdown-item">
-                  <FontAwesomeIcon
-                    icon={faSignInAlt}
-                    className="navbar-dropdown-icon"
-                  />
-                  <span>Iniciar sesión</span>
-                </button>
-                <button
-                  onClick={openRegisterModal}
-                  className="navbar-dropdown-item">
-                  <FontAwesomeIcon
-                    icon={faUserPlus}
-                    className="navbar-dropdown-icon"
-                  />
-                  <span>Registrarse</span>
-                </button>
+                {isAuthenticated ? (
+                  <>
+                    <div className="navbar-dropdown-user-info">
+                      {userAvatar && (
+                        <img
+                          src={userAvatar}
+                          alt={userName}
+                          className="navbar-dropdown-avatar"
+                          referrerPolicy="no-referrer"
+                        />
+                      )}
+                      <span className="navbar-dropdown-username">
+                        {userName}
+                      </span>
+                    </div>
+                    <div className="navbar-dropdown-divider"></div>
+                    <button
+                      onClick={goToProfile}
+                      className="navbar-dropdown-item">
+                      <FontAwesomeIcon
+                        icon={faUser}
+                        className="navbar-dropdown-icon"
+                      />
+                      <span>Mi Perfil</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsUserDropdownOpen(false);
+                        navigate("/publicar-panorama");
+                      }}
+                      className="navbar-dropdown-item">
+                      <FontAwesomeIcon
+                        icon={faCog}
+                        className="navbar-dropdown-icon"
+                      />
+                      <span>Crear Publicación</span>
+                    </button>
+                    <div className="navbar-dropdown-divider"></div>
+                    <button
+                      onClick={handleSignOut}
+                      className="navbar-dropdown-item navbar-dropdown-item--logout">
+                      <FontAwesomeIcon
+                        icon={faSignOutAlt}
+                        className="navbar-dropdown-icon"
+                      />
+                      <span>Cerrar Sesión</span>
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={openLoginModal}
+                    className="navbar-dropdown-item">
+                    <FontAwesomeIcon
+                      icon={faSignInAlt}
+                      className="navbar-dropdown-icon"
+                    />
+                    <span>Iniciar sesión</span>
+                  </button>
+                )}
               </div>
             )}
           </div>
