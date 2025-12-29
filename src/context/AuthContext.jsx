@@ -1,5 +1,7 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useRef } from "react";
 import { supabase } from "../lib/supabase";
+import { getUserRole, ROLES } from "../lib/database";
+import Toast from "../components/UI/Toast";
 
 const AuthContext = createContext({});
 
@@ -13,7 +15,34 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [userRole, setUserRole] = useState(ROLES.USER);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState(null);
+  const isInitialLoad = useRef(true);
+
+  // Función para mostrar notificaciones
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+  };
+
+  const closeToast = () => {
+    setToast(null);
+  };
+
+  // Función para cargar el rol del usuario
+  const loadUserRole = async (userId) => {
+    if (!userId) {
+      setUserRole(ROLES.USER);
+      return;
+    }
+    try {
+      const role = await getUserRole(userId);
+      setUserRole(role);
+    } catch (error) {
+      console.error("Error al cargar rol:", error);
+      setUserRole(ROLES.USER);
+    }
+  };
 
   useEffect(() => {
     // Obtener sesión actual
@@ -23,10 +52,19 @@ export const AuthProvider = ({ children }) => {
           data: { session },
         } = await supabase.auth.getSession();
         setUser(session?.user ?? null);
+
+        // Cargar rol si hay usuario
+        if (session?.user) {
+          await loadUserRole(session.user.id);
+        }
       } catch (error) {
         console.error("Error al obtener sesión:", error);
       } finally {
         setLoading(false);
+        // Marcar que la carga inicial terminó después de un pequeño delay
+        setTimeout(() => {
+          isInitialLoad.current = false;
+        }, 1000);
       }
     };
 
@@ -35,9 +73,26 @@ export const AuthProvider = ({ children }) => {
     // Escuchar cambios de autenticación
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUser(session?.user ?? null);
+
+      // Cargar rol cuando cambia la sesión
+      if (session?.user) {
+        await loadUserRole(session.user.id);
+      } else {
+        setUserRole(ROLES.USER);
+      }
+
       setLoading(false);
+
+      // Solo mostrar notificaciones después de la carga inicial
+      if (!isInitialLoad.current) {
+        if (event === "SIGNED_IN" && session?.user) {
+          showToast("¡Has iniciado sesión correctamente!", "success");
+        } else if (event === "SIGNED_OUT") {
+          showToast("Has cerrado sesión correctamente", "success");
+        }
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -89,16 +144,28 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     user,
+    userRole,
     loading,
     isAuthenticated: !!user,
+    isAdmin: userRole === ROLES.ADMIN,
+    isModerator: userRole === ROLES.ADMIN || userRole === ROLES.MODERATOR,
     signUp,
     signIn,
     signOut,
     signInWithGoogle,
     resetPassword,
+    showToast,
+    refreshRole: () => loadUserRole(user?.id),
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      {toast && (
+        <Toast message={toast.message} type={toast.type} onClose={closeToast} />
+      )}
+    </AuthContext.Provider>
+  );
 };
 
 export default AuthContext;

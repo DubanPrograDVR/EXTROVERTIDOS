@@ -9,6 +9,7 @@ import {
   faLocationDot,
   faPhone,
   faMapMarkerAlt,
+  faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faInstagram,
@@ -39,19 +40,34 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
   const {
     titulo,
     subtitulo,
-    imagen,
-    ciudad,
-    categoria,
+    imagen_url,
+    comuna,
+    provincia,
+    categories,
     descripcion,
-    fecha,
-    hora,
-    entrada,
+    fecha_evento,
+    hora_evento,
+    precio,
     direccion,
-    contacto,
-    ubicacionUrl,
-    tags = [],
-    redes = {},
+    telefono,
+    ubicacion_url,
+    instagram,
+    facebook,
+    whatsapp,
+    youtube,
+    tiktok,
+    profiles,
   } = publication;
+
+  // Formatear fecha
+  const formattedDate = fecha_evento
+    ? new Date(fecha_evento).toLocaleDateString("es-CL", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+    : null;
 
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) onClose();
@@ -67,7 +83,9 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
 
         {/* Header con categoría */}
         <div className="publication-modal__header">
-          <span className="publication-modal__category">{categoria}</span>
+          <span className="publication-modal__category">
+            {categories?.nombre || "Sin categoría"}
+          </span>
         </div>
 
         {/* Contenido principal */}
@@ -75,7 +93,7 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
           {/* Imagen */}
           <div className="publication-modal__image-section">
             <img
-              src={imagen || "/img/placeholder.jpg"}
+              src={imagen_url || "/img/placeholder.jpg"}
               alt={titulo}
               className="publication-modal__image"
             />
@@ -91,6 +109,27 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
               )}
             </div>
 
+            {/* Autor */}
+            {profiles && (
+              <div className="publication-modal__author">
+                {profiles.avatar_url ? (
+                  <img
+                    src={profiles.avatar_url}
+                    alt={profiles.nombre || "Autor"}
+                    className="publication-modal__author-avatar"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="publication-modal__author-icon">
+                    <FontAwesomeIcon icon={faUser} />
+                  </div>
+                )}
+                <span className="publication-modal__author-name">
+                  Publicado por {profiles.nombre || "Usuario"}
+                </span>
+              </div>
+            )}
+
             {/* Descripción */}
             {descripcion && (
               <p className="publication-modal__description">{descripcion}</p>
@@ -102,34 +141,34 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
 
               <div className="publication-modal__detail-item">
                 <FontAwesomeIcon icon={faCalendarDays} />
-                <span>Fecha: {fecha || "Por confirmar"}</span>
+                <span>Fecha: {formattedDate || "Por confirmar"}</span>
               </div>
 
               <div className="publication-modal__detail-item">
                 <FontAwesomeIcon icon={faClock} />
-                <span>Hora: {hora || "Por confirmar"}</span>
+                <span>Hora: {hora_evento || "Por confirmar"}</span>
               </div>
 
               <div className="publication-modal__detail-item">
                 <FontAwesomeIcon icon={faTicket} />
-                <span>Entrada: {entrada || "Por confirmar"}</span>
+                <span>Entrada: {precio || "Por confirmar"}</span>
               </div>
 
               <div className="publication-modal__detail-item">
                 <FontAwesomeIcon icon={faLocationDot} />
-                <span>Dirección: {direccion || ciudad}</span>
+                <span>Dirección: {direccion || `${comuna}, ${provincia}`}</span>
               </div>
 
               <div className="publication-modal__detail-item">
                 <FontAwesomeIcon icon={faPhone} />
-                <span>Contacto: {contacto || "No disponible"}</span>
+                <span>Contacto: {telefono || "No disponible"}</span>
               </div>
 
-              {ubicacionUrl && (
+              {ubicacion_url && (
                 <div className="publication-modal__detail-item publication-modal__detail-item--link">
                   <FontAwesomeIcon icon={faMapMarkerAlt} />
                   <a
-                    href={ubicacionUrl}
+                    href={ubicacion_url}
                     target="_blank"
                     rel="noopener noreferrer">
                     Ubicación: 📍
@@ -138,58 +177,47 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
               )}
             </div>
 
-            {/* Tags */}
-            {tags.length > 0 && (
-              <div className="publication-modal__tags">
-                {tags.map((tag, index) => (
-                  <span key={index} className="publication-modal__tag">
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-            )}
-
             {/* Redes sociales */}
             <div className="publication-modal__social">
-              {redes.instagram && (
+              {instagram && (
                 <a
-                  href={redes.instagram}
+                  href={instagram}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="publication-modal__social-link">
                   <FontAwesomeIcon icon={faInstagram} />
                 </a>
               )}
-              {redes.facebook && (
+              {facebook && (
                 <a
-                  href={redes.facebook}
+                  href={facebook}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="publication-modal__social-link">
                   <FontAwesomeIcon icon={faFacebook} />
                 </a>
               )}
-              {redes.whatsapp && (
+              {whatsapp && (
                 <a
-                  href={redes.whatsapp}
+                  href={whatsapp}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="publication-modal__social-link">
                   <FontAwesomeIcon icon={faWhatsapp} />
                 </a>
               )}
-              {redes.youtube && (
+              {youtube && (
                 <a
-                  href={redes.youtube}
+                  href={youtube}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="publication-modal__social-link">
                   <FontAwesomeIcon icon={faYoutube} />
                 </a>
               )}
-              {redes.tiktok && (
+              {tiktok && (
                 <a
-                  href={redes.tiktok}
+                  href={tiktok}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="publication-modal__social-link">

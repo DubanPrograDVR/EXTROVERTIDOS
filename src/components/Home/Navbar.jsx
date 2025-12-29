@@ -10,6 +10,7 @@ import {
   faUserPlus,
   faSignOutAlt,
   faCog,
+  faShieldAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import logo from "../../../public/img/Logo_extrovertidos.png";
 import manchaExtro from "../../../public/img/Mancha_Extro.png";
@@ -24,7 +25,7 @@ const NAV_LINKS = [
 ];
 
 export default function Navbar() {
-  const { user, isAuthenticated, signOut, loading } = useAuth();
+  const { user, isAuthenticated, isModerator, signOut, loading } = useAuth();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
@@ -203,6 +204,20 @@ export default function Navbar() {
                       />
                       <span>Mi Perfil</span>
                     </button>
+                    {isModerator && (
+                      <button
+                        onClick={() => {
+                          setIsUserDropdownOpen(false);
+                          navigate("/admin");
+                        }}
+                        className="navbar-dropdown-item navbar-dropdown-item--admin">
+                        <FontAwesomeIcon
+                          icon={faShieldAlt}
+                          className="navbar-dropdown-icon"
+                        />
+                        <span>Panel Admin</span>
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         setIsUserDropdownOpen(false);

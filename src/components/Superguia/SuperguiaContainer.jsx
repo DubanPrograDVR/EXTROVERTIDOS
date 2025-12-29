@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import "./styles/SuperguiaContainer.css";
 import FilterBar from "./FilterBar";
 import SearchBar from "./SearchBar";
@@ -7,11 +7,17 @@ import PublicationGrid from "./PublicationGrid";
 import PublicationModal from "./PublicationModal";
 import Pagination from "./Pagination";
 import Footer from "../Home/Footer";
-import { CATEGORIES, LOCATIONS, MOCK_PUBLICATIONS } from "./data";
+import { LOCATIONS, mapCategoriesToUI } from "./data";
+import { getPublishedEvents, getCategories } from "../../lib/database";
 
 const ITEMS_PER_PAGE = 16;
 
 export default function SuperguiaContainer() {
+  // Estados de datos
+  const [publications, setPublications] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loadingData, setLoadingData] = useState(true);
+
   // Estados de filtros
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedCity, setSelectedCity] = useState(null);
@@ -22,6 +28,30 @@ export default function SuperguiaContainer() {
   // Estado del modal
   const [selectedPublication, setSelectedPublication] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Cargar datos desde Supabase
+  useEffect(() => {
+    const loadData = async () => {
+      setLoadingData(true);
+      try {
+        const [eventsData, categoriesData] = await Promise.all([
+          getPublishedEvents(),
+          getCategories(),
+        ]);
+        setPublications(eventsData || []);
+        // Mapear categorías para agregar iconos de FontAwesome
+        setCategories(mapCategoriesToUI(categoriesData || []));
+      } catch (error) {
+        console.error("Error cargando datos:", error);
+        setPublications([]);
+        setCategories([]);
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    loadData();
+  }, []);
 
   // Handlers para el modal
   const handlePublicationClick = useCallback((publication) => {
@@ -70,35 +100,39 @@ export default function SuperguiaContainer() {
 
   // Filtrar publicaciones
   const filteredPublications = useMemo(() => {
-    let result = [...MOCK_PUBLICATIONS];
+    let result = [...publications];
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
         (pub) =>
-          pub.titulo.toLowerCase().includes(query) ||
-          pub.ciudad.toLowerCase().includes(query) ||
-          pub.categoria.toLowerCase().includes(query)
+          pub.titulo?.toLowerCase().includes(query) ||
+          pub.comuna?.toLowerCase().includes(query) ||
+          pub.provincia?.toLowerCase().includes(query) ||
+          pub.categories?.nombre?.toLowerCase().includes(query)
       );
     }
 
     if (selectedCategory) {
-      result = result.filter((pub) => pub.categoria === selectedCategory);
+      result = result.filter((pub) => pub.category_id === selectedCategory);
     }
 
     if (selectedCity) {
-      const cityData = LOCATIONS[selectedCity];
-      if (cityData) {
-        result = result.filter((pub) => cityData.comunas.includes(pub.ciudad));
-      }
+      result = result.filter((pub) => pub.provincia === selectedCity);
     }
 
     if (selectedComuna) {
-      result = result.filter((pub) => pub.ciudad === selectedComuna);
+      result = result.filter((pub) => pub.comuna === selectedComuna);
     }
 
     return result;
-  }, [selectedCategory, selectedCity, selectedComuna, searchQuery]);
+  }, [
+    selectedCategory,
+    selectedCity,
+    selectedComuna,
+    searchQuery,
+    publications,
+  ]);
 
   // Paginación
   const totalPages = Math.ceil(filteredPublications.length / ITEMS_PER_PAGE);
@@ -122,13 +156,13 @@ export default function SuperguiaContainer() {
 
         {/* Barra de filtros */}
         <FilterBar
-          categories={CATEGORIES}
+          categories={categories}
           locations={LOCATIONS}
           selectedCategory={selectedCategory}
           selectedCity={selectedCity}
           selectedComuna={selectedComuna}
           availableComunas={availableComunas}
-          activeCategoriesCount={CATEGORIES.length}
+          activeCategoriesCount={categories.length}
           onCategoryChange={handleCategoryChange}
           onCityChange={handleCityChange}
           onComunaChange={handleComunaChange}
@@ -149,36 +183,45 @@ export default function SuperguiaContainer() {
           {/* Buscador */}
           <SearchBar value={searchQuery} onChange={handleSearch} />
 
-          {/* Grid de publicaciones */}
-          <PublicationGrid
-            publications={paginatedPublications}
-            onPublicationClick={handlePublicationClick}
-          />
-
-          {/* Paginación */}
-          {totalPages > 1 && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-            />
-          )}
-
-          {/* Estado vacío */}
-          {filteredPublications.length === 0 && (
-            <div className="superguia__empty">
-              <p>No se encontraron publicaciones.</p>
-              <button onClick={handleClearFilters}>Limpiar filtros</button>
+          {/* Loading state */}
+          {loadingData ? (
+            <div className="superguia__loading">
+              <p>Cargando publicaciones...</p>
             </div>
+          ) : (
+            <>
+              {/* Grid de publicaciones */}
+              <PublicationGrid
+                publications={paginatedPublications}
+                onPublicationClick={handlePublicationClick}
+              />
+
+              {/* Paginación */}
+              {totalPages > 1 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
+              )}
+
+              {/* Estado vacío */}
+              {filteredPublications.length === 0 && (
+                <div className="superguia__empty">
+                  <p>No se encontraron publicaciones.</p>
+                  <button onClick={handleClearFilters}>Limpiar filtros</button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>
 
-      {MOCK_PUBLICATIONS.length > 0 && (
+      {publications.length > 0 && (
         <div className="superguia__carousel-section">
           <h3 className="superguia__carousel-title">Destacados</h3>
           <Carousel
-            publications={MOCK_PUBLICATIONS}
+            publications={publications}
             onPublicationClick={handlePublicationClick}
           />
         </div>

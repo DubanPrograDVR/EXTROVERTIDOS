@@ -148,6 +148,44 @@
   margin: 5px 0 0;
 }
 
+/* Autor */
+.publication-modal__author {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px;
+  background: rgba(255, 102, 0, 0.05);
+  border-radius: 10px;
+}
+
+.publication-modal__author-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ff6600;
+}
+
+.publication-modal__author-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  font-size: 0.9rem;
+  border: 2px solid #ff6600;
+}
+
+.publication-modal__author-name {
+  color: #ccc;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
 /* Descripción */
 .publication-modal__description {
   font-size: 0.85rem;

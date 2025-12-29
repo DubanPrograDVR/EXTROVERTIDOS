@@ -21,33 +21,60 @@ import {
   faSpa,
   faBook,
   faLandmark,
+  faMusic,
+  faTheaterMasks,
+  faTree,
+  faBriefcase,
+  faQuestion,
 } from "@fortawesome/free-solid-svg-icons";
 
-// Datos de categorías con subcategorías para la SuperGuía
-export const CATEGORIES = [
-  { id: 1, nombre: "Deportes", icon: faFutbol },
-  { id: 2, nombre: "Construcción", icon: faHammer },
-  { id: 3, nombre: "Eventos", icon: faCalendarDays },
-  { id: 4, nombre: "Comida", icon: faUtensils },
-  { id: 5, nombre: "Medicina", icon: faStethoscope },
-  { id: 6, nombre: "Hospedajes", icon: faHotel },
-  { id: 7, nombre: "Automóvil", icon: faCar },
-  { id: 8, nombre: "Maquinaria", icon: faGears },
-  { id: 9, nombre: "Mascotas", icon: faPaw },
-  { id: 10, nombre: "Serv. técnico", icon: faScrewdriverWrench },
-  { id: 11, nombre: "Publicidad", icon: faBullhorn },
-  { id: 12, nombre: "Otros", icon: faEllipsis },
-  { id: 13, nombre: "Servicios al hogar", icon: faHouse },
-  { id: 14, nombre: "Academias", icon: faGraduationCap },
-  { id: 15, nombre: "Comercial", icon: faStore },
-  { id: 16, nombre: "Turismo", icon: faPlane },
-  { id: 17, nombre: "Serv. financieros", icon: faMoneyBillWave },
-  { id: 18, nombre: "Transporte", icon: faTruck },
-  { id: 19, nombre: "Capacitaciones", icon: faChalkboardUser },
-  { id: 20, nombre: "Belleza", icon: faSpa },
-  { id: 21, nombre: "Educación", icon: faBook },
-  { id: 22, nombre: "Serv. municipales", icon: faLandmark },
-];
+// Mapeo de nombres de icono (string de BD) a objetos FontAwesome
+const ICON_MAP = {
+  faFutbol,
+  faHammer,
+  faCalendarDays,
+  faUtensils,
+  faStethoscope,
+  faHotel,
+  faCar,
+  faGears,
+  faPaw,
+  faScrewdriverWrench,
+  faBullhorn,
+  faEllipsis,
+  faHouse,
+  faGraduationCap,
+  faStore,
+  faPlane,
+  faMoneyBillWave,
+  faTruck,
+  faChalkboardUser,
+  faSpa,
+  faBook,
+  faLandmark,
+  faMusic,
+  faTheaterMasks,
+  faTree,
+  faBriefcase,
+};
+
+/**
+ * Convierte el nombre del icono de la BD a objeto FontAwesome
+ */
+export const getIconFromString = (iconName) => {
+  if (!iconName) return faQuestion;
+  return ICON_MAP[iconName] || faQuestion;
+};
+
+/**
+ * Mapea categorías de Supabase agregando el objeto icon de FontAwesome
+ */
+export const mapCategoriesToUI = (categories) => {
+  return categories.map((cat) => ({
+    ...cat,
+    icon: getIconFromString(cat.icono),
+  }));
+};
 
 // Estructura Ciudad → Comunas del Maule
 export const LOCATIONS = {
@@ -98,137 +125,3 @@ export const LOCATIONS = {
     comunas: ["Cauquenes", "Chanco", "Pelluhue"],
   },
 };
-
-// Datos de ejemplo para publicaciones
-export const MOCK_PUBLICATIONS = [
-  {
-    id: 1,
-    titulo: "Campeonato Nacional Mountainbike",
-    subtitulo: "Categoría Elite y Amateur",
-    imagen: "/img/Home1.png",
-    ciudad: "Pencahue",
-    categoria: "Deportes",
-    descripcion:
-      "El evento más esperado del año para los amantes del ciclismo de montaña. Participa en las diferentes categorías y demuestra tu habilidad en los senderos más desafiantes de la región del Maule.",
-    fecha: "5-7 Diciembre 2025",
-    hora: "09:00 hrs",
-    entrada: "Gratuita para espectadores",
-    direccion: "Cerro La Virgen, Pencahue",
-    contacto: "+56 9 1234 5678",
-    ubicacionUrl: "https://maps.google.com",
-    tags: ["mountainbike", "deportes", "ciclismo"],
-    redes: {
-      instagram: "https://instagram.com",
-      facebook: "https://facebook.com",
-      whatsapp: "https://wa.me/56912345678",
-    },
-  },
-  {
-    id: 2,
-    titulo: "LL Jazzer - Lanzamiento 2049",
-    subtitulo: "Nuevo álbum en vivo",
-    imagen: "/img/Home2.png",
-    ciudad: "Curicó",
-    categoria: "Eventos",
-    descripcion:
-      "La banda local LL Jazzer presenta su nuevo material discográfico en un show único e irrepetible. Una noche llena de jazz, fusión y mucha energía.",
-    fecha: "5 Diciembre 2025",
-    hora: "21:00 hrs",
-    entrada: "$8.000 anticipada / $10.000 puerta",
-    direccion: "Teatro Municipal de Curicó",
-    contacto: "+56 9 8765 4321",
-    ubicacionUrl: "https://maps.google.com",
-    tags: ["música", "jazz", "concierto"],
-    redes: {
-      instagram: "https://instagram.com",
-      youtube: "https://youtube.com",
-      tiktok: "https://tiktok.com",
-    },
-  },
-  {
-    id: 3,
-    titulo: "Terra Carnaval 2da Versión",
-    subtitulo: "Festival de música electrónica",
-    imagen: "/img/banner.png",
-    ciudad: "Talca",
-    categoria: "Eventos",
-    descripcion:
-      "Vuelve el festival más grande de música electrónica del Maule. Más de 12 horas de música continua con los mejores DJs nacionales e internacionales.",
-    fecha: "6 Diciembre 2025",
-    hora: "16:00 hrs",
-    entrada: "$25.000 Early Bird / $35.000 General",
-    direccion: "Parque Costanera, Talca",
-    contacto: "+56 9 5555 1234",
-    ubicacionUrl: "https://maps.google.com",
-    tags: ["festival", "electrónica", "dj"],
-    redes: {
-      instagram: "https://instagram.com",
-      facebook: "https://facebook.com",
-      tiktok: "https://tiktok.com",
-    },
-  },
-  {
-    id: 4,
-    titulo: "Ecos del Bienestar",
-    subtitulo: "Feria de salud integral",
-    imagen: "/img/Home1.png",
-    ciudad: "Teno",
-    categoria: "Medicina",
-    descripcion:
-      "Una jornada dedicada al bienestar físico y mental. Charlas, talleres de yoga, meditación y stands de productos naturales y orgánicos.",
-    fecha: "15 Diciembre 2025",
-    hora: "10:00 hrs",
-    entrada: "Gratuita",
-    direccion: "Plaza de Armas de Teno",
-    contacto: "+56 9 4444 7890",
-    ubicacionUrl: "https://maps.google.com",
-    tags: ["salud", "bienestar", "yoga"],
-    redes: {
-      instagram: "https://instagram.com",
-      whatsapp: "https://wa.me/56944447890",
-    },
-  },
-  {
-    id: 5,
-    titulo: "III Encuentro Familiar de Rugby",
-    subtitulo: "Torneo infantil y juvenil",
-    imagen: "/img/Home2.png",
-    ciudad: "Talca",
-    categoria: "Deportes",
-    descripcion:
-      "El club de rugby Talca invita a toda la familia a participar de este encuentro deportivo. Categorías desde los 6 años. Incluye almuerzo y premiación.",
-    fecha: "6 Diciembre 2025",
-    hora: "09:30 hrs",
-    entrada: "$5.000 por equipo",
-    direccion: "Estadio Fiscal de Talca",
-    contacto: "+56 9 3333 2222",
-    ubicacionUrl: "https://maps.google.com",
-    tags: ["rugby", "familia", "deporte"],
-    redes: {
-      instagram: "https://instagram.com",
-      facebook: "https://facebook.com",
-    },
-  },
-  {
-    id: 6,
-    titulo: "Feria Gastronómica del Maule",
-    subtitulo: "Sabores de nuestra tierra",
-    imagen: "/img/banner.png",
-    ciudad: "Curicó",
-    categoria: "Comida",
-    descripcion:
-      "Disfruta de lo mejor de la gastronomía regional. Más de 50 stands con platos típicos, vinos locales, artesanía y música en vivo durante todo el día.",
-    fecha: "10 Diciembre 2025",
-    hora: "11:00 hrs",
-    entrada: "$3.000 general / Niños gratis",
-    direccion: "Plaza de Armas de Curicó",
-    contacto: "+56 9 2222 1111",
-    ubicacionUrl: "https://maps.google.com",
-    tags: ["gastronomía", "vinos", "artesanía"],
-    redes: {
-      instagram: "https://instagram.com",
-      facebook: "https://facebook.com",
-      youtube: "https://youtube.com",
-    },
-  },
-];

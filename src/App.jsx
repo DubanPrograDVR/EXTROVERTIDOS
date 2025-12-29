@@ -4,8 +4,10 @@ import Navbar from "./components/Home/Navbar";
 import Home from "./components/Home/Home";
 import { SuperguiaContainer } from "./components/Superguia";
 import Publicar from "./components/Home/Panorama/Publicar";
+import PublicarNegocio from "./components/Home/Negocio/PublicarNegocio";
+import PanoramasPage from "./components/Home/PanoramasPage";
 import Perfil from "./components/Perfil/Perfil";
-import SupabaseTest from "./components/SupabaseTest";
+import AdminPanel from "./components/Admin/AdminPanel";
 
 function App() {
   return (
@@ -15,11 +17,12 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/superguia" element={<SuperguiaContainer />} />
+          <Route path="/panoramas" element={<PanoramasPage />} />
           <Route path="/publicar-panorama" element={<Publicar />} />
+          <Route path="/publicar-negocio" element={<PublicarNegocio />} />
           <Route path="/perfil" element={<Perfil />} />
+          <Route path="/admin" element={<AdminPanel />} />
         </Routes>
-
-        {/* Componente de prueba - ELIMINAR después de verificar conexión */}
       </Router>
     </AuthProvider>
   );
