@@ -259,13 +259,15 @@
 }
 
 .filter-panel__dropdown--calendar {
-  min-width: 320px;
+  min-width: 280px;
+  max-height: none;
+  overflow: visible;
   right: 0;
   left: auto;
 }
 
 .filter-panel__calendar-content {
-  padding: 0.5rem;
+  padding: 0.25rem;
 }
 
 /* === Footer con resultados y limpiar === */
@@ -318,6 +320,7 @@
     right: auto;
     left: 50%;
     transform: translateX(-50%);
+    min-width: 260px;
   }
 }
 
@@ -348,9 +351,12 @@
 
   .filter-panel__dropdown--calendar {
     min-width: 100%;
+    max-width: 280px;
     left: 0;
     right: 0;
     transform: none;
+    max-height: none;
+    overflow: visible;
   }
 
   .filter-panel__footer {
