@@ -1,15 +1,17 @@
-import "./styles/footer.css";
+import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faInstagram,
   faFacebook,
   faTiktok,
 } from "@fortawesome/free-brands-svg-icons";
+import { faEnvelope, faCommentDots } from "@fortawesome/free-solid-svg-icons";
+import "./styles/footer.css";
 
-// Imágenes servidas desde public/
+// Logo servido desde public/
 const logo = "/img/Logo_extrovertidos.png";
 
-// ===== DATOS DE REDES SOCIALES =====
+// ===== DATOS =====
 const socialLinks = [
   {
     id: 1,
@@ -34,37 +36,101 @@ const socialLinks = [
   },
 ];
 
+const navLinks = [
+  { to: "/", label: "Inicio" },
+  { to: "/eventos", label: "Eventos" },
+  { to: "/superguia", label: "Superguía" },
+  { to: "/publicar", label: "Publicar" },
+  { to: "/faq", label: "Preguntas Frecuentes" },
+];
+
+const legalLinks = [
+  { to: "/terminos", label: "Términos y Condiciones" },
+  { to: "/privacidad", label: "Política de Privacidad" },
+];
+
 // ===== COMPONENTE FOOTER =====
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="footer" role="contentinfo">
-      <div className="footer__container">
-        {/* ===== SECCIÓN IZQUIERDA ===== */}
-        <div className="footer__section footer__section--left">
-          {/* Logo */}
-          <div className="footer__logo-wrapper">
-            <img src={logo} alt="Extrovertidos Logo" className="footer__logo" />
+    <footer className="footer" role="contentinfo" aria-label="Pie de página">
+      {/* Main Footer Content */}
+      <div className="footer__main">
+        <div className="footer__grid">
+          {/* Columna 1: Marca */}
+          <div className="footer__column footer__column--brand">
+            <Link to="/" className="footer__logo-link">
+              <img src={logo} alt="Extrovertidos" className="footer__logo" />
+            </Link>
+            <p className="footer__slogan">
+              Los Panoramas, Actividades y Eventos de tu Ciudad
+            </p>
           </div>
 
-          {/* Descripción */}
-          <p className="footer__description">
-            Los Panoramas, Actividades y Eventos de tu Ciudad
-          </p>
+          {/* Columna 2: Navegación */}
+          <div className="footer__column">
+            <h3 className="footer__title">Explora</h3>
+            <nav aria-label="Enlaces de navegación">
+              <ul className="footer__nav-list">
+                {navLinks.map((link) => (
+                  <li key={link.to}>
+                    <Link to={link.to} className="footer__nav-link">
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          </div>
 
-          {/* Síguenos */}
-          <div className="footer__social">
-            <h3 className="footer__social-title">Síguenos</h3>
-            <div className="footer__social-icons">
+          {/* Columna 3: Contacto */}
+          <div className="footer__column">
+            <h3 className="footer__title">Contacto</h3>
+            <div className="footer__contact-list">
+              <a
+                href="mailto:atencion@extrovertidos.cl"
+                className="footer__contact-link">
+                <FontAwesomeIcon
+                  icon={faEnvelope}
+                  className="footer__contact-icon"
+                />
+                atencion@extrovertidos.cl
+              </a>
+              <a
+                href="https://wa.me/56912345678"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="footer__contact-link">
+                <FontAwesomeIcon
+                  icon={faCommentDots}
+                  className="footer__contact-icon"
+                />
+                WhatsApp
+              </a>
+              <p className="footer__contact-cta">
+                ¿Tienes dudas?{" "}
+                <a
+                  href="mailto:atencion@extrovertidos.cl"
+                  className="footer__cta-link">
+                  ¡Escríbenos!
+                </a>
+              </p>
+            </div>
+          </div>
+
+          {/* Columna 4: Redes Sociales */}
+          <div className="footer__column">
+            <h3 className="footer__title">Síguenos</h3>
+            <div className="footer__social">
               {socialLinks.map((social) => (
                 <a
                   key={social.id}
                   href={social.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="footer__social-link"
-                  aria-label={social.ariaLabel}>
+                  aria-label={social.ariaLabel}
+                  className="footer__social-link">
                   <FontAwesomeIcon
                     icon={social.icon}
                     className="footer__social-icon"
@@ -72,56 +138,34 @@ export default function Footer() {
                 </a>
               ))}
             </div>
-          </div>
-
-          {/* Contacto */}
-          <div className="footer__contact">
-            <h3 className="footer__contact-title">Contacto</h3>
-            <a
-              href="mailto:Atencion@extrovertidos.cl"
-              className="footer__contact-email">
-              Atencion@extrovertidos.cl
-            </a>
-          </div>
-        </div>
-
-        {/* ===== SECCIÓN DERECHA ===== */}
-        <div className="footer__section footer__section--right">
-          {/* ¿Te Ayudamos? */}
-          <div className="footer__help">
-            <h3 className="footer__help-title">¿Te Ayudamos?</h3>
-            <p className="footer__help-text">
-              ¿Quieres saber más de cómo publicar?
-              <br />
-              <strong>¡Escríbenos!</strong>
+            <p className="footer__social-cta">
+              Escríbenos y cuéntanos para mejorar cada día
             </p>
-          </div>
-
-          {/* Coméntanos */}
-          <div className="footer__feedback">
-            <h3 className="footer__feedback-title">Coméntanos</h3>
-            <p className="footer__feedback-text">
-              Escríbenos y coméntanos para mejorar cada día.
-              <br />
-              <strong>¡Esperamos escuchar de ti, somos Extrovertidos!</strong>
-            </p>
-          </div>
-
-          {/* Legal */}
-          <div className="footer__legal">
-            <h3 className="footer__legal-title">Legal</h3>
-            <a href="/terminos" className="footer__legal-link">
-              Términos y Condiciones
-            </a>
           </div>
         </div>
       </div>
 
-      {/* ===== COPYRIGHT ===== */}
+      {/* Bottom Bar */}
       <div className="footer__bottom">
-        <p className="footer__copyright">
-          Extrovertidos {currentYear} - Todos los derechos reservados
-        </p>
+        <div className="footer__bottom-content">
+          {/* Legal Links */}
+          <nav aria-label="Enlaces legales">
+            <ul className="footer__legal-list">
+              {legalLinks.map((link) => (
+                <li key={link.to}>
+                  <Link to={link.to} className="footer__legal-link">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          {/* Copyright */}
+          <p className="footer__copyright">
+            © {currentYear} Extrovertidos - Todos los derechos reservados
+          </p>
+        </div>
       </div>
     </footer>
   );

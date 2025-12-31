@@ -1,5 +1,11 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faShieldAlt, faUserShield } from "@fortawesome/free-solid-svg-icons";
+import {
+  faShieldAlt,
+  faUserShield,
+  faBan,
+  faUserCheck,
+  faCheckCircle,
+} from "@fortawesome/free-solid-svg-icons";
 import { formatDate } from "../utils/formatters";
 
 /**
@@ -10,6 +16,8 @@ export default function AdminUserList({
   currentUserId,
   actionLoading,
   onRoleChange,
+  onBanClick,
+  onUnbanClick,
 }) {
   return (
     <div className="admin-users">
@@ -21,6 +29,7 @@ export default function AdminUserList({
               <th>Usuario</th>
               <th>Email</th>
               <th>Rol Actual</th>
+              <th>Estado</th>
               <th>Fecha de Registro</th>
               <th>Acciones</th>
             </tr>
@@ -33,6 +42,8 @@ export default function AdminUserList({
                 isCurrentUser={user.id === currentUserId}
                 isLoading={actionLoading === user.id}
                 onRoleChange={(newRole) => onRoleChange(user.id, newRole)}
+                onBanClick={() => onBanClick(user)}
+                onUnbanClick={() => onUnbanClick(user)}
               />
             ))}
           </tbody>
@@ -45,9 +56,19 @@ export default function AdminUserList({
 /**
  * Fila individual de usuario en la tabla
  */
-function UserRow({ user, isCurrentUser, isLoading, onRoleChange }) {
+function UserRow({
+  user,
+  isCurrentUser,
+  isLoading,
+  onRoleChange,
+  onBanClick,
+  onUnbanClick,
+}) {
+  const isBanned = user.is_banned;
+  const isAdmin = user.rol === "admin";
+
   return (
-    <tr>
+    <tr className={isBanned ? "admin-users__row--banned" : ""}>
       <td>
         <div className="admin-user-cell">
           <img
@@ -61,21 +82,54 @@ function UserRow({ user, isCurrentUser, isLoading, onRoleChange }) {
       <td>
         <RoleBadge rol={user.rol} />
       </td>
+      <td>
+        <StatusBadge isBanned={isBanned} banInfo={user.ban_info} />
+      </td>
       <td>{formatDate(user.created_at)}</td>
       <td>
-        {isCurrentUser ? (
-          <span className="admin-you-badge">Tú</span>
-        ) : (
-          <select
-            value={user.rol || "user"}
-            onChange={(e) => onRoleChange(e.target.value)}
-            disabled={isLoading}
-            className="admin-role-select">
-            <option value="user">Usuario</option>
-            <option value="moderator">Moderador</option>
-            <option value="admin">Administrador</option>
-          </select>
-        )}
+        <div className="admin-users__actions">
+          {isCurrentUser ? (
+            <span className="admin-you-badge">Tú</span>
+          ) : (
+            <>
+              {/* Selector de rol */}
+              <select
+                value={user.rol || "user"}
+                onChange={(e) => onRoleChange(e.target.value)}
+                disabled={isLoading || isBanned}
+                className="admin-role-select">
+                <option value="user">Usuario</option>
+                <option value="moderator">Moderador</option>
+                <option value="admin">Administrador</option>
+              </select>
+
+              {/* Botón de banear/desbanear */}
+              {!isAdmin && (
+                <>
+                  {isBanned ? (
+                    <button
+                      className="admin-ban-btn admin-ban-btn--unban"
+                      onClick={onUnbanClick}
+                      disabled={isLoading}
+                      title="Restaurar usuario">
+                      <FontAwesomeIcon icon={faUserCheck} />
+                      Restaurar
+                    </button>
+                  ) : (
+                    <button
+                      className="admin-ban-btn admin-ban-btn--ban"
+                      onClick={onBanClick}
+                      disabled={isLoading}
+                      title="Suspender usuario">
+                      <FontAwesomeIcon icon={faBan} />
+                      Suspender
+                    </button>
+                  )}
+                </>
+              )}
+            </>
+          )}
+        </div>
       </td>
     </tr>
   );
@@ -94,6 +148,36 @@ function RoleBadge({ rol }) {
     <span className={`admin-role-badge admin-role-badge--${rol || "user"}`}>
       {roleIcons[rol] && <FontAwesomeIcon icon={roleIcons[rol]} />}
       {rol || "user"}
+    </span>
+  );
+}
+
+/**
+ * Badge del estado del usuario (activo/baneado)
+ */
+function StatusBadge({ isBanned, banInfo }) {
+  if (isBanned) {
+    return (
+      <div>
+        <span className="admin-status-badge admin-status-badge--banned">
+          <FontAwesomeIcon icon={faBan} />
+          Suspendido
+        </span>
+        {banInfo?.ban_reason && (
+          <div className="admin-ban-info">
+            <span className="admin-ban-info__reason" title={banInfo.ban_reason}>
+              {banInfo.ban_reason}
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <span className="admin-status-badge admin-status-badge--active">
+      <FontAwesomeIcon icon={faCheckCircle} />
+      Activo
     </span>
   );
 }

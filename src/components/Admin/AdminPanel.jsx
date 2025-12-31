@@ -15,6 +15,7 @@ import AdminDashboard from "./components/AdminDashboard";
 import AdminPendingList from "./components/AdminPendingList";
 import AdminUserList from "./components/AdminUserList";
 import AdminRejectModal from "./components/AdminRejectModal";
+import AdminBanModal from "./components/AdminBanModal";
 import AdminLoading from "./components/AdminLoading";
 
 // Custom hook para manejo de datos
@@ -38,6 +39,10 @@ export default function AdminPanel() {
     open: false,
     eventId: null,
   });
+  const [banModal, setBanModal] = useState({
+    open: false,
+    user: null,
+  });
 
   // Hook personalizado para manejo de datos
   const {
@@ -51,6 +56,8 @@ export default function AdminPanel() {
     handleApproveEvent,
     handleRejectEvent,
     handleRoleChange,
+    handleBanUser,
+    handleUnbanUser,
   } = useAdminData(user, isAdmin, isModerator);
 
   // Verificar acceso - redirigir si no es moderador/admin
@@ -80,6 +87,40 @@ export default function AdminPanel() {
   // Cerrar modal de rechazo
   const onRejectCancel = () => {
     setRejectModal({ open: false, eventId: null });
+  };
+
+  // Abrir modal de baneo
+  const onBanClick = (userToBan) => {
+    setBanModal({ open: true, user: userToBan });
+  };
+
+  // Confirmar baneo
+  const onBanConfirm = async (reason) => {
+    if (!banModal.user) return;
+    const result = await handleBanUser(banModal.user.id, reason);
+    if (result.success) {
+      setBanModal({ open: false, user: null });
+    }
+    return result;
+  };
+
+  // Cerrar modal de baneo
+  const onBanCancel = () => {
+    setBanModal({ open: false, user: null });
+  };
+
+  // Desbanear usuario
+  const onUnbanClick = async (userToUnban) => {
+    if (!userToUnban.ban_info?.id) return;
+    if (
+      window.confirm(
+        `¿Estás seguro de restaurar a ${
+          userToUnban.nombre || userToUnban.email
+        }?`
+      )
+    ) {
+      await handleUnbanUser(userToUnban.id, userToUnban.ban_info.id);
+    }
   };
 
   // Cambiar tab y cerrar sidebar en móvil
@@ -208,6 +249,8 @@ export default function AdminPanel() {
             currentUserId={user?.id}
             actionLoading={actionLoading}
             onRoleChange={handleRoleChange}
+            onBanClick={onBanClick}
+            onUnbanClick={onUnbanClick}
           />
         )}
       </main>
@@ -218,6 +261,15 @@ export default function AdminPanel() {
         isLoading={actionLoading === rejectModal.eventId}
         onConfirm={onRejectConfirm}
         onClose={onRejectCancel}
+      />
+
+      {/* Modal de baneo */}
+      <AdminBanModal
+        isOpen={banModal.open}
+        user={banModal.user}
+        onConfirm={onBanConfirm}
+        onCancel={onBanCancel}
+        loading={actionLoading === banModal.user?.id}
       />
     </div>
   );

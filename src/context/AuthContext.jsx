@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useState, useRef } from "react";
 import { supabase } from "../lib/supabase";
-import { ROLES } from "../lib/database";
+import { ROLES, checkBanStatus } from "../lib/database";
 import Toast from "../components/UI/Toast";
+import BannedUserCard from "../components/UI/BannedUserCard";
 
 const AuthContext = createContext({});
 
@@ -19,6 +20,10 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
   const [initialized, setInitialized] = useState(false);
+
+  // Estado para usuario baneado
+  const [banInfo, setBanInfo] = useState(null);
+  const [showBanCard, setShowBanCard] = useState(false);
 
   // Refs para evitar consultas duplicadas
   const roleCache = useRef({ userId: null, role: ROLES.USER });
@@ -108,6 +113,21 @@ export const AuthProvider = ({ children }) => {
         } = await supabase.auth.getSession();
 
         if (session?.user) {
+          // Verificar si el usuario está baneado al inicializar
+          const banStatus = await checkBanStatus(session.user.id);
+
+          if (banStatus.isBanned) {
+            console.log(
+              "Usuario baneado detectado en init, cerrando sesión..."
+            );
+            setBanInfo(banStatus);
+            setShowBanCard(true);
+            await supabase.auth.signOut();
+            setLoading(false);
+            setInitialized(true);
+            return;
+          }
+
           setUser(session.user);
           const role = await loadUserRole(session.user.id);
           setUserRole(role);
@@ -139,6 +159,18 @@ export const AuthProvider = ({ children }) => {
       switch (event) {
         case "SIGNED_IN":
           if (session?.user) {
+            // Verificar si el usuario está baneado
+            const banStatus = await checkBanStatus(session.user.id);
+
+            if (banStatus.isBanned) {
+              // Usuario baneado - cerrar sesión y mostrar card
+              console.log("Usuario baneado detectado, cerrando sesión...");
+              setBanInfo(banStatus);
+              setShowBanCard(true);
+              await supabase.auth.signOut();
+              return;
+            }
+
             setUser(session.user);
             // Solo cargar rol si es un usuario diferente
             if (roleCache.current.userId !== session.user.id) {
@@ -229,6 +261,12 @@ export const AuthProvider = ({ children }) => {
     return ROLES.USER;
   };
 
+  // Cerrar tarjeta de baneo
+  const closeBanCard = () => {
+    setShowBanCard(false);
+    setBanInfo(null);
+  };
+
   const value = {
     user,
     userRole,
@@ -250,6 +288,13 @@ export const AuthProvider = ({ children }) => {
       {children}
       {toast && (
         <Toast message={toast.message} type={toast.type} onClose={closeToast} />
+      )}
+      {showBanCard && banInfo && (
+        <BannedUserCard
+          reason={banInfo.reason}
+          bannedAt={banInfo.bannedAt}
+          onClose={closeBanCard}
+        />
       )}
     </AuthContext.Provider>
   );

@@ -8,6 +8,9 @@ import {
   getAdminStats,
   getEventsPerDay,
   getUsersPerDay,
+  getAllUsersWithBanStatus,
+  banUser,
+  unbanUser,
 } from "../../../lib/database";
 
 /**
@@ -89,14 +92,21 @@ export const useAdminData = (user, isAdmin, isModerator) => {
         usersPerDay: usersPerDayData,
       });
 
-      // Solo cargar usuarios si es admin
+      // Solo cargar usuarios si es admin (con estado de baneo)
       if (isAdmin) {
         try {
-          const usersData = await getAllUsers(user.id);
+          const usersData = await getAllUsersWithBanStatus(user.id);
           setUsers(usersData || []);
         } catch (err) {
           console.warn("Error al cargar usuarios:", err);
-          setUsers([]);
+          // Fallback a la función antigua si falla
+          try {
+            const usersData = await getAllUsers(user.id);
+            setUsers(usersData || []);
+          } catch (fallbackErr) {
+            console.warn("Error en fallback:", fallbackErr);
+            setUsers([]);
+          }
         }
       }
     } catch (err) {
@@ -177,6 +187,48 @@ export const useAdminData = (user, isAdmin, isModerator) => {
     }
   };
 
+  // Banear usuario
+  const handleBanUser = async (targetUserId, reason) => {
+    setActionLoading(targetUserId);
+    try {
+      const banData = await banUser(targetUserId, user.id, reason);
+      // Actualizar el estado local del usuario
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === targetUserId
+            ? { ...u, is_banned: true, ban_info: banData }
+            : u
+        )
+      );
+      return { success: true };
+    } catch (err) {
+      console.error("Error al banear usuario:", err);
+      return { success: false, error: err.message };
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Desbanear usuario
+  const handleUnbanUser = async (targetUserId, banId) => {
+    setActionLoading(targetUserId);
+    try {
+      await unbanUser(banId, user.id);
+      // Actualizar el estado local del usuario
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === targetUserId ? { ...u, is_banned: false, ban_info: null } : u
+        )
+      );
+      return { success: true };
+    } catch (err) {
+      console.error("Error al desbanear usuario:", err);
+      return { success: false, error: err.message };
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   return {
     // Estado
     pendingEvents,
@@ -191,6 +243,8 @@ export const useAdminData = (user, isAdmin, isModerator) => {
     handleApproveEvent,
     handleRejectEvent,
     handleRoleChange,
+    handleBanUser,
+    handleUnbanUser,
   };
 };
 

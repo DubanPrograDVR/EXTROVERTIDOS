@@ -229,14 +229,14 @@ export default function SuperguiaContainer() {
         {/* Hero Banner con imagen de fondo */}
         <div className="superguia__hero">
           <img
-            src="/img/superguia-hero.jpg"
+            src="/img/banner.png"
             alt="¿Qué hacemos hoy?"
             className="superguia__hero-img"
           />
           <div className="superguia__hero-overlay"></div>
           <div className="superguia__hero-content">
             <img
-              src="/img/logo-extrovertidos.png"
+              src="/img/Logo_extrovertidos.png"
               alt="Extrovertidos"
               className="superguia__hero-logo"
             />
