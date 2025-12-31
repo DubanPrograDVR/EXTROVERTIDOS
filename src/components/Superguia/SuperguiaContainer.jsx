@@ -1,18 +1,27 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import "./styles/SuperguiaContainer.css";
-import FilterBar from "./FilterBar";
-import SearchBar from "./SearchBar";
+import FilterPanel from "./FilterPanel";
+import { formatDateKey } from "./DateCalendar";
 import Carousel from "./Carousel";
 import PublicationGrid from "./PublicationGrid";
 import PublicationModal from "./PublicationModal";
 import Pagination from "./Pagination";
 import Footer from "../Home/Footer";
 import { LOCATIONS, mapCategoriesToUI } from "./data";
-import { getPublishedEvents, getCategories } from "../../lib/database";
+import {
+  getPublishedEvents,
+  getEventsByCity,
+  getCategories,
+} from "../../lib/database";
+import { useCity } from "../../context/CityContext";
 
 const ITEMS_PER_PAGE = 16;
 
 export default function SuperguiaContainer() {
+  const [searchParams] = useSearchParams();
+  const { cityName, selectCity } = useCity();
+
   // Estados de datos
   const [publications, setPublications] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -22,6 +31,8 @@ export default function SuperguiaContainer() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedCity, setSelectedCity] = useState(null);
   const [selectedComuna, setSelectedComuna] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedPrice, setSelectedPrice] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -29,15 +40,30 @@ export default function SuperguiaContainer() {
   const [selectedPublication, setSelectedPublication] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Cargar datos desde Supabase
+  // Sincronizar con query params
+  useEffect(() => {
+    const ciudadParam = searchParams.get("ciudad");
+    if (ciudadParam) {
+      selectCity(ciudadParam);
+    }
+  }, [searchParams, selectCity]);
+
+  // Cargar datos desde Supabase (filtrado por ciudad si hay param)
   useEffect(() => {
     const loadData = async () => {
       setLoadingData(true);
       try {
-        const [eventsData, categoriesData] = await Promise.all([
-          getPublishedEvents(),
-          getCategories(),
-        ]);
+        const ciudadParam = searchParams.get("ciudad");
+
+        let eventsData;
+        if (ciudadParam) {
+          eventsData = await getEventsByCity(ciudadParam);
+        } else {
+          eventsData = await getPublishedEvents();
+        }
+
+        const categoriesData = await getCategories();
+
         setPublications(eventsData || []);
         // Mapear categorías para agregar iconos de FontAwesome
         setCategories(mapCategoriesToUI(categoriesData || []));
@@ -51,7 +77,7 @@ export default function SuperguiaContainer() {
     };
 
     loadData();
-  }, []);
+  }, [searchParams]);
 
   // Handlers para el modal
   const handlePublicationClick = useCallback((publication) => {
@@ -81,6 +107,16 @@ export default function SuperguiaContainer() {
     setCurrentPage(1);
   }, []);
 
+  const handleDateChange = useCallback((date) => {
+    setSelectedDate(date);
+    setCurrentPage(1);
+  }, []);
+
+  const handlePriceChange = useCallback((price) => {
+    setSelectedPrice(price);
+    setCurrentPage(1);
+  }, []);
+
   const handleSearch = useCallback((query) => {
     setSearchQuery(query);
     setCurrentPage(1);
@@ -90,11 +126,9 @@ export default function SuperguiaContainer() {
     setSelectedCategory(null);
     setSelectedCity(null);
     setSelectedComuna(null);
+    setSelectedDate(null);
+    setSelectedPrice(null);
     setSearchQuery("");
-    setCurrentPage(1);
-  }, []);
-
-  const handleApplyFilters = useCallback(() => {
     setCurrentPage(1);
   }, []);
 
@@ -125,14 +159,57 @@ export default function SuperguiaContainer() {
       result = result.filter((pub) => pub.comuna === selectedComuna);
     }
 
+    // Filtrar por fecha
+    if (selectedDate) {
+      const dateStr = formatDateKey(selectedDate);
+      result = result.filter((pub) => {
+        if (!pub.fecha_evento) return false;
+        const eventDate = new Date(pub.fecha_evento);
+        return formatDateKey(eventDate) === dateStr;
+      });
+    }
+
+    // Filtrar por precio
+    if (selectedPrice) {
+      result = result.filter((pub) => {
+        const precio = pub.precio || 0;
+        switch (selectedPrice) {
+          case "gratis":
+            return precio === 0 || pub.tipo_entrada === "gratis";
+          case "economico":
+            return precio > 0 && precio <= 10000;
+          case "moderado":
+            return precio > 10000 && precio <= 30000;
+          case "premium":
+            return precio > 30000;
+          default:
+            return true;
+        }
+      });
+    }
+
     return result;
   }, [
     selectedCategory,
     selectedCity,
     selectedComuna,
+    selectedDate,
+    selectedPrice,
     searchQuery,
     publications,
   ]);
+
+  // Calcular eventos por día para el calendario
+  const eventsPerDay = useMemo(() => {
+    const counts = {};
+    publications.forEach((pub) => {
+      if (pub.fecha_evento) {
+        const dateStr = formatDateKey(new Date(pub.fecha_evento));
+        counts[dateStr] = (counts[dateStr] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [publications]);
 
   // Paginación
   const totalPages = Math.ceil(filteredPublications.length / ITEMS_PER_PAGE);
@@ -149,44 +226,56 @@ export default function SuperguiaContainer() {
   return (
     <>
       <section className="superguia">
-        {/* Header naranja */}
-        <header className="superguia__header">
-          <h1 className="superguia__title">SUPERGUIA EXTROVERTIDOS</h1>
-        </header>
+        {/* Hero Banner con imagen de fondo */}
+        <div className="superguia__hero">
+          <img
+            src="/img/superguia-hero.jpg"
+            alt="¿Qué hacemos hoy?"
+            className="superguia__hero-img"
+          />
+          <div className="superguia__hero-overlay"></div>
+          <div className="superguia__hero-content">
+            <img
+              src="/img/logo-extrovertidos.png"
+              alt="Extrovertidos"
+              className="superguia__hero-logo"
+            />
+            <h1 className="superguia__hero-title">¿QUÉ HACEMOS HOY?</h1>
+            <p className="superguia__hero-subtitle">
+              Descubre los mejores eventos y panoramas cerca de ti
+            </p>
+          </div>
+        </div>
 
-        {/* Barra de filtros */}
-        <FilterBar
+        {/* Panel de filtros rediseñado */}
+        <FilterPanel
           categories={categories}
           locations={LOCATIONS}
           selectedCategory={selectedCategory}
           selectedCity={selectedCity}
           selectedComuna={selectedComuna}
+          selectedDate={selectedDate}
+          selectedPrice={selectedPrice}
+          searchQuery={searchQuery}
+          eventsPerDay={eventsPerDay}
           availableComunas={availableComunas}
-          activeCategoriesCount={categories.length}
           onCategoryChange={handleCategoryChange}
           onCityChange={handleCityChange}
           onComunaChange={handleComunaChange}
+          onDateChange={handleDateChange}
+          onPriceChange={handlePriceChange}
+          onSearchChange={handleSearch}
           onClearFilters={handleClearFilters}
-          onApplyFilters={handleApplyFilters}
+          totalResults={filteredPublications.length}
         />
-
-        {/* Banner Hero */}
-        <div className="superguia__hero">
-          <div className="superguia__hero-overlay"></div>
-          <div className="superguia__hero-text">
-            <h2>¿QUÉ HACEMOS HOY?</h2>
-          </div>
-        </div>
 
         {/* Contenedor principal */}
         <div className="superguia__container">
-          {/* Buscador */}
-          <SearchBar value={searchQuery} onChange={handleSearch} />
-
           {/* Loading state */}
           {loadingData ? (
             <div className="superguia__loading">
-              <p>Cargando publicaciones...</p>
+              <div className="superguia__loading-spinner"></div>
+              <p>Cargando eventos...</p>
             </div>
           ) : (
             <>
@@ -208,7 +297,9 @@ export default function SuperguiaContainer() {
               {/* Estado vacío */}
               {filteredPublications.length === 0 && (
                 <div className="superguia__empty">
-                  <p>No se encontraron publicaciones.</p>
+                  <div className="superguia__empty-icon">🔍</div>
+                  <h3>No encontramos resultados</h3>
+                  <p>Intenta ajustar los filtros o buscar algo diferente</p>
                   <button onClick={handleClearFilters}>Limpiar filtros</button>
                 </div>
               )}
@@ -217,6 +308,7 @@ export default function SuperguiaContainer() {
         </div>
       </section>
 
+      {/* Sección de destacados */}
       {publications.length > 0 && (
         <div className="superguia__carousel-section">
           <h3 className="superguia__carousel-title">Destacados</h3>
@@ -226,8 +318,6 @@ export default function SuperguiaContainer() {
           />
         </div>
       )}
-
-      {/* Carrusel de publicaciones destacadas */}
 
       {/* Modal de publicación */}
       <PublicationModal

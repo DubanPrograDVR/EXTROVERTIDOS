@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCalendarDays,
@@ -12,12 +12,19 @@ import {
   faPlus,
 } from "@fortawesome/free-solid-svg-icons";
 import Footer from "./Footer";
-import { getPublishedEvents, getCategories } from "../../lib/database";
-import { LOCATIONS, mapCategoriesToUI } from "../Superguia/data";
+import {
+  getPublishedEvents,
+  getEventsByCity,
+  getCategories,
+} from "../../lib/database";
+import { useCity } from "../../context/CityContext";
+import { mapCategoriesToUI } from "../Superguia/data";
 import "./styles/panoramas-page.css";
 
 export default function PanoramasPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { cityName, selectCity, cities } = useCity();
 
   // Estados de datos
   const [events, setEvents] = useState([]);
@@ -32,15 +39,33 @@ export default function PanoramasPage() {
   // Estado del carrusel
   const [carouselIndex, setCarouselIndex] = useState(0);
 
-  // Cargar datos
+  // Leer query params al cargar y sincronizar con CityContext
+  useEffect(() => {
+    const ciudadParam = searchParams.get("ciudad");
+    if (ciudadParam) {
+      // Actualizar el contexto global de ciudad
+      selectCity(ciudadParam);
+      setSearchQuery(ciudadParam);
+    }
+  }, [searchParams, selectCity]);
+
+  // Cargar datos - filtrado por ciudad desde Supabase
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const [eventsData, categoriesData] = await Promise.all([
-          getPublishedEvents(),
-          getCategories(),
-        ]);
+        const ciudadParam = searchParams.get("ciudad");
+
+        // Si hay una ciudad en los params, hacer query filtrada
+        let eventsData;
+        if (ciudadParam) {
+          eventsData = await getEventsByCity(ciudadParam);
+        } else {
+          eventsData = await getPublishedEvents();
+        }
+
+        const categoriesData = await getCategories();
+
         setEvents(eventsData || []);
         setCategories(mapCategoriesToUI(categoriesData || []));
       } catch (error) {
@@ -51,7 +76,7 @@ export default function PanoramasPage() {
     };
 
     loadData();
-  }, []);
+  }, [searchParams]);
 
   // Filtrar eventos
   const filteredEvents = useMemo(() => {
@@ -109,6 +134,7 @@ export default function PanoramasPage() {
     setSelectedCategory(null);
     setSelectedCity(null);
     setSearchQuery("");
+    setSearchParams({}); // Limpiar query params de la URL
   };
 
   // Formatear fecha
@@ -136,7 +162,9 @@ export default function PanoramasPage() {
                   }`}
                   style={{
                     backgroundImage: `url(${
-                      event.imagen_url || "/img/Home1.png"
+                      Array.isArray(event.imagenes) && event.imagenes.length > 0
+                        ? event.imagenes[0]
+                        : "/img/Home1.png"
                     })`,
                   }}>
                   <div className="panoramas-page__hero-overlay"></div>
@@ -226,8 +254,8 @@ export default function PanoramasPage() {
               value={selectedCity || ""}
               onChange={(e) => setSelectedCity(e.target.value || null)}>
               <option value="">Todas las ciudades</option>
-              {Object.entries(LOCATIONS).map(([key, city]) => (
-                <option key={key} value={city.nombre}>
+              {cities.map((city) => (
+                <option key={city.id} value={city.nombre}>
                   {city.nombre}
                 </option>
               ))}
@@ -290,47 +318,60 @@ export default function PanoramasPage() {
           </div>
         ) : (
           <div className="panoramas-page__grid">
-            {filteredEvents.map((event) => (
-              <article
-                key={event.id}
-                className="panoramas-page__card"
-                onClick={() => navigate("/superguia")}>
-                <div className="panoramas-page__card-image">
-                  <img
-                    src={event.imagen_url || "/img/Home1.png"}
-                    alt={event.titulo}
-                  />
-                  <span className="panoramas-page__card-category">
-                    {event.categories?.nombre || "Evento"}
-                  </span>
-                </div>
-                <div className="panoramas-page__card-content">
-                  <h3 className="panoramas-page__card-title">{event.titulo}</h3>
-                  <div className="panoramas-page__card-info">
-                    <span>
-                      <FontAwesomeIcon icon={faCalendarDays} />
-                      {formatDate(event.fecha_evento)}
-                    </span>
-                    <span>
-                      <FontAwesomeIcon icon={faLocationDot} />
-                      {event.comuna}
+            {filteredEvents.map((event) => {
+              // Obtener la primera imagen del array o usar placeholder
+              const imageUrl =
+                Array.isArray(event.imagenes) && event.imagenes.length > 0
+                  ? event.imagenes[0]
+                  : "/img/Home1.png";
+
+              return (
+                <article
+                  key={event.id}
+                  className="panoramas-page__card"
+                  onClick={() => navigate("/superguia")}>
+                  <div className="panoramas-page__card-image">
+                    <img
+                      src={imageUrl}
+                      alt={event.titulo}
+                      onError={(e) => {
+                        e.target.src = "/img/Home1.png";
+                      }}
+                    />
+                    <span className="panoramas-page__card-category">
+                      {event.categories?.nombre || "Evento"}
                     </span>
                   </div>
-                  {event.profiles && (
-                    <div className="panoramas-page__card-author">
-                      {event.profiles.avatar_url && (
-                        <img
-                          src={event.profiles.avatar_url}
-                          alt={event.profiles.nombre}
-                          referrerPolicy="no-referrer"
-                        />
-                      )}
-                      <span>{event.profiles.nombre || "Usuario"}</span>
+                  <div className="panoramas-page__card-content">
+                    <h3 className="panoramas-page__card-title">
+                      {event.titulo}
+                    </h3>
+                    <div className="panoramas-page__card-info">
+                      <span>
+                        <FontAwesomeIcon icon={faCalendarDays} />
+                        {formatDate(event.fecha_evento)}
+                      </span>
+                      <span>
+                        <FontAwesomeIcon icon={faLocationDot} />
+                        {event.comuna}
+                      </span>
                     </div>
-                  )}
-                </div>
-              </article>
-            ))}
+                    {event.profiles && (
+                      <div className="panoramas-page__card-author">
+                        {event.profiles.avatar_url && (
+                          <img
+                            src={event.profiles.avatar_url}
+                            alt={event.profiles.nombre}
+                            referrerPolicy="no-referrer"
+                          />
+                        )}
+                        <span>{event.profiles.nombre || "Usuario"}</span>
+                      </div>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
           </div>
         )}
       </section>

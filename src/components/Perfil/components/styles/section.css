@@ -1,0 +1,116 @@
+/* ===== PERFIL SECTION (Estilos compartidos) ===== */
+
+.perfil-section__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.perfil-section__header h2 {
+  font-size: 1.5rem;
+  color: #fff;
+  margin: 0;
+}
+
+.perfil-section__btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: #ff6600;
+  border: none;
+  border-radius: 10px;
+  color: #000;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.perfil-section__btn:hover {
+  background: #ff8533;
+  transform: translateY(-2px);
+}
+
+.perfil-section__btn--secondary {
+  background: transparent;
+  border: 2px solid #ff6600;
+  color: #ff6600;
+}
+
+.perfil-section__btn--secondary:hover {
+  background: rgba(255, 102, 0, 0.1);
+}
+
+/* Loading State */
+.perfil-section__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  color: #ff6600;
+  gap: 15px;
+}
+
+.perfil-section__loading svg {
+  font-size: 2rem;
+}
+
+/* Empty State */
+.perfil-section__empty {
+  text-align: center;
+  padding: 80px 20px;
+  background: #111;
+  border-radius: 20px;
+  border: 2px dashed rgba(255, 102, 0, 0.3);
+}
+
+.perfil-section__empty svg {
+  font-size: 4rem;
+  color: rgba(255, 102, 0, 0.3);
+  margin-bottom: 20px;
+}
+
+.perfil-section__empty h3 {
+  font-size: 1.3rem;
+  color: #fff;
+  margin: 0 0 10px;
+}
+
+.perfil-section__empty p {
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 25px;
+}
+
+.perfil-section__empty button {
+  padding: 14px 30px;
+  background: #ff6600;
+  border: none;
+  border-radius: 10px;
+  color: #000;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.perfil-section__empty button:hover {
+  background: #ff8533;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .perfil-section__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .perfil-section__btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

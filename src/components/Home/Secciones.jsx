@@ -2,9 +2,11 @@ import { useEffect, useRef } from "react";
 import "./styles/secciones.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMapMarkedAlt, faCompass } from "@fortawesome/free-solid-svg-icons";
-import panoramasImg from "../../../public/img/Home1.png";
-import superguiaImg from "../../../public/img/Home2.png";
-import pExtroIcon from "../../../public/img/SG_Extro.png";
+
+// Imágenes servidas desde public/
+const panoramasImg = "/img/Home1.png";
+const superguiaImg = "/img/Home2.png";
+const pExtroIcon = "/img/SG_Extro.png";
 
 // ===== DATOS DE LAS SECCIONES =====
 const sectionsData = [

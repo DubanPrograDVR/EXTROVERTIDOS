@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useRef } from "react";
 import { supabase } from "../lib/supabase";
-import { getUserRole, ROLES } from "../lib/database";
+import { ROLES } from "../lib/database";
 import Toast from "../components/UI/Toast";
 
 const AuthContext = createContext({});
@@ -18,9 +18,12 @@ export const AuthProvider = ({ children }) => {
   const [userRole, setUserRole] = useState(ROLES.USER);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
-  const isInitialLoad = useRef(true);
+  const [initialized, setInitialized] = useState(false);
 
-  // Función para mostrar notificaciones
+  // Refs para evitar consultas duplicadas
+  const roleCache = useRef({ userId: null, role: ROLES.USER });
+  const isLoadingRole = useRef(false);
+
   const showToast = (message, type = "success") => {
     setToast({ message, type });
   };
@@ -29,88 +32,167 @@ export const AuthProvider = ({ children }) => {
     setToast(null);
   };
 
-  // Función para cargar el rol del usuario
-  const loadUserRole = async (userId) => {
+  // Función para cargar el rol con cache y timeout
+  const loadUserRole = async (userId, forceRefresh = false) => {
     if (!userId) {
-      setUserRole(ROLES.USER);
-      return;
+      return ROLES.USER;
     }
+
+    // Si ya tenemos el rol en cache para este usuario, usarlo
+    if (!forceRefresh && roleCache.current.userId === userId) {
+      console.log("Usando rol desde cache:", roleCache.current.role);
+      return roleCache.current.role;
+    }
+
+    // Evitar consultas simultáneas
+    if (isLoadingRole.current) {
+      console.log("Ya hay una consulta en progreso, esperando...");
+      // Esperar un poco y devolver el cache actual
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      return roleCache.current.role;
+    }
+
+    isLoadingRole.current = true;
+
     try {
-      const role = await getUserRole(userId);
-      setUserRole(role);
+      console.log("Cargando rol desde DB para:", userId);
+
+      // Crear una promesa con timeout de 5 segundos
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Timeout")), 5000);
+      });
+
+      const queryPromise = supabase
+        .from("profiles")
+        .select("rol")
+        .eq("id", userId)
+        .maybeSingle();
+
+      const { data, error } = await Promise.race([
+        queryPromise,
+        timeoutPromise,
+      ]);
+
+      if (error) {
+        console.error("Error al obtener rol:", error);
+        return roleCache.current.userId === userId
+          ? roleCache.current.role
+          : ROLES.USER;
+      }
+
+      const role = data?.rol || ROLES.USER;
+
+      // Guardar en cache
+      roleCache.current = { userId, role };
+      console.log("Rol obtenido y cacheado:", role);
+
+      return role;
     } catch (error) {
-      console.error("Error al cargar rol:", error);
-      setUserRole(ROLES.USER);
+      console.error("Error/Timeout al cargar rol:", error);
+      return roleCache.current.userId === userId
+        ? roleCache.current.role
+        : ROLES.USER;
+    } finally {
+      isLoadingRole.current = false;
     }
   };
 
+  // Inicialización - solo se ejecuta una vez
   useEffect(() => {
-    // Obtener sesión actual
-    const getSession = async () => {
+    if (initialized) return;
+
+    const initialize = async () => {
       try {
         const {
           data: { session },
         } = await supabase.auth.getSession();
-        setUser(session?.user ?? null);
 
-        // Cargar rol si hay usuario
         if (session?.user) {
-          await loadUserRole(session.user.id);
+          setUser(session.user);
+          const role = await loadUserRole(session.user.id);
+          setUserRole(role);
         }
       } catch (error) {
-        console.error("Error al obtener sesión:", error);
+        console.error("Error inicializando auth:", error);
       } finally {
         setLoading(false);
-        // Marcar que la carga inicial terminó después de un pequeño delay
-        setTimeout(() => {
-          isInitialLoad.current = false;
-        }, 1000);
+        setInitialized(true);
       }
     };
 
-    getSession();
+    initialize();
+  }, [initialized]);
 
-    // Escuchar cambios de autenticación
+  // Listener de cambios de auth
+  useEffect(() => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user ?? null);
+      // Ignorar durante la inicialización
+      if (!initialized) return;
 
-      // Cargar rol cuando cambia la sesión
-      if (session?.user) {
-        await loadUserRole(session.user.id);
-      } else {
-        setUserRole(ROLES.USER);
-      }
+      // Ignorar INITIAL_SESSION
+      if (event === "INITIAL_SESSION") return;
 
-      setLoading(false);
+      console.log("Auth event:", event);
 
-      // Solo mostrar notificaciones después de la carga inicial
-      if (!isInitialLoad.current) {
-        if (event === "SIGNED_IN" && session?.user) {
-          showToast("¡Has iniciado sesión correctamente!", "success");
-        } else if (event === "SIGNED_OUT") {
+      switch (event) {
+        case "SIGNED_IN":
+          if (session?.user) {
+            setUser(session.user);
+            // Solo cargar rol si es un usuario diferente
+            if (roleCache.current.userId !== session.user.id) {
+              const role = await loadUserRole(session.user.id);
+              setUserRole(role);
+            } else {
+              // Usar rol cacheado
+              setUserRole(roleCache.current.role);
+            }
+            showToast("¡Has iniciado sesión correctamente!", "success");
+          }
+          break;
+
+        case "SIGNED_OUT":
+          setUser(null);
+          setUserRole(ROLES.USER);
+          roleCache.current = { userId: null, role: ROLES.USER };
           showToast("Has cerrado sesión correctamente", "success");
-        }
+          break;
+
+        case "TOKEN_REFRESHED":
+          // Solo actualizar el usuario, NO recargar el rol
+          if (session?.user) {
+            setUser(session.user);
+            // Mantener el rol actual del cache
+            if (roleCache.current.userId === session.user.id) {
+              setUserRole(roleCache.current.role);
+            }
+          }
+          break;
+
+        case "USER_UPDATED":
+          if (session?.user) {
+            setUser(session.user);
+          }
+          break;
+
+        default:
+          break;
       }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [initialized]);
 
-  // Función para registrar usuario
   const signUp = async (email, password, metadata = {}) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: metadata,
-      },
+      options: { data: metadata },
     });
     return { data, error };
   };
 
-  // Función para iniciar sesión
   const signIn = async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -119,27 +201,32 @@ export const AuthProvider = ({ children }) => {
     return { data, error };
   };
 
-  // Función para cerrar sesión
   const signOut = async () => {
+    roleCache.current = { userId: null, role: ROLES.USER };
     const { error } = await supabase.auth.signOut();
     return { error };
   };
 
-  // Función para iniciar sesión con Google
   const signInWithGoogle = async () => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: {
-        redirectTo: window.location.origin,
-      },
+      options: { redirectTo: window.location.origin },
     });
     return { data, error };
   };
 
-  // Función para recuperar contraseña
   const resetPassword = async (email) => {
     const { data, error } = await supabase.auth.resetPasswordForEmail(email);
     return { data, error };
+  };
+
+  const refreshRole = async () => {
+    if (user?.id) {
+      const role = await loadUserRole(user.id, true); // forceRefresh = true
+      setUserRole(role);
+      return role;
+    }
+    return ROLES.USER;
   };
 
   const value = {
@@ -155,7 +242,7 @@ export const AuthProvider = ({ children }) => {
     signInWithGoogle,
     resetPassword,
     showToast,
-    refreshRole: () => loadUserRole(user?.id),
+    refreshRole,
   };
 
   return (

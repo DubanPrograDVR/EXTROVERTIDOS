@@ -40,7 +40,7 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
   const {
     titulo,
     subtitulo,
-    imagen_url,
+    imagenes,
     comuna,
     provincia,
     categories,
@@ -58,6 +58,12 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
     tiktok,
     profiles,
   } = publication;
+
+  // Obtener la primera imagen del array o usar placeholder
+  const imageUrl =
+    Array.isArray(imagenes) && imagenes.length > 0
+      ? imagenes[0]
+      : "/img/Home1.png";
 
   // Formatear fecha
   const formattedDate = fecha_evento
@@ -93,9 +99,12 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
           {/* Imagen */}
           <div className="publication-modal__image-section">
             <img
-              src={imagen_url || "/img/placeholder.jpg"}
+              src={imageUrl}
               alt={titulo}
               className="publication-modal__image"
+              onError={(e) => {
+                e.target.src = "/img/Home1.png";
+              }}
             />
           </div>
 

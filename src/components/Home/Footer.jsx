@@ -5,7 +5,9 @@ import {
   faFacebook,
   faTiktok,
 } from "@fortawesome/free-brands-svg-icons";
-import logo from "../../../public/img/Logo_extrovertidos.png";
+
+// Imágenes servidas desde public/
+const logo = "/img/Logo_extrovertidos.png";
 
 // ===== DATOS DE REDES SOCIALES =====
 const socialLinks = [

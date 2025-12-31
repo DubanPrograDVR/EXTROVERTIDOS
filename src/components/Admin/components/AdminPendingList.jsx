@@ -58,11 +58,23 @@ function EmptyState() {
  * Tarjeta individual de publicación pendiente
  */
 function PendingCard({ event, isLoading, onApprove, onReject, onView }) {
+  // Obtener la primera imagen del array o usar placeholder
+  const imageUrl =
+    Array.isArray(event.imagenes) && event.imagenes.length > 0
+      ? event.imagenes[0]
+      : "/img/Home1.png";
+
   return (
     <article className="admin-pending-card">
       {/* Imagen */}
       <div className="admin-pending-card__image">
-        <img src={event.imagen_url || "/img/Home1.png"} alt={event.titulo} />
+        <img
+          src={imageUrl}
+          alt={event.titulo}
+          onError={(e) => {
+            e.target.src = "/img/Home1.png";
+          }}
+        />
       </div>
 
       {/* Contenido */}

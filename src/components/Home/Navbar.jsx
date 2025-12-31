@@ -12,9 +12,11 @@ import {
   faCog,
   faShieldAlt,
 } from "@fortawesome/free-solid-svg-icons";
-import logo from "../../../public/img/Logo_extrovertidos.png";
-import manchaExtro from "../../../public/img/Mancha_Extro.png";
 import AuthModal from "../Auth/AuthModal";
+
+// Imágenes servidas desde public/
+const logo = "/img/Logo_extrovertidos.png";
+const manchaExtro = "/img/Mancha_Extro.png";
 import { useAuth } from "../../context/AuthContext";
 
 const NAV_LINKS = [

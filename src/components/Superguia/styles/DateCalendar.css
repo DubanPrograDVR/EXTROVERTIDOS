@@ -1,0 +1,235 @@
+/* ===== DATE CALENDAR ===== */
+
+.date-calendar {
+  background: #1a1a1a;
+  border-radius: 16px;
+  padding: 1.25rem;
+  width: 100%;
+  max-width: 320px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Header */
+.date-calendar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.date-calendar__title {
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  text-transform: capitalize;
+}
+
+.date-calendar__nav {
+  background: transparent;
+  border: none;
+  color: #999;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.date-calendar__nav:hover {
+  background: rgba(255, 107, 53, 0.15);
+  color: #ff6b35;
+}
+
+/* Botón Hoy */
+.date-calendar__today {
+  width: 100%;
+  background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+  border: none;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  transition: all 0.2s ease;
+}
+
+.date-calendar__today:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+}
+
+/* Días de la semana */
+.date-calendar__weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 0.5rem;
+}
+
+.date-calendar__weekday {
+  text-align: center;
+  color: #666;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 0.25rem 0;
+}
+
+/* Grid de días */
+.date-calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.date-calendar__day {
+  aspect-ratio: 1;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.date-calendar__day:hover:not(:disabled):not(.date-calendar__day--empty) {
+  background: rgba(255, 107, 53, 0.15);
+}
+
+.date-calendar__day--empty {
+  cursor: default;
+}
+
+.date-calendar__day--past {
+  color: #444;
+  cursor: not-allowed;
+}
+
+.date-calendar__day--today {
+  background: rgba(255, 107, 53, 0.2);
+  color: #ff6b35;
+  font-weight: 700;
+}
+
+.date-calendar__day--today::before {
+  content: "";
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  background: #ff6b35;
+  border-radius: 50%;
+}
+
+.date-calendar__day--selected {
+  background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.4);
+}
+
+.date-calendar__day--selected::before {
+  display: none;
+}
+
+.date-calendar__day--has-events:not(.date-calendar__day--selected) {
+  background: rgba(76, 175, 80, 0.15);
+}
+
+.date-calendar__day-number {
+  z-index: 1;
+}
+
+/* Indicador de eventos */
+.date-calendar__event-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: #4caf50;
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  min-width: 14px;
+  height: 14px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+}
+
+.date-calendar__day--selected .date-calendar__event-dot {
+  background: #fff;
+  color: #ff6b35;
+}
+
+/* Leyenda */
+.date-calendar__legend {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.date-calendar__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #888;
+  font-size: 0.7rem;
+}
+
+.date-calendar__legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.date-calendar__legend-dot--events {
+  background: #4caf50;
+}
+
+.date-calendar__legend-dot--today {
+  background: #ff6b35;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .date-calendar {
+    max-width: 100%;
+    padding: 1rem;
+    border-radius: 12px;
+  }
+
+  .date-calendar__day {
+    font-size: 0.8rem;
+  }
+
+  .date-calendar__event-dot {
+    min-width: 12px;
+    height: 12px;
+    font-size: 0.55rem;
+  }
+}

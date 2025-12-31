@@ -1,0 +1,71 @@
+/* ===== PERFIL CONFIGURACION ===== */
+.perfil-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.perfil-settings__section {
+  background: #111;
+  border-radius: 15px;
+  padding: 30px;
+  border: 1px solid rgba(255, 102, 0, 0.2);
+}
+
+.perfil-settings__section h3 {
+  font-size: 1.1rem;
+  color: #ff6600;
+  margin: 0 0 20px;
+}
+
+.perfil-settings__field {
+  margin-bottom: 20px;
+}
+
+.perfil-settings__field label {
+  display: block;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 8px;
+}
+
+.perfil-settings__field input {
+  width: 100%;
+  padding: 14px 18px;
+  background: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 1rem;
+}
+
+.perfil-settings__field input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.perfil-settings__note {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 20px;
+}
+
+.perfil-settings__toggle {
+  margin-bottom: 15px;
+}
+
+.perfil-settings__toggle label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.95rem;
+}
+
+.perfil-settings__toggle input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: #ff6600;
+  cursor: pointer;
+}

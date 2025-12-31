@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useCity } from "../../context/CityContext";
 import "./styles/home.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -9,31 +10,30 @@ import {
   faCompass,
   faMapMarkedAlt,
 } from "@fortawesome/free-solid-svg-icons";
-import logo from "../../../public/img/Logo_extrovertidos.png";
 import Secciones from "./Secciones";
+
+// Imágenes servidas desde public/
+const logo = "/img/Logo_extrovertidos.png";
 import Panoramas from "./Panoramas";
 import Footer from "./Footer";
 
-const CITIES = [
-  "Talca",
-  "Santiago",
-  "Valparaíso",
-  "Concepción",
-  "Viña del Mar",
-  "La Serena",
-  "Antofagasta",
-  "Temuco",
-];
-
 export default function Home() {
-  const [currentCityIndex, setCurrentCityIndex] = useState(0);
+  const navigate = useNavigate();
+  const { cityName, prevCity, nextCity } = useCity();
 
-  const handlePrevCity = () => {
-    setCurrentCityIndex((prev) => (prev === 0 ? CITIES.length - 1 : prev - 1));
+  // Buscar panoramas por ciudad seleccionada
+  const handleSearch = () => {
+    navigate(`/panoramas?ciudad=${encodeURIComponent(cityName)}`);
   };
 
-  const handleNextCity = () => {
-    setCurrentCityIndex((prev) => (prev === CITIES.length - 1 ? 0 : prev + 1));
+  // Ir a panoramas sin filtro
+  const handlePanoramasClick = () => {
+    navigate("/panoramas");
+  };
+
+  // Ir a superguía
+  const handleSuperguiaClick = () => {
+    navigate("/superguia");
   };
 
   return (
@@ -66,24 +66,27 @@ export default function Home() {
             <div className="city-picker">
               <button
                 className="city-arrow"
-                onClick={handlePrevCity}
+                onClick={prevCity}
                 aria-label="Ciudad anterior">
                 <FontAwesomeIcon icon={faChevronLeft} />
               </button>
 
               <div className="city-display">
                 <FontAwesomeIcon icon={faMapMarkerAlt} className="city-icon" />
-                <span className="city-name">{CITIES[currentCityIndex]}</span>
+                <span className="city-name">{cityName}</span>
               </div>
 
               <button
                 className="city-arrow"
-                onClick={handleNextCity}
+                onClick={nextCity}
                 aria-label="Ciudad siguiente">
                 <FontAwesomeIcon icon={faChevronRight} />
               </button>
 
-              <button className="search-btn" aria-label="Buscar">
+              <button
+                className="search-btn"
+                onClick={handleSearch}
+                aria-label="Buscar">
                 <FontAwesomeIcon icon={faSearch} />
               </button>
             </div>
@@ -91,11 +94,15 @@ export default function Home() {
 
           {/* Botones de Acción */}
           <div className="action-buttons">
-            <button className="action-btn btn-panoramas">
+            <button
+              className="action-btn btn-panoramas"
+              onClick={handlePanoramasClick}>
               <FontAwesomeIcon icon={faMapMarkedAlt} className="btn-icon" />
               <span>Panoramas</span>
             </button>
-            <button className="action-btn btn-superguia">
+            <button
+              className="action-btn btn-superguia"
+              onClick={handleSuperguiaClick}>
               <FontAwesomeIcon icon={faCompass} className="btn-icon" />
               <span>
                 Superguía

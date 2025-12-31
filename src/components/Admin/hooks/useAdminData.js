@@ -6,6 +6,8 @@ import {
   rejectEvent,
   updateUserRole,
   getAdminStats,
+  getEventsPerDay,
+  getUsersPerDay,
 } from "../../../lib/database";
 
 /**
@@ -15,6 +17,10 @@ export const useAdminData = (user, isAdmin, isModerator) => {
   const [pendingEvents, setPendingEvents] = useState([]);
   const [users, setUsers] = useState([]);
   const [stats, setStats] = useState(null);
+  const [chartData, setChartData] = useState({
+    eventsPerDay: [],
+    usersPerDay: [],
+  });
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [error, setError] = useState(null);
@@ -60,8 +66,28 @@ export const useAdminData = (user, isAdmin, isModerator) => {
         console.warn("Error al cargar estadísticas:", err);
       }
 
+      // Cargar datos para gráficos
+      let eventsPerDayData = [];
+      let usersPerDayData = [];
+
+      try {
+        eventsPerDayData = await getEventsPerDay(user.id);
+      } catch (err) {
+        console.warn("Error al cargar eventos por día:", err);
+      }
+
+      try {
+        usersPerDayData = await getUsersPerDay(user.id);
+      } catch (err) {
+        console.warn("Error al cargar usuarios por día:", err);
+      }
+
       setPendingEvents(eventsData || []);
       setStats(statsData);
+      setChartData({
+        eventsPerDay: eventsPerDayData,
+        usersPerDay: usersPerDayData,
+      });
 
       // Solo cargar usuarios si es admin
       if (isAdmin) {
@@ -156,6 +182,7 @@ export const useAdminData = (user, isAdmin, isModerator) => {
     pendingEvents,
     users,
     stats,
+    chartData,
     loading,
     actionLoading,
     error,

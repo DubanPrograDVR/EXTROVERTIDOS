@@ -1,10 +1,16 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faChartLine,
+  faClock,
+  faUsers,
+  faBars,
+  faTimes,
+} from "@fortawesome/free-solid-svg-icons";
 
 // Componentes modulares
-import AdminHeader from "./components/AdminHeader";
-import AdminTabs from "./components/AdminTabs";
 import AdminDashboard from "./components/AdminDashboard";
 import AdminPendingList from "./components/AdminPendingList";
 import AdminUserList from "./components/AdminUserList";
@@ -19,7 +25,7 @@ import "./styles/admin.css";
 
 /**
  * Panel de Administración Principal
- * Componente orquestador que coordina todos los módulos del panel de admin
+ * Componente con sidebar para navegación
  */
 export default function AdminPanel() {
   const { user, isAdmin, isModerator, loading: authLoading } = useAuth();
@@ -27,6 +33,7 @@ export default function AdminPanel() {
 
   // Estado local para UI
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [rejectModal, setRejectModal] = useState({
     open: false,
     eventId: null,
@@ -37,6 +44,7 @@ export default function AdminPanel() {
     pendingEvents,
     users,
     stats,
+    chartData,
     loading,
     actionLoading,
     loadData,
@@ -74,6 +82,12 @@ export default function AdminPanel() {
     setRejectModal({ open: false, eventId: null });
   };
 
+  // Cambiar tab y cerrar sidebar en móvil
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setSidebarOpen(false);
+  };
+
   // Estados de carga
   if (authLoading || loading) {
     return <AdminLoading message="Cargando panel de administración..." />;
@@ -84,25 +98,95 @@ export default function AdminPanel() {
     return null;
   }
 
-  return (
-    <div className="admin-page">
-      {/* Header del panel */}
-      <AdminHeader />
+  const menuItems = [
+    {
+      id: "dashboard",
+      label: "Dashboard",
+      icon: faChartLine,
+      show: true,
+    },
+    {
+      id: "pending",
+      label: "Pendientes",
+      icon: faClock,
+      badge: stats?.eventos?.pendientes || 0,
+      show: true,
+    },
+    {
+      id: "users",
+      label: "Usuarios",
+      icon: faUsers,
+      show: isAdmin,
+    },
+  ];
 
-      {/* Navegación por tabs */}
-      <AdminTabs
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        pendingCount={stats?.eventos?.pendientes || 0}
-        isAdmin={isAdmin}
-      />
+  return (
+    <div className="admin-layout">
+      {/* Botón hamburguesa móvil */}
+      <button
+        className={`admin-layout__mobile-toggle ${
+          sidebarOpen ? "sidebar-open" : ""
+        }`}
+        onClick={() => setSidebarOpen(!sidebarOpen)}>
+        <FontAwesomeIcon icon={sidebarOpen ? faTimes : faBars} />
+      </button>
+
+      {/* Overlay para cerrar sidebar en móvil */}
+      {sidebarOpen && (
+        <div
+          className="admin-layout__overlay"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`admin-sidebar ${sidebarOpen ? "open" : ""}`}>
+        {/* Logo */}
+        <div className="admin-sidebar__logo">
+          <img src="/img/logo-extrovertidos.png" alt="Extrovertidos" />
+          <span>Admin</span>
+        </div>
+
+        {/* Navegación */}
+        <nav className="admin-sidebar__nav">
+          {menuItems
+            .filter((item) => item.show)
+            .map((item) => (
+              <button
+                key={item.id}
+                className={`admin-sidebar__item ${
+                  activeTab === item.id ? "active" : ""
+                }`}
+                onClick={() => handleTabChange(item.id)}>
+                <FontAwesomeIcon icon={item.icon} />
+                <span>{item.label}</span>
+                {item.badge > 0 && (
+                  <span className="admin-sidebar__badge">{item.badge}</span>
+                )}
+              </button>
+            ))}
+        </nav>
+
+        {/* Info usuario */}
+        <div className="admin-sidebar__user">
+          <img
+            src={user?.user_metadata?.avatar_url || "/img/default-avatar.png"}
+            alt="Avatar"
+          />
+          <div>
+            <p>{user?.user_metadata?.full_name || "Admin"}</p>
+            <span>{isAdmin ? "Administrador" : "Moderador"}</span>
+          </div>
+        </div>
+      </aside>
 
       {/* Contenido principal */}
-      <main className="admin-content">
+      <main className="admin-main">
         {/* Dashboard con estadísticas */}
         {activeTab === "dashboard" && stats && (
           <AdminDashboard
             stats={stats}
+            chartData={chartData}
             onViewPending={() => setActiveTab("pending")}
           />
         )}

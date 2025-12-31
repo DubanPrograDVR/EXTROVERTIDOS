@@ -42,6 +42,7 @@ export const getCategoryById = async (id) => {
 
 /**
  * Crea un nuevo evento
+ * También crea una notificación de "en revisión"
  */
 export const createEvent = async (eventData) => {
   const { data, error } = await supabase
@@ -53,6 +54,23 @@ export const createEvent = async (eventData) => {
   if (error) {
     console.error("Error al crear evento:", error);
     throw error;
+  }
+
+  // Crear notificación de "en revisión" para el autor
+  try {
+    await supabase.from("notifications").insert([
+      {
+        user_id: eventData.user_id,
+        type: "publication_pending",
+        title: "Publicación en revisión",
+        message: `Tu evento "${eventData.titulo}" está siendo revisado por nuestro equipo. Te notificaremos cuando sea aprobado.`,
+        related_event_id: data.id,
+        read: false,
+        created_at: new Date().toISOString(),
+      },
+    ]);
+  } catch (notifError) {
+    console.warn("No se pudo crear la notificación:", notifError);
   }
 
   return data;
@@ -85,6 +103,53 @@ export const getPublishedEvents = async () => {
 
   if (error) {
     console.error("Error al obtener eventos:", error);
+    throw error;
+  }
+
+  return data;
+};
+
+/**
+ * Obtiene eventos publicados filtrados por ciudad/comuna
+ * @param {string} ciudad - Nombre de la ciudad o comuna a filtrar
+ * @param {string} provincia - Nombre de la provincia (opcional)
+ */
+export const getEventsByCity = async (ciudad, provincia = null) => {
+  let query = supabase
+    .from("events")
+    .select(
+      `
+      *,
+      categories (
+        id,
+        nombre,
+        icono,
+        color
+      ),
+      profiles (
+        id,
+        nombre,
+        avatar_url
+      )
+    `
+    )
+    .eq("estado", "publicado");
+
+  // Filtrar por comuna o provincia
+  if (ciudad) {
+    query = query.or(`comuna.ilike.%${ciudad}%,provincia.ilike.%${ciudad}%`);
+  }
+
+  if (provincia) {
+    query = query.ilike("provincia", `%${provincia}%`);
+  }
+
+  const { data, error } = await query.order("fecha_evento", {
+    ascending: true,
+  });
+
+  if (error) {
+    console.error("Error al obtener eventos por ciudad:", error);
     throw error;
   }
 
@@ -670,6 +735,7 @@ export const getAllEvents = async (adminUserId) => {
 
 /**
  * Aprueba una publicación (cambia estado a 'publicado')
+ * También crea una notificación para el autor
  */
 export const approveEvent = async (eventId, adminUserId) => {
   const canModerate = await isModerator(adminUserId);
@@ -677,6 +743,19 @@ export const approveEvent = async (eventId, adminUserId) => {
     throw new Error("No tienes permisos para aprobar publicaciones");
   }
 
+  // Primero obtener el evento para saber quién es el autor
+  const { data: eventData, error: fetchError } = await supabase
+    .from("events")
+    .select("user_id, titulo")
+    .eq("id", eventId)
+    .single();
+
+  if (fetchError) {
+    console.error("Error al obtener evento:", fetchError);
+    throw fetchError;
+  }
+
+  // Actualizar estado del evento
   const { data, error } = await supabase
     .from("events")
     .update({
@@ -692,11 +771,29 @@ export const approveEvent = async (eventId, adminUserId) => {
     throw error;
   }
 
+  // Crear notificación para el autor
+  try {
+    await supabase.from("notifications").insert([
+      {
+        user_id: eventData.user_id,
+        type: "publication_approved",
+        title: "¡Publicación aprobada!",
+        message: `Tu evento "${eventData.titulo}" ha sido aprobado y ya está visible para todos.`,
+        related_event_id: eventId,
+        read: false,
+        created_at: new Date().toISOString(),
+      },
+    ]);
+  } catch (notifError) {
+    console.warn("No se pudo crear la notificación:", notifError);
+  }
+
   return data;
 };
 
 /**
  * Rechaza una publicación
+ * También crea una notificación para el autor
  */
 export const rejectEvent = async (eventId, adminUserId, motivo = "") => {
   const canModerate = await isModerator(adminUserId);
@@ -704,6 +801,19 @@ export const rejectEvent = async (eventId, adminUserId, motivo = "") => {
     throw new Error("No tienes permisos para rechazar publicaciones");
   }
 
+  // Primero obtener el evento para saber quién es el autor
+  const { data: eventData, error: fetchError } = await supabase
+    .from("events")
+    .select("user_id, titulo")
+    .eq("id", eventId)
+    .single();
+
+  if (fetchError) {
+    console.error("Error al obtener evento:", fetchError);
+    throw fetchError;
+  }
+
+  // Actualizar estado del evento
   const { data, error } = await supabase
     .from("events")
     .update({
@@ -718,6 +828,26 @@ export const rejectEvent = async (eventId, adminUserId, motivo = "") => {
     console.error("Error al rechazar evento:", error);
     throw error;
   }
+
+  // Crear notificación para el autor
+  try {
+    const motivoTexto = motivo ? ` Motivo: ${motivo}` : "";
+    await supabase.from("notifications").insert([
+      {
+        user_id: eventData.user_id,
+        type: "publication_rejected",
+        title: "Publicación rechazada",
+        message: `Tu evento "${eventData.titulo}" no ha sido aprobado.${motivoTexto}`,
+        related_event_id: eventId,
+        read: false,
+        created_at: new Date().toISOString(),
+      },
+    ]);
+  } catch (notifError) {
+    console.warn("No se pudo crear la notificación:", notifError);
+  }
+
+  return data;
 
   return data;
 };
@@ -872,4 +1002,270 @@ export const getAdminStats = async (adminUserId) => {
       usuarios: { total: 0 },
     };
   }
+};
+
+/**
+ * Obtiene publicaciones por día de los últimos 7 días
+ */
+export const getEventsPerDay = async (adminUserId) => {
+  try {
+    const canModerate = await isModerator(adminUserId);
+    if (!canModerate) {
+      throw new Error("No tienes permisos");
+    }
+
+    // Obtener fecha de hace 7 días
+    const today = new Date();
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const { data, error } = await supabase
+      .from("events")
+      .select("created_at")
+      .gte("created_at", sevenDaysAgo.toISOString());
+
+    if (error) throw error;
+
+    // Agrupar por día
+    const daysMap = {};
+    const days = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+
+    // Inicializar los últimos 7 días
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const dayKey = date.toISOString().split("T")[0];
+      const dayName = days[date.getDay()];
+      daysMap[dayKey] = { day: dayName, fecha: dayKey, publicaciones: 0 };
+    }
+
+    // Contar publicaciones por día
+    data?.forEach((event) => {
+      const dayKey = event.created_at.split("T")[0];
+      if (daysMap[dayKey]) {
+        daysMap[dayKey].publicaciones++;
+      }
+    });
+
+    return Object.values(daysMap);
+  } catch (error) {
+    console.error("Error en getEventsPerDay:", error);
+    return [];
+  }
+};
+
+/**
+ * Obtiene usuarios registrados por día de los últimos 7 días
+ */
+export const getUsersPerDay = async (adminUserId) => {
+  try {
+    const canModerate = await isModerator(adminUserId);
+    if (!canModerate) {
+      throw new Error("No tienes permisos");
+    }
+
+    // Obtener fecha de hace 7 días
+    const today = new Date();
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("created_at")
+      .gte("created_at", sevenDaysAgo.toISOString());
+
+    if (error) throw error;
+
+    // Agrupar por día
+    const daysMap = {};
+    const days = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+
+    // Inicializar los últimos 7 días
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const dayKey = date.toISOString().split("T")[0];
+      const dayName = days[date.getDay()];
+      daysMap[dayKey] = { day: dayName, fecha: dayKey, usuarios: 0 };
+    }
+
+    // Contar usuarios por día
+    data?.forEach((user) => {
+      const dayKey = user.created_at.split("T")[0];
+      if (daysMap[dayKey]) {
+        daysMap[dayKey].usuarios++;
+      }
+    });
+
+    return Object.values(daysMap);
+  } catch (error) {
+    console.error("Error en getUsersPerDay:", error);
+    return [];
+  }
+};
+
+// ============ NOTIFICACIONES ============
+
+/**
+ * Tipos de notificación
+ */
+export const NOTIFICATION_TYPES = {
+  PUBLICATION_APPROVED: "publication_approved",
+  PUBLICATION_REJECTED: "publication_rejected",
+  PUBLICATION_PENDING: "publication_pending",
+  WELCOME: "welcome",
+  INFO: "info",
+};
+
+/**
+ * Crea una nueva notificación
+ */
+export const createNotification = async ({
+  userId,
+  type,
+  title,
+  message,
+  relatedEventId = null,
+  relatedBusinessId = null,
+}) => {
+  const { data, error } = await supabase
+    .from("notifications")
+    .insert([
+      {
+        user_id: userId,
+        type,
+        title,
+        message,
+        related_event_id: relatedEventId,
+        related_business_id: relatedBusinessId,
+        read: false,
+        created_at: new Date().toISOString(),
+      },
+    ])
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error al crear notificación:", error);
+    throw error;
+  }
+
+  return data;
+};
+
+/**
+ * Obtiene las notificaciones de un usuario
+ */
+export const getUserNotifications = async (userId) => {
+  const { data, error } = await supabase
+    .from("notifications")
+    .select(
+      `
+      *,
+      events:related_event_id (
+        id,
+        titulo
+      )
+    `
+    )
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  if (error) {
+    console.error("Error al obtener notificaciones:", error);
+    throw error;
+  }
+
+  return data;
+};
+
+/**
+ * Marca una notificación como leída
+ */
+export const markNotificationAsRead = async (notificationId, userId) => {
+  const { data, error } = await supabase
+    .from("notifications")
+    .update({ read: true })
+    .eq("id", notificationId)
+    .eq("user_id", userId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error al marcar notificación como leída:", error);
+    throw error;
+  }
+
+  return data;
+};
+
+/**
+ * Marca todas las notificaciones como leídas
+ */
+export const markAllNotificationsAsRead = async (userId) => {
+  const { data, error } = await supabase
+    .from("notifications")
+    .update({ read: true })
+    .eq("user_id", userId)
+    .eq("read", false)
+    .select();
+
+  if (error) {
+    console.error("Error al marcar todas las notificaciones:", error);
+    throw error;
+  }
+
+  return data;
+};
+
+/**
+ * Elimina una notificación
+ */
+export const deleteNotification = async (notificationId, userId) => {
+  const { error } = await supabase
+    .from("notifications")
+    .delete()
+    .eq("id", notificationId)
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("Error al eliminar notificación:", error);
+    throw error;
+  }
+
+  return { success: true };
+};
+
+/**
+ * Cuenta las notificaciones no leídas de un usuario
+ */
+export const getUnreadNotificationsCount = async (userId) => {
+  const { count, error } = await supabase
+    .from("notifications")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("read", false);
+
+  if (error) {
+    console.error("Error al contar notificaciones:", error);
+    throw error;
+  }
+
+  return count || 0;
+};
+
+/**
+ * Crea notificación de bienvenida para nuevos usuarios
+ */
+export const createWelcomeNotification = async (userId) => {
+  return createNotification({
+    userId,
+    type: NOTIFICATION_TYPES.WELCOME,
+    title: "¡Bienvenido a Extrovertidos!",
+    message:
+      "Gracias por unirte a nuestra comunidad. Explora y publica tus eventos favoritos.",
+  });
 };

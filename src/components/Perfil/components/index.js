@@ -1,0 +1,8 @@
+export { default as PerfilSidebar } from "./PerfilSidebar";
+export { default as PerfilHeader } from "./PerfilHeader";
+export { default as PerfilStats } from "./PerfilStats";
+export { default as PerfilPublicaciones } from "./PerfilPublicaciones";
+export { default as PerfilNotificaciones } from "./PerfilNotificaciones";
+export { default as PerfilFavoritos } from "./PerfilFavoritos";
+export { default as PerfilNegocios } from "./PerfilNegocios";
+export { default as PerfilConfiguracion } from "./PerfilConfiguracion";

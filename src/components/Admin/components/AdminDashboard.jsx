@@ -7,12 +7,52 @@ import {
   faExclamationTriangle,
   faChevronRight,
 } from "@fortawesome/free-solid-svg-icons";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
+
+// Colores para los gráficos
+const COLORS = {
+  primary: "#ff6600",
+  success: "#22c55e",
+  warning: "#f59e0b",
+  danger: "#ef4444",
+  info: "#3b82f6",
+};
 
 /**
- * Dashboard con estadísticas generales
+ * Dashboard con estadísticas generales y gráficos
  */
-export default function AdminDashboard({ stats, onViewPending }) {
+export default function AdminDashboard({ stats, chartData, onViewPending }) {
   if (!stats) return null;
+
+  // Datos para el gráfico de torta (publicaciones por estado)
+  const pieData = [
+    {
+      name: "Pendientes",
+      value: stats.eventos.pendientes,
+      color: COLORS.warning,
+    },
+    {
+      name: "Publicados",
+      value: stats.eventos.publicados,
+      color: COLORS.success,
+    },
+    {
+      name: "Rechazados",
+      value: stats.eventos.rechazados,
+      color: COLORS.danger,
+    },
+  ];
 
   return (
     <div className="admin-dashboard">
@@ -44,6 +84,120 @@ export default function AdminDashboard({ stats, onViewPending }) {
           label="Usuarios Registrados"
           variant="info"
         />
+      </div>
+
+      {/* Gráficos */}
+      <div className="admin-charts">
+        {/* Gráfico de Torta - Estados de publicaciones */}
+        <div className="admin-chart-card">
+          <h3>Estado de Publicaciones</h3>
+          <div className="admin-chart-container">
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={80}
+                  paddingAngle={3}
+                  dataKey="value"
+                  label={({ name, value }) => `${name}: ${value}`}
+                  labelLine={false}>
+                  {pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    background: "#1a1a1a",
+                    border: "1px solid #333",
+                    borderRadius: "8px",
+                    color: "#fff",
+                  }}
+                />
+                <Legend
+                  wrapperStyle={{ color: "#fff", fontSize: "12px" }}
+                  formatter={(value) => (
+                    <span style={{ color: "#ccc" }}>{value}</span>
+                  )}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Gráfico de Barras - Publicaciones por día */}
+        <div className="admin-chart-card">
+          <h3>Publicaciones (últimos 7 días)</h3>
+          <div className="admin-chart-container">
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={chartData?.eventsPerDay || []}>
+                <XAxis
+                  dataKey="day"
+                  tick={{ fill: "#888", fontSize: 12 }}
+                  axisLine={{ stroke: "#333" }}
+                />
+                <YAxis
+                  tick={{ fill: "#888", fontSize: 12 }}
+                  axisLine={{ stroke: "#333" }}
+                  allowDecimals={false}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: "#1a1a1a",
+                    border: "1px solid #333",
+                    borderRadius: "8px",
+                    color: "#fff",
+                  }}
+                  labelStyle={{ color: "#ff6600" }}
+                />
+                <Bar
+                  dataKey="publicaciones"
+                  fill={COLORS.primary}
+                  radius={[4, 4, 0, 0]}
+                  name="Publicaciones"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Gráfico de Barras - Usuarios registrados por día */}
+        <div className="admin-chart-card">
+          <h3>Nuevos Usuarios (últimos 7 días)</h3>
+          <div className="admin-chart-container">
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={chartData?.usersPerDay || []}>
+                <XAxis
+                  dataKey="day"
+                  tick={{ fill: "#888", fontSize: 12 }}
+                  axisLine={{ stroke: "#333" }}
+                />
+                <YAxis
+                  tick={{ fill: "#888", fontSize: 12 }}
+                  axisLine={{ stroke: "#333" }}
+                  allowDecimals={false}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: "#1a1a1a",
+                    border: "1px solid #333",
+                    borderRadius: "8px",
+                    color: "#fff",
+                  }}
+                  labelStyle={{ color: "#3b82f6" }}
+                />
+                <Bar
+                  dataKey="usuarios"
+                  fill={COLORS.info}
+                  radius={[4, 4, 0, 0]}
+                  name="Usuarios"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </div>
 
       {/* Accesos rápidos */}

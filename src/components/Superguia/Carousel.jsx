@@ -82,9 +82,16 @@ export default function Carousel({ publications, onPublicationClick }) {
             onClick={() => onPublicationClick && onPublicationClick(item)}>
             <div className="carousel__card">
               <img
-                src={item.imagen || "/img/placeholder.jpg"}
+                src={
+                  Array.isArray(item.imagenes) && item.imagenes.length > 0
+                    ? item.imagenes[0]
+                    : "/img/Home1.png"
+                }
                 alt={item.titulo}
                 className="carousel__image"
+                onError={(e) => {
+                  e.target.src = "/img/Home1.png";
+                }}
               />
               <div className="carousel__info">
                 <div className="carousel__location">

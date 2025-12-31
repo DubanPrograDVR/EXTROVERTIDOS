@@ -1,11 +1,15 @@
+import { useState } from "react";
 import "./styles/PublicationCard.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMapMarkerAlt, faUser } from "@fortawesome/free-solid-svg-icons";
 
+// Imagen placeholder por defecto
+const PLACEHOLDER_IMAGE = "/img/Home1.png";
+
 export default function PublicationCard({ publication, onClick }) {
   const {
     titulo,
-    imagen_url,
+    imagenes,
     comuna,
     provincia,
     categories,
@@ -13,8 +17,24 @@ export default function PublicationCard({ publication, onClick }) {
     profiles,
   } = publication;
 
-  // Imagen de placeholder si no hay imagen
-  const imageUrl = imagen_url || "/img/placeholder.jpg";
+  const [imageError, setImageError] = useState(false);
+
+  // Obtener la primera imagen del array o usar placeholder
+  const getImageUrl = () => {
+    if (imageError) return PLACEHOLDER_IMAGE;
+    if (Array.isArray(imagenes) && imagenes.length > 0) {
+      return imagenes[0];
+    }
+    return PLACEHOLDER_IMAGE;
+  };
+
+  const imageUrl = getImageUrl();
+
+  // Handler para errores de carga de imagen
+  const handleImageError = () => {
+    console.warn(`Error cargando imagen para: ${titulo}`);
+    setImageError(true);
+  };
 
   // Formatear fecha
   const formattedDate = fecha_evento
@@ -37,6 +57,7 @@ export default function PublicationCard({ publication, onClick }) {
           alt={titulo}
           className="publication-card__image"
           loading="lazy"
+          onError={handleImageError}
         />
         <div className="publication-card__overlay">
           <span className="publication-card__category">

@@ -1,7 +1,8 @@
 import "./styles/panoramas.css";
-import pExtroIcon from "../../../public/img/P_Extro.png";
-// Asegúrate de guardar la imagen de las personas saltando como Panoramas_people.png
-import peopleImg from "../../../public/img/Home1.png";
+
+// Imágenes servidas desde public/
+const pExtroIcon = "/img/P_Extro.png";
+const peopleImg = "/img/Home1.png";
 
 export default function Panoramas() {
   return (

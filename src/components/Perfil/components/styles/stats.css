@@ -1,0 +1,37 @@
+/* ===== PERFIL STATS ===== */
+.perfil-stats {
+  display: flex;
+  justify-content: center;
+  gap: 60px;
+  padding: 40px 20px;
+  background: #0a0a0a;
+  border-top: 1px solid rgba(255, 102, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 102, 0, 0.2);
+}
+
+.perfil-stats__item {
+  text-align: center;
+}
+
+.perfil-stats__number {
+  display: block;
+  font-size: 2rem;
+  font-weight: 900;
+  color: #ff6600;
+}
+
+.perfil-stats__label {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .perfil-stats {
+    gap: 30px;
+  }
+
+  .perfil-stats__number {
+    font-size: 1.5rem;
+  }
+}
