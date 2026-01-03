@@ -142,6 +142,17 @@ export default function Navbar() {
                   <FontAwesomeIcon icon={faUser} />
                   <span>Mi Perfil</span>
                 </button>
+                {isModerator && (
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      navigate("/admin");
+                    }}
+                    className="navbar-mobile-auth-btn navbar-mobile-auth-btn--admin">
+                    <FontAwesomeIcon icon={faShieldAlt} />
+                    <span>Panel Admin</span>
+                  </button>
+                )}
                 <button
                   onClick={handleSignOut}
                   className="navbar-mobile-auth-btn navbar-mobile-auth-btn--logout">

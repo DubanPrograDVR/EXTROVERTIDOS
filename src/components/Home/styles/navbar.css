@@ -833,6 +833,18 @@
     transform: translateY(-2px);
   }
 
+  .navbar-mobile-auth-btn--admin {
+    background: linear-gradient(135deg, var(--color-primary), #ff8533);
+    border: none;
+    color: white;
+  }
+
+  .navbar-mobile-auth-btn--admin:hover {
+    background: linear-gradient(135deg, #e65c00, var(--color-primary));
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 102, 0, 0.3);
+  }
+
   .navbar-mobile-auth-btn--logout {
     background: transparent;
     border: 2px solid var(--color-error, #ff4444);
