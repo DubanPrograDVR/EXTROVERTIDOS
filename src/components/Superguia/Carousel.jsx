@@ -10,72 +10,126 @@ import {
 export default function Carousel({ publications, onPublicationClick }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const autoPlayRef = useRef(null);
+  const resumeTimeoutRef = useRef(null);
 
-  const itemsToShow = 5; // Cantidad visible a la vez
-  const totalItems = publications.length;
+  const itemsToShow = 5;
+  const totalItems = publications?.length || 0;
+  const autoPlayInterval = 3500; // Velocidad del autoplay
+  const transitionDuration = 500; // Duración de la transición en ms
 
-  // Navegar al siguiente
-  const goToNext = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1) % totalItems);
-  }, [totalItems]);
-
-  // Navegar al anterior
-  const goToPrev = useCallback(() => {
-    setCurrentIndex((prev) => (prev - 1 + totalItems) % totalItems);
-  }, [totalItems]);
-
-  // Auto-play con control de pausa
+  // Limpiar timeouts al desmontar
   useEffect(() => {
-    if (isPaused || totalItems === 0) return;
+    return () => {
+      if (autoPlayRef.current) clearInterval(autoPlayRef.current);
+      if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
+    };
+  }, []);
+
+  // Navegar al siguiente con protección de transición
+  const goToNext = useCallback(() => {
+    if (isTransitioning || totalItems === 0) return;
+    setIsTransitioning(true);
+    setCurrentIndex((prev) => (prev + 1) % totalItems);
+    setTimeout(() => setIsTransitioning(false), transitionDuration);
+  }, [totalItems, isTransitioning]);
+
+  // Navegar al anterior con protección de transición
+  const goToPrev = useCallback(() => {
+    if (isTransitioning || totalItems === 0) return;
+    setIsTransitioning(true);
+    setCurrentIndex((prev) => (prev - 1 + totalItems) % totalItems);
+    setTimeout(() => setIsTransitioning(false), transitionDuration);
+  }, [totalItems, isTransitioning]);
+
+  // Ir a un índice específico
+  const goToIndex = useCallback(
+    (index) => {
+      if (isTransitioning || totalItems === 0) return;
+      setIsTransitioning(true);
+      setCurrentIndex(index);
+      setTimeout(() => setIsTransitioning(false), transitionDuration);
+    },
+    [totalItems, isTransitioning]
+  );
+
+  // Auto-play controlado
+  useEffect(() => {
+    if (isPaused || totalItems === 0) {
+      if (autoPlayRef.current) {
+        clearInterval(autoPlayRef.current);
+        autoPlayRef.current = null;
+      }
+      return;
+    }
 
     autoPlayRef.current = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % totalItems);
-    }, 4000);
+    }, autoPlayInterval);
 
     return () => {
       if (autoPlayRef.current) {
         clearInterval(autoPlayRef.current);
+        autoPlayRef.current = null;
       }
     };
   }, [isPaused, totalItems]);
 
-  // Pausar/Reanudar auto-play al hover
-  const handleMouseEnter = () => setIsPaused(true);
-  const handleMouseLeave = () => setIsPaused(false);
+  // Pausar al hacer hover
+  const handleMouseEnter = useCallback(() => {
+    // Cancelar cualquier timeout de reanudación pendiente
+    if (resumeTimeoutRef.current) {
+      clearTimeout(resumeTimeoutRef.current);
+      resumeTimeoutRef.current = null;
+    }
+    setIsPaused(true);
+  }, []);
+
+  // Reanudar al salir del hover con delay para evitar "saltos"
+  const handleMouseLeave = useCallback(() => {
+    // Delay antes de reanudar para transición suave
+    resumeTimeoutRef.current = setTimeout(() => {
+      setIsPaused(false);
+    }, 300);
+  }, []);
 
   // Obtener items visibles con efecto circular
-  const getVisibleItems = () => {
+  const getVisibleItems = useCallback(() => {
+    if (totalItems === 0) return [];
     const items = [];
     for (let i = 0; i < itemsToShow; i++) {
       const index = (currentIndex + i) % totalItems;
       items.push({ ...publications[index], displayIndex: i });
     }
     return items;
-  };
+  }, [currentIndex, publications, totalItems, itemsToShow]);
 
   if (!publications || publications.length === 0) {
     return null;
   }
 
+  const visibleItems = getVisibleItems();
+
   return (
     <div
-      className="carousel"
+      className={`carousel ${isPaused ? "carousel--paused" : ""}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}>
       {/* Botón anterior */}
       <button
         className="carousel__nav carousel__nav--prev"
         onClick={goToPrev}
+        disabled={isTransitioning}
         aria-label="Anterior">
         <FontAwesomeIcon icon={faChevronLeft} />
       </button>
 
       {/* Track del carrusel */}
       <div className="carousel__track">
-        {getVisibleItems().map((item, index) => (
+        {visibleItems.map((item, index) => (
           <div
-            key={`${item.id}-${index}`}
+            key={`${item.id}-${currentIndex}-${index}`}
             className={`carousel__item ${
               index === Math.floor(itemsToShow / 2) ? "active" : ""
             }`}
@@ -96,7 +150,10 @@ export default function Carousel({ publications, onPublicationClick }) {
               <div className="carousel__info">
                 <div className="carousel__location">
                   <FontAwesomeIcon icon={faMapMarkerAlt} />
-                  <span>{item.ciudad}</span>
+                  <span>
+                    {item.comuna || item.ciudad}
+                    {item.provincia ? `, ${item.provincia}` : ""}
+                  </span>
                 </div>
               </div>
             </div>
@@ -108,19 +165,20 @@ export default function Carousel({ publications, onPublicationClick }) {
       <button
         className="carousel__nav carousel__nav--next"
         onClick={goToNext}
+        disabled={isTransitioning}
         aria-label="Siguiente">
         <FontAwesomeIcon icon={faChevronRight} />
       </button>
 
       {/* Indicadores */}
       <div className="carousel__indicators">
-        {publications.slice(0, Math.min(10, totalItems)).map((_, index) => (
+        {publications.slice(0, Math.min(8, totalItems)).map((_, index) => (
           <button
             key={index}
             className={`carousel__dot ${
-              index === currentIndex % 10 ? "active" : ""
+              index === currentIndex % Math.min(8, totalItems) ? "active" : ""
             }`}
-            onClick={() => setCurrentIndex(index)}
+            onClick={() => goToIndex(index)}
             aria-label={`Ir a slide ${index + 1}`}
           />
         ))}

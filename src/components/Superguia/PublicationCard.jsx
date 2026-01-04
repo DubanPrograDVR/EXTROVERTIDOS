@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "./styles/PublicationCard.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faMapMarkerAlt, faUser } from "@fortawesome/free-solid-svg-icons";
+import { faMapMarkerAlt, faUser, faClock } from "@fortawesome/free-solid-svg-icons";
 
 // Imagen placeholder por defecto
 const PLACEHOLDER_IMAGE = "/img/Home1.png";
@@ -14,6 +14,8 @@ export default function PublicationCard({ publication, onClick }) {
     provincia,
     categories,
     fecha_evento,
+    hora_inicio,
+    hora_fin,
     profiles,
   } = publication;
 
@@ -45,9 +47,30 @@ export default function PublicationCard({ publication, onClick }) {
       })
     : null;
 
+  // Formatear hora (de "HH:MM:SS" a "HH:MM")
+  const formatTime = (timeString) => {
+    if (!timeString) return null;
+    const parts = timeString.split(":");
+    if (parts.length >= 2) {
+      return `${parts[0]}:${parts[1]}`;
+    }
+    return timeString;
+  };
+
+  // Construir string de horario corto
+  const getHorarioShort = () => {
+    const inicio = formatTime(hora_inicio);
+    if (inicio) {
+      return inicio + " hrs";
+    }
+    return null;
+  };
+
   const handleClick = () => {
     if (onClick) onClick(publication);
   };
+
+  const horarioShort = getHorarioShort();
 
   return (
     <article className="publication-card" onClick={handleClick}>
@@ -75,9 +98,19 @@ export default function PublicationCard({ publication, onClick }) {
           </span>
         </div>
         <h3 className="publication-card__title">{titulo}</h3>
-        {formattedDate && (
-          <p className="publication-card__date">{formattedDate}</p>
-        )}
+        
+        {/* Fecha y hora */}
+        <div className="publication-card__datetime">
+          {formattedDate && (
+            <span className="publication-card__date">{formattedDate}</span>
+          )}
+          {horarioShort && (
+            <span className="publication-card__time">
+              <FontAwesomeIcon icon={faClock} />
+              {horarioShort}
+            </span>
+          )}
+        </div>
 
         {/* Información del autor */}
         {profiles && (

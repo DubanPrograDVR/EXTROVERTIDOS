@@ -46,18 +46,23 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
     categories,
     descripcion,
     fecha_evento,
-    hora_evento,
+    hora_inicio,
+    hora_fin,
+    tipo_entrada,
     precio,
     direccion,
     telefono,
     ubicacion_url,
-    instagram,
-    facebook,
-    whatsapp,
-    youtube,
-    tiktok,
+    redes_sociales,
     profiles,
   } = publication;
+
+  // Extraer redes sociales del objeto JSON
+  const instagram = redes_sociales?.instagram || publication.instagram;
+  const facebook = redes_sociales?.facebook || publication.facebook;
+  const whatsapp = redes_sociales?.whatsapp || publication.whatsapp;
+  const youtube = redes_sociales?.youtube || publication.youtube;
+  const tiktok = redes_sociales?.tiktok || publication.tiktok;
 
   // Obtener la primera imagen del array o usar placeholder
   const imageUrl =
@@ -74,6 +79,43 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
         year: "numeric",
       })
     : null;
+
+  // Formatear hora (de "HH:MM:SS" a "HH:MM")
+  const formatTime = (timeString) => {
+    if (!timeString) return null;
+    // Si viene en formato "HH:MM:SS", extraer solo "HH:MM"
+    const parts = timeString.split(":");
+    if (parts.length >= 2) {
+      return `${parts[0]}:${parts[1]}`;
+    }
+    return timeString;
+  };
+
+  // Construir string de horario
+  const getHorarioDisplay = () => {
+    const inicio = formatTime(hora_inicio);
+    const fin = formatTime(hora_fin);
+    
+    if (inicio && fin) {
+      return `${inicio} - ${fin} hrs`;
+    } else if (inicio) {
+      return `${inicio} hrs`;
+    } else if (fin) {
+      return `Hasta ${fin} hrs`;
+    }
+    return "Por confirmar";
+  };
+
+  // Formatear entrada/precio
+  const getEntradaDisplay = () => {
+    if (tipo_entrada === "gratis" || (!precio && tipo_entrada !== "pagada")) {
+      return "Entrada gratuita";
+    }
+    if (precio) {
+      return `$${precio.toLocaleString("es-CL")}`;
+    }
+    return "Por confirmar";
+  };
 
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) onClose();
@@ -155,12 +197,12 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
 
               <div className="publication-modal__detail-item">
                 <FontAwesomeIcon icon={faClock} />
-                <span>Hora: {hora_evento || "Por confirmar"}</span>
+                <span>Hora: {getHorarioDisplay()}</span>
               </div>
 
               <div className="publication-modal__detail-item">
                 <FontAwesomeIcon icon={faTicket} />
-                <span>Entrada: {precio || "Por confirmar"}</span>
+                <span>Entrada: {getEntradaDisplay()}</span>
               </div>
 
               <div className="publication-modal__detail-item">

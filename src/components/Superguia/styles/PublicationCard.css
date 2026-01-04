@@ -81,10 +81,38 @@
   overflow: hidden;
 }
 
+.publication-card__datetime {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .publication-card__date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   color: #888;
   font-size: 0.8rem;
   margin: 0;
+}
+
+.publication-card__date svg {
+  color: #ff6600;
+  font-size: 0.75rem;
+}
+
+.publication-card__time {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #888;
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.publication-card__time svg {
+  color: #ff6600;
+  font-size: 0.75rem;
 }
 
 /* Autor */
