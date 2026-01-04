@@ -1,14 +1,71 @@
 import { supabase } from "./supabase";
 
+// ============ SISTEMA DE CACHÉ EN MEMORIA ============
+
+/**
+ * Caché simple en memoria para datos que no cambian frecuentemente
+ * TTL (Time To Live) configurable por tipo de dato
+ */
+const cache = {
+  data: new Map(),
+  timestamps: new Map(),
+
+  // TTL en milisegundos
+  TTL: {
+    categories: 5 * 60 * 1000, // 5 minutos
+    adminStats: 30 * 1000, // 30 segundos
+    chartData: 60 * 1000, // 1 minuto
+  },
+
+  get(key) {
+    const timestamp = this.timestamps.get(key);
+    const ttlKey = key.split("_")[0]; // Extrae el tipo (ej: 'adminStats' de 'adminStats_userId')
+    const ttl = this.TTL[ttlKey] || 30000;
+
+    if (timestamp && Date.now() - timestamp < ttl) {
+      return this.data.get(key);
+    }
+    return null;
+  },
+
+  set(key, value) {
+    this.data.set(key, value);
+    this.timestamps.set(key, Date.now());
+  },
+
+  invalidate(keyPattern) {
+    for (const key of this.data.keys()) {
+      if (key.includes(keyPattern)) {
+        this.data.delete(key);
+        this.timestamps.delete(key);
+      }
+    }
+  },
+
+  clear() {
+    this.data.clear();
+    this.timestamps.clear();
+  },
+};
+
+// Exportar para poder invalidar desde otros módulos
+export const invalidateCache = (pattern) => cache.invalidate(pattern);
+export const clearCache = () => cache.clear();
+
 // ============ CATEGORÍAS ============
 
 /**
  * Obtiene todas las categorías activas
+ * OPTIMIZADO: Con caché de 5 minutos
  */
 export const getCategories = async () => {
+  // Verificar caché
+  const cached = cache.get("categories");
+  if (cached) return cached;
+
   const { data, error } = await supabase
     .from("categories")
-    .select("*")
+    .select("id, nombre, icono, color, orden")
     .eq("activo", true)
     .order("orden", { ascending: true });
 
@@ -17,6 +74,8 @@ export const getCategories = async () => {
     throw error;
   }
 
+  // Guardar en caché
+  cache.set("categories", data);
   return data;
 };
 
@@ -634,17 +693,21 @@ export const updateUserRole = async (targetUserId, newRole, adminUserId) => {
 
 /**
  * Obtiene todos los usuarios con sus roles (solo admin)
+ * Optimizado: Solo trae campos necesarios
  */
-export const getAllUsers = async (adminUserId) => {
-  const isAdminUser = await isAdmin(adminUserId);
-  if (!isAdminUser) {
-    throw new Error("No tienes permisos para ver usuarios");
+export const getAllUsers = async (adminUserId, skipPermissionCheck = false) => {
+  if (!skipPermissionCheck) {
+    const isAdminUser = await isAdmin(adminUserId);
+    if (!isAdminUser) {
+      throw new Error("No tienes permisos para ver usuarios");
+    }
   }
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("*")
-    .order("created_at", { ascending: false });
+    .select("id, nombre, email, avatar_url, rol, created_at")
+    .order("created_at", { ascending: false })
+    .limit(100); // Limitar resultados iniciales
 
   if (error) {
     console.error("Error al obtener usuarios:", error);
@@ -658,18 +721,32 @@ export const getAllUsers = async (adminUserId) => {
 
 /**
  * Obtiene todas las publicaciones pendientes de aprobación
+ * @param {string} adminUserId - ID del usuario admin/moderador
+ * @param {boolean} skipPermissionCheck - Si ya se verificó el permiso, evitar query extra
  */
-export const getPendingEvents = async (adminUserId) => {
-  const canModerate = await isModerator(adminUserId);
-  if (!canModerate) {
-    throw new Error("No tienes permisos para ver publicaciones pendientes");
+export const getPendingEvents = async (
+  adminUserId,
+  skipPermissionCheck = false
+) => {
+  if (!skipPermissionCheck) {
+    const canModerate = await isModerator(adminUserId);
+    if (!canModerate) {
+      throw new Error("No tienes permisos para ver publicaciones pendientes");
+    }
   }
 
   const { data, error } = await supabase
     .from("events")
     .select(
       `
-      *,
+      id,
+      titulo,
+      descripcion,
+      fecha_evento,
+      comuna,
+      provincia,
+      imagenes,
+      created_at,
       categories (
         id,
         nombre,
@@ -685,7 +762,8 @@ export const getPendingEvents = async (adminUserId) => {
     `
     )
     .eq("estado", "pendiente")
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .limit(50); // Paginación por defecto
 
   if (error) {
     console.error("Error al obtener eventos pendientes:", error);
@@ -771,6 +849,9 @@ export const approveEvent = async (eventId, adminUserId) => {
     throw error;
   }
 
+  // Invalidar caché de estadísticas
+  cache.invalidate("adminStats");
+
   // Crear notificación para el autor
   try {
     await supabase.from("notifications").insert([
@@ -829,6 +910,9 @@ export const rejectEvent = async (eventId, adminUserId, motivo = "") => {
     throw error;
   }
 
+  // Invalidar caché de estadísticas
+  cache.invalidate("adminStats");
+
   // Crear notificación para el autor
   try {
     const motivoTexto = motivo ? ` Motivo: ${motivo}` : "";
@@ -846,8 +930,6 @@ export const rejectEvent = async (eventId, adminUserId, motivo = "") => {
   } catch (notifError) {
     console.warn("No se pudo crear la notificación:", notifError);
   }
-
-  return data;
 
   return data;
 };
@@ -952,48 +1034,60 @@ export const rejectBusiness = async (businessId, adminUserId, razon = "") => {
 
 /**
  * Estadísticas del panel de administración
+ * OPTIMIZADO: Queries en paralelo + caché de 30 segundos
  */
-export const getAdminStats = async (adminUserId) => {
+export const getAdminStats = async (
+  adminUserId,
+  skipPermissionCheck = false
+) => {
   try {
-    const canModerate = await isModerator(adminUserId);
-    if (!canModerate) {
-      throw new Error("No tienes permisos para ver estadísticas");
+    if (!skipPermissionCheck) {
+      const canModerate = await isModerator(adminUserId);
+      if (!canModerate) {
+        throw new Error("No tienes permisos para ver estadísticas");
+      }
     }
 
-    // Contar eventos por estado
-    const { data: eventsPendientes } = await supabase
-      .from("events")
-      .select("id", { count: "exact" })
-      .eq("estado", "pendiente");
+    // Verificar caché
+    const cacheKey = `adminStats_${adminUserId}`;
+    const cached = cache.get(cacheKey);
+    if (cached) return cached;
 
-    const { data: eventsPublicados } = await supabase
-      .from("events")
-      .select("id", { count: "exact" })
-      .eq("estado", "publicado");
+    // Ejecutar todas las queries de conteo en paralelo
+    const [pendientesResult, publicadosResult, rechazadosResult, usersResult] =
+      await Promise.all([
+        supabase
+          .from("events")
+          .select("id", { count: "exact", head: true })
+          .eq("estado", "pendiente"),
+        supabase
+          .from("events")
+          .select("id", { count: "exact", head: true })
+          .eq("estado", "publicado"),
+        supabase
+          .from("events")
+          .select("id", { count: "exact", head: true })
+          .eq("estado", "rechazado"),
+        supabase.from("profiles").select("id", { count: "exact", head: true }),
+      ]);
 
-    const { data: eventsRechazados } = await supabase
-      .from("events")
-      .select("id", { count: "exact" })
-      .eq("estado", "rechazado");
-
-    // Contar usuarios
-    const { data: totalUsers } = await supabase
-      .from("profiles")
-      .select("id", { count: "exact" });
-
-    return {
+    const stats = {
       eventos: {
-        pendientes: eventsPendientes?.length || 0,
-        publicados: eventsPublicados?.length || 0,
-        rechazados: eventsRechazados?.length || 0,
+        pendientes: pendientesResult.count || 0,
+        publicados: publicadosResult.count || 0,
+        rechazados: rechazadosResult.count || 0,
       },
       negocios: {
-        pendientes: 0, // No hay tabla businesses por ahora
+        pendientes: 0,
       },
       usuarios: {
-        total: totalUsers?.length || 0,
+        total: usersResult.count || 0,
       },
     };
+
+    // Guardar en caché
+    cache.set(cacheKey, stats);
+    return stats;
   } catch (error) {
     console.error("Error en getAdminStats:", error);
     return {
@@ -1006,12 +1100,18 @@ export const getAdminStats = async (adminUserId) => {
 
 /**
  * Obtiene publicaciones por día de los últimos 7 días
+ * OPTIMIZADO: Solo trae las fechas necesarias, no todos los campos
  */
-export const getEventsPerDay = async (adminUserId) => {
+export const getEventsPerDay = async (
+  adminUserId,
+  skipPermissionCheck = false
+) => {
   try {
-    const canModerate = await isModerator(adminUserId);
-    if (!canModerate) {
-      throw new Error("No tienes permisos");
+    if (!skipPermissionCheck) {
+      const canModerate = await isModerator(adminUserId);
+      if (!canModerate) {
+        throw new Error("No tienes permisos");
+      }
     }
 
     // Obtener fecha de hace 7 días
@@ -1020,35 +1120,41 @@ export const getEventsPerDay = async (adminUserId) => {
     sevenDaysAgo.setDate(today.getDate() - 6);
     sevenDaysAgo.setHours(0, 0, 0, 0);
 
+    // Solo seleccionar created_at, no todo el registro
     const { data, error } = await supabase
       .from("events")
       .select("created_at")
-      .gte("created_at", sevenDaysAgo.toISOString());
+      .gte("created_at", sevenDaysAgo.toISOString())
+      .lte("created_at", today.toISOString());
 
     if (error) throw error;
 
-    // Agrupar por día
-    const daysMap = {};
+    // Agrupar por día usando un objeto más eficiente
     const days = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+    const daysMap = new Map();
 
     // Inicializar los últimos 7 días
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(today.getDate() - i);
       const dayKey = date.toISOString().split("T")[0];
-      const dayName = days[date.getDay()];
-      daysMap[dayKey] = { day: dayName, fecha: dayKey, publicaciones: 0 };
+      daysMap.set(dayKey, {
+        day: days[date.getDay()],
+        fecha: dayKey,
+        publicaciones: 0,
+      });
     }
 
     // Contar publicaciones por día
     data?.forEach((event) => {
       const dayKey = event.created_at.split("T")[0];
-      if (daysMap[dayKey]) {
-        daysMap[dayKey].publicaciones++;
+      const dayData = daysMap.get(dayKey);
+      if (dayData) {
+        dayData.publicaciones++;
       }
     });
 
-    return Object.values(daysMap);
+    return Array.from(daysMap.values());
   } catch (error) {
     console.error("Error en getEventsPerDay:", error);
     return [];
@@ -1057,12 +1163,18 @@ export const getEventsPerDay = async (adminUserId) => {
 
 /**
  * Obtiene usuarios registrados por día de los últimos 7 días
+ * OPTIMIZADO: Solo trae las fechas necesarias
  */
-export const getUsersPerDay = async (adminUserId) => {
+export const getUsersPerDay = async (
+  adminUserId,
+  skipPermissionCheck = false
+) => {
   try {
-    const canModerate = await isModerator(adminUserId);
-    if (!canModerate) {
-      throw new Error("No tienes permisos");
+    if (!skipPermissionCheck) {
+      const canModerate = await isModerator(adminUserId);
+      if (!canModerate) {
+        throw new Error("No tienes permisos");
+      }
     }
 
     // Obtener fecha de hace 7 días
@@ -1074,32 +1186,37 @@ export const getUsersPerDay = async (adminUserId) => {
     const { data, error } = await supabase
       .from("profiles")
       .select("created_at")
-      .gte("created_at", sevenDaysAgo.toISOString());
+      .gte("created_at", sevenDaysAgo.toISOString())
+      .lte("created_at", today.toISOString());
 
     if (error) throw error;
 
-    // Agrupar por día
-    const daysMap = {};
+    // Agrupar por día usando Map
     const days = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+    const daysMap = new Map();
 
     // Inicializar los últimos 7 días
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(today.getDate() - i);
       const dayKey = date.toISOString().split("T")[0];
-      const dayName = days[date.getDay()];
-      daysMap[dayKey] = { day: dayName, fecha: dayKey, usuarios: 0 };
+      daysMap.set(dayKey, {
+        day: days[date.getDay()],
+        fecha: dayKey,
+        usuarios: 0,
+      });
     }
 
     // Contar usuarios por día
     data?.forEach((user) => {
       const dayKey = user.created_at.split("T")[0];
-      if (daysMap[dayKey]) {
-        daysMap[dayKey].usuarios++;
+      const dayData = daysMap.get(dayKey);
+      if (dayData) {
+        dayData.usuarios++;
       }
     });
 
-    return Object.values(daysMap);
+    return Array.from(daysMap.values());
   } catch (error) {
     console.error("Error en getUsersPerDay:", error);
     return [];
@@ -1442,39 +1559,49 @@ export const getUserBanHistory = async (userId) => {
 
 /**
  * Obtiene todos los usuarios con su estado de baneo (para admin)
+ * OPTIMIZADO: Queries en paralelo y paginación
  * @param {string} adminId - ID del admin que consulta
+ * @param {number} page - Página actual (default: 1)
+ * @param {number} limit - Cantidad por página (default: 50)
  */
-export const getAllUsersWithBanStatus = async (adminId) => {
-  // Primero obtener todos los usuarios
-  const { data: users, error: usersError } = await supabase
-    .from("profiles")
-    .select("*")
-    .order("created_at", { ascending: false });
+export const getAllUsersWithBanStatus = async (
+  adminId,
+  page = 1,
+  limit = 50
+) => {
+  const offset = (page - 1) * limit;
 
-  if (usersError) {
-    console.error("Error al obtener usuarios:", usersError);
-    throw usersError;
+  // Ejecutar ambas queries en paralelo
+  const [usersResult, bansResult] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, nombre, email, avatar_url, rol, created_at")
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1),
+    supabase
+      .from("user_bans")
+      .select("id, user_id, ban_reason, banned_at")
+      .eq("is_active", true),
+  ]);
+
+  if (usersResult.error) {
+    console.error("Error al obtener usuarios:", usersResult.error);
+    throw usersResult.error;
   }
 
-  // Obtener baneos activos
-  const { data: activeBans, error: bansError } = await supabase
-    .from("user_bans")
-    .select("*")
-    .eq("is_active", true);
-
-  if (bansError) {
-    console.error("Error al obtener baneos:", bansError);
-    throw bansError;
+  if (bansResult.error) {
+    console.error("Error al obtener baneos:", bansResult.error);
+    throw bansResult.error;
   }
 
-  // Mapear baneos a usuarios
+  // Usar Map para O(1) lookup en lugar de O(n) búsqueda
   const bansMap = new Map();
-  activeBans?.forEach((ban) => {
+  bansResult.data?.forEach((ban) => {
     bansMap.set(ban.user_id, ban);
   });
 
   // Combinar datos
-  const usersWithBanStatus = users.map((user) => {
+  const usersWithBanStatus = usersResult.data.map((user) => {
     const ban = bansMap.get(user.id);
     return {
       ...user,

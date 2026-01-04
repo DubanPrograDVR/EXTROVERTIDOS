@@ -49,65 +49,66 @@ export const useAdminData = (user, isAdmin, isModerator) => {
     setError(null);
 
     try {
-      // Cargar datos con manejo de errores individual
-      let eventsData = [];
-      let statsData = {
+      // ✅ OPTIMIZADO: Ejecutar todas las consultas en paralelo
+      const defaultStats = {
         eventos: { pendientes: 0, publicados: 0, rechazados: 0 },
         negocios: { pendientes: 0 },
         usuarios: { total: 0 },
       };
 
-      try {
-        eventsData = await getPendingEvents(user.id);
-      } catch (err) {
-        console.warn("Error al cargar eventos pendientes:", err);
+      // Definir todas las promesas base
+      const basePromises = [
+        getPendingEvents(user.id).catch((err) => {
+          console.warn("Error al cargar eventos pendientes:", err);
+          return [];
+        }),
+        getAdminStats(user.id).catch((err) => {
+          console.warn("Error al cargar estadísticas:", err);
+          return defaultStats;
+        }),
+        getEventsPerDay(user.id).catch((err) => {
+          console.warn("Error al cargar eventos por día:", err);
+          return [];
+        }),
+        getUsersPerDay(user.id).catch((err) => {
+          console.warn("Error al cargar usuarios por día:", err);
+          return [];
+        }),
+      ];
+
+      // Si es admin, agregar la consulta de usuarios
+      if (isAdmin) {
+        basePromises.push(
+          getAllUsersWithBanStatus(user.id).catch((err) => {
+            console.warn("Error al cargar usuarios:", err);
+            // Fallback a la función antigua
+            return getAllUsers(user.id).catch(() => []);
+          })
+        );
       }
 
-      try {
-        statsData = await getAdminStats(user.id);
-      } catch (err) {
-        console.warn("Error al cargar estadísticas:", err);
-      }
+      // Ejecutar todas en paralelo
+      const results = await Promise.all(basePromises);
 
-      // Cargar datos para gráficos
-      let eventsPerDayData = [];
-      let usersPerDayData = [];
+      // Extraer resultados
+      const [
+        eventsData,
+        statsData,
+        eventsPerDayData,
+        usersPerDayData,
+        usersData,
+      ] = results;
 
-      try {
-        eventsPerDayData = await getEventsPerDay(user.id);
-      } catch (err) {
-        console.warn("Error al cargar eventos por día:", err);
-      }
-
-      try {
-        usersPerDayData = await getUsersPerDay(user.id);
-      } catch (err) {
-        console.warn("Error al cargar usuarios por día:", err);
-      }
-
+      // Actualizar estados una sola vez
       setPendingEvents(eventsData || []);
-      setStats(statsData);
+      setStats(statsData || defaultStats);
       setChartData({
-        eventsPerDay: eventsPerDayData,
-        usersPerDay: usersPerDayData,
+        eventsPerDay: eventsPerDayData || [],
+        usersPerDay: usersPerDayData || [],
       });
 
-      // Solo cargar usuarios si es admin (con estado de baneo)
       if (isAdmin) {
-        try {
-          const usersData = await getAllUsersWithBanStatus(user.id);
-          setUsers(usersData || []);
-        } catch (err) {
-          console.warn("Error al cargar usuarios:", err);
-          // Fallback a la función antigua si falla
-          try {
-            const usersData = await getAllUsers(user.id);
-            setUsers(usersData || []);
-          } catch (fallbackErr) {
-            console.warn("Error en fallback:", fallbackErr);
-            setUsers([]);
-          }
-        }
+        setUsers(usersData || []);
       }
     } catch (err) {
       console.error("Error cargando datos:", err);
