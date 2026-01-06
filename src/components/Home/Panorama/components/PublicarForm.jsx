@@ -23,6 +23,7 @@ const PublicarForm = ({
   errors,
   isSubmitting,
   previewImages,
+  isEditing,
   onSubmit,
   onChange,
   onFieldFocus,
@@ -31,7 +32,10 @@ const PublicarForm = ({
 }) => {
   return (
     <section className="publicar-form-section">
-      <form className="publicar-form" onSubmit={onSubmit} onFocus={onFieldFocus}>
+      <form
+        className="publicar-form"
+        onSubmit={onSubmit}
+        onFocus={onFieldFocus}>
         {/* Título */}
         <div className="publicar-form__group">
           <label className="publicar-form__label" htmlFor="titulo">
@@ -107,8 +111,7 @@ const PublicarForm = ({
             }`}
             value={formData.category_id}
             onChange={onChange}
-            disabled={loadingCategories}
-          >
+            disabled={loadingCategories}>
             <option value="">
               {loadingCategories
                 ? "Cargando categorías..."
@@ -143,7 +146,9 @@ const PublicarForm = ({
               min={new Date().toISOString().split("T")[0]}
             />
             {errors.fecha_evento && (
-              <span className="publicar-form__error">{errors.fecha_evento}</span>
+              <span className="publicar-form__error">
+                {errors.fecha_evento}
+              </span>
             )}
           </div>
 
@@ -189,8 +194,7 @@ const PublicarForm = ({
                 errors.provincia ? "error" : ""
               }`}
               value={formData.provincia}
-              onChange={onChange}
-            >
+              onChange={onChange}>
               <option value="">Selecciona una provincia</option>
               {PROVINCIAS.map((prov) => (
                 <option key={prov} value={prov}>
@@ -231,7 +235,9 @@ const PublicarForm = ({
             type="text"
             id="direccion"
             name="direccion"
-            className={`publicar-form__input ${errors.direccion ? "error" : ""}`}
+            className={`publicar-form__input ${
+              errors.direccion ? "error" : ""
+            }`}
             placeholder="Ej: Av. Principal 123, Local 5"
             value={formData.direccion}
             onChange={onChange}
@@ -252,8 +258,7 @@ const PublicarForm = ({
               name="tipo_entrada"
               className="publicar-form__select"
               value={formData.tipo_entrada}
-              onChange={onChange}
-            >
+              onChange={onChange}>
               {TIPOS_ENTRADA.map((tipo) => (
                 <option key={tipo.value} value={tipo.value}>
                   {tipo.label}
@@ -271,7 +276,9 @@ const PublicarForm = ({
                 type="number"
                 id="precio"
                 name="precio"
-                className={`publicar-form__input ${errors.precio ? "error" : ""}`}
+                className={`publicar-form__input ${
+                  errors.precio ? "error" : ""
+                }`}
                 placeholder="Ej: 10000"
                 value={formData.precio}
                 onChange={onChange}
@@ -320,13 +327,14 @@ const PublicarForm = ({
         <button
           type="submit"
           className="publicar-form__submit"
-          disabled={isSubmitting}
-        >
+          disabled={isSubmitting}>
           {isSubmitting ? (
             <>
               <FontAwesomeIcon icon={faSpinner} spin />
-              Publicando...
+              {isEditing ? "Guardando..." : "Publicando..."}
             </>
+          ) : isEditing ? (
+            "Guardar Cambios"
           ) : (
             "Publicar Evento"
           )}

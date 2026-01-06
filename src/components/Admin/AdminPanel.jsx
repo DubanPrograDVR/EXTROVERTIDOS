@@ -8,15 +8,18 @@ import {
   faUsers,
   faBars,
   faTimes,
+  faNewspaper,
 } from "@fortawesome/free-solid-svg-icons";
 
 // Componentes modulares
 import AdminDashboard from "./components/AdminDashboard";
 import AdminPendingList from "./components/AdminPendingList";
 import AdminUserList from "./components/AdminUserList";
+import AdminPublicationsList from "./components/AdminPublicationsList";
 import AdminRejectModal from "./components/AdminRejectModal";
 import AdminBanModal from "./components/AdminBanModal";
 import AdminLoading from "./components/AdminLoading";
+import PublicationModal from "../Superguia/PublicationModal";
 
 // Custom hook para manejo de datos
 import { useAdminData } from "./hooks/useAdminData";
@@ -43,10 +46,15 @@ export default function AdminPanel() {
     open: false,
     user: null,
   });
+  const [viewModal, setViewModal] = useState({
+    open: false,
+    event: null,
+  });
 
   // Hook personalizado para manejo de datos
   const {
     pendingEvents,
+    allEvents,
     users,
     stats,
     chartData,
@@ -58,6 +66,8 @@ export default function AdminPanel() {
     handleRoleChange,
     handleBanUser,
     handleUnbanUser,
+    handleDeleteEvent,
+    handleDeleteUser,
   } = useAdminData(user, isAdmin, isModerator);
 
   // Verificar acceso - redirigir si no es moderador/admin
@@ -109,6 +119,34 @@ export default function AdminPanel() {
     setBanModal({ open: false, user: null });
   };
 
+  // Ver detalle de publicación (pendientes)
+  const onViewEvent = (eventId) => {
+    const event = pendingEvents.find((e) => e.id === eventId);
+    if (event) {
+      setViewModal({ open: true, event });
+    }
+  };
+
+  // Ver detalle de publicación (todas las publicaciones)
+  const onViewAllEvent = (eventId) => {
+    const event = allEvents.find((e) => e.id === eventId);
+    if (event) {
+      setViewModal({ open: true, event });
+    }
+  };
+
+  // Editar publicación (redirige a la página de edición)
+  const onEditEvent = (eventId) => {
+    // TODO: Implementar página de edición completa
+    // Por ahora navegar con query param para futura implementación
+    navigate(`/publicar-panorama?editar=${eventId}`);
+  };
+
+  // Cerrar modal de vista previa
+  const onViewClose = () => {
+    setViewModal({ open: false, event: null });
+  };
+
   // Desbanear usuario
   const onUnbanClick = async (userToUnban) => {
     if (!userToUnban.ban_info?.id) return;
@@ -152,6 +190,13 @@ export default function AdminPanel() {
       icon: faClock,
       badge: stats?.eventos?.pendientes || 0,
       show: true,
+    },
+    {
+      id: "publications",
+      label: "Publicaciones",
+      icon: faNewspaper,
+      badge: allEvents?.length || 0,
+      show: isAdmin,
     },
     {
       id: "users",
@@ -239,6 +284,19 @@ export default function AdminPanel() {
             actionLoading={actionLoading}
             onApprove={onApprove}
             onReject={onRejectClick}
+            onView={onViewEvent}
+          />
+        )}
+
+        {/* Gestión de todas las publicaciones (solo admin) */}
+        {activeTab === "publications" && isAdmin && (
+          <AdminPublicationsList
+            events={allEvents}
+            loading={loading}
+            actionLoading={actionLoading}
+            onView={onViewAllEvent}
+            onEdit={onEditEvent}
+            onDelete={handleDeleteEvent}
           />
         )}
 
@@ -251,6 +309,7 @@ export default function AdminPanel() {
             onRoleChange={handleRoleChange}
             onBanClick={onBanClick}
             onUnbanClick={onUnbanClick}
+            onDeleteUser={handleDeleteUser}
           />
         )}
       </main>
@@ -270,6 +329,13 @@ export default function AdminPanel() {
         onConfirm={onBanConfirm}
         onCancel={onBanCancel}
         loading={actionLoading === banModal.user?.id}
+      />
+
+      {/* Modal de vista previa de publicación */}
+      <PublicationModal
+        publication={viewModal.event}
+        isOpen={viewModal.open}
+        onClose={onViewClose}
       />
     </div>
   );

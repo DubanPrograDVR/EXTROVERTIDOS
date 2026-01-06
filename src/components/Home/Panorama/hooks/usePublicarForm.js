@@ -1,29 +1,38 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../../../context/AuthContext";
 import {
   getCategories,
   createEvent,
   uploadEventImage,
+  getEventById,
+  updateEvent,
 } from "../../../../lib/database";
 import { INITIAL_FORM_STATE, IMAGE_CONFIG } from "../constants";
 
 /**
  * Hook personalizado para manejar la lógica del formulario de publicación
+ * Soporta creación y edición de eventos
  */
 const usePublicarForm = () => {
-  const { user, isAuthenticated, signInWithGoogle, showToast } = useAuth();
+  const { user, isAuthenticated, isAdmin, signInWithGoogle, showToast } =
+    useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editEventId = searchParams.get("editar");
+  const isEditing = !!editEventId;
 
   // Estados
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  const [loadingEvent, setLoadingEvent] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previewImages, setPreviewImages] = useState([]);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
+  const [existingImages, setExistingImages] = useState([]); // URLs de imágenes existentes en edición
 
   // Cargar categorías al montar
   useEffect(() => {
@@ -41,6 +50,69 @@ const usePublicarForm = () => {
 
     loadCategories();
   }, [showToast]);
+
+  // Cargar evento si estamos editando
+  useEffect(() => {
+    const loadEventForEdit = async () => {
+      if (!editEventId || !isAuthenticated) return;
+
+      setLoadingEvent(true);
+      try {
+        const event = await getEventById(editEventId);
+        if (!event) {
+          showToast?.("No se encontró la publicación", "error");
+          navigate("/");
+          return;
+        }
+
+        // Solo admin o el autor pueden editar
+        if (!isAdmin && event.user_id !== user?.id) {
+          showToast?.(
+            "No tienes permisos para editar esta publicación",
+            "error"
+          );
+          navigate("/");
+          return;
+        }
+
+        // Mapear datos del evento al formulario
+        setFormData({
+          titulo: event.titulo || "",
+          descripcion: event.descripcion || "",
+          organizador: event.organizador || "",
+          category_id: event.category_id || "",
+          fecha_evento: event.fecha_evento || "",
+          hora_inicio: event.hora_inicio || "",
+          hora_fin: event.hora_fin || "",
+          provincia: event.provincia || "",
+          comuna: event.comuna || "",
+          direccion: event.direccion || "",
+          tipo_entrada: event.tipo_entrada || "gratuito",
+          precio: event.precio || "",
+          url_venta: event.url_venta || "",
+          redes_sociales: event.redes_sociales || {
+            instagram: "",
+            facebook: "",
+            whatsapp: "",
+          },
+          imagenes: [], // Las nuevas imágenes se agregan aquí
+        });
+
+        // Guardar las imágenes existentes
+        if (event.imagenes && event.imagenes.length > 0) {
+          setExistingImages(event.imagenes);
+          setPreviewImages(event.imagenes);
+        }
+      } catch (error) {
+        console.error("Error cargando evento para editar:", error);
+        showToast?.("Error al cargar la publicación", "error");
+      } finally {
+        setLoadingEvent(false);
+      }
+    };
+
+    loadEventForEdit();
+  }, [editEventId, isAuthenticated, isAdmin, user?.id, navigate, showToast]);
 
   // Verificar autenticación al hacer foco en campos
   const handleFieldFocus = () => {
@@ -132,11 +204,22 @@ const usePublicarForm = () => {
 
   // Eliminar imagen
   const removeImage = (index) => {
-    setFormData((prev) => ({
-      ...prev,
-      imagenes: prev.imagenes.filter((_, i) => i !== index),
-    }));
-    setPreviewImages((prev) => prev.filter((_, i) => i !== index));
+    // Determinar si es una imagen existente o una nueva
+    const totalExisting = existingImages.length;
+
+    if (index < totalExisting) {
+      // Es una imagen existente
+      setExistingImages((prev) => prev.filter((_, i) => i !== index));
+      setPreviewImages((prev) => prev.filter((_, i) => i !== index));
+    } else {
+      // Es una imagen nueva
+      const newIndex = index - totalExisting;
+      setFormData((prev) => ({
+        ...prev,
+        imagenes: prev.imagenes.filter((_, i) => i !== newIndex),
+      }));
+      setPreviewImages((prev) => prev.filter((_, i) => i !== index));
+    }
   };
 
   // Validar formulario
@@ -167,7 +250,12 @@ const usePublicarForm = () => {
     if (formData.tipo_entrada === "pagado" && !formData.precio) {
       newErrors.precio = "Indica el precio del evento";
     }
-    if (formData.imagenes.length === 0) {
+    // Solo requerir imágenes si es nuevo evento y no hay existentes
+    if (
+      !isEditing &&
+      formData.imagenes.length === 0 &&
+      existingImages.length === 0
+    ) {
       newErrors.imagenes = "Sube al menos una imagen";
     }
 
@@ -202,16 +290,18 @@ const usePublicarForm = () => {
     setIsSubmitting(true);
 
     try {
-      // 1. Subir imágenes
-      const imageUrls = [];
+      // 1. Subir nuevas imágenes si hay
+      const newImageUrls = [];
       for (const file of formData.imagenes) {
         const url = await uploadEventImage(file, user.id);
-        imageUrls.push(url);
+        newImageUrls.push(url);
       }
+
+      // Combinar imágenes existentes con las nuevas
+      const allImageUrls = [...existingImages, ...newImageUrls];
 
       // 2. Preparar datos del evento
       const eventData = {
-        user_id: user.id,
         titulo: formData.titulo.trim(),
         descripcion: formData.descripcion.trim(),
         organizador:
@@ -230,28 +320,44 @@ const usePublicarForm = () => {
           formData.tipo_entrada === "pagado" ? parseInt(formData.precio) : null,
         url_venta: formData.url_venta.trim() || null,
         redes_sociales: formData.redes_sociales,
-        imagenes: imageUrls,
-        estado: "pendiente",
+        imagenes: allImageUrls,
       };
 
-      // 3. Crear evento en la BD
-      await createEvent(eventData);
-
-      if (showToast)
-        showToast(
-          "¡Evento creado exitosamente! Será revisado pronto.",
-          "success"
-        );
+      if (isEditing) {
+        // Actualizar evento existente
+        await updateEvent(editEventId, eventData);
+        if (showToast)
+          showToast("¡Publicación actualizada exitosamente!", "success");
+      } else {
+        // Crear nuevo evento
+        eventData.user_id = user.id;
+        eventData.estado = "pendiente";
+        await createEvent(eventData);
+        if (showToast)
+          showToast(
+            "¡Evento creado exitosamente! Será revisado pronto.",
+            "success"
+          );
+      }
 
       // Resetear formulario
       resetForm();
+      setExistingImages([]);
 
-      // Redirigir al perfil
-      navigate("/perfil");
+      // Redirigir
+      navigate(isEditing && isAdmin ? "/admin" : "/perfil");
     } catch (error) {
-      console.error("Error al crear evento:", error);
+      console.error(
+        `Error al ${isEditing ? "actualizar" : "crear"} evento:`,
+        error
+      );
       if (showToast)
-        showToast("Error al crear el evento. Intenta nuevamente.", "error");
+        showToast(
+          `Error al ${
+            isEditing ? "actualizar" : "crear"
+          } el evento. Intenta nuevamente.`,
+          "error"
+        );
     } finally {
       setIsSubmitting(false);
     }
@@ -265,11 +371,13 @@ const usePublicarForm = () => {
     formData,
     categories,
     loadingCategories,
+    loadingEvent,
     showAuthModal,
     errors,
     isSubmitting,
     previewImages,
     isGoogleLoading,
+    isEditing,
     // Handlers
     handleFieldFocus,
     handleGoogleLogin,

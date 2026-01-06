@@ -11,6 +11,9 @@ import {
   getAllUsersWithBanStatus,
   banUser,
   unbanUser,
+  getAllEvents,
+  deleteEvent,
+  deleteUser,
 } from "../../../lib/database";
 
 /**
@@ -18,6 +21,7 @@ import {
  */
 export const useAdminData = (user, isAdmin, isModerator) => {
   const [pendingEvents, setPendingEvents] = useState([]);
+  const [allEvents, setAllEvents] = useState([]);
   const [users, setUsers] = useState([]);
   const [stats, setStats] = useState(null);
   const [chartData, setChartData] = useState({
@@ -85,6 +89,13 @@ export const useAdminData = (user, isAdmin, isModerator) => {
             return getAllUsers(user.id).catch(() => []);
           })
         );
+        // También cargar todas las publicaciones para admin
+        basePromises.push(
+          getAllEvents(user.id).catch((err) => {
+            console.warn("Error al cargar todas las publicaciones:", err);
+            return [];
+          })
+        );
       }
 
       // Ejecutar todas en paralelo
@@ -97,6 +108,7 @@ export const useAdminData = (user, isAdmin, isModerator) => {
         eventsPerDayData,
         usersPerDayData,
         usersData,
+        allEventsData,
       ] = results;
 
       // Actualizar estados una sola vez
@@ -109,6 +121,7 @@ export const useAdminData = (user, isAdmin, isModerator) => {
 
       if (isAdmin) {
         setUsers(usersData || []);
+        setAllEvents(allEventsData || []);
       }
     } catch (err) {
       console.error("Error cargando datos:", err);
@@ -230,9 +243,78 @@ export const useAdminData = (user, isAdmin, isModerator) => {
     }
   };
 
+  // Eliminar publicación (admin)
+  const handleDeleteEvent = async (eventId) => {
+    setActionLoading(eventId);
+    try {
+      await deleteEvent(eventId);
+      // Actualizar ambas listas
+      setAllEvents((prev) => prev.filter((e) => e.id !== eventId));
+      setPendingEvents((prev) => prev.filter((e) => e.id !== eventId));
+      // Actualizar estadísticas
+      setStats((prev) => {
+        const event = allEvents.find((e) => e.id === eventId);
+        if (!event || !prev) return prev;
+        const estado = event.estado;
+        return {
+          ...prev,
+          eventos: {
+            ...prev.eventos,
+            [estado === "publicado"
+              ? "publicados"
+              : estado === "pendiente"
+              ? "pendientes"
+              : "rechazados"]:
+              prev.eventos[
+                estado === "publicado"
+                  ? "publicados"
+                  : estado === "pendiente"
+                  ? "pendientes"
+                  : "rechazados"
+              ] - 1,
+          },
+        };
+      });
+      return { success: true };
+    } catch (err) {
+      console.error("Error al eliminar publicación:", err);
+      return { success: false, error: err.message };
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Eliminar usuario (admin)
+  const handleDeleteUser = async (targetUserId) => {
+    setActionLoading(targetUserId);
+    try {
+      await deleteUser(targetUserId, user.id);
+      // Actualizar lista de usuarios
+      setUsers((prev) => prev.filter((u) => u.id !== targetUserId));
+      // Actualizar estadísticas
+      setStats((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          usuarios: {
+            ...prev.usuarios,
+            total: prev.usuarios.total - 1,
+          },
+        };
+      });
+      return { success: true };
+    } catch (err) {
+      console.error("Error al eliminar usuario:", err);
+      return { success: false, error: err.message };
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   return {
     // Estado
     pendingEvents,
+    allEvents,
     users,
     stats,
     chartData,
@@ -246,6 +328,8 @@ export const useAdminData = (user, isAdmin, isModerator) => {
     handleRoleChange,
     handleBanUser,
     handleUnbanUser,
+    handleDeleteEvent,
+    handleDeleteUser,
   };
 };
 

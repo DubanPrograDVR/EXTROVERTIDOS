@@ -67,6 +67,7 @@ export {
   isModerator,
   updateUserRole,
   getAllUsers,
+  deleteUser,
 } from "./roles";
 
 // ============ ADMINISTRACIÓN ============
@@ -98,3 +99,14 @@ export {
 
 // ============ SISTEMA DE BANEO ============
 export { checkBanStatus, banUser, unbanUser, getUserBanHistory } from "./bans";
+
+// ============ FAVORITOS ============
+export {
+  getUserFavorites,
+  isFavorite,
+  getFavoriteIds,
+  addFavorite,
+  removeFavorite,
+  toggleFavorite,
+  countUserFavorites,
+} from "./favorites";

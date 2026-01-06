@@ -1,13 +1,28 @@
 import { useState } from "react";
 import "./styles/PublicationCard.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faMapMarkerAlt, faUser, faClock } from "@fortawesome/free-solid-svg-icons";
+import {
+  faMapMarkerAlt,
+  faUser,
+  faClock,
+  faTicketAlt,
+  faHeart as faHeartSolid,
+} from "@fortawesome/free-solid-svg-icons";
+import { faHeart as faHeartRegular } from "@fortawesome/free-regular-svg-icons";
+import { useAuth } from "../../context/AuthContext";
+import { toggleFavorite } from "../../lib/database";
 
 // Imagen placeholder por defecto
 const PLACEHOLDER_IMAGE = "/img/Home1.png";
 
-export default function PublicationCard({ publication, onClick }) {
+export default function PublicationCard({
+  publication,
+  onClick,
+  isFavorite: initialIsFavorite = false,
+  onFavoriteChange,
+}) {
   const {
+    id,
     titulo,
     imagenes,
     comuna,
@@ -16,10 +31,15 @@ export default function PublicationCard({ publication, onClick }) {
     fecha_evento,
     hora_inicio,
     hora_fin,
+    tipo_entrada,
+    precio,
     profiles,
   } = publication;
 
+  const { user } = useAuth();
   const [imageError, setImageError] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(initialIsFavorite);
+  const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
 
   // Obtener la primera imagen del array o usar placeholder
   const getImageUrl = () => {
@@ -57,11 +77,26 @@ export default function PublicationCard({ publication, onClick }) {
     return timeString;
   };
 
-  // Construir string de horario corto
+  // Construir string de horario completo (inicio - fin)
   const getHorarioShort = () => {
     const inicio = formatTime(hora_inicio);
-    if (inicio) {
-      return inicio + " hrs";
+    const fin = formatTime(hora_fin);
+
+    if (inicio && fin) {
+      return `${inicio} - ${fin} hrs`;
+    } else if (inicio) {
+      return `${inicio} hrs`;
+    }
+    return null;
+  };
+
+  // Obtener texto de entrada/precio
+  const getEntradaText = () => {
+    if (tipo_entrada === "gratis" || (!precio && tipo_entrada !== "pagada")) {
+      return "Gratis";
+    }
+    if (precio) {
+      return `$${precio.toLocaleString("es-CL")}`;
     }
     return null;
   };
@@ -70,7 +105,36 @@ export default function PublicationCard({ publication, onClick }) {
     if (onClick) onClick(publication);
   };
 
+  // Manejar toggle de favorito
+  const handleFavoriteClick = async (e) => {
+    e.stopPropagation(); // Evitar que se abra el modal
+
+    if (!user) {
+      // Aquí podrías mostrar un toast o abrir el modal de login
+      console.log("Debes iniciar sesión para guardar favoritos");
+      return;
+    }
+
+    if (isTogglingFavorite) return;
+
+    setIsTogglingFavorite(true);
+    try {
+      const result = await toggleFavorite(user.id, id);
+      setIsFavorited(result.isFavorite);
+
+      // Notificar al componente padre si existe el callback
+      if (onFavoriteChange) {
+        onFavoriteChange(id, result.isFavorite);
+      }
+    } catch (error) {
+      console.error("Error al cambiar favorito:", error);
+    } finally {
+      setIsTogglingFavorite(false);
+    }
+  };
+
   const horarioShort = getHorarioShort();
+  const entradaText = getEntradaText();
 
   return (
     <article className="publication-card" onClick={handleClick}>
@@ -86,6 +150,20 @@ export default function PublicationCard({ publication, onClick }) {
           <span className="publication-card__category">
             {categories?.nombre || "Sin categoría"}
           </span>
+          {/* Botón de favorito */}
+          <button
+            className={`publication-card__favorite ${
+              isFavorited ? "publication-card__favorite--active" : ""
+            }`}
+            onClick={handleFavoriteClick}
+            disabled={isTogglingFavorite}
+            aria-label={
+              isFavorited ? "Quitar de favoritos" : "Guardar en favoritos"
+            }>
+            <FontAwesomeIcon
+              icon={isFavorited ? faHeartSolid : faHeartRegular}
+            />
+          </button>
         </div>
       </div>
 
@@ -98,7 +176,7 @@ export default function PublicationCard({ publication, onClick }) {
           </span>
         </div>
         <h3 className="publication-card__title">{titulo}</h3>
-        
+
         {/* Fecha y hora */}
         <div className="publication-card__datetime">
           {formattedDate && (
@@ -108,6 +186,17 @@ export default function PublicationCard({ publication, onClick }) {
             <span className="publication-card__time">
               <FontAwesomeIcon icon={faClock} />
               {horarioShort}
+            </span>
+          )}
+          {entradaText && (
+            <span
+              className={`publication-card__entrada ${
+                tipo_entrada === "gratis"
+                  ? "publication-card__entrada--gratis"
+                  : ""
+              }`}>
+              <FontAwesomeIcon icon={faTicketAlt} />
+              {entradaText}
             </span>
           )}
         </div>

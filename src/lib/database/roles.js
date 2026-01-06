@@ -121,3 +121,85 @@ export const getAllUsers = async (adminUserId, skipPermissionCheck = false) => {
 
   return data;
 };
+
+/**
+ * Elimina un usuario del sistema (solo admin)
+ * Nota: Esto elimina el perfil. El auth.user se mantiene pero no podrá acceder.
+ * @param {string} targetUserId - ID del usuario a eliminar
+ * @param {string} adminUserId - ID del admin que realiza la acción
+ * @returns {Promise<boolean>} true si se eliminó correctamente
+ */
+export const deleteUser = async (targetUserId, adminUserId) => {
+  // Verificar que quien hace el cambio es admin
+  const isAdminUser = await isAdmin(adminUserId);
+  if (!isAdminUser) {
+    throw new Error("No tienes permisos para eliminar usuarios");
+  }
+
+  // Verificar que no se elimine a sí mismo
+  if (targetUserId === adminUserId) {
+    throw new Error("No puedes eliminarte a ti mismo");
+  }
+
+  // Verificar que el usuario a eliminar no sea admin
+  const targetRole = await getUserRole(targetUserId);
+  if (targetRole === ROLES.ADMIN) {
+    throw new Error("No puedes eliminar a otro administrador");
+  }
+
+  // Eliminar eventos del usuario primero (para evitar errores de FK)
+  const { error: eventsError } = await supabase
+    .from("events")
+    .delete()
+    .eq("user_id", targetUserId);
+
+  if (eventsError) {
+    console.warn("Error al eliminar eventos del usuario:", eventsError);
+  }
+
+  // Eliminar favoritos del usuario
+  const { error: favoritesError } = await supabase
+    .from("user_favorites")
+    .delete()
+    .eq("user_id", targetUserId);
+
+  if (favoritesError) {
+    console.warn("Error al eliminar favoritos del usuario:", favoritesError);
+  }
+
+  // Eliminar bans relacionados
+  const { error: bansError } = await supabase
+    .from("user_bans")
+    .delete()
+    .eq("user_id", targetUserId);
+
+  if (bansError) {
+    console.warn("Error al eliminar bans del usuario:", bansError);
+  }
+
+  // Eliminar notificaciones del usuario
+  const { error: notificationsError } = await supabase
+    .from("notifications")
+    .delete()
+    .eq("user_id", targetUserId);
+
+  if (notificationsError) {
+    console.warn(
+      "Error al eliminar notificaciones del usuario:",
+      notificationsError
+    );
+  }
+
+  // Finalmente eliminar el perfil
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .delete()
+    .eq("id", targetUserId);
+
+  if (profileError) {
+    console.error("Error al eliminar perfil del usuario:", profileError);
+    throw profileError;
+  }
+
+  return true;
+};
