@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import {
   getEventsByUser,
@@ -7,9 +7,8 @@ import {
   markNotificationAsRead,
   markAllNotificationsAsRead,
   deleteNotification as deleteNotificationDB,
-} from "../../lib/database";
+} from "../../../lib/database";
 import {
-  PerfilSidebar,
   PerfilHeader,
   PerfilStats,
   PerfilPublicaciones,
@@ -17,16 +16,22 @@ import {
   PerfilFavoritos,
   PerfilNegocios,
   PerfilConfiguracion,
-} from "./components";
-import "./styles/perfil.css";
+} from "../../Perfil/components";
 
-export default function Perfil() {
-  const { user, signOut, isAuthenticated, loading } = useAuth();
+// Importar estilos del perfil
+import "../../Perfil/styles/perfil.css";
+import "./AdminProfile.css";
+
+/**
+ * Componente de Perfil embebido en el Panel de Administración
+ * Reutiliza los componentes del perfil existente con estilos adaptados
+ */
+export default function AdminProfile() {
+  const { user, signOut, isAuthenticated, loading, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   // Estados principales
   const [activeSection, setActiveSection] = useState("publicaciones");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userPublications, setUserPublications] = useState([]);
   const [loadingPublications, setLoadingPublications] = useState(false);
 
@@ -34,12 +39,6 @@ export default function Perfil() {
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-
-  useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      navigate("/");
-    }
-  }, [isAuthenticated, loading, navigate]);
 
   // Cargar publicaciones del usuario
   useEffect(() => {
@@ -167,9 +166,9 @@ export default function Perfil() {
 
   if (loading) {
     return (
-      <div className="perfil-loading">
-        <div className="perfil-loading__spinner"></div>
-        <p>Cargando...</p>
+      <div className="admin-profile__loading">
+        <div className="admin-profile__loading-spinner"></div>
+        <p>Cargando perfil...</p>
       </div>
     );
   }
@@ -192,60 +191,82 @@ export default function Perfil() {
     day: "numeric",
   });
 
+  // Tabs de navegación interna del perfil
+  const profileTabs = [
+    { id: "publicaciones", label: "Publicaciones" },
+    { id: "notificaciones", label: "Notificaciones", badge: unreadCount },
+    { id: "favoritos", label: "Favoritos" },
+    { id: "negocios", label: "Negocios" },
+    { id: "configuracion", label: "Configuración" },
+  ];
+
   return (
-    <div className="perfil-layout">
-      <PerfilSidebar
-        activeSection={activeSection}
-        onSectionChange={setActiveSection}
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-        unreadCount={unreadCount}
+    <div className="admin-profile">
+      {/* Header del perfil */}
+      <PerfilHeader
         userAvatar={userAvatar}
         userName={userName}
+        userEmail={userEmail}
+        createdAt={createdAt}
+        onSignOut={handleSignOut}
       />
 
-      <main className="perfil-main">
-        <PerfilHeader
-          userAvatar={userAvatar}
-          userName={userName}
-          userEmail={userEmail}
-          createdAt={createdAt}
-          onSignOut={handleSignOut}
-        />
+      {/* Stats */}
+      <PerfilStats
+        publicationsCount={userPublications.length}
+        unreadCount={unreadCount}
+      />
 
-        <PerfilStats
-          publicationsCount={userPublications.length}
-          unreadCount={unreadCount}
-        />
+      {/* Navegación interna del perfil */}
+      <div className="admin-profile__tabs">
+        {profileTabs.map((tab) => (
+          <button
+            key={tab.id}
+            className={`admin-profile__tab ${
+              activeSection === tab.id ? "active" : ""
+            }`}
+            onClick={() => setActiveSection(tab.id)}>
+            {tab.label}
+            {tab.badge > 0 && (
+              <span className="admin-profile__tab-badge">{tab.badge}</span>
+            )}
+          </button>
+        ))}
+      </div>
 
-        <section className="perfil-content">
-          {activeSection === "publicaciones" && (
-            <PerfilPublicaciones
-              publications={userPublications}
-              loading={loadingPublications}
-            />
-          )}
+      {/* Contenido según sección activa */}
+      <section className="admin-profile__content">
+        {activeSection === "publicaciones" && (
+          <PerfilPublicaciones
+            publications={userPublications}
+            loading={loadingPublications}
+          />
+        )}
 
-          {activeSection === "notificaciones" && (
-            <PerfilNotificaciones
-              notifications={notifications}
-              unreadCount={unreadCount}
-              loading={loadingNotifications}
-              onMarkAsRead={markAsRead}
-              onMarkAllAsRead={markAllAsRead}
-              onDelete={handleDeleteNotification}
-            />
-          )}
+        {activeSection === "notificaciones" && (
+          <PerfilNotificaciones
+            notifications={notifications}
+            unreadCount={unreadCount}
+            loading={loadingNotifications}
+            onMarkAsRead={markAsRead}
+            onMarkAllAsRead={markAllAsRead}
+            onDelete={handleDeleteNotification}
+          />
+        )}
 
-          {activeSection === "favoritos" && <PerfilFavoritos />}
+        {activeSection === "favoritos" && <PerfilFavoritos />}
 
-          {activeSection === "negocios" && <PerfilNegocios />}
+        {activeSection === "negocios" && <PerfilNegocios />}
 
-          {activeSection === "configuracion" && (
-            <PerfilConfiguracion userName={userName} userEmail={userEmail} />
-          )}
-        </section>
-      </main>
+        {activeSection === "configuracion" && (
+          <PerfilConfiguracion userName={userName} userEmail={userEmail} />
+        )}
+      </section>
+
+      {/* Badge indicando rol de admin */}
+      <div className="admin-profile__role-badge">
+        {isAdmin ? "Administrador" : "Moderador"}
+      </div>
     </div>
   );
 }

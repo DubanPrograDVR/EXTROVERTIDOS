@@ -9,6 +9,7 @@ import {
   faBars,
   faTimes,
   faNewspaper,
+  faUserCircle,
 } from "@fortawesome/free-solid-svg-icons";
 
 // Componentes modulares
@@ -19,6 +20,7 @@ import AdminPublicationsList from "./components/AdminPublicationsList";
 import AdminRejectModal from "./components/AdminRejectModal";
 import AdminBanModal from "./components/AdminBanModal";
 import AdminLoading from "./components/AdminLoading";
+import AdminProfile from "./components/AdminProfile";
 import PublicationModal from "../Superguia/PublicationModal";
 
 // Custom hook para manejo de datos
@@ -204,6 +206,12 @@ export default function AdminPanel() {
       icon: faUsers,
       show: isAdmin,
     },
+    {
+      id: "profile",
+      label: "Mi Perfil",
+      icon: faUserCircle,
+      show: true,
+    },
   ];
 
   return (
@@ -312,6 +320,9 @@ export default function AdminPanel() {
             onDeleteUser={handleDeleteUser}
           />
         )}
+
+        {/* Perfil del administrador/moderador */}
+        {activeTab === "profile" && <AdminProfile />}
       </main>
 
       {/* Modal de rechazo */}

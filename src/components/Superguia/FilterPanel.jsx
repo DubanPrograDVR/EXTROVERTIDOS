@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSearch,
@@ -57,44 +57,46 @@ export default function FilterPanel({
     selectedDate ||
     selectedPrice;
 
-  const priceOptions = [
-    { value: "gratis", label: "Gratis", icon: "🆓" },
-    { value: "economico", label: "Económico", icon: "💵" },
-    { value: "moderado", label: "Moderado", icon: "💵💵" },
-    { value: "premium", label: "Premium", icon: "💵💵💵" },
-  ];
+  const priceOptions = useMemo(
+    () => [
+      { value: "gratis", label: "Gratis", icon: "🆓" },
+      { value: "economico", label: "Económico", icon: "💵" },
+      { value: "moderado", label: "Moderado", icon: "💵💵" },
+      { value: "premium", label: "Premium", icon: "💵💵💵" },
+    ],
+    []
+  );
 
-  const toggleDropdown = (dropdown) => {
-    setActiveDropdown(activeDropdown === dropdown ? null : dropdown);
-  };
+  const toggleDropdown = useCallback((dropdown) => {
+    setActiveDropdown((prev) => (prev === dropdown ? null : dropdown));
+  }, []);
 
-  // Obtener label del filtro seleccionado
-  const getCategoryLabel = () => {
+  // Memoizar labels para evitar recálculos innecesarios
+  const categoryLabel = useMemo(() => {
     if (!selectedCategory) return "Categoría";
     const cat = categories.find((c) => c.id === selectedCategory);
     return cat?.nombre || "Categoría";
-  };
+  }, [selectedCategory, categories]);
 
-  const getLocationLabel = () => {
+  const locationLabel = useMemo(() => {
     if (selectedComuna) return selectedComuna;
     if (selectedCity) return locations[selectedCity]?.nombre || "Ubicación";
     return "Ubicación";
-  };
+  }, [selectedComuna, selectedCity, locations]);
 
-  const getPriceLabel = () => {
+  const priceLabel = useMemo(() => {
     if (!selectedPrice) return "Precio";
     const price = priceOptions.find((p) => p.value === selectedPrice);
     return price?.label || "Precio";
-  };
+  }, [selectedPrice, priceOptions]);
 
-  // Formatear fecha para mostrar en el botón
-  const getCalendarLabel = () => {
+  const calendarLabel = useMemo(() => {
     if (!selectedDate) return "Calendario";
     return selectedDate.toLocaleDateString("es-CL", {
       day: "numeric",
       month: "short",
     });
-  };
+  }, [selectedDate]);
 
   return (
     <div className="filter-panel" ref={panelRef}>
@@ -134,7 +136,7 @@ export default function FilterPanel({
               } ${selectedCategory ? "has-value" : ""}`}
               onClick={() => toggleDropdown("category")}>
               <FontAwesomeIcon icon={faLayerGroup} />
-              <span>{getCategoryLabel()}</span>
+              <span>{categoryLabel}</span>
               <FontAwesomeIcon icon={faChevronDown} className="chevron" />
             </button>
 
@@ -181,7 +183,7 @@ export default function FilterPanel({
               } ${selectedCity || selectedComuna ? "has-value" : ""}`}
               onClick={() => toggleDropdown("location")}>
               <FontAwesomeIcon icon={faMapMarkerAlt} />
-              <span>{getLocationLabel()}</span>
+              <span>{locationLabel}</span>
               <FontAwesomeIcon icon={faChevronDown} className="chevron" />
             </button>
 
@@ -254,7 +256,7 @@ export default function FilterPanel({
               } ${selectedPrice ? "has-value" : ""}`}
               onClick={() => toggleDropdown("price")}>
               <FontAwesomeIcon icon={faTag} />
-              <span>{getPriceLabel()}</span>
+              <span>{priceLabel}</span>
               <FontAwesomeIcon icon={faChevronDown} className="chevron" />
             </button>
 
@@ -299,7 +301,7 @@ export default function FilterPanel({
               } ${selectedDate ? "has-value" : ""}`}
               onClick={() => toggleDropdown("calendar")}>
               <FontAwesomeIcon icon={faCalendarAlt} />
-              <span>{getCalendarLabel()}</span>
+              <span>{calendarLabel}</span>
               <FontAwesomeIcon icon={faChevronDown} className="chevron" />
             </button>
 

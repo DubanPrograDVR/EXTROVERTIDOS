@@ -143,6 +143,8 @@ export default function Carousel({ publications, onPublicationClick }) {
                 }
                 alt={item.titulo}
                 className="carousel__image"
+                loading="lazy"
+                decoding="async"
                 onError={(e) => {
                   e.target.src = "/img/Home1.png";
                 }}

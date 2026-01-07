@@ -74,10 +74,26 @@ export default function Navbar() {
     setIsAuthModalOpen(false);
   };
 
+  // Estado para evitar múltiples clicks durante logout
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
   const handleSignOut = async () => {
-    await signOut();
+    if (isLoggingOut) return; // Evitar múltiples clicks
+
+    setIsLoggingOut(true);
     setIsUserDropdownOpen(false);
-    navigate("/");
+    setIsMenuOpen(false);
+
+    try {
+      await signOut();
+      navigate("/");
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+      // Navegar de todos modos ya que el estado local ya se limpió
+      navigate("/");
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   const goToProfile = () => {
@@ -136,12 +152,15 @@ export default function Navbar() {
                   />
                   <span className="navbar-mobile-user-name">{userName}</span>
                 </div>
-                <button
-                  onClick={goToProfile}
-                  className="navbar-mobile-auth-btn navbar-mobile-auth-btn--profile">
-                  <FontAwesomeIcon icon={faUser} />
-                  <span>Mi Perfil</span>
-                </button>
+                {/* Mi Perfil solo visible para usuarios regulares (no admin/moderador) */}
+                {!isModerator && (
+                  <button
+                    onClick={goToProfile}
+                    className="navbar-mobile-auth-btn navbar-mobile-auth-btn--profile">
+                    <FontAwesomeIcon icon={faUser} />
+                    <span>Mi Perfil</span>
+                  </button>
+                )}
                 {isModerator && (
                   <button
                     onClick={() => {
@@ -208,15 +227,18 @@ export default function Navbar() {
                       </span>
                     </div>
                     <div className="navbar-dropdown-divider"></div>
-                    <button
-                      onClick={goToProfile}
-                      className="navbar-dropdown-item">
-                      <FontAwesomeIcon
-                        icon={faUser}
-                        className="navbar-dropdown-icon"
-                      />
-                      <span>Mi Perfil</span>
-                    </button>
+                    {/* Mi Perfil solo visible para usuarios regulares (no admin/moderador) */}
+                    {!isModerator && (
+                      <button
+                        onClick={goToProfile}
+                        className="navbar-dropdown-item">
+                        <FontAwesomeIcon
+                          icon={faUser}
+                          className="navbar-dropdown-icon"
+                        />
+                        <span>Mi Perfil</span>
+                      </button>
+                    )}
                     {isModerator && (
                       <button
                         onClick={() => {

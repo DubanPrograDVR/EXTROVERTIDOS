@@ -1,4 +1,11 @@
-import { createContext, useContext, useEffect, useState, useRef } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+} from "react";
 import { supabase } from "../lib/supabase";
 import { ROLES, checkBanStatus } from "../lib/database";
 import Toast from "../components/UI/Toast";
@@ -28,14 +35,15 @@ export const AuthProvider = ({ children }) => {
   // Refs para evitar consultas duplicadas
   const roleCache = useRef({ userId: null, role: ROLES.USER });
   const isLoadingRole = useRef(false);
+  const isMountedRef = useRef(true);
 
-  const showToast = (message, type = "success") => {
+  const showToast = useCallback((message, type = "success") => {
     setToast({ message, type });
-  };
+  }, []);
 
-  const closeToast = () => {
+  const closeToast = useCallback(() => {
     setToast(null);
-  };
+  }, []);
 
   // Función para cargar el rol con cache y timeout
   const loadUserRole = async (userId, forceRefresh = false) => {
@@ -106,41 +114,54 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (initialized) return;
 
+    isMountedRef.current = true;
+
     const initialize = async () => {
       try {
         const {
           data: { session },
         } = await supabase.auth.getSession();
 
+        if (!isMountedRef.current) return;
+
         if (session?.user) {
           // Verificar si el usuario está baneado al inicializar
           const banStatus = await checkBanStatus(session.user.id);
 
+          if (!isMountedRef.current) return;
+
           if (banStatus.isBanned) {
-            console.log(
-              "Usuario baneado detectado en init, cerrando sesión..."
-            );
             setBanInfo(banStatus);
             setShowBanCard(true);
             await supabase.auth.signOut();
-            setLoading(false);
-            setInitialized(true);
+            if (isMountedRef.current) {
+              setLoading(false);
+              setInitialized(true);
+            }
             return;
           }
 
           setUser(session.user);
           const role = await loadUserRole(session.user.id);
-          setUserRole(role);
+          if (isMountedRef.current) {
+            setUserRole(role);
+          }
         }
       } catch (error) {
         console.error("Error inicializando auth:", error);
       } finally {
-        setLoading(false);
-        setInitialized(true);
+        if (isMountedRef.current) {
+          setLoading(false);
+          setInitialized(true);
+        }
       }
     };
 
     initialize();
+
+    return () => {
+      isMountedRef.current = false;
+    };
   }, [initialized]);
 
   // Listener de cambios de auth
@@ -185,10 +206,14 @@ export const AuthProvider = ({ children }) => {
           break;
 
         case "SIGNED_OUT":
-          setUser(null);
-          setUserRole(ROLES.USER);
-          roleCache.current = { userId: null, role: ROLES.USER };
-          showToast("Has cerrado sesión correctamente", "success");
+          // Solo limpiar si no se hizo ya (el estado local puede estar ya limpio)
+          // Esto evita doble limpieza y toast duplicado
+          if (user !== null) {
+            setUser(null);
+            setUserRole(ROLES.USER);
+            roleCache.current = { userId: null, role: ROLES.USER };
+            showToast("Has cerrado sesión correctamente", "success");
+          }
           break;
 
         case "TOKEN_REFRESHED":
@@ -234,9 +259,48 @@ export const AuthProvider = ({ children }) => {
   };
 
   const signOut = async () => {
+    // Limpiar estado local PRIMERO para evitar UI bloqueada
+    // Esto asegura que la UI responda inmediatamente
+    const previousUser = user;
+    const previousRole = userRole;
+
+    // Limpiar cache y estados inmediatamente
     roleCache.current = { userId: null, role: ROLES.USER };
-    const { error } = await supabase.auth.signOut();
-    return { error };
+    isLoadingRole.current = false; // Cancelar cualquier carga de rol en progreso
+    setUser(null);
+    setUserRole(ROLES.USER);
+
+    try {
+      // Crear promesa con timeout de 5 segundos
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Timeout al cerrar sesión")), 5000);
+      });
+
+      const signOutPromise = supabase.auth.signOut();
+
+      // Race entre signOut y timeout
+      const { error } = await Promise.race([signOutPromise, timeoutPromise]);
+
+      if (error) {
+        console.error("Error en signOut:", error);
+        // Mostrar toast de éxito de todos modos porque ya limpiamos el estado local
+        showToast("Sesión cerrada localmente", "success");
+        return { error };
+      }
+
+      return { error: null };
+    } catch (error) {
+      // Si hay timeout o error de red, la sesión ya está cerrada localmente
+      console.error("Error/Timeout en signOut:", error);
+      showToast("Sesión cerrada", "success");
+
+      // Intentar limpiar la sesión de Supabase en segundo plano sin bloquear
+      supabase.auth.signOut().catch(() => {
+        // Ignorar errores silenciosamente en el retry
+      });
+
+      return { error };
+    }
   };
 
   const signInWithGoogle = async () => {

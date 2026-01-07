@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getPendingEvents,
   getAllUsers,
@@ -32,8 +32,11 @@ export const useAdminData = (user, isAdmin, isModerator) => {
   const [actionLoading, setActionLoading] = useState(null);
   const [error, setError] = useState(null);
 
-  // Cargar datos iniciales
-  const loadData = async () => {
+  // Ref para controlar componente montado
+  const isMountedRef = useRef(true);
+
+  // Cargar datos iniciales con useCallback para evitar race conditions
+  const loadData = useCallback(async () => {
     if (!user || !isModerator) {
       if (!user) {
         console.error(
@@ -101,6 +104,9 @@ export const useAdminData = (user, isAdmin, isModerator) => {
       // Ejecutar todas en paralelo
       const results = await Promise.all(basePromises);
 
+      // Verificar si el componente sigue montado
+      if (!isMountedRef.current) return;
+
       // Extraer resultados
       const [
         eventsData,
@@ -124,19 +130,29 @@ export const useAdminData = (user, isAdmin, isModerator) => {
         setAllEvents(allEventsData || []);
       }
     } catch (err) {
-      console.error("Error cargando datos:", err);
-      setError(err.message);
+      if (isMountedRef.current) {
+        console.error("Error cargando datos:", err);
+        setError(err.message);
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
-  };
+  }, [user, isAdmin, isModerator]);
 
   // Cargar datos cuando cambie el usuario o permisos
   useEffect(() => {
+    isMountedRef.current = true;
+
     if (user && isModerator) {
       loadData();
     }
-  }, [user, isModerator]);
+
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [user, isModerator, loadData]);
 
   // Aprobar evento
   const handleApproveEvent = async (eventId) => {

@@ -169,6 +169,8 @@ export async function removeFavorite(userId, eventId) {
 
 /**
  * Toggle favorito (agregar si no existe, eliminar si existe)
+ * Optimizado: Intenta insertar primero, si falla por duplicado entonces elimina
+ * Reduce de 2-3 queries a 1-2 queries
  * @param {string} userId - ID del usuario
  * @param {number} eventId - ID del evento
  * @returns {Promise<{isFavorite: boolean}>} Nuevo estado del favorito
@@ -178,15 +180,38 @@ export async function toggleFavorite(userId, eventId) {
     throw new Error("Se requiere userId y eventId");
   }
 
-  const exists = await isFavorite(userId, eventId);
+  // Intentar insertar primero (caso más común en UX: agregar favorito)
+  const { data, error } = await supabase
+    .from("user_favorites")
+    .insert({
+      user_id: userId,
+      event_id: eventId,
+    })
+    .select()
+    .single();
 
-  if (exists) {
-    await removeFavorite(userId, eventId);
-    return { isFavorite: false };
-  } else {
-    await addFavorite(userId, eventId);
+  // Si se insertó correctamente, es nuevo favorito
+  if (!error && data) {
     return { isFavorite: true };
   }
+
+  // Si el error es de constraint único (23505), ya existe, entonces eliminar
+  if (error?.code === "23505") {
+    await supabase
+      .from("user_favorites")
+      .delete()
+      .eq("user_id", userId)
+      .eq("event_id", eventId);
+    return { isFavorite: false };
+  }
+
+  // Otro tipo de error
+  if (error) {
+    console.error("Error en toggleFavorite:", error);
+    throw error;
+  }
+
+  return { isFavorite: false };
 }
 
 /**

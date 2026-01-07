@@ -6,12 +6,37 @@
 import { supabase } from "../supabase";
 
 /**
+ * Valida los campos requeridos de un evento
+ * @param {Object} eventData - Datos del evento a validar
+ * @throws {Error} Si faltan campos requeridos
+ */
+const validateEventData = (eventData) => {
+  const requiredFields = ["titulo", "user_id", "category_id"];
+  const missingFields = requiredFields.filter((field) => !eventData[field]);
+
+  if (missingFields.length > 0) {
+    throw new Error(`Campos requeridos faltantes: ${missingFields.join(", ")}`);
+  }
+
+  if (eventData.titulo && eventData.titulo.length > 200) {
+    throw new Error("El título no puede exceder 200 caracteres");
+  }
+
+  if (eventData.descripcion && eventData.descripcion.length > 5000) {
+    throw new Error("La descripción no puede exceder 5000 caracteres");
+  }
+};
+
+/**
  * Crea un nuevo evento
  * También crea una notificación de "en revisión"
  * @param {Object} eventData - Datos del evento
  * @returns {Promise<Object>} Evento creado
  */
 export const createEvent = async (eventData) => {
+  // Validar datos antes de insertar
+  validateEventData(eventData);
+
   const { data, error } = await supabase
     .from("events")
     .insert([eventData])
