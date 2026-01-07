@@ -16,6 +16,7 @@ const PublicarNegocio = lazy(() =>
 const PanoramasPage = lazy(() => import("./components/Home/PanoramasPage"));
 const Perfil = lazy(() => import("./components/Perfil/Perfil"));
 const AdminPanel = lazy(() => import("./components/Admin/AdminPanel"));
+const FAQ = lazy(() => import("./components/FAQ/FAQ"));
 
 // Componente de loading para Suspense
 const PageLoader = () => (
@@ -42,6 +43,7 @@ function App() {
                 <Route path="/panoramas" element={<PanoramasPage />} />
                 <Route path="/publicar-panorama" element={<Publicar />} />
                 <Route path="/publicar-negocio" element={<PublicarNegocio />} />
+                <Route path="/faq" element={<FAQ />} />
 
                 {/* Rutas que requieren autenticación */}
                 <Route
