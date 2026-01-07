@@ -134,9 +134,32 @@
   margin: 0;
 }
 
+/* Estilo especial para fechas multi-día */
+.publication-card__date--multiday {
+  color: #ff6600;
+  font-weight: 600;
+  background: rgba(255, 102, 0, 0.1);
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 102, 0, 0.3);
+}
+
 .publication-card__date svg {
   color: #ff6600;
   font-size: 0.75rem;
+}
+
+/* Badge de duración */
+.publication-card__duration {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  background: linear-gradient(135deg, #ff6600, #ff8533);
+  color: #000;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 10px;
+  width: fit-content;
 }
 
 .publication-card__time {

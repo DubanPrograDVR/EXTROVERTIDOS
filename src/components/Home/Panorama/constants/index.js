@@ -14,15 +14,23 @@ export const INITIAL_FORM_STATE = {
   descripcion: "",
   organizador: "",
   category_id: "",
+  // Campos de fecha
   fecha_evento: "",
+  fecha_fin: "", // Nueva: fecha de finalización para eventos multi-día
+  es_multidia: false, // Nueva: indica si el evento dura más de un día
+  // Horarios
   hora_inicio: "",
   hora_fin: "",
+  mismo_horario: true, // Nueva: si el horario es igual todos los días
+  // Ubicación
   provincia: "",
   comuna: "",
   direccion: "",
+  // Entrada
   tipo_entrada: "gratuito",
   precio: "",
   url_venta: "",
+  // Redes sociales
   redes_sociales: {
     instagram: "",
     facebook: "",

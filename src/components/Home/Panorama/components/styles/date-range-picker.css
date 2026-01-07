@@ -1,0 +1,321 @@
+/* ===== DATE RANGE PICKER ===== */
+
+.date-range-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Fila principal */
+.date-range-picker__main-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+/* Grupo de fecha */
+.date-range-picker__date-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.date-range-picker__date-group--end {
+  margin-top: 15px;
+}
+
+/* ===== CHECKBOX ESTILIZADO ===== */
+.date-range-picker__checkbox-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 28px; /* Alinear con el input de fecha */
+}
+
+.date-range-picker__checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.date-range-picker__checkbox-label--small {
+  padding-top: 0;
+}
+
+.date-range-picker__checkbox-label--small .date-range-picker__checkbox-text {
+  font-size: 0.9rem;
+}
+
+/* Ocultar checkbox nativo */
+.date-range-picker__checkbox {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+/* Checkbox personalizado */
+.date-range-picker__checkbox-custom {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  background: #1a1a1a;
+  border: 2px solid rgba(255, 102, 0, 0.4);
+  border-radius: 6px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.date-range-picker__checkbox-custom::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 6px;
+  height: 12px;
+  border: solid #000;
+  border-width: 0 2.5px 2.5px 0;
+  transform: rotate(45deg) scale(0);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Estado checked */
+.date-range-picker__checkbox:checked + .date-range-picker__checkbox-custom {
+  background: #ff6600;
+  border-color: #ff6600;
+  box-shadow: 0 0 12px rgba(255, 102, 0, 0.4);
+}
+
+.date-range-picker__checkbox:checked
+  + .date-range-picker__checkbox-custom::after {
+  transform: rotate(45deg) scale(1);
+}
+
+/* Hover */
+.date-range-picker__checkbox-label:hover .date-range-picker__checkbox-custom {
+  border-color: #ff6600;
+}
+
+/* Focus */
+.date-range-picker__checkbox:focus + .date-range-picker__checkbox-custom {
+  box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.2);
+}
+
+/* Texto del checkbox */
+.date-range-picker__checkbox-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.date-range-picker__checkbox-text svg {
+  color: #ff6600;
+  font-size: 1rem;
+}
+
+/* Hint debajo del checkbox */
+.date-range-picker__checkbox-hint {
+  margin: 0;
+  padding-left: 34px;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ===== PANEL EXPANDIBLE ===== */
+.date-range-picker__expanded {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    margin 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+  opacity: 0;
+  margin-top: 0;
+}
+
+.date-range-picker__expanded.open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin-top: 20px;
+}
+
+.date-range-picker__expanded-content {
+  overflow: hidden;
+  background: rgba(255, 102, 0, 0.05);
+  border: 1px solid rgba(255, 102, 0, 0.2);
+  border-radius: 12px;
+  padding: 0;
+  transition: padding 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.date-range-picker__expanded.open .date-range-picker__expanded-content {
+  padding: 20px;
+}
+
+/* ===== INDICADOR DE RANGO ===== */
+.date-range-picker__range-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.date-range-picker__range-line {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex: 1;
+}
+
+.date-range-picker__range-start,
+.date-range-picker__range-end {
+  padding: 8px 14px;
+  background: #1a1a1a;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  min-width: 100px;
+  text-align: center;
+}
+
+.date-range-picker__range-start {
+  border-color: #ff6600;
+}
+
+.date-range-picker__range-end {
+  border-color: #ff8533;
+}
+
+.date-range-picker__range-arrow {
+  color: #ff6600;
+  font-size: 1rem;
+  animation: pulse-arrow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-arrow {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: translateX(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(3px);
+  }
+}
+
+/* Badge de duración */
+.date-range-picker__duration-badge {
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #ff6600, #ff8533);
+  color: #000;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+/* ===== OPCIÓN DE HORARIO ===== */
+.date-range-picker__schedule-option {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ===== INFO ===== */
+.date-range-picker__info {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 15px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border-left: 3px solid #ff6600;
+}
+
+.date-range-picker__info svg {
+  color: #ff6600;
+  font-size: 0.9rem;
+  margin-top: 2px;
+}
+
+.date-range-picker__info p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+}
+
+.date-range-picker__info-note {
+  color: #ff6600;
+  font-weight: 500;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .date-range-picker__main-row {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .date-range-picker__checkbox-wrapper {
+    padding-top: 0;
+  }
+
+  .date-range-picker__range-indicator {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .date-range-picker__range-line {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .date-range-picker__range-start,
+  .date-range-picker__range-end {
+    flex: 1;
+    min-width: auto;
+  }
+
+  .date-range-picker__duration-badge {
+    align-self: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .date-range-picker__checkbox-text {
+    font-size: 0.85rem;
+  }
+
+  .date-range-picker__checkbox-hint {
+    font-size: 0.75rem;
+    padding-left: 34px;
+  }
+
+  .date-range-picker__expanded.open .date-range-picker__expanded-content {
+    padding: 15px;
+  }
+
+  .date-range-picker__range-indicator {
+    padding: 12px;
+  }
+
+  .date-range-picker__range-start,
+  .date-range-picker__range-end {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+}

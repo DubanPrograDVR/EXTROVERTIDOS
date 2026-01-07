@@ -6,6 +6,7 @@ import {
   faUser,
   faClock,
   faTicketAlt,
+  faCalendarWeek,
   faHeart as faHeartSolid,
 } from "@fortawesome/free-solid-svg-icons";
 import { faHeart as faHeartRegular } from "@fortawesome/free-regular-svg-icons";
@@ -29,6 +30,8 @@ export default function PublicationCard({
     provincia,
     categories,
     fecha_evento,
+    fecha_fin,
+    es_multidia,
     hora_inicio,
     hora_fin,
     tipo_entrada,
@@ -58,14 +61,44 @@ export default function PublicationCard({
     setImageError(true);
   };
 
-  // Formatear fecha
-  const formattedDate = fecha_evento
-    ? new Date(fecha_evento).toLocaleDateString("es-CL", {
+  // Determinar si es evento multi-día
+  const isMultiDay = es_multidia || (fecha_fin && fecha_fin !== fecha_evento);
+
+  // Calcular duración en días
+  const calcularDuracion = () => {
+    if (!fecha_evento || !fecha_fin) return null;
+    const inicio = new Date(fecha_evento);
+    const fin = new Date(fecha_fin);
+    const diffTime = Math.abs(fin - inicio);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return diffDays;
+  };
+
+  const duracionDias = isMultiDay ? calcularDuracion() : null;
+
+  // Formatear fecha (con soporte para rango)
+  const getFormattedDate = () => {
+    if (!fecha_evento) return null;
+
+    const formatShort = (fecha) => {
+      return new Date(fecha + "T00:00:00").toLocaleDateString("es-CL", {
         day: "numeric",
         month: "short",
-        year: "numeric",
-      })
-    : null;
+      });
+    };
+
+    if (isMultiDay && fecha_fin) {
+      return `${formatShort(fecha_evento)} - ${formatShort(fecha_fin)}`;
+    }
+
+    return new Date(fecha_evento + "T00:00:00").toLocaleDateString("es-CL", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const formattedDate = getFormattedDate();
 
   // Formatear hora (de "HH:MM:SS" a "HH:MM")
   const formatTime = (timeString) => {
@@ -180,7 +213,19 @@ export default function PublicationCard({
         {/* Fecha y hora */}
         <div className="publication-card__datetime">
           {formattedDate && (
-            <span className="publication-card__date">{formattedDate}</span>
+            <span
+              className={`publication-card__date ${
+                isMultiDay ? "publication-card__date--multiday" : ""
+              }`}>
+              {isMultiDay && <FontAwesomeIcon icon={faCalendarWeek} />}
+              {formattedDate}
+            </span>
+          )}
+          {/* Badge de duración para eventos multi-día */}
+          {isMultiDay && duracionDias && (
+            <span className="publication-card__duration">
+              {duracionDias} días
+            </span>
           )}
           {horarioShort && (
             <span className="publication-card__time">

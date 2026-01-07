@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faTimes,
   faCalendarDays,
+  faCalendarWeek,
   faClock,
   faTicket,
   faLocationDot,
@@ -46,6 +47,8 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
     categories,
     descripcion,
     fecha_evento,
+    fecha_fin,
+    es_multidia,
     hora_inicio,
     hora_fin,
     tipo_entrada,
@@ -70,15 +73,49 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
       ? imagenes[0]
       : "/img/Home1.png";
 
+  // Determinar si es evento multi-día
+  const isMultiDay = es_multidia || (fecha_fin && fecha_fin !== fecha_evento);
+
+  // Calcular duración en días
+  const calcularDuracion = () => {
+    if (!fecha_evento || !fecha_fin) return null;
+    const inicio = new Date(fecha_evento);
+    const fin = new Date(fecha_fin);
+    const diffTime = Math.abs(fin - inicio);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return diffDays;
+  };
+
+  const duracionDias = isMultiDay ? calcularDuracion() : null;
+
   // Formatear fecha
-  const formattedDate = fecha_evento
-    ? new Date(fecha_evento).toLocaleDateString("es-CL", {
-        weekday: "long",
+  const formatearFecha = (fecha, formato = "largo") => {
+    if (!fecha) return null;
+    const date = new Date(fecha + "T00:00:00");
+    if (formato === "corto") {
+      return date.toLocaleDateString("es-CL", {
         day: "numeric",
-        month: "long",
-        year: "numeric",
-      })
-    : null;
+        month: "short",
+      });
+    }
+    return date.toLocaleDateString("es-CL", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  // Obtener display de fecha (simple o rango)
+  const getFechaDisplay = () => {
+    if (isMultiDay && fecha_fin) {
+      const inicioCorto = formatearFecha(fecha_evento, "corto");
+      const finCorto = formatearFecha(fecha_fin, "corto");
+      const anio = new Date(fecha_evento + "T00:00:00").getFullYear();
+      return `${inicioCorto} al ${finCorto}, ${anio}`;
+    }
+    return formatearFecha(fecha_evento);
+  };
 
   // Formatear hora (de "HH:MM:SS" a "HH:MM")
   const formatTime = (timeString) => {
@@ -95,7 +132,7 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
   const getHorarioDisplay = () => {
     const inicio = formatTime(hora_inicio);
     const fin = formatTime(hora_fin);
-    
+
     if (inicio && fin) {
       return `${inicio} - ${fin} hrs`;
     } else if (inicio) {
@@ -191,9 +228,21 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
               <h4 className="publication-modal__details-title">INFORMACIÓN</h4>
 
               <div className="publication-modal__detail-item">
-                <FontAwesomeIcon icon={faCalendarDays} />
-                <span>Fecha: {formattedDate || "Por confirmar"}</span>
+                <FontAwesomeIcon
+                  icon={isMultiDay ? faCalendarWeek : faCalendarDays}
+                />
+                <span>
+                  {isMultiDay ? "Fechas: " : "Fecha: "}
+                  {getFechaDisplay() || "Por confirmar"}
+                </span>
               </div>
+
+              {/* Badge de duración para eventos multi-día */}
+              {isMultiDay && duracionDias && (
+                <div className="publication-modal__duration-badge">
+                  <span>🎉 Evento de {duracionDias} días</span>
+                </div>
+              )}
 
               <div className="publication-modal__detail-item">
                 <FontAwesomeIcon icon={faClock} />

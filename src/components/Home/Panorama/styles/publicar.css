@@ -136,6 +136,17 @@
   margin-right: 8px;
 }
 
+.publicar-form__label-hint {
+  font-weight: 400;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Full width group */
+.publicar-form__group--full {
+  grid-column: 1 / -1;
+}
+
 /* Tipo de publicación */
 .publicar-form__tipo-options {
   display: flex;

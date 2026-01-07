@@ -76,12 +76,19 @@ const usePublicarForm = () => {
         }
 
         // Mapear datos del evento al formulario
+        // Determinar si es multi-día basado en si tiene fecha_fin diferente a fecha_evento
+        const esMultidia =
+          event.fecha_fin && event.fecha_fin !== event.fecha_evento;
+
         setFormData({
           titulo: event.titulo || "",
           descripcion: event.descripcion || "",
           organizador: event.organizador || "",
           category_id: event.category_id || "",
           fecha_evento: event.fecha_evento || "",
+          fecha_fin: event.fecha_fin || "",
+          es_multidia: esMultidia,
+          mismo_horario: event.mismo_horario !== false, // Por defecto true
           hora_inicio: event.hora_inicio || "",
           hora_fin: event.hora_fin || "",
           provincia: event.provincia || "",
@@ -139,7 +146,16 @@ const usePublicarForm = () => {
 
   // Manejar cambios en inputs
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
+
+    // Manejar checkboxes (para es_multidia y mismo_horario)
+    if (type === "checkbox") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value, // El valor ya viene como boolean desde DateRangePicker
+      }));
+      return;
+    }
 
     // Manejar campos anidados (redes_sociales)
     if (name.startsWith("redes_")) {
@@ -156,6 +172,18 @@ const usePublicarForm = () => {
         ...prev,
         [name]: value,
       }));
+
+      // Si se cambia la fecha_evento y hay fecha_fin, validar que fecha_fin sea posterior
+      if (name === "fecha_evento" && formData.fecha_fin) {
+        if (new Date(value) > new Date(formData.fecha_fin)) {
+          // Si la nueva fecha inicio es posterior a fecha fin, limpiar fecha fin
+          setFormData((prev) => ({
+            ...prev,
+            [name]: value,
+            fecha_fin: "",
+          }));
+        }
+      }
     }
 
     // Limpiar error del campo
@@ -236,8 +264,22 @@ const usePublicarForm = () => {
       newErrors.category_id = "Selecciona una categoría";
     }
     if (!formData.fecha_evento) {
-      newErrors.fecha_evento = "La fecha es obligatoria";
+      newErrors.fecha_evento = "La fecha de inicio es obligatoria";
     }
+
+    // Validaciones para eventos multi-día
+    if (formData.es_multidia) {
+      if (!formData.fecha_fin) {
+        newErrors.fecha_fin =
+          "La fecha de fin es obligatoria para eventos multi-día";
+      } else if (
+        new Date(formData.fecha_fin) < new Date(formData.fecha_evento)
+      ) {
+        newErrors.fecha_fin =
+          "La fecha de fin debe ser posterior a la fecha de inicio";
+      }
+    }
+
     if (!formData.provincia) {
       newErrors.provincia = "Selecciona una provincia";
     }
@@ -310,6 +352,12 @@ const usePublicarForm = () => {
           "Organizador",
         category_id: parseInt(formData.category_id),
         fecha_evento: formData.fecha_evento,
+        // Si es multi-día, incluir fecha_fin; si no, fecha_fin es igual a fecha_evento
+        fecha_fin: formData.es_multidia
+          ? formData.fecha_fin
+          : formData.fecha_evento,
+        es_multidia: formData.es_multidia,
+        mismo_horario: formData.mismo_horario,
         hora_inicio: formData.hora_inicio || null,
         hora_fin: formData.hora_fin || null,
         provincia: formData.provincia,

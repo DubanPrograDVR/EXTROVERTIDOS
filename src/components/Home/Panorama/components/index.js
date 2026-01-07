@@ -5,3 +5,4 @@ export { default as PublicarForm } from "./PublicarForm";
 export { default as PublicarAuthModal } from "./PublicarAuthModal";
 export { default as SocialInputs } from "./SocialInputs";
 export { default as ImageUpload } from "./ImageUpload";
+export { default as DateRangePicker } from "./DateRangePicker";

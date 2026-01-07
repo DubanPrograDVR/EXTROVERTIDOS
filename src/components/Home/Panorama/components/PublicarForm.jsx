@@ -12,6 +12,7 @@ import {
 import { TIPOS_ENTRADA, PROVINCIAS } from "../constants";
 import SocialInputs from "./SocialInputs";
 import ImageUpload from "./ImageUpload";
+import DateRangePicker from "./DateRangePicker";
 
 /**
  * Formulario principal de publicación de eventos
@@ -129,32 +130,30 @@ const PublicarForm = ({
         </div>
 
         {/* Fecha y Horas */}
-        <div className="publicar-form__row publicar-form__row--three">
-          <div className="publicar-form__group">
-            <label className="publicar-form__label" htmlFor="fecha_evento">
-              <FontAwesomeIcon icon={faCalendarDays} /> Fecha *
-            </label>
-            <input
-              type="date"
-              id="fecha_evento"
-              name="fecha_evento"
-              className={`publicar-form__input ${
-                errors.fecha_evento ? "error" : ""
-              }`}
-              value={formData.fecha_evento}
-              onChange={onChange}
-              min={new Date().toISOString().split("T")[0]}
-            />
-            {errors.fecha_evento && (
-              <span className="publicar-form__error">
-                {errors.fecha_evento}
-              </span>
-            )}
-          </div>
+        <div className="publicar-form__group publicar-form__group--full">
+          <DateRangePicker
+            fechaEvento={formData.fecha_evento}
+            fechaFin={formData.fecha_fin}
+            esMultidia={formData.es_multidia}
+            mismoHorario={formData.mismo_horario}
+            horaInicio={formData.hora_inicio}
+            horaFin={formData.hora_fin}
+            onChange={onChange}
+            errors={errors}
+          />
+        </div>
 
+        {/* Horarios */}
+        <div className="publicar-form__row">
           <div className="publicar-form__group">
             <label className="publicar-form__label" htmlFor="hora_inicio">
               <FontAwesomeIcon icon={faClock} /> Hora Inicio
+              {formData.es_multidia && formData.mismo_horario && (
+                <span className="publicar-form__label-hint">
+                  {" "}
+                  (todos los días)
+                </span>
+              )}
             </label>
             <input
               type="time"
