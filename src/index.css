@@ -4,6 +4,7 @@
 
 /* Importar sistema de diseño centralizado */
 @import "./styles/design-system.css";
+@import "./styles/page-loader.css";
 
 /* Los estilos específicos de cada componente
    se importan en sus respectivos archivos JSX */
