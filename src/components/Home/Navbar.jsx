@@ -22,8 +22,8 @@ import { useAuth } from "../../context/AuthContext";
 const NAV_LINKS = [
   { href: "/panoramas", label: "Panoramas" },
   { href: "/superguia", label: "Superguía Extrovertidos" },
-  { href: "/publicar-panorama", label: "Publicar Panorama" },
-  { href: "/publicar-negocio", label: "Publicar Negocio" },
+  { href: "/publicar-panorama", label: "Publicar Panorama", userOnly: true },
+  { href: "/publicar-negocio", label: "Publicar Negocio", userOnly: true },
 ];
 
 export default function Navbar() {
@@ -129,15 +129,17 @@ export default function Navbar() {
         )}
 
         <nav className={`navbar-menu ${isMenuOpen ? "active" : ""}`}>
-          {NAV_LINKS.map((link, index) => (
-            <a
-              key={index}
-              href={link.href}
-              className="nav-link"
-              onClick={handleLinkClick}>
-              {link.label}
-            </a>
-          ))}
+          {NAV_LINKS.filter((link) => !link.userOnly || !isModerator).map(
+            (link, index) => (
+              <a
+                key={index}
+                href={link.href}
+                className="nav-link"
+                onClick={handleLinkClick}>
+                {link.label}
+              </a>
+            )
+          )}
 
           {/* Botones de autenticación en menú móvil */}
           <div className="navbar-mobile-auth">

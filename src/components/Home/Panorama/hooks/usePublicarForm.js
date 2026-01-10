@@ -392,8 +392,8 @@ const usePublicarForm = () => {
       resetForm();
       setExistingImages([]);
 
-      // Redirigir
-      navigate(isEditing && isAdmin ? "/admin" : "/perfil");
+      // Redirigir: admin siempre vuelve al panel, usuarios normales al perfil
+      navigate(isAdmin ? "/admin" : "/perfil");
     } catch (error) {
       console.error(
         `Error al ${isEditing ? "actualizar" : "crear"} evento:`,

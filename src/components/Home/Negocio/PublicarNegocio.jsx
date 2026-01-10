@@ -44,7 +44,8 @@ const DIAS_SEMANA = [
 ];
 
 const PublicarNegocio = () => {
-  const { user, isAuthenticated, signInWithGoogle, showToast } = useAuth();
+  const { user, isAuthenticated, isAdmin, signInWithGoogle, showToast } =
+    useAuth();
   const navigate = useNavigate();
 
   // Estados
@@ -315,8 +316,8 @@ const PublicarNegocio = () => {
       });
       setPreviewImages([]);
 
-      // Redirigir al perfil
-      navigate("/perfil");
+      // Redirigir: admin siempre vuelve al panel, usuarios normales al perfil
+      navigate(isAdmin ? "/admin" : "/perfil");
     } catch (error) {
       console.error("Error al crear negocio:", error);
       if (showToast) showToast("Error al crear el negocio", "error");

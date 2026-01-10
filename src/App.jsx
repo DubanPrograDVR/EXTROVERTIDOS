@@ -4,6 +4,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { CityProvider } from "./context/CityContext";
 import ErrorBoundary from "./components/ErrorBoundary";
 import ProtectedRoute from "./components/Auth/ProtectedRoute";
+import UserOnlyRoute from "./components/Auth/UserOnlyRoute";
 import Navbar from "./components/Home/Navbar";
 import Home from "./components/Home/Home";
 import { SuperguiaContainer } from "./components/Superguia";
@@ -41,16 +42,32 @@ function App() {
 
                 {/* Rutas públicas menos frecuentes (lazy loaded) */}
                 <Route path="/panoramas" element={<PanoramasPage />} />
-                <Route path="/publicar-panorama" element={<Publicar />} />
-                <Route path="/publicar-negocio" element={<PublicarNegocio />} />
+                <Route
+                  path="/publicar-panorama"
+                  element={
+                    <UserOnlyRoute>
+                      <Publicar />
+                    </UserOnlyRoute>
+                  }
+                />
+                <Route
+                  path="/publicar-negocio"
+                  element={
+                    <UserOnlyRoute>
+                      <PublicarNegocio />
+                    </UserOnlyRoute>
+                  }
+                />
                 <Route path="/faq" element={<FAQ />} />
 
-                {/* Rutas que requieren autenticación */}
+                {/* Rutas que requieren autenticación - solo usuarios regulares */}
                 <Route
                   path="/perfil"
                   element={
                     <ProtectedRoute>
-                      <Perfil />
+                      <UserOnlyRoute>
+                        <Perfil />
+                      </UserOnlyRoute>
                     </ProtectedRoute>
                   }
                 />
