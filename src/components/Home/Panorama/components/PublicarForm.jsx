@@ -9,12 +9,14 @@ import {
   faTicket,
   faLink,
   faSpinner,
+  faMapMarkerAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import { PROVINCIAS } from "../constants";
 import SocialInputs from "./SocialInputs";
 import ImageUpload from "./ImageUpload";
 import DateRangePicker from "./DateRangePicker";
 import TicketModal from "./TicketModal";
+import LocationPicker from "./LocationPicker";
 
 /**
  * Formulario principal de publicación de eventos
@@ -34,6 +36,7 @@ const PublicarForm = ({
   onRemoveImage,
 }) => {
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
+  const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
 
   // Helper para mostrar el texto del tipo de entrada seleccionado
   const getTicketDisplayText = () => {
@@ -48,7 +51,7 @@ const PublicarForm = ({
     return tipos[formData.tipo_entrada] || "Configurar entradas";
   };
 
-  // Handler para guardar desde el modal
+  // Handler para guardar desde el modal de tickets
   const handleTicketSave = (ticketData) => {
     // Simular eventos de cambio para actualizar formData
     onChange({
@@ -56,6 +59,11 @@ const PublicarForm = ({
     });
     onChange({ target: { name: "precio", value: ticketData.precio } });
     onChange({ target: { name: "url_venta", value: ticketData.url_venta } });
+  };
+
+  // Handler para guardar la ubicación del mapa
+  const handleLocationSave = (locationUrl) => {
+    onChange({ target: { name: "ubicacion_url", value: locationUrl } });
   };
 
   return (
@@ -273,6 +281,46 @@ const PublicarForm = ({
           )}
         </div>
 
+        {/* Ubicación en Mapa - Opcional */}
+        <div className="publicar-form__group publicar-form__group--location">
+          <label className="publicar-form__label">
+            <span className="publicar-form__label-hint">(Opcional)</span>
+            <FontAwesomeIcon icon={faMapMarkerAlt} /> Ubicación
+          </label>
+
+          {formData.ubicacion_url && (
+            <input
+              type="text"
+              id="ubicacion_url"
+              name="ubicacion_url"
+              className="publicar-form__input publicar-form__input--location"
+              value={formData.ubicacion_url}
+              onChange={onChange}
+              placeholder="https://www.google.com/maps?q=..."
+              readOnly
+            />
+          )}
+
+          <div className="publicar-form__location-wrapper">
+            <div className="publicar-form__location-icon">
+              <svg viewBox="0 0 64 80" fill="currentColor">
+                <path d="M32 8c-11 0-20 9-20 20 0 15 20 36 20 36s20-21 20-36c0-11-9-20-20-20zm0 27c-3.9 0-7-3.1-7-7s3.1-7 7-7 7 3.1 7 7-3.1 7-7 7z" />
+                <circle cx="32" cy="60" r="3" />
+              </svg>
+            </div>
+            <button
+              type="button"
+              className="publicar-form__location-btn"
+              onClick={() => setIsLocationPickerOpen(true)}>
+              <FontAwesomeIcon icon={faMapMarkerAlt} />
+              {formData.ubicacion_url ? "Cambiar ubicación" : "Elegir en mapa"}
+            </button>
+            <p className="publicar-form__location-hint">
+              Selecciona la ubicación en el mapa para generar el enlace directo.
+            </p>
+          </div>
+        </div>
+
         {/* Opciones de Entrada - Botón que abre modal */}
         <div className="publicar-form__group">
           <label className="publicar-form__label">
@@ -332,6 +380,14 @@ const PublicarForm = ({
           url_venta: formData.url_venta,
         }}
         onSave={handleTicketSave}
+      />
+
+      {/* Modal de selección de ubicación */}
+      <LocationPicker
+        isOpen={isLocationPickerOpen}
+        onClose={() => setIsLocationPickerOpen(false)}
+        currentLocation={formData.ubicacion_url}
+        onSave={handleLocationSave}
       />
     </section>
   );

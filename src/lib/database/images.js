@@ -4,23 +4,70 @@
  */
 
 import { supabase } from "../supabase";
+import imageCompression from "browser-image-compression";
+
+/**
+ * Opciones de compresión de imágenes
+ */
+const COMPRESSION_OPTIONS = {
+  maxSizeMB: 1, // Máximo 1MB después de comprimir
+  maxWidthOrHeight: 1920, // Máximo 1920px de ancho o alto
+  useWebWorker: true, // Usar Web Worker para no bloquear UI
+  fileType: "image/webp", // Convertir a WebP para mejor compresión
+  initialQuality: 0.8, // Calidad inicial 80%
+};
+
+/**
+ * Comprime una imagen antes de subirla
+ * @param {File} file - Archivo de imagen original
+ * @returns {Promise<File>} Archivo comprimido
+ */
+const compressImage = async (file) => {
+  // Si el archivo es muy pequeño (< 200KB), no comprimir
+  if (file.size < 200 * 1024) {
+    return file;
+  }
+
+  try {
+    const compressedFile = await imageCompression(file, COMPRESSION_OPTIONS);
+    console.log(
+      `Imagen comprimida: ${(file.size / 1024 / 1024).toFixed(2)}MB → ${(
+        compressedFile.size /
+        1024 /
+        1024
+      ).toFixed(2)}MB`
+    );
+    return compressedFile;
+  } catch (error) {
+    console.warn("Error al comprimir imagen, usando original:", error);
+    return file; // Fallback al archivo original
+  }
+};
 
 /**
  * Sube una imagen de evento al storage de Supabase
  * @param {File} file - Archivo de imagen
  * @param {string} userId - ID del usuario
+ * @param {boolean} compress - Si comprimir o no (default: true)
  * @returns {Promise<string>} URL pública de la imagen
  */
-export const uploadEventImage = async (file, userId) => {
-  const fileExt = file.name.split(".").pop();
-  const fileName = `${userId}/${Date.now()}.${fileExt}`;
+export const uploadEventImage = async (file, userId, compress = true) => {
+  // Comprimir imagen si está habilitado
+  const fileToUpload = compress ? await compressImage(file) : file;
+
+  const fileExt =
+    fileToUpload.type === "image/webp" ? "webp" : file.name.split(".").pop();
+  const fileName = `${userId}/${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(7)}.${fileExt}`;
   const filePath = `events/${fileName}`;
 
   const { data, error } = await supabase.storage
     .from("Imagenes")
-    .upload(filePath, file, {
-      cacheControl: "3600",
+    .upload(filePath, fileToUpload, {
+      cacheControl: "31536000", // Cache por 1 año
       upsert: false,
+      contentType: fileToUpload.type,
     });
 
   if (error) {

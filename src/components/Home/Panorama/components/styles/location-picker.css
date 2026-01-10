@@ -1,0 +1,443 @@
+/* ===== LOCATION PICKER MODAL ===== */
+
+.location-picker-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: locationFadeIn 0.2s ease;
+}
+
+@keyframes locationFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.location-picker {
+  background: #1a1a1a;
+  border-radius: 20px;
+  border: 2px solid #ff6600;
+  width: 100%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: locationSlideUp 0.3s ease;
+}
+
+@keyframes locationSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ===== HEADER ===== */
+.location-picker__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 102, 0, 0.1) 0%,
+    transparent 100%
+  );
+}
+
+.location-picker__title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #ff6600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.location-picker__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.location-picker__close:hover {
+  background: rgba(255, 102, 0, 0.2);
+  color: #ff6600;
+  transform: rotate(90deg);
+}
+
+/* ===== SEARCH ===== */
+.location-picker__search {
+  display: flex;
+  gap: 10px;
+  padding: 16px 24px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.location-picker__search-input-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: #0a0a0a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.location-picker__search-input-wrapper:focus-within {
+  border-color: #ff6600;
+  box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.1);
+}
+
+.location-picker__search-icon {
+  padding: 0 15px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.location-picker__search-input {
+  flex: 1;
+  padding: 14px 0;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.location-picker__search-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.location-picker__search-btn {
+  padding: 14px 20px;
+  background: #ff6600;
+  border: none;
+  color: #000;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.location-picker__search-btn:hover:not(:disabled) {
+  background: #ff8533;
+}
+
+.location-picker__search-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.location-picker__current-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  min-width: 50px;
+  background: rgba(255, 102, 0, 0.15);
+  border: 1px solid #ff6600;
+  border-radius: 12px;
+  color: #ff6600;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.location-picker__current-btn:hover {
+  background: #ff6600;
+  color: #000;
+}
+
+/* ===== MAP ===== */
+.location-picker__map-container {
+  position: relative;
+  flex: 1;
+  min-height: 350px;
+}
+
+.location-picker__map {
+  width: 100%;
+  height: 100%;
+  min-height: 350px;
+  background: #0a0a0a;
+}
+
+/* Estilo oscuro para el mapa */
+.location-picker__map .leaflet-tile-pane {
+  filter: brightness(0.8) saturate(0.9);
+}
+
+.location-picker__hint {
+  position: absolute;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid rgba(255, 102, 0, 0.3);
+  border-radius: 50px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.85rem;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.location-picker__hint svg {
+  color: #ff6600;
+}
+
+/* ===== SELECTED LOCATION ===== */
+.location-picker__selected {
+  padding: 14px 24px;
+  background: rgba(255, 102, 0, 0.1);
+  border-top: 1px solid rgba(255, 102, 0, 0.2);
+}
+
+.location-picker__coords {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+
+.location-picker__coords-label {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.location-picker__coords-value {
+  color: #ff6600;
+  font-weight: 600;
+  font-family: monospace;
+}
+
+/* ===== FOOTER ===== */
+.location-picker__footer {
+  display: flex;
+  gap: 12px;
+  padding: 18px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.location-picker__btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 24px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.location-picker__btn--cancel {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.location-picker__btn--cancel:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.location-picker__btn--save {
+  background: linear-gradient(135deg, #ff6600, #ff8533);
+  border: none;
+  color: #000;
+}
+
+.location-picker__btn--save:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 102, 0, 0.4);
+}
+
+.location-picker__btn--save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .location-picker-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .location-picker {
+    max-width: 100%;
+    max-height: 95vh;
+    border-radius: 24px 24px 0 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+  }
+
+  .location-picker__header {
+    padding: 16px 20px;
+  }
+
+  .location-picker__title {
+    font-size: 1.1rem;
+    gap: 10px;
+  }
+
+  .location-picker__search {
+    padding: 12px 16px;
+    flex-wrap: wrap;
+  }
+
+  .location-picker__search-input-wrapper {
+    flex: 1 1 100%;
+    order: 1;
+  }
+
+  .location-picker__current-btn {
+    order: 2;
+    flex: 0 0 auto;
+    width: 48px;
+    min-width: 48px;
+  }
+
+  .location-picker__search-input {
+    padding: 12px 0;
+    font-size: 0.9rem;
+  }
+
+  .location-picker__search-btn {
+    padding: 12px 16px;
+    font-size: 0.85rem;
+  }
+
+  .location-picker__map-container {
+    min-height: 280px;
+  }
+
+  .location-picker__map {
+    min-height: 280px;
+  }
+
+  .location-picker__hint {
+    font-size: 0.8rem;
+    padding: 8px 16px;
+  }
+
+  .location-picker__selected {
+    padding: 12px 16px;
+  }
+
+  .location-picker__coords {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    font-size: 0.85rem;
+  }
+
+  .location-picker__footer {
+    padding: 14px 16px 20px;
+  }
+
+  .location-picker__btn {
+    padding: 12px 16px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .location-picker__title {
+    font-size: 1rem;
+  }
+
+  .location-picker__close {
+    width: 34px;
+    height: 34px;
+  }
+
+  .location-picker__search {
+    gap: 8px;
+  }
+
+  .location-picker__map-container {
+    min-height: 250px;
+  }
+
+  .location-picker__map {
+    min-height: 250px;
+  }
+
+  .location-picker__hint {
+    display: none;
+  }
+
+  .location-picker__footer {
+    flex-direction: column;
+  }
+
+  .location-picker__btn {
+    width: 100%;
+  }
+}
+
+/* ===== LEAFLET OVERRIDES ===== */
+.location-picker .leaflet-control-zoom {
+  border: none !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3) !important;
+}
+
+.location-picker .leaflet-control-zoom a {
+  background: #1a1a1a !important;
+  color: #ff6600 !important;
+  border: 1px solid rgba(255, 102, 0, 0.3) !important;
+}
+
+.location-picker .leaflet-control-zoom a:hover {
+  background: #ff6600 !important;
+  color: #000 !important;
+}
+
+.location-picker .leaflet-control-attribution {
+  background: rgba(0, 0, 0, 0.7) !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  font-size: 10px !important;
+}
+
+.location-picker .leaflet-control-attribution a {
+  color: #ff6600 !important;
+}

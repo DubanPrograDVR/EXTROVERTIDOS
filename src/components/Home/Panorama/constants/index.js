@@ -27,6 +27,7 @@ export const INITIAL_FORM_STATE = {
   provincia: "",
   comuna: "",
   direccion: "",
+  ubicacion_url: "", // URL de Google Maps con coordenadas
   // Entrada
   tipo_entrada: "sin_entrada",
   precio: "",

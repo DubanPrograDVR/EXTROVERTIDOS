@@ -16,8 +16,11 @@
     "@fortawesome/free-solid-svg-icons": "^7.1.0",
     "@fortawesome/react-fontawesome": "^3.1.0",
     "@supabase/supabase-js": "^2.86.0",
+    "browser-image-compression": "^2.0.2",
+    "leaflet": "^1.9.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.9.6",
     "recharts": "^3.6.0"
   },

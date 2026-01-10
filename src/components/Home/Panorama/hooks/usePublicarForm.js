@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../../../context/AuthContext";
 import {
@@ -192,63 +192,92 @@ const usePublicarForm = () => {
     }
   };
 
-  // Manejar cambio de imágenes (múltiples)
-  const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
-    const { maxFiles, maxSize } = IMAGE_CONFIG;
+  // Manejar cambio de imágenes (múltiples) - con limpieza de memory leaks
+  const handleImageChange = useCallback(
+    (e) => {
+      const files = Array.from(e.target.files);
+      const { maxFiles, maxSize } = IMAGE_CONFIG;
 
-    // Validar cantidad
-    if (formData.imagenes.length + files.length > maxFiles) {
-      setErrors((prev) => ({
-        ...prev,
-        imagenes: `Máximo ${maxFiles} imágenes permitidas`,
-      }));
-      return;
-    }
-
-    // Validar tamaño y agregar
-    const validFiles = [];
-    const newPreviews = [];
-
-    for (const file of files) {
-      if (file.size > maxSize) {
+      // Validar cantidad total (existentes + nuevas + las que se van a agregar)
+      const totalImages =
+        existingImages.length + formData.imagenes.length + files.length;
+      if (totalImages > maxFiles) {
         setErrors((prev) => ({
           ...prev,
-          imagenes: `La imagen ${file.name} supera los 5MB`,
+          imagenes: `Máximo ${maxFiles} imágenes permitidas`,
         }));
-        continue;
+        return;
       }
-      validFiles.push(file);
-      newPreviews.push(URL.createObjectURL(file));
-    }
 
-    setFormData((prev) => ({
-      ...prev,
-      imagenes: [...prev.imagenes, ...validFiles],
-    }));
-    setPreviewImages((prev) => [...prev, ...newPreviews]);
-    setErrors((prev) => ({ ...prev, imagenes: "" }));
-  };
+      // Validar tamaño y agregar
+      const validFiles = [];
+      const newPreviews = [];
 
-  // Eliminar imagen
-  const removeImage = (index) => {
-    // Determinar si es una imagen existente o una nueva
-    const totalExisting = existingImages.length;
+      for (const file of files) {
+        if (file.size > maxSize) {
+          setErrors((prev) => ({
+            ...prev,
+            imagenes: `La imagen ${file.name} supera los 5MB (será comprimida automáticamente)`,
+          }));
+          // Ahora aceptamos archivos grandes porque serán comprimidos
+        }
+        validFiles.push(file);
+        newPreviews.push(URL.createObjectURL(file));
+      }
 
-    if (index < totalExisting) {
-      // Es una imagen existente
-      setExistingImages((prev) => prev.filter((_, i) => i !== index));
-      setPreviewImages((prev) => prev.filter((_, i) => i !== index));
-    } else {
-      // Es una imagen nueva
-      const newIndex = index - totalExisting;
       setFormData((prev) => ({
         ...prev,
-        imagenes: prev.imagenes.filter((_, i) => i !== newIndex),
+        imagenes: [...prev.imagenes, ...validFiles],
       }));
-      setPreviewImages((prev) => prev.filter((_, i) => i !== index));
-    }
-  };
+      setPreviewImages((prev) => [...prev, ...newPreviews]);
+      setErrors((prev) => ({ ...prev, imagenes: "" }));
+    },
+    [existingImages.length, formData.imagenes.length]
+  );
+
+  // Eliminar imagen - con limpieza de Object URLs para evitar memory leaks
+  const removeImage = useCallback(
+    (index) => {
+      // Determinar si es una imagen existente o una nueva
+      const totalExisting = existingImages.length;
+
+      if (index < totalExisting) {
+        // Es una imagen existente (URL de Supabase, no necesita revocar)
+        setExistingImages((prev) => prev.filter((_, i) => i !== index));
+        setPreviewImages((prev) => prev.filter((_, i) => i !== index));
+      } else {
+        // Es una imagen nueva (Object URL, revocar para liberar memoria)
+        const newIndex = index - totalExisting;
+
+        // Revocar Object URL para liberar memoria
+        setPreviewImages((prev) => {
+          const urlToRevoke = prev[index];
+          if (urlToRevoke && urlToRevoke.startsWith("blob:")) {
+            URL.revokeObjectURL(urlToRevoke);
+          }
+          return prev.filter((_, i) => i !== index);
+        });
+
+        setFormData((prev) => ({
+          ...prev,
+          imagenes: prev.imagenes.filter((_, i) => i !== newIndex),
+        }));
+      }
+    },
+    [existingImages.length]
+  );
+
+  // Limpiar Object URLs al desmontar el componente
+  useEffect(() => {
+    return () => {
+      // Cleanup: revocar todas las Object URLs al desmontar
+      previewImages.forEach((url) => {
+        if (url && url.startsWith("blob:")) {
+          URL.revokeObjectURL(url);
+        }
+      });
+    };
+  }, []);
 
   // Validar formulario
   const validateForm = () => {
@@ -340,12 +369,10 @@ const usePublicarForm = () => {
     setIsSubmitting(true);
 
     try {
-      // 1. Subir nuevas imágenes si hay
-      const newImageUrls = [];
-      for (const file of formData.imagenes) {
-        const url = await uploadEventImage(file, user.id);
-        newImageUrls.push(url);
-      }
+      // 1. Subir nuevas imágenes en paralelo (con compresión automática)
+      const newImageUrls = await Promise.all(
+        formData.imagenes.map((file) => uploadEventImage(file, user.id))
+      );
 
       // Combinar imágenes existentes con las nuevas
       const allImageUrls = [...existingImages, ...newImageUrls];
