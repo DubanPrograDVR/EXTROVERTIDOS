@@ -289,8 +289,16 @@ const usePublicarForm = () => {
     if (!formData.direccion.trim()) {
       newErrors.direccion = "La dirección es obligatoria";
     }
+    // Validación de entrada pagada requiere precio
     if (formData.tipo_entrada === "pagado" && !formData.precio) {
       newErrors.precio = "Indica el precio del evento";
+    }
+    // Validación de venta externa requiere URL
+    if (
+      formData.tipo_entrada === "venta_externa" &&
+      !formData.url_venta?.trim()
+    ) {
+      newErrors.url_venta = "Proporciona el enlace de venta de entradas";
     }
     // Solo requerir imágenes si es nuevo evento y no hay existentes
     if (

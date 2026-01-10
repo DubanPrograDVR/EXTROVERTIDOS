@@ -1,8 +1,9 @@
 // Tipos de entrada disponibles para eventos
 export const TIPOS_ENTRADA = [
-  { value: "gratuito", label: "Gratuito" },
-  { value: "pagado", label: "Pagado" },
-  { value: "por_confirmar", label: "Por confirmar" },
+  { value: "sin_entrada", label: "Sin entrada" },
+  { value: "gratuito", label: "Entrada gratuita" },
+  { value: "pagado", label: "Entrada General" },
+  { value: "venta_externa", label: "Venta externa" },
 ];
 
 // Provincias de Chile (Región del Maule)
@@ -27,7 +28,7 @@ export const INITIAL_FORM_STATE = {
   comuna: "",
   direccion: "",
   // Entrada
-  tipo_entrada: "gratuito",
+  tipo_entrada: "sin_entrada",
   precio: "",
   url_venta: "",
   // Redes sociales

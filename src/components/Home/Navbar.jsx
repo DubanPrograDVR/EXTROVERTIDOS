@@ -255,18 +255,21 @@ export default function Navbar() {
                         <span>Panel Admin</span>
                       </button>
                     )}
-                    <button
-                      onClick={() => {
-                        setIsUserDropdownOpen(false);
-                        navigate("/publicar-panorama");
-                      }}
-                      className="navbar-dropdown-item">
-                      <FontAwesomeIcon
-                        icon={faCog}
-                        className="navbar-dropdown-icon"
-                      />
-                      <span>Crear Publicación</span>
-                    </button>
+                    {/* Crear Publicación solo para usuarios regulares */}
+                    {!isModerator && (
+                      <button
+                        onClick={() => {
+                          setIsUserDropdownOpen(false);
+                          navigate("/publicar-panorama");
+                        }}
+                        className="navbar-dropdown-item">
+                        <FontAwesomeIcon
+                          icon={faCog}
+                          className="navbar-dropdown-icon"
+                        />
+                        <span>Crear Publicación</span>
+                      </button>
+                    )}
                     <div className="navbar-dropdown-divider"></div>
                     <button
                       onClick={handleSignOut}

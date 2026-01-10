@@ -416,6 +416,36 @@
   grid-template-columns: 1fr 1fr 1fr;
 }
 
+/* Ticket Button */
+.publicar-form__ticket-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: fit-content;
+  max-width: 320px;
+  margin: 0 auto;
+  padding: 14px 30px;
+  background: transparent;
+  border: 2px solid #ff6600;
+  border-radius: 50px;
+  color: #ff6600;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.publicar-form__ticket-btn:hover {
+  background: rgba(255, 102, 0, 0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 20px rgba(255, 102, 0, 0.2);
+}
+
+.publicar-form__ticket-btn svg {
+  font-size: 1.1rem;
+}
+
 /* Submit button */
 .publicar-form__submit {
   width: 100%;
