@@ -12,7 +12,7 @@ import imageCompression from "browser-image-compression";
 const COMPRESSION_OPTIONS = {
   maxSizeMB: 1, // Máximo 1MB después de comprimir
   maxWidthOrHeight: 1920, // Máximo 1920px de ancho o alto
-  useWebWorker: true, // Usar Web Worker para no bloquear UI
+  useWebWorker: false, // Desactivar Web Worker para evitar problemas de compatibilidad
   fileType: "image/webp", // Convertir a WebP para mejor compresión
   initialQuality: 0.8, // Calidad inicial 80%
 };
@@ -25,10 +25,18 @@ const COMPRESSION_OPTIONS = {
 const compressImage = async (file) => {
   // Si el archivo es muy pequeño (< 200KB), no comprimir
   if (file.size < 200 * 1024) {
+    console.log(
+      `Imagen pequeña (${(file.size / 1024).toFixed(2)}KB), saltando compresión`
+    );
     return file;
   }
 
   try {
+    console.log(
+      `Comprimiendo imagen: ${file.name} (${(file.size / 1024 / 1024).toFixed(
+        2
+      )}MB)`
+    );
     const compressedFile = await imageCompression(file, COMPRESSION_OPTIONS);
     console.log(
       `Imagen comprimida: ${(file.size / 1024 / 1024).toFixed(2)}MB → ${(
@@ -52,35 +60,45 @@ const compressImage = async (file) => {
  * @returns {Promise<string>} URL pública de la imagen
  */
 export const uploadEventImage = async (file, userId, compress = true) => {
-  // Comprimir imagen si está habilitado
-  const fileToUpload = compress ? await compressImage(file) : file;
+  console.log(`Iniciando subida de imagen: ${file.name}`);
 
-  const fileExt =
-    fileToUpload.type === "image/webp" ? "webp" : file.name.split(".").pop();
-  const fileName = `${userId}/${Date.now()}-${Math.random()
-    .toString(36)
-    .substring(7)}.${fileExt}`;
-  const filePath = `events/${fileName}`;
+  try {
+    // Comprimir imagen si está habilitado
+    const fileToUpload = compress ? await compressImage(file) : file;
 
-  const { data, error } = await supabase.storage
-    .from("Imagenes")
-    .upload(filePath, fileToUpload, {
-      cacheControl: "31536000", // Cache por 1 año
-      upsert: false,
-      contentType: fileToUpload.type,
-    });
+    const fileExt =
+      fileToUpload.type === "image/webp" ? "webp" : file.name.split(".").pop();
+    const fileName = `${userId}/${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(7)}.${fileExt}`;
+    const filePath = `events/${fileName}`;
 
-  if (error) {
-    console.error("Error al subir imagen:", error);
+    console.log(`Subiendo a Supabase: ${filePath}`);
+
+    const { data, error } = await supabase.storage
+      .from("Imagenes")
+      .upload(filePath, fileToUpload, {
+        cacheControl: "31536000", // Cache por 1 año
+        upsert: false,
+        contentType: fileToUpload.type || "image/jpeg",
+      });
+
+    if (error) {
+      console.error("Error al subir imagen:", error);
+      throw error;
+    }
+
+    // Obtener URL pública
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("Imagenes").getPublicUrl(filePath);
+
+    console.log(`Imagen subida exitosamente: ${publicUrl}`);
+    return publicUrl;
+  } catch (error) {
+    console.error(`Error en uploadEventImage para ${file.name}:`, error);
     throw error;
   }
-
-  // Obtener URL pública
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from("Imagenes").getPublicUrl(filePath);
-
-  return publicUrl;
 };
 
 /**

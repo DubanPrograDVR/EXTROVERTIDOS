@@ -10,7 +10,9 @@ import {
   faTimes,
   faNewspaper,
   faUserCircle,
+  faPlus,
 } from "@fortawesome/free-solid-svg-icons";
+import { getCategories } from "../../lib/database";
 
 // Componentes modulares
 import AdminDashboard from "./components/AdminDashboard";
@@ -21,6 +23,7 @@ import AdminRejectModal from "./components/AdminRejectModal";
 import AdminBanModal from "./components/AdminBanModal";
 import AdminLoading from "./components/AdminLoading";
 import AdminProfile from "./components/AdminProfile";
+import AdminEditModal from "./components/AdminEditModal";
 import PublicationModal from "../Superguia/PublicationModal";
 
 // Custom hook para manejo de datos
@@ -52,6 +55,11 @@ export default function AdminPanel() {
     open: false,
     event: null,
   });
+  const [editModal, setEditModal] = useState({
+    open: false,
+    event: null,
+  });
+  const [categories, setCategories] = useState([]);
 
   // Hook personalizado para manejo de datos
   const {
@@ -70,6 +78,7 @@ export default function AdminPanel() {
     handleUnbanUser,
     handleDeleteEvent,
     handleDeleteUser,
+    handleUpdateEvent,
   } = useAdminData(user, isAdmin, isModerator);
 
   // Verificar acceso - redirigir si no es moderador/admin
@@ -78,6 +87,19 @@ export default function AdminPanel() {
       navigate("/");
     }
   }, [authLoading, isModerator, navigate]);
+
+  // Cargar categorías para el modal de edición
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const cats = await getCategories();
+        setCategories(cats || []);
+      } catch (error) {
+        console.error("Error cargando categorías:", error);
+      }
+    };
+    loadCategories();
+  }, []);
 
   // Manejar aprobación de evento
   const onApprove = async (eventId) => {
@@ -137,11 +159,26 @@ export default function AdminPanel() {
     }
   };
 
-  // Editar publicación (redirige a la página de edición)
+  // Editar publicación (abrir modal de edición)
   const onEditEvent = (eventId) => {
-    // TODO: Implementar página de edición completa
-    // Por ahora navegar con query param para futura implementación
-    navigate(`/publicar-panorama?editar=${eventId}`);
+    const event = allEvents.find((e) => e.id === eventId);
+    if (event) {
+      setEditModal({ open: true, event });
+    }
+  };
+
+  // Guardar cambios de publicación
+  const onSaveEdit = async (eventId, eventData) => {
+    const result = await handleUpdateEvent(eventId, eventData);
+    if (result.success) {
+      setEditModal({ open: false, event: null });
+    }
+    return result;
+  };
+
+  // Cerrar modal de edición
+  const onEditClose = () => {
+    setEditModal({ open: false, event: null });
   };
 
   // Cerrar modal de vista previa
@@ -261,6 +298,16 @@ export default function AdminPanel() {
             ))}
         </nav>
 
+        {/* Botón Nueva Publicación - Siempre visible */}
+        <div className="admin-sidebar__action">
+          <button
+            className="admin-sidebar__new-btn"
+            onClick={() => navigate("/publicar-panorama")}>
+            <FontAwesomeIcon icon={faPlus} />
+            <span>Nueva Publicación</span>
+          </button>
+        </div>
+
         {/* Info usuario */}
         <div className="admin-sidebar__user">
           <img
@@ -347,6 +394,16 @@ export default function AdminPanel() {
         publication={viewModal.event}
         isOpen={viewModal.open}
         onClose={onViewClose}
+      />
+
+      {/* Modal de edición de publicación */}
+      <AdminEditModal
+        isOpen={editModal.open}
+        event={editModal.event}
+        categories={categories}
+        onClose={onEditClose}
+        onSave={onSaveEdit}
+        loading={actionLoading === editModal.event?.id}
       />
     </div>
   );

@@ -121,31 +121,194 @@
   padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 12px;
   border-left: 2px solid #ff6600;
+  max-height: 100%;
+  overflow-y: auto;
 }
 
 /* Títulos */
 .publication-modal__titles {
   text-align: center;
-  padding-bottom: 10px;
+  padding-bottom: 12px;
   border-bottom: 1px solid rgba(255, 102, 0, 0.3);
 }
 
+.publication-modal__organizer {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
 .publication-modal__title {
-  font-size: 1.5rem;
-  font-weight: 900;
+  font-size: 1.2rem;
+  font-weight: 700;
   color: #fff;
   margin: 0;
-  text-transform: uppercase;
-  line-height: 1.2;
+  line-height: 1.3;
 }
 
 .publication-modal__subtitle {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: #ff6600;
-  margin: 5px 0 0;
+  margin: 4px 0 0;
+}
+
+/* ===== ACCORDION SECTION - Componente Reutilizable ===== */
+.accordion-section {
+  border-radius: 10px;
+  overflow: hidden;
+  background: transparent;
+}
+
+.accordion-section__header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #ff6600 0%, #e55a00 100%);
+  color: #000;
+  border: none;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border-radius: 8px;
+}
+
+.accordion-section__header:hover {
+  background: linear-gradient(135deg, #ff7722 0%, #ff6600 100%);
+}
+
+.accordion-section__header.open {
+  border-radius: 8px 8px 0 0;
+  background: linear-gradient(135deg, #ff6600 0%, #cc5200 100%);
+}
+
+.accordion-section__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.accordion-section__icon {
+  font-size: 0.7rem;
+  transition: transform 0.3s ease;
+}
+
+.accordion-section__content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.accordion-section__content.open {
+  max-height: 600px;
+}
+
+.accordion-section__body {
+  padding: 14px;
+  background: #1a1a1a;
+  border: 1px solid rgba(255, 102, 0, 0.25);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+}
+
+/* ===== CTA SECTION - Botones de Acción ===== */
+.publication-modal__cta-section {
+  display: flex;
+  gap: 8px;
+  padding-top: 12px;
+  margin-top: auto;
+  border-top: 1px solid rgba(255, 102, 0, 0.3);
+}
+
+.publication-modal__cta-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: none;
+}
+
+.publication-modal__cta-btn svg {
+  font-size: 0.85rem;
+}
+
+/* Botón primario - Ver evento */
+.publication-modal__cta-btn--primary {
+  background: linear-gradient(135deg, #ff6600 0%, #ff8533 100%);
+  color: #000;
+}
+
+.publication-modal__cta-btn--primary:hover {
+  background: linear-gradient(135deg, #ff7722 0%, #ff9955 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 102, 0, 0.4);
+}
+
+/* Botón secundario - Compartir */
+.publication-modal__cta-btn--secondary {
+  background: rgba(255, 102, 0, 0.15);
+  color: #ff6600;
+  border: 1px solid rgba(255, 102, 0, 0.4);
+}
+
+.publication-modal__cta-btn--secondary:hover {
+  background: rgba(255, 102, 0, 0.25);
+  border-color: #ff6600;
+}
+
+/* Botón outline - Guardar */
+.publication-modal__cta-btn--outline {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.publication-modal__cta-btn--outline:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #ff6600;
+}
+
+/* Info rápida (fecha y lugar destacados) */
+.publication-modal__quick-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.publication-modal__quick-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 15px;
+  background: #1a1a1a;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  color: #fff;
+  border-left: 3px solid #ff6600;
+}
+
+.publication-modal__quick-item svg {
+  color: #ff6600;
+  font-size: 0.9rem;
+  width: 18px;
+  flex-shrink: 0;
 }
 
 /* Autor */
@@ -188,23 +351,27 @@
 
 /* Descripción */
 .publication-modal__description {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.8);
-  line-height: 1.6;
-  text-align: center;
-  padding: 10px;
-  background: rgba(255, 102, 0, 0.1);
-  border-radius: 10px;
-  border: 1px solid rgba(255, 102, 0, 0.2);
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.7;
+  text-align: left;
   margin: 0;
+  white-space: pre-line;
+}
+
+.publication-modal__description--empty {
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+  text-align: center;
 }
 
 /* Detalles */
 .publication-modal__details {
-  background: #111;
-  border-radius: 15px;
-  padding: 15px;
-  border: 1px solid rgba(255, 102, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 102, 0, 0.2);
 }
 
 .publication-modal__details-title {
@@ -217,17 +384,17 @@
   text-align: center;
   margin: 0 0 15px;
   letter-spacing: 1px;
+  display: none; /* Ya no se usa, el título está en el botón del acordeón */
 }
 
 .publication-modal__detail-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 15px;
+  padding: 10px 15px;
   background: #1a1a1a;
-  border-radius: 25px;
-  margin-bottom: 8px;
-  font-size: 0.9rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
   color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -238,8 +405,9 @@
 
 .publication-modal__detail-item svg {
   color: #ff6600;
-  font-size: 1rem;
-  width: 20px;
+  font-size: 0.9rem;
+  width: 18px;
+  flex-shrink: 0;
 }
 
 .publication-modal__detail-item--link a {
@@ -286,38 +454,45 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  justify-content: center;
+  justify-content: flex-start;
+  margin-bottom: 12px;
 }
 
 .publication-modal__tag {
-  background: #ff6600;
-  color: #000;
-  padding: 6px 14px;
+  background: transparent;
+  color: #ff6600;
+  padding: 6px 12px;
   border-radius: 15px;
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
+  border: 1px solid #ff6600;
+  transition: all 0.2s ease;
+}
+
+.publication-modal__tag:hover {
+  background: #ff6600;
+  color: #000;
 }
 
 /* Redes sociales */
 .publication-modal__social {
   display: flex;
   justify-content: center;
-  gap: 12px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(255, 102, 0, 0.3);
+  gap: 10px;
+  padding: 10px 0;
 }
 
 .publication-modal__social-link {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  border: 2px solid #fff;
+  border: 2px solid rgba(255, 255, 255, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 1.1rem;
+  font-size: 1rem;
   transition: all 0.3s ease;
 }
 
@@ -326,6 +501,93 @@
   border-color: #ff6600;
   color: #000;
   transform: scale(1.1);
+}
+
+/* ===== SECCIÓN UBICACIÓN ===== */
+.publication-modal__location {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.publication-modal__map-container {
+  width: 100%;
+  height: 200px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 102, 0, 0.3);
+}
+
+.publication-modal__map {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.publication-modal__location-address {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 15px;
+  background: #1a1a1a;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  color: #fff;
+  border-left: 3px solid #ff6600;
+}
+
+.publication-modal__location-address svg {
+  color: #ff6600;
+  flex-shrink: 0;
+}
+
+.publication-modal__directions-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #ff6600, #ff8533);
+  color: #000;
+  border: none;
+  border-radius: 25px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.publication-modal__directions-btn:hover {
+  background: linear-gradient(135deg, #ff8533, #ffaa66);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(255, 102, 0, 0.4);
+}
+
+.publication-modal__directions-btn svg {
+  font-size: 1rem;
+}
+
+/* Ubicación vacía */
+.publication-modal__location--empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  text-align: center;
+}
+
+.publication-modal__location-empty-icon {
+  font-size: 2.5rem;
+  color: rgba(255, 102, 0, 0.3);
+}
+
+.publication-modal__location--empty p {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.9rem;
+  margin: 0;
 }
 
 /* Responsive */
@@ -342,6 +604,7 @@
   .publication-modal__info-section {
     border-left: none;
     border-top: 2px solid #ff6600;
+    gap: 10px;
   }
 
   .publication-modal__image {
@@ -349,12 +612,44 @@
   }
 
   .publication-modal__title {
-    font-size: 1.3rem;
+    font-size: 1.1rem;
   }
 
   .publication-modal__detail-item {
+    font-size: 0.8rem;
+    padding: 8px 12px;
+  }
+
+  .accordion-section__header {
+    font-size: 0.75rem;
+    padding: 9px 14px;
+  }
+
+  .accordion-section__body {
+    padding: 12px;
+  }
+
+  .publication-modal__map-container {
+    height: 180px;
+  }
+
+  .publication-modal__directions-btn {
     font-size: 0.85rem;
-    padding: 10px 12px;
+    padding: 10px 16px;
+  }
+
+  .publication-modal__cta-section {
+    flex-wrap: wrap;
+  }
+
+  .publication-modal__cta-btn {
+    flex: 1 1 calc(50% - 4px);
+    font-size: 0.75rem;
+    padding: 9px 10px;
+  }
+
+  .publication-modal__cta-btn--outline {
+    flex: 1 1 100%;
   }
 }
 
@@ -369,13 +664,33 @@
 
   .publication-modal__info-section {
     padding: 15px;
+    gap: 10px;
   }
 
   .publication-modal__title {
-    font-size: 1.1rem;
+    font-size: 1rem;
+  }
+
+  .publication-modal__organizer {
+    font-size: 0.85rem;
   }
 
   .publication-modal__description {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
+  }
+
+  .publication-modal__tag {
+    font-size: 0.7rem;
+    padding: 5px 10px;
+  }
+
+  .publication-modal__cta-btn {
+    flex: 1 1 100%;
+  }
+
+  .publication-modal__social-link {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
   }
 }

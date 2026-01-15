@@ -7,6 +7,7 @@ import {
   faHeart,
   faStore,
   faCog,
+  faFileAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import "./styles/sidebar.css";
 
@@ -16,12 +17,19 @@ export default function PerfilSidebar({
   sidebarOpen,
   setSidebarOpen,
   unreadCount,
+  draftsCount = 0,
   userAvatar,
   userName,
 }) {
   // Opciones del menú lateral
   const menuItems = [
     { id: "publicaciones", label: "Mis Publicaciones", icon: faNewspaper },
+    {
+      id: "borradores",
+      label: "Mis Borradores",
+      icon: faFileAlt,
+      badge: draftsCount,
+    },
     {
       id: "notificaciones",
       label: "Notificaciones",

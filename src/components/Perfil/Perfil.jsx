@@ -7,6 +7,7 @@ import {
   markNotificationAsRead,
   markAllNotificationsAsRead,
   deleteNotification as deleteNotificationDB,
+  countDrafts,
 } from "../../lib/database";
 import {
   PerfilSidebar,
@@ -17,6 +18,7 @@ import {
   PerfilFavoritos,
   PerfilNegocios,
   PerfilConfiguracion,
+  PerfilBorradores,
 } from "./components";
 import "./styles/perfil.css";
 
@@ -34,6 +36,9 @@ export default function Perfil() {
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  // Estado de borradores
+  const [draftsCount, setDraftsCount] = useState(0);
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -59,6 +64,23 @@ export default function Perfil() {
     };
 
     loadUserPublications();
+  }, [isAuthenticated, user?.id]);
+
+  // Cargar cantidad de borradores
+  useEffect(() => {
+    const loadDraftsCount = async () => {
+      if (isAuthenticated && user?.id) {
+        try {
+          const count = await countDrafts(user.id);
+          setDraftsCount(count);
+        } catch (error) {
+          console.error("Error contando borradores:", error);
+          setDraftsCount(0);
+        }
+      }
+    };
+
+    loadDraftsCount();
   }, [isAuthenticated, user?.id]);
 
   // Cargar notificaciones del usuario desde Supabase
@@ -200,6 +222,7 @@ export default function Perfil() {
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
         unreadCount={unreadCount}
+        draftsCount={draftsCount}
         userAvatar={userAvatar}
         userName={userName}
       />
@@ -225,6 +248,8 @@ export default function Perfil() {
               loading={loadingPublications}
             />
           )}
+
+          {activeSection === "borradores" && <PerfilBorradores />}
 
           {activeSection === "notificaciones" && (
             <PerfilNotificaciones

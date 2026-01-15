@@ -14,6 +14,7 @@ import {
   getAllEvents,
   deleteEvent,
   deleteUser,
+  updateEvent,
 } from "../../../lib/database";
 
 /**
@@ -327,6 +328,25 @@ export const useAdminData = (user, isAdmin, isModerator) => {
     }
   };
 
+  // Actualizar publicación (admin)
+  const handleUpdateEvent = async (eventId, eventData) => {
+    setActionLoading(eventId);
+    try {
+      await updateEvent(eventId, eventData);
+      // Actualizar ambas listas con los nuevos datos
+      const updateEventInList = (list) =>
+        list.map((e) => (e.id === eventId ? { ...e, ...eventData } : e));
+      setAllEvents(updateEventInList);
+      setPendingEvents(updateEventInList);
+      return { success: true };
+    } catch (err) {
+      console.error("Error al actualizar publicación:", err);
+      return { success: false, error: err.message };
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   return {
     // Estado
     pendingEvents,
@@ -346,6 +366,7 @@ export const useAdminData = (user, isAdmin, isModerator) => {
     handleUnbanUser,
     handleDeleteEvent,
     handleDeleteUser,
+    handleUpdateEvent,
   };
 };
 

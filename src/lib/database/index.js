@@ -110,3 +110,13 @@ export {
   toggleFavorite,
   countUserFavorites,
 } from "./favorites";
+
+// ============ BORRADORES ============
+export {
+  saveDraft,
+  getDrafts,
+  getDraftById,
+  deleteDraft,
+  countDrafts,
+  deleteAllDraftsByType,
+} from "./drafts";

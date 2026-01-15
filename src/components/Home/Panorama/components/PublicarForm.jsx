@@ -10,6 +10,8 @@ import {
   faLink,
   faSpinner,
   faMapMarkerAlt,
+  faEye,
+  faSave,
 } from "@fortawesome/free-solid-svg-icons";
 import { PROVINCIAS } from "../constants";
 import SocialInputs from "./SocialInputs";
@@ -17,6 +19,8 @@ import ImageUpload from "./ImageUpload";
 import DateRangePicker from "./DateRangePicker";
 import TicketModal from "./TicketModal";
 import LocationPicker from "./LocationPicker";
+import DraftPreview from "./DraftPreview";
+import "../styles/draft-preview.css";
 
 /**
  * Formulario principal de publicación de eventos
@@ -29,14 +33,17 @@ const PublicarForm = ({
   isSubmitting,
   previewImages,
   isEditing,
+  isSavingDraft,
   onSubmit,
   onChange,
   onFieldFocus,
   onImageChange,
   onRemoveImage,
+  onSaveDraft,
 }) => {
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
   const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
+  const [isDraftPreviewOpen, setIsDraftPreviewOpen] = useState(false);
 
   // Helper para mostrar el texto del tipo de entrada seleccionado
   const getTicketDisplayText = () => {
@@ -352,22 +359,55 @@ const PublicarForm = ({
           error={errors.imagenes}
         />
 
-        {/* Botón de envío */}
-        <button
-          type="submit"
-          className="publicar-form__submit"
-          disabled={isSubmitting}>
-          {isSubmitting ? (
-            <>
-              <FontAwesomeIcon icon={faSpinner} spin />
-              {isEditing ? "Guardando..." : "Publicando..."}
-            </>
-          ) : isEditing ? (
-            "Guardar Cambios"
-          ) : (
-            "Publicar Evento"
+        {/* Botones de acción */}
+        <div className="publicar-form__actions">
+          {/* Botón Ver Borrador */}
+          <button
+            type="button"
+            className="publicar-form__draft-btn"
+            onClick={() => setIsDraftPreviewOpen(true)}>
+            <FontAwesomeIcon icon={faEye} />
+            Ver Borrador
+          </button>
+
+          {/* Botón Guardar Borrador - solo si no estamos editando */}
+          {!isEditing && onSaveDraft && (
+            <button
+              type="button"
+              className="publicar-form__save-draft-btn"
+              onClick={onSaveDraft}
+              disabled={isSavingDraft || isSubmitting}>
+              {isSavingDraft ? (
+                <>
+                  <FontAwesomeIcon icon={faSpinner} spin />
+                  Guardando...
+                </>
+              ) : (
+                <>
+                  <FontAwesomeIcon icon={faSave} />
+                  Guardar Borrador
+                </>
+              )}
+            </button>
           )}
-        </button>
+
+          {/* Botón de envío */}
+          <button
+            type="submit"
+            className="publicar-form__submit"
+            disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <FontAwesomeIcon icon={faSpinner} spin />
+                {isEditing ? "Guardando..." : "Publicando..."}
+              </>
+            ) : isEditing ? (
+              "Guardar Cambios"
+            ) : (
+              "Publicar Evento"
+            )}
+          </button>
+        </div>
       </form>
 
       {/* Modal de configuración de entradas */}
@@ -388,6 +428,15 @@ const PublicarForm = ({
         onClose={() => setIsLocationPickerOpen(false)}
         currentLocation={formData.ubicacion_url}
         onSave={handleLocationSave}
+      />
+
+      {/* Vista previa del borrador */}
+      <DraftPreview
+        isOpen={isDraftPreviewOpen}
+        onClose={() => setIsDraftPreviewOpen(false)}
+        formData={formData}
+        previewImages={previewImages}
+        categories={categories}
       />
     </section>
   );

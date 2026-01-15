@@ -7,6 +7,8 @@ import {
   uploadEventImage,
   getEventById,
   updateEvent,
+  saveDraft,
+  deleteDraft,
 } from "../../../../lib/database";
 import { INITIAL_FORM_STATE, IMAGE_CONFIG } from "../constants";
 
@@ -33,6 +35,8 @@ const usePublicarForm = () => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
   const [existingImages, setExistingImages] = useState([]); // URLs de imágenes existentes en edición
+  const [currentDraftId, setCurrentDraftId] = useState(null); // ID del borrador actual
+  const [isSavingDraft, setIsSavingDraft] = useState(false); // Estado de guardado de borrador
 
   // Cargar categorías al montar
   useEffect(() => {
@@ -49,6 +53,65 @@ const usePublicarForm = () => {
     };
 
     loadCategories();
+  }, [showToast]);
+
+  // Cargar borrador desde sessionStorage si existe
+  useEffect(() => {
+    const loadDraftFromStorage = () => {
+      try {
+        const draftJson = sessionStorage.getItem("draftToLoad");
+        if (!draftJson) return;
+
+        const draft = JSON.parse(draftJson);
+        if (!draft || !draft.data) return;
+
+        // Limpiar sessionStorage inmediatamente
+        sessionStorage.removeItem("draftToLoad");
+
+        // Guardar el ID del borrador para eliminarlo al publicar
+        setCurrentDraftId(draft.id);
+
+        // Cargar datos del formulario
+        const draftData = draft.data;
+        setFormData({
+          titulo: draftData.titulo || "",
+          descripcion: draftData.descripcion || "",
+          organizador: draftData.organizador || "",
+          category_id: draftData.category_id || "",
+          fecha_evento: draftData.fecha_evento || "",
+          fecha_fin: draftData.fecha_fin || "",
+          es_multidia: draftData.es_multidia || false,
+          mismo_horario: draftData.mismo_horario !== false,
+          hora_inicio: draftData.hora_inicio || "",
+          hora_fin: draftData.hora_fin || "",
+          provincia: draftData.provincia || "",
+          comuna: draftData.comuna || "",
+          direccion: draftData.direccion || "",
+          tipo_entrada: draftData.tipo_entrada || "gratuito",
+          precio: draftData.precio || "",
+          url_venta: draftData.url_venta || "",
+          redes_sociales: draftData.redes_sociales || {
+            instagram: "",
+            facebook: "",
+            whatsapp: "",
+          },
+          imagenes: [], // Las imágenes del borrador son previews, no archivos
+        });
+
+        // Cargar imágenes preview del borrador
+        if (draftData.imagenes_preview?.length > 0) {
+          setPreviewImages(draftData.imagenes_preview);
+        }
+
+        if (showToast) {
+          showToast("Borrador cargado exitosamente", "success");
+        }
+      } catch (error) {
+        console.error("Error cargando borrador:", error);
+      }
+    };
+
+    loadDraftFromStorage();
   }, [showToast]);
 
   // Cargar evento si estamos editando
@@ -347,6 +410,131 @@ const usePublicarForm = () => {
     setFormData(INITIAL_FORM_STATE);
     setPreviewImages([]);
     setErrors({});
+    setCurrentDraftId(null);
+  };
+
+  // Convertir imagen a base64 (para guardar en borrador)
+  const imageToBase64 = async (imageUrl) => {
+    if (!imageUrl || !imageUrl.startsWith("blob:")) {
+      return imageUrl; // Ya es una URL válida
+    }
+
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+
+      // Comprimir si es muy grande (máximo 100KB para base64)
+      if (blob.size > 100000) {
+        // Crear canvas para redimensionar
+        const img = new Image();
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        return new Promise((resolve) => {
+          img.onload = () => {
+            // Calcular nuevo tamaño (máximo 300px)
+            const maxSize = 300;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height && width > maxSize) {
+              height = (height * maxSize) / width;
+              width = maxSize;
+            } else if (height > maxSize) {
+              width = (width * maxSize) / height;
+              height = maxSize;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+
+            resolve(canvas.toDataURL("image/jpeg", 0.6));
+          };
+          img.onerror = () => resolve(null);
+          img.src = imageUrl;
+        });
+      }
+
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error("Error convirtiendo imagen a base64:", error);
+      return null;
+    }
+  };
+
+  // Guardar borrador
+  const handleSaveDraft = async () => {
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return false;
+    }
+
+    // Validar que haya al menos un campo con datos
+    const hasData =
+      formData.titulo || formData.descripcion || formData.category_id;
+    if (!hasData) {
+      if (showToast)
+        showToast(
+          "Agrega al menos un título o descripción para guardar el borrador",
+          "warning"
+        );
+      return false;
+    }
+
+    setIsSavingDraft(true);
+
+    try {
+      // Obtener nombre de la categoría para mostrar en la lista
+      const selectedCategory = categories.find(
+        (c) => c.id === parseInt(formData.category_id)
+      );
+
+      // Convertir la primera imagen a base64 para preview (si existe)
+      let imagenPreviewBase64 = null;
+      if (previewImages.length > 0) {
+        imagenPreviewBase64 = await imageToBase64(previewImages[0]);
+      } else if (existingImages.length > 0) {
+        imagenPreviewBase64 = existingImages[0]; // Ya es URL válida
+      }
+
+      // Preparar datos del borrador
+      const draftData = {
+        ...formData,
+        categoria_nombre: selectedCategory?.nombre || "",
+        // Guardar referencia a cantidad de imágenes (las blob URLs no persisten)
+        cantidad_imagenes: previewImages.length + existingImages.length,
+      };
+
+      const savedDraft = await saveDraft({
+        userId: user.id,
+        tipo: "evento",
+        data: draftData,
+        id: currentDraftId, // null si es nuevo, ID si estamos actualizando
+        imagenPreview: imagenPreviewBase64,
+      });
+
+      setCurrentDraftId(savedDraft.id);
+
+      if (showToast) {
+        showToast("Borrador guardado exitosamente", "success");
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error guardando borrador:", error);
+      if (showToast) {
+        showToast("Error al guardar el borrador", "error");
+      }
+      return false;
+    } finally {
+      setIsSavingDraft(false);
+    }
   };
 
   // Manejar envío del formulario
@@ -369,15 +557,39 @@ const usePublicarForm = () => {
     setIsSubmitting(true);
 
     try {
-      // 1. Subir nuevas imágenes en paralelo (con compresión automática)
-      const newImageUrls = await Promise.all(
-        formData.imagenes.map((file) => uploadEventImage(file, user.id))
-      );
+      // 1. Subir nuevas imágenes (secuencialmente para mejor manejo de errores)
+      console.log(`Subiendo ${formData.imagenes.length} imágenes...`);
+      const newImageUrls = [];
+
+      for (let i = 0; i < formData.imagenes.length; i++) {
+        const file = formData.imagenes[i];
+        console.log(
+          `Subiendo imagen ${i + 1} de ${formData.imagenes.length}: ${
+            file.name
+          }`
+        );
+        try {
+          const url = await uploadEventImage(file, user.id);
+          newImageUrls.push(url);
+        } catch (uploadError) {
+          console.error(`Error subiendo imagen ${i + 1}:`, uploadError);
+          throw new Error(`Error al subir la imagen ${file.name}`);
+        }
+      }
 
       // Combinar imágenes existentes con las nuevas
       const allImageUrls = [...existingImages, ...newImageUrls];
+      console.log(`Total de imágenes: ${allImageUrls.length}`);
 
       // 2. Preparar datos del evento
+      // Limpiar redes sociales (eliminar valores vacíos)
+      const redesLimpias = {};
+      Object.entries(formData.redes_sociales).forEach(([key, value]) => {
+        if (value && value.trim()) {
+          redesLimpias[key] = value.trim();
+        }
+      });
+
       const eventData = {
         titulo: formData.titulo.trim(),
         descripcion: formData.descripcion.trim(),
@@ -402,25 +614,46 @@ const usePublicarForm = () => {
         precio:
           formData.tipo_entrada === "pagado" ? parseInt(formData.precio) : null,
         url_venta: formData.url_venta.trim() || null,
-        redes_sociales: formData.redes_sociales,
+        redes_sociales: redesLimpias,
         imagenes: allImageUrls,
       };
 
+      console.log(
+        "Datos del evento a enviar:",
+        JSON.stringify(eventData, null, 2)
+      );
+
       if (isEditing) {
         // Actualizar evento existente
+        console.log("Actualizando evento existente...");
         await updateEvent(editEventId, eventData);
         if (showToast)
           showToast("¡Publicación actualizada exitosamente!", "success");
       } else {
         // Crear nuevo evento
         eventData.user_id = user.id;
-        eventData.estado = "pendiente";
+        // Admins publican directamente, usuarios normales van a cola de aprobación
+        eventData.estado = isAdmin ? "publicado" : "pendiente";
+        console.log("Creando nuevo evento...");
         await createEvent(eventData);
+        console.log("Evento creado exitosamente");
         if (showToast)
           showToast(
-            "¡Evento creado exitosamente! Será revisado pronto.",
+            isAdmin
+              ? "¡Publicación creada y publicada exitosamente!"
+              : "¡Evento creado exitosamente! Será revisado pronto.",
             "success"
           );
+      }
+
+      // Si había un borrador, eliminarlo después de publicar exitosamente
+      if (currentDraftId) {
+        try {
+          await deleteDraft(currentDraftId, user.id);
+          console.log("Borrador eliminado tras publicar");
+        } catch (draftError) {
+          console.warn("No se pudo eliminar el borrador:", draftError);
+        }
       }
 
       // Resetear formulario
@@ -461,6 +694,8 @@ const usePublicarForm = () => {
     previewImages,
     isGoogleLoading,
     isEditing,
+    isSavingDraft,
+    currentDraftId,
     // Handlers
     handleFieldFocus,
     handleGoogleLogin,
@@ -468,6 +703,7 @@ const usePublicarForm = () => {
     handleImageChange,
     removeImage,
     handleSubmit,
+    handleSaveDraft,
     closeAuthModal,
   };
 };

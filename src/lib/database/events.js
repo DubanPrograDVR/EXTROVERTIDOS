@@ -88,6 +88,12 @@ export const getPublishedEvents = async () => {
         id,
         nombre,
         avatar_url
+      ),
+      event_tags (
+        tags (
+          id,
+          nombre
+        )
       )
     `
     )
@@ -124,6 +130,12 @@ export const getEventsByCity = async (ciudad, provincia = null) => {
         id,
         nombre,
         avatar_url
+      ),
+      event_tags (
+        tags (
+          id,
+          nombre
+        )
       )
     `
     )
@@ -201,6 +213,12 @@ export const getEventById = async (eventId) => {
         id,
         nombre,
         avatar_url
+      ),
+      event_tags (
+        tags (
+          id,
+          nombre
+        )
       )
     `
     )
@@ -240,6 +258,12 @@ export const getFilteredEvents = async (filters = {}) => {
         id,
         nombre,
         avatar_url
+      ),
+      event_tags (
+        tags (
+          id,
+          nombre
+        )
       )
     `
     )

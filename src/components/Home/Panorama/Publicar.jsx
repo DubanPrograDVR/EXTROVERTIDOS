@@ -25,6 +25,7 @@ const Publicar = () => {
     previewImages,
     isGoogleLoading,
     isEditing,
+    isSavingDraft,
     // Handlers
     handleFieldFocus,
     handleGoogleLogin,
@@ -32,6 +33,7 @@ const Publicar = () => {
     handleImageChange,
     removeImage,
     handleSubmit,
+    handleSaveDraft,
     closeAuthModal,
   } = usePublicarForm();
 
@@ -73,11 +75,13 @@ const Publicar = () => {
         isSubmitting={isSubmitting}
         previewImages={previewImages}
         isEditing={isEditing}
+        isSavingDraft={isSavingDraft}
         onSubmit={handleSubmit}
         onChange={handleChange}
         onFieldFocus={handleFieldFocus}
         onImageChange={handleImageChange}
         onRemoveImage={removeImage}
+        onSaveDraft={handleSaveDraft}
       />
 
       {/* Modal de autenticación */}
