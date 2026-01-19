@@ -8,6 +8,8 @@ import {
   faTicketAlt,
   faCalendarWeek,
   faHeart as faHeartSolid,
+  faChevronLeft,
+  faChevronRight,
 } from "@fortawesome/free-solid-svg-icons";
 import { faHeart as faHeartRegular } from "@fortawesome/free-regular-svg-icons";
 import { useAuth } from "../../context/AuthContext";
@@ -41,24 +43,48 @@ export default function PublicationCard({
 
   const { user } = useAuth();
   const [imageError, setImageError] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorited, setIsFavorited] = useState(initialIsFavorite);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
 
-  // Obtener la primera imagen del array o usar placeholder
-  const getImageUrl = () => {
-    if (imageError) return PLACEHOLDER_IMAGE;
+  // Obtener array de imágenes válidas
+  const getValidImages = () => {
     if (Array.isArray(imagenes) && imagenes.length > 0) {
-      return imagenes[0];
+      return imagenes;
     }
-    return PLACEHOLDER_IMAGE;
+    return [PLACEHOLDER_IMAGE];
   };
 
-  const imageUrl = getImageUrl();
+  const validImages = getValidImages();
+  const hasMultipleImages = validImages.length > 1;
+
+  // Obtener la imagen actual
+  const getCurrentImageUrl = () => {
+    if (imageError) return PLACEHOLDER_IMAGE;
+    return validImages[currentImageIndex] || PLACEHOLDER_IMAGE;
+  };
+
+  const imageUrl = getCurrentImageUrl();
 
   // Handler para errores de carga de imagen
   const handleImageError = () => {
     console.warn(`Error cargando imagen para: ${titulo}`);
     setImageError(true);
+  };
+
+  // Navegación de imágenes
+  const handlePrevImage = (e) => {
+    e.stopPropagation();
+    setCurrentImageIndex((prev) =>
+      prev === 0 ? validImages.length - 1 : prev - 1,
+    );
+  };
+
+  const handleNextImage = (e) => {
+    e.stopPropagation();
+    setCurrentImageIndex((prev) =>
+      prev === validImages.length - 1 ? 0 : prev + 1,
+    );
   };
 
   // Determinar si es evento multi-día
@@ -179,6 +205,41 @@ export default function PublicationCard({
           loading="lazy"
           onError={handleImageError}
         />
+
+        {/* Flechas de navegación */}
+        {hasMultipleImages && (
+          <>
+            <button
+              className="publication-card__nav publication-card__nav--prev"
+              onClick={handlePrevImage}
+              aria-label="Imagen anterior">
+              <FontAwesomeIcon icon={faChevronLeft} />
+            </button>
+            <button
+              className="publication-card__nav publication-card__nav--next"
+              onClick={handleNextImage}
+              aria-label="Imagen siguiente">
+              <FontAwesomeIcon icon={faChevronRight} />
+            </button>
+          </>
+        )}
+
+        {/* Indicadores de imagen (dots) */}
+        {hasMultipleImages && (
+          <div className="publication-card__dots">
+            {validImages.map((_, index) => (
+              <span
+                key={index}
+                className={`publication-card__dot ${
+                  index === currentImageIndex
+                    ? "publication-card__dot--active"
+                    : ""
+                }`}
+              />
+            ))}
+          </div>
+        )}
+
         <div className="publication-card__overlay">
           <span className="publication-card__category">
             {categories?.nombre || "Sin categoría"}

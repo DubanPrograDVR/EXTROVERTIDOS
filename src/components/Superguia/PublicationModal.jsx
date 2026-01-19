@@ -16,6 +16,8 @@ import {
   faUser,
   faChevronDown,
   faChevronUp,
+  faChevronLeft,
+  faChevronRight,
   faRoute,
   faMap,
   faExternalLinkAlt,
@@ -81,6 +83,7 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
   const [showDescription, setShowDescription] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
   const [showLocation, setShowLocation] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Cerrar con ESC
   useEffect(() => {
@@ -96,6 +99,11 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
       document.body.style.overflow = "auto";
     };
   }, [isOpen, onClose]);
+
+  // Resetear índice de imagen cuando cambia la publicación
+  useEffect(() => {
+    setCurrentImageIndex(0);
+  }, [publication?.id]);
 
   if (!isOpen || !publication) return null;
 
@@ -130,11 +138,29 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
   const youtube = redes_sociales?.youtube || publication.youtube;
   const tiktok = redes_sociales?.tiktok || publication.tiktok;
 
-  // Obtener la primera imagen del array o usar placeholder
-  const imageUrl =
-    Array.isArray(imagenes) && imagenes.length > 0
-      ? imagenes[0]
-      : "/img/Home1.png";
+  // Obtener array de imágenes válidas
+  const getValidImages = () => {
+    if (Array.isArray(imagenes) && imagenes.length > 0) {
+      return imagenes;
+    }
+    return ["/img/Home1.png"];
+  };
+
+  const validImages = getValidImages();
+  const hasMultipleImages = validImages.length > 1;
+
+  // Navegación de imágenes
+  const handlePrevImage = () => {
+    setCurrentImageIndex((prev) =>
+      prev === 0 ? validImages.length - 1 : prev - 1,
+    );
+  };
+
+  const handleNextImage = () => {
+    setCurrentImageIndex((prev) =>
+      prev === validImages.length - 1 ? 0 : prev + 1,
+    );
+  };
 
   // Determinar si es evento multi-día
   const isMultiDay = es_multidia || (fecha_fin && fecha_fin !== fecha_evento);
@@ -250,7 +276,7 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
     }
     // Fallback: usar la dirección como destino
     const destination = encodeURIComponent(
-      direccion || `${comuna}, ${provincia}, Chile`
+      direccion || `${comuna}, ${provincia}, Chile`,
     );
     return `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
   };
@@ -276,16 +302,61 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
 
         {/* Contenido principal */}
         <div className="publication-modal__content">
-          {/* Imagen */}
+          {/* Imagen con carrusel */}
           <div className="publication-modal__image-section">
-            <img
-              src={imageUrl}
-              alt={titulo}
-              className="publication-modal__image"
-              onError={(e) => {
-                e.target.src = "/img/Home1.png";
-              }}
-            />
+            <div className="publication-modal__image-container">
+              <img
+                src={validImages[currentImageIndex]}
+                alt={titulo}
+                className="publication-modal__image"
+                onError={(e) => {
+                  e.target.src = "/img/Home1.png";
+                }}
+              />
+
+              {/* Flechas de navegación */}
+              {hasMultipleImages && (
+                <>
+                  <button
+                    className="publication-modal__image-nav publication-modal__image-nav--prev"
+                    onClick={handlePrevImage}
+                    aria-label="Imagen anterior">
+                    <FontAwesomeIcon icon={faChevronLeft} />
+                  </button>
+                  <button
+                    className="publication-modal__image-nav publication-modal__image-nav--next"
+                    onClick={handleNextImage}
+                    aria-label="Imagen siguiente">
+                    <FontAwesomeIcon icon={faChevronRight} />
+                  </button>
+                </>
+              )}
+
+              {/* Indicadores (dots) */}
+              {hasMultipleImages && (
+                <div className="publication-modal__image-dots">
+                  {validImages.map((_, index) => (
+                    <button
+                      key={index}
+                      className={`publication-modal__image-dot ${
+                        index === currentImageIndex
+                          ? "publication-modal__image-dot--active"
+                          : ""
+                      }`}
+                      onClick={() => setCurrentImageIndex(index)}
+                      aria-label={`Ver imagen ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Contador de imágenes */}
+              {hasMultipleImages && (
+                <div className="publication-modal__image-counter">
+                  {currentImageIndex + 1} / {validImages.length}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Información */}

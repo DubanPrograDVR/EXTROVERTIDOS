@@ -109,11 +109,98 @@
   background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
 }
 
+.publication-modal__image-container {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .publication-modal__image {
   width: 100%;
   max-height: 450px;
   object-fit: contain;
   border-radius: 15px;
+}
+
+/* Flechas de navegación */
+.publication-modal__image-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 2px solid #ff6600;
+  border-radius: 50%;
+  color: #ff6600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  z-index: 5;
+}
+
+.publication-modal__image-nav:hover {
+  background: #ff6600;
+  color: #000;
+}
+
+.publication-modal__image-nav--prev {
+  left: 10px;
+}
+
+.publication-modal__image-nav--next {
+  right: 10px;
+}
+
+/* Indicadores (dots) */
+.publication-modal__image-dots {
+  position: absolute;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 5;
+}
+
+.publication-modal__image-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.publication-modal__image-dot:hover {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.publication-modal__image-dot--active {
+  background: #ff6600;
+  width: 24px;
+  border-radius: 5px;
+}
+
+/* Contador de imágenes */
+.publication-modal__image-counter {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  z-index: 5;
 }
 
 /* Sección de información */
@@ -609,6 +696,20 @@
 
   .publication-modal__image {
     max-height: 300px;
+  }
+
+  .publication-modal__image-nav {
+    width: 35px;
+    height: 35px;
+    font-size: 0.9rem;
+  }
+
+  .publication-modal__image-nav--prev {
+    left: 5px;
+  }
+
+  .publication-modal__image-nav--next {
+    right: 5px;
   }
 
   .publication-modal__title {

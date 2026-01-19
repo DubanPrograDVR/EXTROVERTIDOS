@@ -4,7 +4,9 @@
   background: #111;
   border-radius: 12px;
   overflow: hidden;
-  transition: transform 0.3s, box-shadow 0.3s;
+  transition:
+    transform 0.3s,
+    box-shadow 0.3s;
   cursor: pointer;
 }
 
@@ -29,6 +31,69 @@
 
 .publication-card:hover .publication-card__image {
   transform: scale(1.05);
+}
+
+/* Flechas de navegación */
+.publication-card__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  opacity: 0;
+  transition: all 0.2s ease;
+  z-index: 5;
+}
+
+.publication-card:hover .publication-card__nav {
+  opacity: 1;
+}
+
+.publication-card__nav:hover {
+  background: rgba(255, 102, 0, 0.9);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.publication-card__nav--prev {
+  left: 8px;
+}
+
+.publication-card__nav--next {
+  right: 8px;
+}
+
+/* Indicadores (dots) */
+.publication-card__dots {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 5px;
+  z-index: 5;
+}
+
+.publication-card__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transition: all 0.2s ease;
+}
+
+.publication-card__dot--active {
+  background: #ff6600;
+  width: 16px;
+  border-radius: 3px;
 }
 
 .publication-card__overlay {
