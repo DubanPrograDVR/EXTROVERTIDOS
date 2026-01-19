@@ -132,7 +132,7 @@ const usePublicarForm = () => {
         if (!isAdmin && event.user_id !== user?.id) {
           showToast?.(
             "No tienes permisos para editar esta publicación",
-            "error"
+            "error",
           );
           navigate("/");
           return;
@@ -236,6 +236,15 @@ const usePublicarForm = () => {
         [name]: value,
       }));
 
+      // Si cambia la provincia, limpiar la comuna seleccionada
+      if (name === "provincia") {
+        setFormData((prev) => ({
+          ...prev,
+          provincia: value,
+          comuna: "", // Resetear comuna al cambiar provincia
+        }));
+      }
+
       // Si se cambia la fecha_evento y hay fecha_fin, validar que fecha_fin sea posterior
       if (name === "fecha_evento" && formData.fecha_fin) {
         if (new Date(value) > new Date(formData.fecha_fin)) {
@@ -295,7 +304,7 @@ const usePublicarForm = () => {
       setPreviewImages((prev) => [...prev, ...newPreviews]);
       setErrors((prev) => ({ ...prev, imagenes: "" }));
     },
-    [existingImages.length, formData.imagenes.length]
+    [existingImages.length, formData.imagenes.length],
   );
 
   // Eliminar imagen - con limpieza de Object URLs para evitar memory leaks
@@ -327,7 +336,7 @@ const usePublicarForm = () => {
         }));
       }
     },
-    [existingImages.length]
+    [existingImages.length],
   );
 
   // Limpiar Object URLs al desmontar el componente
@@ -482,7 +491,7 @@ const usePublicarForm = () => {
       if (showToast)
         showToast(
           "Agrega al menos un título o descripción para guardar el borrador",
-          "warning"
+          "warning",
         );
       return false;
     }
@@ -492,7 +501,7 @@ const usePublicarForm = () => {
     try {
       // Obtener nombre de la categoría para mostrar en la lista
       const selectedCategory = categories.find(
-        (c) => c.id === parseInt(formData.category_id)
+        (c) => c.id === parseInt(formData.category_id),
       );
 
       // Convertir la primera imagen a base64 para preview (si existe)
@@ -540,21 +549,27 @@ const usePublicarForm = () => {
   // Manejar envío del formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("=== INICIO SUBMIT ===");
 
     // Verificar autenticación
     if (!isAuthenticated) {
+      console.log("Usuario no autenticado");
       setShowAuthModal(true);
       return;
     }
 
     // Validar formulario
+    console.log("Validando formulario...");
     if (!validateForm()) {
+      console.log("Validación fallida:", errors);
       if (showToast)
         showToast("Por favor completa todos los campos obligatorios", "error");
       return;
     }
+    console.log("Validación exitosa");
 
     setIsSubmitting(true);
+    console.log("isSubmitting = true");
 
     try {
       // 1. Subir nuevas imágenes (secuencialmente para mejor manejo de errores)
@@ -566,7 +581,7 @@ const usePublicarForm = () => {
         console.log(
           `Subiendo imagen ${i + 1} de ${formData.imagenes.length}: ${
             file.name
-          }`
+          }`,
         );
         try {
           const url = await uploadEventImage(file, user.id);
@@ -610,6 +625,7 @@ const usePublicarForm = () => {
         provincia: formData.provincia,
         comuna: formData.comuna.trim(),
         direccion: formData.direccion.trim(),
+        ubicacion_url: formData.ubicacion_url?.trim() || null,
         tipo_entrada: formData.tipo_entrada,
         precio:
           formData.tipo_entrada === "pagado" ? parseInt(formData.precio) : null,
@@ -620,13 +636,14 @@ const usePublicarForm = () => {
 
       console.log(
         "Datos del evento a enviar:",
-        JSON.stringify(eventData, null, 2)
+        JSON.stringify(eventData, null, 2),
       );
 
       if (isEditing) {
         // Actualizar evento existente
-        console.log("Actualizando evento existente...");
+        console.log("Actualizando evento existente...", editEventId);
         await updateEvent(editEventId, eventData);
+        console.log("Evento actualizado exitosamente");
         if (showToast)
           showToast("¡Publicación actualizada exitosamente!", "success");
       } else {
@@ -634,15 +651,15 @@ const usePublicarForm = () => {
         eventData.user_id = user.id;
         // Admins publican directamente, usuarios normales van a cola de aprobación
         eventData.estado = isAdmin ? "publicado" : "pendiente";
-        console.log("Creando nuevo evento...");
-        await createEvent(eventData);
-        console.log("Evento creado exitosamente");
+        console.log("Creando nuevo evento con estado:", eventData.estado);
+        const createdEvent = await createEvent(eventData);
+        console.log("Evento creado exitosamente:", createdEvent);
         if (showToast)
           showToast(
             isAdmin
               ? "¡Publicación creada y publicada exitosamente!"
               : "¡Evento creado exitosamente! Será revisado pronto.",
-            "success"
+            "success",
           );
       }
 
@@ -663,18 +680,23 @@ const usePublicarForm = () => {
       // Redirigir: admin siempre vuelve al panel, usuarios normales al perfil
       navigate(isAdmin ? "/admin" : "/perfil");
     } catch (error) {
+      console.error("=== ERROR EN SUBMIT ===");
       console.error(
         `Error al ${isEditing ? "actualizar" : "crear"} evento:`,
-        error
+        error,
       );
+      console.error("Error name:", error?.name);
+      console.error("Error message:", error?.message);
+      console.error("Error stack:", error?.stack);
       if (showToast)
         showToast(
           `Error al ${
             isEditing ? "actualizar" : "crear"
           } el evento. Intenta nuevamente.`,
-          "error"
+          "error",
         );
     } finally {
+      console.log("=== FINALLY: Setting isSubmitting = false ===");
       setIsSubmitting(false);
     }
   };

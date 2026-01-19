@@ -6,6 +6,7 @@ import {
   faSearch,
   faLocationCrosshairs,
   faCheck,
+  faExternalLinkAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   MapContainer,
@@ -42,6 +43,87 @@ const customIcon = new L.Icon({
 const DEFAULT_CENTER = [-35.4264, -71.6554];
 const DEFAULT_ZOOM = 13;
 
+/**
+ * Detectar si es una URL corta de Google Maps (goo.gl o maps.app.goo.gl)
+ */
+const isShortUrl = (url) => {
+  if (!url) return false;
+  return url.includes("goo.gl/") || url.includes("maps.app.goo.gl/");
+};
+
+/**
+ * Las URLs cortas de Google Maps NO se pueden resolver desde el navegador
+ * debido a restricciones de CORS. Simplemente retornamos null.
+ */
+const resolveShortUrl = async () => {
+  // No intentamos resolver URLs cortas porque los servicios externos
+  // causan problemas de CORS y pueden bloquear otras operaciones de red.
+  return null;
+};
+
+/**
+ * Extraer coordenadas de URL de Google Maps (soporta múltiples formatos)
+ * Movido fuera del componente para evitar recreación en cada render
+ */
+const extractCoordsFromUrl = (url) => {
+  if (!url) return null;
+
+  // Limpiar espacios
+  url = url.trim();
+
+  console.log("Intentando extraer coordenadas de:", url);
+
+  // Formato 1: https://www.google.com/maps?q=-35.123,-71.456
+  let match = url.match(/[?&]q=(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/);
+  if (match) {
+    console.log("Match formato 1 (q=lat,lng):", match);
+    return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+  }
+
+  // Formato 2: https://www.google.com/maps/@-35.123,-71.456,15z
+  match = url.match(/@(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/);
+  if (match) {
+    console.log("Match formato 2 (@lat,lng):", match);
+    return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+  }
+
+  // Formato 3: https://www.google.com/maps/place/.../@-35.123,-71.456,15z
+  match = url.match(/place\/[^/]+\/@(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/);
+  if (match) {
+    console.log("Match formato 3 (place/@lat,lng):", match);
+    return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+  }
+
+  // Formato 4: https://maps.google.com/?ll=-35.123,-71.456
+  match = url.match(/[?&]ll=(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/);
+  if (match) {
+    console.log("Match formato 4 (ll=lat,lng):", match);
+    return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+  }
+
+  // Formato 5: https://goo.gl/maps/... con coordenadas en query
+  match = url.match(/!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/);
+  if (match) {
+    console.log("Match formato 5 (!3d!4d):", match);
+    return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+  }
+
+  // Formato 6: Coordenadas directas separadas por coma: -35.123, -71.456
+  match = url.match(/^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/);
+  if (match) {
+    const lat = parseFloat(match[1]);
+    const lng = parseFloat(match[2]);
+    // Validar que sean coordenadas válidas
+    if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+      console.log("Match formato 6 (coords directas):", { lat, lng });
+      return { lat, lng };
+    }
+  }
+
+  console.log("No se encontraron coordenadas en el URL");
+  return null;
+};
+
 // Componente para manejar clicks en el mapa
 const MapClickHandler = ({ onLocationSelect }) => {
   useMapEvents({
@@ -70,33 +152,39 @@ const LocationPicker = ({ isOpen, onClose, currentLocation, onSave }) => {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [isResolvingUrl, setIsResolvingUrl] = useState(false);
+  const [shortUrlError, setShortUrlError] = useState(false);
   const [mapCenter, setMapCenter] = useState(DEFAULT_CENTER);
   const searchInputRef = useRef(null);
 
   // Parsear ubicación actual si existe
   useEffect(() => {
-    if (isOpen && currentLocation) {
-      // Intentar extraer coordenadas del URL de Google Maps
-      const coords = extractCoordsFromUrl(currentLocation);
-      if (coords) {
-        setSelectedLocation(coords);
-        setMapCenter([coords.lat, coords.lng]);
+    if (!isOpen || !currentLocation) {
+      if (isOpen) {
+        setSelectedLocation(null);
+        setShortUrlError(false);
+        setIsResolvingUrl(false);
       }
-    } else if (isOpen) {
-      setSelectedLocation(null);
+      return;
+    }
+
+    setShortUrlError(false);
+
+    // Intentar extraer coordenadas directamente
+    const coords = extractCoordsFromUrl(currentLocation);
+
+    // Si es una URL corta, mostrar error inmediatamente (no intentamos resolver)
+    if (!coords && isShortUrl(currentLocation)) {
+      console.log("URL corta detectada - no soportada directamente");
+      setShortUrlError(true);
+      return;
+    }
+
+    if (coords) {
+      setSelectedLocation(coords);
+      setMapCenter([coords.lat, coords.lng]);
     }
   }, [isOpen, currentLocation]);
-
-  // Extraer coordenadas de URL de Google Maps
-  const extractCoordsFromUrl = (url) => {
-    if (!url) return null;
-    // Formato: https://www.google.com/maps?q=-35.123,-71.456
-    const match = url.match(/q=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
-    if (match) {
-      return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
-    }
-    return null;
-  };
 
   // Generar URL de Google Maps
   const generateGoogleMapsUrl = (latlng) => {
@@ -239,8 +327,49 @@ const LocationPicker = ({ isOpen, onClose, currentLocation, onSave }) => {
           </button>
         </div>
 
+        {/* Mensaje de ayuda para URLs cortas */}
+        {shortUrlError && currentLocation && (
+          <div className="location-picker__short-url-help">
+            <div className="location-picker__short-url-header">
+              <span>📍 Enlace corto detectado</span>
+            </div>
+            <p>
+              Los enlaces cortos de Google Maps no se pueden leer directamente.
+              Haz clic en el botón para abrir el mapa y luego copia la URL
+              larga:
+            </p>
+            <a
+              href={currentLocation}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="location-picker__open-link-btn">
+              <FontAwesomeIcon icon={faExternalLinkAlt} />
+              Abrir en Google Maps
+            </a>
+            <p className="location-picker__short-url-steps">
+              <strong>Pasos:</strong>
+              <br />
+              1. Haz clic en el botón de arriba
+              <br />
+              2. Copia la URL de la barra de direcciones
+              <br />
+              3. Pégala en el campo de ubicación del formulario
+            </p>
+            <p className="location-picker__short-url-alt">
+              O simplemente haz clic en el mapa para marcar la ubicación
+              manualmente.
+            </p>
+          </div>
+        )}
+
         {/* Map */}
         <div className="location-picker__map-container">
+          {isResolvingUrl && (
+            <div className="location-picker__loading">
+              <div className="location-picker__loading-spinner"></div>
+              <span>Resolviendo enlace de Google Maps...</span>
+            </div>
+          )}
           <MapContainer
             center={mapCenter}
             zoom={DEFAULT_ZOOM}

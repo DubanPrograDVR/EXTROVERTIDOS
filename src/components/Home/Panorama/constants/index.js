@@ -9,6 +9,44 @@ export const TIPOS_ENTRADA = [
 // Provincias de Chile (Región del Maule)
 export const PROVINCIAS = ["Talca", "Curicó", "Linares", "Cauquenes"];
 
+// Comunas por Provincia (Región del Maule)
+export const COMUNAS_POR_PROVINCIA = {
+  Talca: [
+    "Talca",
+    "Constitución",
+    "Curepto",
+    "Empedrado",
+    "Maule",
+    "Pelarco",
+    "Pencahue",
+    "Río Claro",
+    "San Clemente",
+    "San Rafael",
+  ],
+  Curicó: [
+    "Curicó",
+    "Hualañé",
+    "Licantén",
+    "Molina",
+    "Rauco",
+    "Romeral",
+    "Sagrada Familia",
+    "Teno",
+    "Vichuquén",
+  ],
+  Linares: [
+    "Linares",
+    "Colbún",
+    "Longaví",
+    "Parral",
+    "Retiro",
+    "San Javier",
+    "Villa Alegre",
+    "Yerbas Buenas",
+  ],
+  Cauquenes: ["Cauquenes", "Chanco", "Pelluhue"],
+};
+
 // Estado inicial del formulario
 export const INITIAL_FORM_STATE = {
   titulo: "",

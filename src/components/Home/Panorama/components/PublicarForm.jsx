@@ -13,7 +13,7 @@ import {
   faEye,
   faSave,
 } from "@fortawesome/free-solid-svg-icons";
-import { PROVINCIAS } from "../constants";
+import { PROVINCIAS, COMUNAS_POR_PROVINCIA } from "../constants";
 import SocialInputs from "./SocialInputs";
 import ImageUpload from "./ImageUpload";
 import DateRangePicker from "./DateRangePicker";
@@ -252,15 +252,25 @@ const PublicarForm = ({
             <label className="publicar-form__label" htmlFor="comuna">
               Comuna *
             </label>
-            <input
-              type="text"
+            <select
               id="comuna"
               name="comuna"
-              className={`publicar-form__input ${errors.comuna ? "error" : ""}`}
-              placeholder="Ej: Talca"
+              className={`publicar-form__select ${errors.comuna ? "error" : ""}`}
               value={formData.comuna}
               onChange={onChange}
-            />
+              disabled={!formData.provincia}>
+              <option value="">
+                {formData.provincia
+                  ? "Selecciona una comuna"
+                  : "Primero selecciona provincia"}
+              </option>
+              {formData.provincia &&
+                COMUNAS_POR_PROVINCIA[formData.provincia]?.map((comuna) => (
+                  <option key={comuna} value={comuna}>
+                    {comuna}
+                  </option>
+                ))}
+            </select>
             {errors.comuna && (
               <span className="publicar-form__error">{errors.comuna}</span>
             )}
@@ -292,21 +302,19 @@ const PublicarForm = ({
         <div className="publicar-form__group publicar-form__group--location">
           <label className="publicar-form__label">
             <span className="publicar-form__label-hint">(Opcional)</span>
-            <FontAwesomeIcon icon={faMapMarkerAlt} /> Ubicación
+            <FontAwesomeIcon icon={faMapMarkerAlt} /> Ubicación en Mapa
           </label>
 
-          {formData.ubicacion_url && (
-            <input
-              type="text"
-              id="ubicacion_url"
-              name="ubicacion_url"
-              className="publicar-form__input publicar-form__input--location"
-              value={formData.ubicacion_url}
-              onChange={onChange}
-              placeholder="https://www.google.com/maps?q=..."
-              readOnly
-            />
-          )}
+          {/* Input para pegar link de Google Maps */}
+          <input
+            type="text"
+            id="ubicacion_url"
+            name="ubicacion_url"
+            className="publicar-form__input publicar-form__input--location"
+            value={formData.ubicacion_url || ""}
+            onChange={onChange}
+            placeholder="Pega aquí el enlace de Google Maps o selecciona en el mapa"
+          />
 
           <div className="publicar-form__location-wrapper">
             <div className="publicar-form__location-icon">
@@ -320,10 +328,13 @@ const PublicarForm = ({
               className="publicar-form__location-btn"
               onClick={() => setIsLocationPickerOpen(true)}>
               <FontAwesomeIcon icon={faMapMarkerAlt} />
-              {formData.ubicacion_url ? "Cambiar ubicación" : "Elegir en mapa"}
+              {formData.ubicacion_url
+                ? "Ver/Cambiar en mapa"
+                : "Elegir en mapa"}
             </button>
             <p className="publicar-form__location-hint">
-              Selecciona la ubicación en el mapa para generar el enlace directo.
+              Pega un enlace de Google Maps o selecciona la ubicación
+              manualmente.
             </p>
           </div>
         </div>
