@@ -651,9 +651,10 @@ const usePublicarForm = () => {
         eventData.user_id = user.id;
         // Admins publican directamente, usuarios normales van a cola de aprobación
         eventData.estado = isAdmin ? "publicado" : "pendiente";
-        console.log("Creando nuevo evento con estado:", eventData.estado);
+
         const createdEvent = await createEvent(eventData);
-        console.log("Evento creado exitosamente:", createdEvent);
+        console.log("Evento creado exitosamente:", createdEvent?.id);
+
         if (showToast)
           showToast(
             isAdmin
