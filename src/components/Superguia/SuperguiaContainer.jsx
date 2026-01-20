@@ -16,7 +16,7 @@ import {
 } from "../../lib/database";
 import { useCity } from "../../context/CityContext";
 
-const ITEMS_PER_PAGE = 16;
+const ITEMS_PER_PAGE = 4;
 
 export default function SuperguiaContainer() {
   const [searchParams] = useSearchParams();
@@ -143,7 +143,7 @@ export default function SuperguiaContainer() {
           pub.titulo?.toLowerCase().includes(query) ||
           pub.comuna?.toLowerCase().includes(query) ||
           pub.provincia?.toLowerCase().includes(query) ||
-          pub.categories?.nombre?.toLowerCase().includes(query)
+          pub.categories?.nombre?.toLowerCase().includes(query),
       );
     }
 

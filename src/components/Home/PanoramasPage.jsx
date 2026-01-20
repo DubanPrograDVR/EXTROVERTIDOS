@@ -12,6 +12,7 @@ import {
   faPlus,
 } from "@fortawesome/free-solid-svg-icons";
 import Footer from "./Footer";
+import Pagination from "../Superguia/Pagination";
 import {
   getPublishedEvents,
   getEventsByCity,
@@ -20,6 +21,8 @@ import {
 import { useCity } from "../../context/CityContext";
 import { mapCategoriesToUI } from "../Superguia/data";
 import "./styles/panoramas-page.css";
+
+const ITEMS_PER_PAGE = 4;
 
 export default function PanoramasPage() {
   const navigate = useNavigate();
@@ -35,6 +38,7 @@ export default function PanoramasPage() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedCity, setSelectedCity] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Estado del carrusel
   const [carouselIndex, setCarouselIndex] = useState(0);
@@ -88,7 +92,7 @@ export default function PanoramasPage() {
         (event) =>
           event.titulo?.toLowerCase().includes(query) ||
           event.comuna?.toLowerCase().includes(query) ||
-          event.provincia?.toLowerCase().includes(query)
+          event.provincia?.toLowerCase().includes(query),
       );
     }
 
@@ -103,6 +107,18 @@ export default function PanoramasPage() {
     return result;
   }, [events, searchQuery, selectedCategory, selectedCity]);
 
+  // Paginación
+  const totalPages = Math.ceil(filteredEvents.length / ITEMS_PER_PAGE);
+  const paginatedEvents = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredEvents.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredEvents, currentPage]);
+
+  // Resetear página cuando cambian los filtros
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategory, selectedCity]);
+
   // Eventos destacados (primeros 5)
   const featuredEvents = useMemo(() => {
     return events.slice(0, 5);
@@ -111,13 +127,13 @@ export default function PanoramasPage() {
   // Navegación del carrusel
   const nextSlide = useCallback(() => {
     setCarouselIndex((prev) =>
-      prev >= featuredEvents.length - 1 ? 0 : prev + 1
+      prev >= featuredEvents.length - 1 ? 0 : prev + 1,
     );
   }, [featuredEvents.length]);
 
   const prevSlide = useCallback(() => {
     setCarouselIndex((prev) =>
-      prev <= 0 ? featuredEvents.length - 1 : prev - 1
+      prev <= 0 ? featuredEvents.length - 1 : prev - 1,
     );
   }, [featuredEvents.length]);
 
@@ -134,6 +150,7 @@ export default function PanoramasPage() {
     setSelectedCategory(null);
     setSelectedCity(null);
     setSearchQuery("");
+    setCurrentPage(1);
     setSearchParams({}); // Limpiar query params de la URL
   };
 
@@ -269,7 +286,7 @@ export default function PanoramasPage() {
               value={selectedCategory || ""}
               onChange={(e) =>
                 setSelectedCategory(
-                  e.target.value ? parseInt(e.target.value) : null
+                  e.target.value ? parseInt(e.target.value) : null,
                 )
               }>
               <option value="">Todas las categorías</option>
@@ -317,62 +334,73 @@ export default function PanoramasPage() {
             <button onClick={clearFilters}>Ver todos los panoramas</button>
           </div>
         ) : (
-          <div className="panoramas-page__grid">
-            {filteredEvents.map((event) => {
-              // Obtener la primera imagen del array o usar placeholder
-              const imageUrl =
-                Array.isArray(event.imagenes) && event.imagenes.length > 0
-                  ? event.imagenes[0]
-                  : "/img/Home1.png";
+          <>
+            <div className="panoramas-page__grid">
+              {paginatedEvents.map((event) => {
+                // Obtener la primera imagen del array o usar placeholder
+                const imageUrl =
+                  Array.isArray(event.imagenes) && event.imagenes.length > 0
+                    ? event.imagenes[0]
+                    : "/img/Home1.png";
 
-              return (
-                <article
-                  key={event.id}
-                  className="panoramas-page__card"
-                  onClick={() => navigate("/superguia")}>
-                  <div className="panoramas-page__card-image">
-                    <img
-                      src={imageUrl}
-                      alt={event.titulo}
-                      onError={(e) => {
-                        e.target.src = "/img/Home1.png";
-                      }}
-                    />
-                    <span className="panoramas-page__card-category">
-                      {event.categories?.nombre || "Evento"}
-                    </span>
-                  </div>
-                  <div className="panoramas-page__card-content">
-                    <h3 className="panoramas-page__card-title">
-                      {event.titulo}
-                    </h3>
-                    <div className="panoramas-page__card-info">
-                      <span>
-                        <FontAwesomeIcon icon={faCalendarDays} />
-                        {formatDate(event.fecha_evento)}
-                      </span>
-                      <span>
-                        <FontAwesomeIcon icon={faLocationDot} />
-                        {event.comuna}
+                return (
+                  <article
+                    key={event.id}
+                    className="panoramas-page__card"
+                    onClick={() => navigate("/superguia")}>
+                    <div className="panoramas-page__card-image">
+                      <img
+                        src={imageUrl}
+                        alt={event.titulo}
+                        onError={(e) => {
+                          e.target.src = "/img/Home1.png";
+                        }}
+                      />
+                      <span className="panoramas-page__card-category">
+                        {event.categories?.nombre || "Evento"}
                       </span>
                     </div>
-                    {event.profiles && (
-                      <div className="panoramas-page__card-author">
-                        {event.profiles.avatar_url && (
-                          <img
-                            src={event.profiles.avatar_url}
-                            alt={event.profiles.nombre}
-                            referrerPolicy="no-referrer"
-                          />
-                        )}
-                        <span>{event.profiles.nombre || "Usuario"}</span>
+                    <div className="panoramas-page__card-content">
+                      <h3 className="panoramas-page__card-title">
+                        {event.titulo}
+                      </h3>
+                      <div className="panoramas-page__card-info">
+                        <span>
+                          <FontAwesomeIcon icon={faCalendarDays} />
+                          {formatDate(event.fecha_evento)}
+                        </span>
+                        <span>
+                          <FontAwesomeIcon icon={faLocationDot} />
+                          {event.comuna}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+                      {event.profiles && (
+                        <div className="panoramas-page__card-author">
+                          {event.profiles.avatar_url && (
+                            <img
+                              src={event.profiles.avatar_url}
+                              alt={event.profiles.nombre}
+                              referrerPolicy="no-referrer"
+                            />
+                          )}
+                          <span>{event.profiles.nombre || "Usuario"}</span>
+                        </div>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            {/* Paginación */}
+            {totalPages > 1 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            )}
+          </>
         )}
       </section>
 

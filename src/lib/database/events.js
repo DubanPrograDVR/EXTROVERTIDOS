@@ -6,6 +6,47 @@
 import { supabase } from "../supabase";
 
 /**
+ * Asegura que el perfil del usuario exista antes de crear un evento
+ * @param {string} userId - ID del usuario
+ */
+const ensureProfileExists = async (userId) => {
+  // Verificar si el perfil existe
+  const { data: profile, error: checkError } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", userId)
+    .single();
+
+  // Si no existe el perfil, crearlo
+  if (checkError?.code === "PGRST116" || !profile) {
+    // Obtener datos del usuario desde auth
+    const { data: authData } = await supabase.auth.getUser();
+    const user = authData?.user;
+
+    if (user) {
+      const { error: insertError } = await supabase.from("profiles").insert([
+        {
+          id: userId,
+          email: user.email,
+          nombre:
+            user.user_metadata?.full_name ||
+            user.user_metadata?.name ||
+            user.email?.split("@")[0] ||
+            "Usuario",
+          avatar_url: user.user_metadata?.avatar_url || null,
+        },
+      ]);
+
+      if (insertError && insertError.code !== "23505") {
+        // 23505 = ya existe (ignorar)
+        console.error("Error creando perfil:", insertError);
+        throw new Error("No se pudo crear el perfil del usuario");
+      }
+    }
+  }
+};
+
+/**
  * Valida los campos requeridos de un evento
  * @param {Object} eventData - Datos del evento a validar
  * @throws {Error} Si faltan campos requeridos
@@ -36,6 +77,9 @@ const validateEventData = (eventData) => {
 export const createEvent = async (eventData) => {
   // Validar datos antes de insertar
   validateEventData(eventData);
+
+  // Asegurar que el perfil del usuario exista
+  await ensureProfileExists(eventData.user_id);
 
   const { data, error } = await supabase
     .from("events")
@@ -95,7 +139,7 @@ export const getPublishedEvents = async () => {
           nombre
         )
       )
-    `
+    `,
     )
     .eq("estado", "publicado")
     .order("fecha_evento", { ascending: true });
@@ -137,7 +181,7 @@ export const getEventsByCity = async (ciudad, provincia = null) => {
           nombre
         )
       )
-    `
+    `,
     )
     .eq("estado", "publicado");
 
@@ -179,7 +223,7 @@ export const getEventsByUser = async (userId) => {
         icono,
         color
       )
-    `
+    `,
     )
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
@@ -220,7 +264,7 @@ export const getEventById = async (eventId) => {
           nombre
         )
       )
-    `
+    `,
     )
     .eq("id", eventId)
     .single();
@@ -265,7 +309,7 @@ export const getFilteredEvents = async (filters = {}) => {
           nombre
         )
       )
-    `
+    `,
     )
     .eq("estado", "publicado");
 
@@ -287,7 +331,7 @@ export const getFilteredEvents = async (filters = {}) => {
   // Búsqueda por texto
   if (filters.search) {
     query = query.or(
-      `titulo.ilike.%${filters.search}%,descripcion.ilike.%${filters.search}%,comuna.ilike.%${filters.search}%`
+      `titulo.ilike.%${filters.search}%,descripcion.ilike.%${filters.search}%,comuna.ilike.%${filters.search}%`,
     );
   }
 
