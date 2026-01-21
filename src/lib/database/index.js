@@ -120,3 +120,13 @@ export {
   countDrafts,
   deleteAllDraftsByType,
 } from "./drafts";
+
+// ============ LIKES ============
+export {
+  getLikesCount,
+  hasUserLiked,
+  getLikesState,
+  toggleLike,
+  addLike,
+  removeLike,
+} from "./likes";

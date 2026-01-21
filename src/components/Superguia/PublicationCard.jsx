@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./styles/PublicationCard.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -10,10 +10,21 @@ import {
   faHeart as faHeartSolid,
   faChevronLeft,
   faChevronRight,
+  faBookmark as faBookmarkSolid,
+  faThumbsUp as faThumbsUpSolid,
 } from "@fortawesome/free-solid-svg-icons";
-import { faHeart as faHeartRegular } from "@fortawesome/free-regular-svg-icons";
+import {
+  faHeart as faHeartRegular,
+  faBookmark as faBookmarkRegular,
+  faThumbsUp as faThumbsUpRegular,
+} from "@fortawesome/free-regular-svg-icons";
 import { useAuth } from "../../context/AuthContext";
-import { toggleFavorite } from "../../lib/database";
+import {
+  toggleFavorite,
+  toggleLike,
+  hasUserLiked,
+  getLikesCount,
+} from "../../lib/database";
 
 // Imagen placeholder por defecto
 const PLACEHOLDER_IMAGE = "/img/Home1.png";
@@ -41,11 +52,33 @@ export default function PublicationCard({
     profiles,
   } = publication;
 
-  const { user } = useAuth();
+  const { user, showToast } = useAuth();
   const [imageError, setImageError] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorited, setIsFavorited] = useState(initialIsFavorite);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [isTogglingLike, setIsTogglingLike] = useState(false);
+
+  // Cargar estado de likes al montar
+  useEffect(() => {
+    const loadLikeState = async () => {
+      try {
+        const count = await getLikesCount(id);
+        setLikeCount(count);
+
+        if (user) {
+          const liked = await hasUserLiked(user.id, id);
+          setIsLiked(liked);
+        }
+      } catch (error) {
+        console.error("Error cargando likes:", error);
+      }
+    };
+
+    loadLikeState();
+  }, [id, user]);
 
   // Obtener array de imágenes válidas
   const getValidImages = () => {
@@ -192,6 +225,28 @@ export default function PublicationCard({
     }
   };
 
+  // Manejar like
+  const handleLikeClick = async (e) => {
+    e.stopPropagation();
+    if (!user) {
+      showToast?.("Inicia sesión para dar me gusta", "warning");
+      return;
+    }
+    if (isTogglingLike) return;
+
+    setIsTogglingLike(true);
+    try {
+      const result = await toggleLike(user.id, id);
+      setIsLiked(result.isLiked);
+      setLikeCount(result.count);
+    } catch (error) {
+      console.error("Error al cambiar like:", error);
+      showToast?.("Error al procesar tu like", "error");
+    } finally {
+      setIsTogglingLike(false);
+    }
+  };
+
   const horarioShort = getHorarioShort();
   const entradaText = getEntradaText();
 
@@ -327,6 +382,30 @@ export default function PublicationCard({
             </span>
           </div>
         )}
+
+        {/* Botones de acción */}
+        <div className="publication-card__actions">
+          <button
+            className={`publication-card__action-btn ${isLiked ? "publication-card__action-btn--active" : ""}`}
+            onClick={handleLikeClick}
+            disabled={isTogglingLike}
+            aria-label={isLiked ? "Quitar me gusta" : "Me gusta"}>
+            <FontAwesomeIcon
+              icon={isLiked ? faThumbsUpSolid : faThumbsUpRegular}
+            />
+            <span>{likeCount > 0 ? likeCount : "Me gusta"}</span>
+          </button>
+          <button
+            className={`publication-card__action-btn ${isFavorited ? "publication-card__action-btn--active" : ""}`}
+            onClick={handleFavoriteClick}
+            disabled={isTogglingFavorite}
+            aria-label={isFavorited ? "Quitar de guardados" : "Guardar"}>
+            <FontAwesomeIcon
+              icon={isFavorited ? faBookmarkSolid : faBookmarkRegular}
+            />
+            <span>{isFavorited ? "Guardado" : "Guardar"}</span>
+          </button>
+        </div>
       </div>
     </article>
   );
