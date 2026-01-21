@@ -689,13 +689,13 @@ const usePublicarForm = () => {
       console.error("Error name:", error?.name);
       console.error("Error message:", error?.message);
       console.error("Error stack:", error?.stack);
-      if (showToast)
-        showToast(
-          `Error al ${
-            isEditing ? "actualizar" : "crear"
-          } el evento. Intenta nuevamente.`,
-          "error",
-        );
+
+      // Mostrar mensaje de error específico si está disponible
+      const errorMessage =
+        error?.message ||
+        `Error al ${isEditing ? "actualizar" : "crear"} el evento. Intenta nuevamente.`;
+
+      if (showToast) showToast(errorMessage, "error");
     } finally {
       console.log("=== FINALLY: Setting isSubmitting = false ===");
       setIsSubmitting(false);
