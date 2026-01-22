@@ -12,6 +12,7 @@ import {
   faChevronRight,
   faBookmark as faBookmarkSolid,
   faThumbsUp as faThumbsUpSolid,
+  faBullhorn,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faHeart as faHeartRegular,
@@ -50,6 +51,7 @@ export default function PublicationCard({
     tipo_entrada,
     precio,
     profiles,
+    mensaje_marketing,
   } = publication;
 
   const { user, showToast } = useAuth();
@@ -325,6 +327,19 @@ export default function PublicationCard({
           </span>
         </div>
         <h3 className="publication-card__title">{titulo}</h3>
+
+        {/* Mensaje de Marketing */}
+        {mensaje_marketing && (
+          <div className="publication-card__marketing">
+            <FontAwesomeIcon
+              icon={faBullhorn}
+              className="publication-card__marketing-icon"
+            />
+            <span className="publication-card__marketing-text">
+              {mensaje_marketing}
+            </span>
+          </div>
+        )}
 
         {/* Fecha y hora */}
         <div className="publication-card__datetime">

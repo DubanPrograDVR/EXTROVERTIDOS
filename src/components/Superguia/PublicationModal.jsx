@@ -24,6 +24,7 @@ import {
   faShareAlt,
   faHeart,
   faBookmark,
+  faBullhorn,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faInstagram,
@@ -115,6 +116,7 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
     provincia,
     categories,
     descripcion,
+    mensaje_marketing,
     fecha_evento,
     fecha_fin,
     es_multidia,
@@ -373,6 +375,19 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
                 <h3 className="publication-modal__subtitle">{subtitulo}</h3>
               )}
             </div>
+
+            {/* Mensaje de Marketing */}
+            {mensaje_marketing && (
+              <div className="publication-modal__marketing">
+                <FontAwesomeIcon
+                  icon={faBullhorn}
+                  className="publication-modal__marketing-icon"
+                />
+                <p className="publication-modal__marketing-text">
+                  {mensaje_marketing}
+                </p>
+              </div>
+            )}
 
             {/* Sección Descripción - Acordeón */}
             <AccordionSection

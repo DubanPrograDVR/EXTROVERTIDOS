@@ -244,6 +244,37 @@
   margin: 4px 0 0;
 }
 
+/* Mensaje de Marketing */
+.publication-modal__marketing {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 102, 0, 0.2) 0%,
+    rgba(255, 153, 0, 0.1) 100%
+  );
+  border: 1px solid rgba(255, 102, 0, 0.4);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-top: 16px;
+}
+
+.publication-modal__marketing-icon {
+  color: #ff6600;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.publication-modal__marketing-text {
+  color: #ffcc80;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+  font-style: italic;
+}
+
 /* ===== ACCORDION SECTION - Componente Reutilizable ===== */
 .accordion-section {
   border-radius: 10px;
