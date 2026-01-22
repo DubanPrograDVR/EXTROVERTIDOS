@@ -76,6 +76,7 @@ const usePublicarForm = () => {
         setFormData({
           titulo: draftData.titulo || "",
           descripcion: draftData.descripcion || "",
+          mensaje_marketing: draftData.mensaje_marketing || "",
           organizador: draftData.organizador || "",
           category_id: draftData.category_id || "",
           fecha_evento: draftData.fecha_evento || "",
@@ -94,6 +95,7 @@ const usePublicarForm = () => {
             instagram: "",
             facebook: "",
             whatsapp: "",
+            tiktok: "",
           },
           imagenes: [], // Las imágenes del borrador son previews, no archivos
         });
@@ -146,6 +148,7 @@ const usePublicarForm = () => {
         setFormData({
           titulo: event.titulo || "",
           descripcion: event.descripcion || "",
+          mensaje_marketing: event.mensaje_marketing || "",
           organizador: event.organizador || "",
           category_id: event.category_id || "",
           fecha_evento: event.fecha_evento || "",
@@ -164,6 +167,7 @@ const usePublicarForm = () => {
             instagram: "",
             facebook: "",
             whatsapp: "",
+            tiktok: "",
           },
           imagenes: [], // Las nuevas imágenes se agregan aquí
         });
@@ -608,6 +612,7 @@ const usePublicarForm = () => {
       const eventData = {
         titulo: formData.titulo.trim(),
         descripcion: formData.descripcion.trim(),
+        mensaje_marketing: formData.mensaje_marketing?.trim() || null,
         organizador:
           formData.organizador.trim() ||
           user.user_metadata?.full_name ||

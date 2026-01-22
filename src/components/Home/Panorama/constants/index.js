@@ -75,7 +75,10 @@ export const INITIAL_FORM_STATE = {
     instagram: "",
     facebook: "",
     whatsapp: "",
+    tiktok: "",
   },
+  // Marketing
+  mensaje_marketing: "",
   imagenes: [],
 };
 

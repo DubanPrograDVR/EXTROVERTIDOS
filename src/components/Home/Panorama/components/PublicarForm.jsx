@@ -12,6 +12,7 @@ import {
   faMapMarkerAlt,
   faEye,
   faSave,
+  faBullhorn,
 } from "@fortawesome/free-solid-svg-icons";
 import { PROVINCIAS, COMUNAS_POR_PROVINCIA } from "../constants";
 import SocialInputs from "./SocialInputs";
@@ -139,6 +140,30 @@ const PublicarForm = ({
           {errors.descripcion && (
             <span className="publicar-form__error">{errors.descripcion}</span>
           )}
+        </div>
+
+        {/* Mensaje de Marketing */}
+        <div className="publicar-form__group">
+          <label className="publicar-form__label" htmlFor="mensaje_marketing">
+            <FontAwesomeIcon icon={faBullhorn} /> Mensaje de Marketing
+            <span className="publicar-form__label-hint">
+              {" "}
+              (Opcional - Engancha a tu público)
+            </span>
+          </label>
+          <textarea
+            id="mensaje_marketing"
+            name="mensaje_marketing"
+            className="publicar-form__textarea publicar-form__textarea--marketing"
+            placeholder="Ej: ¡Las primeras 50 personas recibirán una bebida gratis! 🎉 Sorpresas exclusivas para quienes lleguen temprano..."
+            value={formData.mensaje_marketing}
+            onChange={onChange}
+            rows={3}
+            maxLength={500}
+          />
+          <span className="publicar-form__char-count">
+            {formData.mensaje_marketing?.length || 0}/500
+          </span>
         </div>
 
         {/* Categoría */}
