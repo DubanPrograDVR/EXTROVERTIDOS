@@ -383,6 +383,7 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
                   icon={faBullhorn}
                   className="publication-modal__marketing-icon"
                 />
+                <p>Mensaje de Marketing:</p>
                 <p className="publication-modal__marketing-text">
                   {mensaje_marketing}
                 </p>

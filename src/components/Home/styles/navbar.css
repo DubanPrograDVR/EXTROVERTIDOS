@@ -5,11 +5,13 @@
 @keyframes glow-pulse {
   0%,
   100% {
-    box-shadow: 0 4px 20px rgba(255, 102, 0, 0.2),
+    box-shadow:
+      0 4px 20px rgba(255, 102, 0, 0.2),
       0 0 30px rgba(255, 102, 0, 0.1);
   }
   50% {
-    box-shadow: 0 4px 30px rgba(255, 102, 0, 0.4),
+    box-shadow:
+      0 4px 30px rgba(255, 102, 0, 0.4),
       0 0 50px rgba(255, 102, 0, 0.2);
   }
 }
@@ -274,7 +276,9 @@
   border-radius: var(--radius-lg);
   padding: var(--space-2) 0;
   min-width: 160px;
-  box-shadow: var(--shadow-xl), 0 0 20px rgba(255, 102, 0, 0.15);
+  box-shadow:
+    var(--shadow-xl),
+    0 0 20px rgba(255, 102, 0, 0.15);
   z-index: 1001;
   animation: dropdownFadeIn 0.3s ease;
   overflow: hidden;
@@ -432,6 +436,18 @@
 .navbar-dropdown-item--admin .navbar-dropdown-icon {
   color: #ff6600;
 }
+
+.navbar-dropdown-item--switch {
+  color: #4fc3f7;
+}
+
+.navbar-dropdown-item--switch:hover {
+  background: rgba(79, 195, 247, 0.1);
+  color: #81d4fa;
+}
+
+.navbar-dropdown-item--switch .navbar-dropdown-icon {
+  color: #4fc3f7;
 }
 
 .navbar-dropdown-item--logout::before {
@@ -523,7 +539,9 @@
   background: linear-gradient(135deg, #ff6600, #ff8833);
   color: #000;
   transform: scale(1.2) rotate(360deg);
-  box-shadow: 0 8px 25px rgba(255, 102, 0, 0.6), 0 0 30px rgba(255, 102, 0, 0.4),
+  box-shadow:
+    0 8px 25px rgba(255, 102, 0, 0.6),
+    0 0 30px rgba(255, 102, 0, 0.4),
     inset 0 0 20px rgba(255, 170, 0, 0.3);
   border-color: #ffaa00;
   animation: float 1s ease-in-out infinite;
@@ -647,7 +665,8 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: radial-gradient(
+    background:
+      radial-gradient(
         circle at 50% 10%,
         rgba(255, 102, 0, 0.15),
         transparent 50%
@@ -708,7 +727,10 @@
     gap: 1.2rem;
     opacity: 0;
     transform: translateX(50px);
-    transition: all 0.3s ease, opacity 0.4s ease, transform 0.4s ease;
+    transition:
+      all 0.3s ease,
+      opacity 0.4s ease,
+      transform 0.4s ease;
   }
 
   .navbar-menu.active .nav-link {
@@ -853,6 +875,17 @@
 
   .navbar-mobile-auth-btn--logout:hover {
     background: rgba(255, 68, 68, 0.1);
+    transform: translateY(-2px);
+  }
+
+  .navbar-mobile-auth-btn--switch {
+    background: transparent;
+    border: 2px solid #4fc3f7;
+    color: #4fc3f7;
+  }
+
+  .navbar-mobile-auth-btn--switch:hover {
+    background: rgba(79, 195, 247, 0.1);
     transform: translateY(-2px);
   }
 

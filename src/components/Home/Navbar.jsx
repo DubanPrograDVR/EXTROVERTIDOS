@@ -11,6 +11,7 @@ import {
   faSignOutAlt,
   faCog,
   faShieldAlt,
+  faExchangeAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import AuthModal from "../Auth/AuthModal";
 
@@ -101,6 +102,19 @@ export default function Navbar() {
     navigate("/perfil");
   };
 
+  // Cambiar de cuenta: cerrar sesión y abrir modal de login
+  const handleSwitchAccount = async () => {
+    setIsUserDropdownOpen(false);
+    setIsMenuOpen(false);
+    try {
+      await signOut();
+      setAuthModalMode("login");
+      setIsAuthModalOpen(true);
+    } catch (error) {
+      console.error("Error al cambiar cuenta:", error);
+    }
+  };
+
   // Cerrar dropdown al hacer click fuera
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -138,7 +152,7 @@ export default function Navbar() {
                 onClick={handleLinkClick}>
                 {link.label}
               </a>
-            )
+            ),
           )}
 
           {/* Botones de autenticación en menú móvil */}
@@ -174,6 +188,12 @@ export default function Navbar() {
                     <span>Panel Admin</span>
                   </button>
                 )}
+                <button
+                  onClick={handleSwitchAccount}
+                  className="navbar-mobile-auth-btn navbar-mobile-auth-btn--switch">
+                  <FontAwesomeIcon icon={faExchangeAlt} />
+                  <span>Cambiar Cuenta</span>
+                </button>
                 <button
                   onClick={handleSignOut}
                   className="navbar-mobile-auth-btn navbar-mobile-auth-btn--logout">
@@ -271,6 +291,15 @@ export default function Navbar() {
                       </button>
                     )}
                     <div className="navbar-dropdown-divider"></div>
+                    <button
+                      onClick={handleSwitchAccount}
+                      className="navbar-dropdown-item navbar-dropdown-item--switch">
+                      <FontAwesomeIcon
+                        icon={faExchangeAlt}
+                        className="navbar-dropdown-icon"
+                      />
+                      <span>Cambiar Cuenta</span>
+                    </button>
                     <button
                       onClick={handleSignOut}
                       className="navbar-dropdown-item navbar-dropdown-item--logout">
