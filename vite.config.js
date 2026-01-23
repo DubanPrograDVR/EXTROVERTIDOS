@@ -8,6 +8,11 @@ export default defineConfig({
     // Separar chunks de vendors para mejor caching
     rollupOptions: {
       output: {
+        // ✅ AGREGAR ESTO: Hashes únicos en cada build
+        entryFileNames: "assets/[name]-[hash].js",
+        chunkFileNames: "assets/[name]-[hash].js",
+        assetFileNames: "assets/[name]-[hash].[ext]",
+
         manualChunks: {
           "vendor-react": ["react", "react-dom", "react-router-dom"],
           "vendor-supabase": ["@supabase/supabase-js"],
@@ -22,18 +27,12 @@ export default defineConfig({
         },
       },
     },
-    // Comprimir CSS
     cssCodeSplit: true,
-    // Target moderno para mejor performance
     target: "es2020",
-    // Minificación
     minify: "esbuild",
-    // Source maps solo en dev
     sourcemap: false,
-    // Tamaño de chunk warning
     chunkSizeWarningLimit: 1000,
   },
-  // Optimizar dependencias
   optimizeDeps: {
     include: [
       "react",
