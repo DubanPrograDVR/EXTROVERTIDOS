@@ -3,8 +3,9 @@
 .publication-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 25px;
+  gap: 30px;
   margin-bottom: 40px;
+  padding: 10px;
 }
 
 /* Responsive */

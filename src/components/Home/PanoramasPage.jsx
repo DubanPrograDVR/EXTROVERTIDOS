@@ -4,8 +4,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCalendarDays,
   faLocationDot,
-  faSearch,
-  faFilter,
   faArrowRight,
   faChevronLeft,
   faChevronRight,
@@ -13,13 +11,17 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import Footer from "./Footer";
 import Pagination from "../Superguia/Pagination";
+import FilterPanel from "../Superguia/FilterPanel";
+import PublicationModal from "../Superguia/PublicationModal";
+import PublicationGrid from "../Superguia/PublicationGrid";
+import { formatDateKey } from "../Superguia/DateCalendar";
 import {
   getPublishedEvents,
   getEventsByCity,
   getCategories,
 } from "../../lib/database";
 import { useCity } from "../../context/CityContext";
-import { mapCategoriesToUI } from "../Superguia/data";
+import { LOCATIONS, mapCategoriesToUI } from "../Superguia/data";
 import "./styles/panoramas-page.css";
 
 const ITEMS_PER_PAGE = 4;
@@ -27,27 +29,33 @@ const ITEMS_PER_PAGE = 4;
 export default function PanoramasPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { cityName, selectCity, cities } = useCity();
+  const { selectCity } = useCity();
 
   // Estados de datos
   const [events, setEvents] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Estados de filtros
+  // Estados de filtros (igual que SuperguiaContainer)
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedCity, setSelectedCity] = useState(null);
+  const [selectedComuna, setSelectedComuna] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedPrice, setSelectedPrice] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
   // Estado del carrusel
   const [carouselIndex, setCarouselIndex] = useState(0);
 
+  // Estado del modal
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   // Leer query params al cargar y sincronizar con CityContext
   useEffect(() => {
     const ciudadParam = searchParams.get("ciudad");
     if (ciudadParam) {
-      // Actualizar el contexto global de ciudad
       selectCity(ciudadParam);
       setSearchQuery(ciudadParam);
     }
@@ -60,7 +68,6 @@ export default function PanoramasPage() {
       try {
         const ciudadParam = searchParams.get("ciudad");
 
-        // Si hay una ciudad en los params, hacer query filtrada
         let eventsData;
         if (ciudadParam) {
           eventsData = await getEventsByCity(ciudadParam);
@@ -82,7 +89,61 @@ export default function PanoramasPage() {
     loadData();
   }, [searchParams]);
 
-  // Filtrar eventos
+  // Handlers para filtros
+  const handleCityChange = useCallback((city) => {
+    setSelectedCity(city);
+    setSelectedComuna(null);
+    setCurrentPage(1);
+  }, []);
+
+  const handleCategoryChange = useCallback((category) => {
+    setSelectedCategory(category);
+    setCurrentPage(1);
+  }, []);
+
+  const handleComunaChange = useCallback((comuna) => {
+    setSelectedComuna(comuna);
+    setCurrentPage(1);
+  }, []);
+
+  const handleDateChange = useCallback((date) => {
+    setSelectedDate(date);
+    setCurrentPage(1);
+  }, []);
+
+  const handlePriceChange = useCallback((price) => {
+    setSelectedPrice(price);
+    setCurrentPage(1);
+  }, []);
+
+  const handleSearch = useCallback((query) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
+  }, []);
+
+  const handleClearFilters = useCallback(() => {
+    setSelectedCategory(null);
+    setSelectedCity(null);
+    setSelectedComuna(null);
+    setSelectedDate(null);
+    setSelectedPrice(null);
+    setSearchQuery("");
+    setCurrentPage(1);
+    setSearchParams({});
+  }, [setSearchParams]);
+
+  // Handlers para el modal
+  const handleEventClick = useCallback((event) => {
+    setSelectedEvent(event);
+    setIsModalOpen(true);
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    setIsModalOpen(false);
+    setSelectedEvent(null);
+  }, []);
+
+  // Filtrar eventos (misma lógica que SuperguiaContainer)
   const filteredEvents = useMemo(() => {
     let result = [...events];
 
@@ -92,7 +153,8 @@ export default function PanoramasPage() {
         (event) =>
           event.titulo?.toLowerCase().includes(query) ||
           event.comuna?.toLowerCase().includes(query) ||
-          event.provincia?.toLowerCase().includes(query),
+          event.provincia?.toLowerCase().includes(query) ||
+          event.categories?.nombre?.toLowerCase().includes(query),
       );
     }
 
@@ -104,8 +166,67 @@ export default function PanoramasPage() {
       result = result.filter((event) => event.provincia === selectedCity);
     }
 
+    if (selectedComuna) {
+      result = result.filter((event) => event.comuna === selectedComuna);
+    }
+
+    // Filtrar por fecha
+    if (selectedDate) {
+      const dateStr = formatDateKey(selectedDate);
+      result = result.filter((event) => {
+        if (!event.fecha_evento) return false;
+        const eventDate = new Date(event.fecha_evento);
+        return formatDateKey(eventDate) === dateStr;
+      });
+    }
+
+    // Filtrar por precio
+    if (selectedPrice) {
+      result = result.filter((event) => {
+        const precio = event.precio || 0;
+        switch (selectedPrice) {
+          case "gratis":
+            return precio === 0 || event.tipo_entrada === "gratis";
+          case "economico":
+            return precio > 0 && precio <= 10000;
+          case "moderado":
+            return precio > 10000 && precio <= 30000;
+          case "premium":
+            return precio > 30000;
+          default:
+            return true;
+        }
+      });
+    }
+
     return result;
-  }, [events, searchQuery, selectedCategory, selectedCity]);
+  }, [
+    events,
+    searchQuery,
+    selectedCategory,
+    selectedCity,
+    selectedComuna,
+    selectedDate,
+    selectedPrice,
+  ]);
+
+  // Calcular eventos por día para el calendario
+  const eventsPerDay = useMemo(() => {
+    const counts = {};
+    events.forEach((event) => {
+      if (event.fecha_evento) {
+        const dateStr = formatDateKey(new Date(event.fecha_evento));
+        counts[dateStr] = (counts[dateStr] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [events]);
+
+  // Comunas disponibles según ciudad seleccionada
+  const availableComunas = useMemo(() => {
+    if (!selectedCity) return [];
+    return LOCATIONS[selectedCity]?.comunas || [];
+  }, [selectedCity]);
 
   // Paginación
   const totalPages = Math.ceil(filteredEvents.length / ITEMS_PER_PAGE);
@@ -113,11 +234,6 @@ export default function PanoramasPage() {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredEvents.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredEvents, currentPage]);
-
-  // Resetear página cuando cambian los filtros
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, selectedCategory, selectedCity]);
 
   // Eventos destacados (primeros 5)
   const featuredEvents = useMemo(() => {
@@ -144,15 +260,6 @@ export default function PanoramasPage() {
       return () => clearInterval(interval);
     }
   }, [featuredEvents.length, nextSlide]);
-
-  // Limpiar filtros
-  const clearFilters = () => {
-    setSelectedCategory(null);
-    setSelectedCity(null);
-    setSearchQuery("");
-    setCurrentPage(1);
-    setSearchParams({}); // Limpiar query params de la URL
-  };
 
   // Formatear fecha
   const formatDate = (dateString) => {
@@ -204,7 +311,7 @@ export default function PanoramasPage() {
                     </div>
                     <button
                       className="panoramas-page__hero-btn"
-                      onClick={() => navigate("/superguia")}>
+                      onClick={() => handleEventClick(event)}>
                       Ver más
                       <FontAwesomeIcon icon={faArrowRight} />
                     </button>
@@ -250,64 +357,27 @@ export default function PanoramasPage() {
         )}
       </section>
 
-      {/* Sección de filtros */}
-      <section className="panoramas-page__filters">
-        <div className="panoramas-page__filters-container">
-          {/* Buscador */}
-          <div className="panoramas-page__search">
-            <FontAwesomeIcon icon={faSearch} />
-            <input
-              type="text"
-              placeholder="Buscar panoramas..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-
-          {/* Filtro por ciudad */}
-          <div className="panoramas-page__filter-select">
-            <FontAwesomeIcon icon={faLocationDot} />
-            <select
-              value={selectedCity || ""}
-              onChange={(e) => setSelectedCity(e.target.value || null)}>
-              <option value="">Todas las ciudades</option>
-              {cities.map((city) => (
-                <option key={city.id} value={city.nombre}>
-                  {city.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Filtro por categoría */}
-          <div className="panoramas-page__filter-select">
-            <FontAwesomeIcon icon={faFilter} />
-            <select
-              value={selectedCategory || ""}
-              onChange={(e) =>
-                setSelectedCategory(
-                  e.target.value ? parseInt(e.target.value) : null,
-                )
-              }>
-              <option value="">Todas las categorías</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Botón limpiar */}
-          {(selectedCategory || selectedCity || searchQuery) && (
-            <button
-              className="panoramas-page__clear-btn"
-              onClick={clearFilters}>
-              Limpiar filtros
-            </button>
-          )}
-        </div>
-      </section>
+      {/* Panel de filtros de Superguia */}
+      <FilterPanel
+        categories={categories}
+        locations={LOCATIONS}
+        selectedCategory={selectedCategory}
+        selectedCity={selectedCity}
+        selectedComuna={selectedComuna}
+        selectedDate={selectedDate}
+        selectedPrice={selectedPrice}
+        searchQuery={searchQuery}
+        eventsPerDay={eventsPerDay}
+        availableComunas={availableComunas}
+        onCategoryChange={handleCategoryChange}
+        onCityChange={handleCityChange}
+        onComunaChange={handleComunaChange}
+        onDateChange={handleDateChange}
+        onPriceChange={handlePriceChange}
+        onSearchChange={handleSearch}
+        onClearFilters={handleClearFilters}
+        totalResults={filteredEvents.length}
+      />
 
       {/* Lista de eventos */}
       <section className="panoramas-page__events">
@@ -331,66 +401,17 @@ export default function PanoramasPage() {
         ) : filteredEvents.length === 0 ? (
           <div className="panoramas-page__empty">
             <p>No se encontraron panoramas con los filtros seleccionados.</p>
-            <button onClick={clearFilters}>Ver todos los panoramas</button>
+            <button onClick={handleClearFilters}>
+              Ver todos los panoramas
+            </button>
           </div>
         ) : (
           <>
-            <div className="panoramas-page__grid">
-              {paginatedEvents.map((event) => {
-                // Obtener la primera imagen del array o usar placeholder
-                const imageUrl =
-                  Array.isArray(event.imagenes) && event.imagenes.length > 0
-                    ? event.imagenes[0]
-                    : "/img/Home1.png";
-
-                return (
-                  <article
-                    key={event.id}
-                    className="panoramas-page__card"
-                    onClick={() => navigate("/superguia")}>
-                    <div className="panoramas-page__card-image">
-                      <img
-                        src={imageUrl}
-                        alt={event.titulo}
-                        onError={(e) => {
-                          e.target.src = "/img/Home1.png";
-                        }}
-                      />
-                      <span className="panoramas-page__card-category">
-                        {event.categories?.nombre || "Evento"}
-                      </span>
-                    </div>
-                    <div className="panoramas-page__card-content">
-                      <h3 className="panoramas-page__card-title">
-                        {event.titulo}
-                      </h3>
-                      <div className="panoramas-page__card-info">
-                        <span>
-                          <FontAwesomeIcon icon={faCalendarDays} />
-                          {formatDate(event.fecha_evento)}
-                        </span>
-                        <span>
-                          <FontAwesomeIcon icon={faLocationDot} />
-                          {event.comuna}
-                        </span>
-                      </div>
-                      {event.profiles && (
-                        <div className="panoramas-page__card-author">
-                          {event.profiles.avatar_url && (
-                            <img
-                              src={event.profiles.avatar_url}
-                              alt={event.profiles.nombre}
-                              referrerPolicy="no-referrer"
-                            />
-                          )}
-                          <span>{event.profiles.nombre || "Usuario"}</span>
-                        </div>
-                      )}
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
+            {/* Grid de publicaciones usando el componente de Superguia */}
+            <PublicationGrid
+              publications={paginatedEvents}
+              onPublicationClick={handleEventClick}
+            />
 
             {/* Paginación */}
             {totalPages > 1 && (
@@ -418,6 +439,13 @@ export default function PanoramasPage() {
           </button>
         </div>
       </section>
+
+      {/* Modal de publicación */}
+      <PublicationModal
+        publication={selectedEvent}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
 
       <Footer />
     </div>
