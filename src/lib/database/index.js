@@ -56,6 +56,12 @@ export {
   createBusiness,
   getPublishedBusinesses,
   getBusinessesByUser,
+  getPendingBusinesses,
+  getAllBusinesses,
+  approveBusiness,
+  rejectBusiness,
+  deleteBusiness,
+  updateBusiness,
 } from "./businesses";
 
 // ============ ROLES Y PERMISOS ============
@@ -76,9 +82,6 @@ export {
   getAllEvents,
   approveEvent,
   rejectEvent,
-  getPendingBusinesses,
-  approveBusiness,
-  rejectBusiness,
   getAdminStats,
   getEventsPerDay,
   getUsersPerDay,

@@ -1735,6 +1735,371 @@
   cursor: not-allowed;
 }
 
+/* ===== ADMIN SECTION (Negocios) ===== */
+.admin-section {
+  padding: 20px;
+}
+
+.admin-section__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.admin-section__header h2 {
+  font-size: 1.5rem;
+  color: #fff;
+  margin: 0;
+}
+
+.admin-section__count {
+  background: rgba(255, 102, 0, 0.15);
+  color: #ff6600;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* ===== ADMIN FILTERS ===== */
+.admin-filters {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.admin-filters__search {
+  flex: 1;
+  min-width: 250px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.admin-filters__search svg {
+  position: absolute;
+  left: 14px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.9rem;
+}
+
+.admin-filters__search input {
+  width: 100%;
+  padding: 12px 14px 12px 40px;
+  background: #111;
+  border: 1px solid rgba(255, 102, 0, 0.2);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.admin-filters__search input:focus {
+  outline: none;
+  border-color: #ff6600;
+  box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.1);
+}
+
+.admin-filters__search input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.admin-filters__select select {
+  padding: 12px 35px 12px 14px;
+  background: #111;
+  border: 1px solid rgba(255, 102, 0, 0.2);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23ff6600' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 20px;
+  transition: all 0.2s ease;
+}
+
+.admin-filters__select select:focus {
+  outline: none;
+  border-color: #ff6600;
+}
+
+/* ===== ADMIN TABLE ===== */
+.admin-table-wrapper {
+  overflow-x: auto;
+  background: #111;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 102, 0, 0.2);
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
+}
+
+.admin-table thead {
+  background: rgba(255, 102, 0, 0.1);
+}
+
+.admin-table th {
+  padding: 14px 16px;
+  text-align: left;
+  color: #ff6600;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 102, 0, 0.2);
+}
+
+.admin-table td {
+  padding: 14px 16px;
+  color: #fff;
+  font-size: 0.9rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  vertical-align: middle;
+}
+
+.admin-table tbody tr:hover {
+  background: rgba(255, 102, 0, 0.05);
+}
+
+.admin-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Table Business Cell */
+.admin-table__business {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-table__business-image {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #1a1a1a;
+}
+
+.admin-table__business-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-table__business-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 102, 0, 0.4);
+  font-size: 1.2rem;
+}
+
+.admin-table__business-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-table__business-name {
+  font-weight: 600;
+  color: #fff;
+}
+
+.admin-table__business-category {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Table User Cell */
+.admin-table__user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-table__user img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.admin-table__user-placeholder {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 102, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ff6600;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+/* Table Location Cell */
+.admin-table__location {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.admin-table__location svg {
+  color: #ff6600;
+  font-size: 0.85rem;
+}
+
+/* Table Status */
+.admin-table__status {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.admin-table__status.status--pending {
+  background: rgba(255, 193, 7, 0.15);
+  color: #ffc107;
+}
+
+.admin-table__status.status--published {
+  background: rgba(76, 175, 80, 0.15);
+  color: #4caf50;
+}
+
+.admin-table__status.status--rejected {
+  background: rgba(244, 67, 54, 0.15);
+  color: #f44336;
+}
+
+/* Table Actions */
+.admin-table__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-table__action {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
+}
+
+.admin-table__action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-table__action--view {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.admin-table__action--view:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.3);
+}
+
+.admin-table__action--approve {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.admin-table__action--approve:hover:not(:disabled) {
+  background: rgba(34, 197, 94, 0.3);
+}
+
+.admin-table__action--reject {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.admin-table__action--reject:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+.admin-table__action--delete {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.admin-table__action--delete:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+/* Admin Loading Inline */
+.admin-loading-inline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 15px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.admin-loading-inline__spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 102, 0, 0.2);
+  border-top-color: #ff6600;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive para tabla de negocios */
+@media (max-width: 900px) {
+  .admin-table-wrapper {
+    display: none;
+  }
+
+  /* Mostrar versión de tarjetas en móvil - se puede agregar después */
+}
+
+@media (max-width: 600px) {
+  .admin-filters {
+    flex-direction: column;
+  }
+
+  .admin-filters__search {
+    min-width: 100%;
+  }
+
+  .admin-filters__select {
+    width: 100%;
+  }
+
+  .admin-filters__select select {
+    width: 100%;
+  }
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .admin-publications__filters {

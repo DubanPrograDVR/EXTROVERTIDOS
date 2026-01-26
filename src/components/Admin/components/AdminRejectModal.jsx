@@ -3,13 +3,15 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 
 /**
- * Modal para rechazar una publicación con motivo
+ * Modal para rechazar una publicación o negocio con motivo
  */
 export default function AdminRejectModal({
   isOpen,
   isLoading,
   onConfirm,
   onClose,
+  title = "Rechazar Publicación",
+  placeholder = "Ej: La imagen no cumple con las normas de la comunidad...",
 }) {
   const [reason, setReason] = useState("");
 
@@ -28,13 +30,13 @@ export default function AdminRejectModal({
   return (
     <div className="admin-modal-overlay" onClick={handleClose}>
       <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
-        <h3>Rechazar Publicación</h3>
+        <h3>{title}</h3>
         <p>Por favor, indica el motivo del rechazo (opcional):</p>
 
         <textarea
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          placeholder="Ej: La imagen no cumple con las normas de la comunidad..."
+          placeholder={placeholder}
           rows={4}
         />
 

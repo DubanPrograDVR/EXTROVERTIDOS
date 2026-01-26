@@ -10,3 +10,8 @@ export { default as PublicationGrid } from "./PublicationGrid";
 export { default as PublicationCard } from "./PublicationCard";
 export { default as Carousel } from "./Carousel";
 export { default as Pagination } from "./Pagination";
+
+// Componentes de Negocios
+export { default as BusinessCard } from "./BusinessCard";
+export { default as BusinessGrid } from "./BusinessGrid";
+export { default as BusinessModal } from "./BusinessModal";

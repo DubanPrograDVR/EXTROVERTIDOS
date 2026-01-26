@@ -11,6 +11,7 @@ import {
   faNewspaper,
   faUserCircle,
   faPlus,
+  faStore,
 } from "@fortawesome/free-solid-svg-icons";
 import { getCategories } from "../../lib/database";
 
@@ -19,6 +20,7 @@ import AdminDashboard from "./components/AdminDashboard";
 import AdminPendingList from "./components/AdminPendingList";
 import AdminUserList from "./components/AdminUserList";
 import AdminPublicationsList from "./components/AdminPublicationsList";
+import AdminBusinessList from "./components/AdminBusinessList";
 import AdminRejectModal from "./components/AdminRejectModal";
 import AdminBanModal from "./components/AdminBanModal";
 import AdminLoading from "./components/AdminLoading";
@@ -47,6 +49,10 @@ export default function AdminPanel() {
     open: false,
     eventId: null,
   });
+  const [rejectBusinessModal, setRejectBusinessModal] = useState({
+    open: false,
+    businessId: null,
+  });
   const [banModal, setBanModal] = useState({
     open: false,
     user: null,
@@ -65,6 +71,8 @@ export default function AdminPanel() {
   const {
     pendingEvents,
     allEvents,
+    pendingBusinesses,
+    allBusinesses,
     users,
     stats,
     chartData,
@@ -79,6 +87,9 @@ export default function AdminPanel() {
     handleDeleteEvent,
     handleDeleteUser,
     handleUpdateEvent,
+    handleApproveBusiness,
+    handleRejectBusiness,
+    handleDeleteBusiness,
   } = useAdminData(user, isAdmin, isModerator);
 
   // Verificar acceso - redirigir si no es moderador/admin
@@ -121,6 +132,23 @@ export default function AdminPanel() {
   // Cerrar modal de rechazo
   const onRejectCancel = () => {
     setRejectModal({ open: false, eventId: null });
+  };
+
+  // Abrir modal de rechazo de negocio
+  const onRejectBusinessClick = (businessId) => {
+    setRejectBusinessModal({ open: true, businessId });
+  };
+
+  // Confirmar rechazo de negocio
+  const onRejectBusinessConfirm = async (reason) => {
+    if (!rejectBusinessModal.businessId) return;
+    await handleRejectBusiness(rejectBusinessModal.businessId, reason);
+    setRejectBusinessModal({ open: false, businessId: null });
+  };
+
+  // Cerrar modal de rechazo de negocio
+  const onRejectBusinessCancel = () => {
+    setRejectBusinessModal({ open: false, businessId: null });
   };
 
   // Abrir modal de baneo
@@ -193,7 +221,7 @@ export default function AdminPanel() {
       window.confirm(
         `¿Estás seguro de restaurar a ${
           userToUnban.nombre || userToUnban.email
-        }?`
+        }?`,
       )
     ) {
       await handleUnbanUser(userToUnban.id, userToUnban.ban_info.id);
@@ -235,6 +263,13 @@ export default function AdminPanel() {
       label: "Publicaciones",
       icon: faNewspaper,
       badge: allEvents?.length || 0,
+      show: isAdmin,
+    },
+    {
+      id: "businesses",
+      label: "Negocios",
+      icon: faStore,
+      badge: pendingBusinesses?.length || 0,
       show: isAdmin,
     },
     {
@@ -355,6 +390,18 @@ export default function AdminPanel() {
           />
         )}
 
+        {/* Gestión de negocios (solo admin) */}
+        {activeTab === "businesses" && isAdmin && (
+          <AdminBusinessList
+            businesses={allBusinesses}
+            loading={loading}
+            actionLoading={actionLoading}
+            onApprove={handleApproveBusiness}
+            onReject={onRejectBusinessClick}
+            onDelete={handleDeleteBusiness}
+          />
+        )}
+
         {/* Gestión de usuarios (solo admin) */}
         {activeTab === "users" && isAdmin && (
           <AdminUserList
@@ -378,6 +425,16 @@ export default function AdminPanel() {
         isLoading={actionLoading === rejectModal.eventId}
         onConfirm={onRejectConfirm}
         onClose={onRejectCancel}
+      />
+
+      {/* Modal de rechazo de negocio */}
+      <AdminRejectModal
+        isOpen={rejectBusinessModal.open}
+        isLoading={actionLoading === rejectBusinessModal.businessId}
+        onConfirm={onRejectBusinessConfirm}
+        onClose={onRejectBusinessCancel}
+        title="Rechazar Negocio"
+        placeholder="Motivo del rechazo del negocio..."
       />
 
       {/* Modal de baneo */}

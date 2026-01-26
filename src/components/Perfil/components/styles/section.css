@@ -102,6 +102,153 @@
   background: #ff8533;
 }
 
+/* ===== LISTA DE NEGOCIOS ===== */
+.perfil-section__list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.perfil-section__error {
+  text-align: center;
+  padding: 40px;
+  color: #ff4444;
+  background: rgba(255, 68, 68, 0.1);
+  border-radius: 12px;
+}
+
+/* ===== TARJETA DE NEGOCIO ===== */
+.perfil-business-card {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  background: #111;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.perfil-business-card:hover {
+  border-color: rgba(255, 102, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+.perfil-business-card__image {
+  flex-shrink: 0;
+  width: 120px;
+  height: 120px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #1a1a1a;
+}
+
+.perfil-business-card__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.perfil-business-card__placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 102, 0, 0.3);
+  font-size: 2.5rem;
+}
+
+.perfil-business-card__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.perfil-business-card__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.perfil-business-card__header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #fff;
+}
+
+.perfil-business-card__category {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.perfil-business-card__location,
+.perfil-business-card__phone {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.perfil-business-card__location svg,
+.perfil-business-card__phone svg {
+  color: #ff6600;
+  width: 14px;
+}
+
+.perfil-business-card__rejection {
+  margin-top: 8px;
+  padding: 12px;
+  background: rgba(255, 68, 68, 0.1);
+  border-radius: 8px;
+  border-left: 3px solid #ff4444;
+}
+
+.perfil-business-card__rejection strong {
+  display: block;
+  color: #ff4444;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+}
+
+.perfil-business-card__rejection p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ===== STATUS BADGES ===== */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.status-badge--pending {
+  background: rgba(255, 193, 7, 0.15);
+  color: #ffc107;
+}
+
+.status-badge--published {
+  background: rgba(76, 175, 80, 0.15);
+  color: #4caf50;
+}
+
+.status-badge--rejected {
+  background: rgba(244, 67, 54, 0.15);
+  color: #f44336;
+}
+
 /* Responsive */
 @media (max-width: 480px) {
   .perfil-section__header {
@@ -112,5 +259,14 @@
   .perfil-section__btn {
     width: 100%;
     justify-content: center;
+  }
+
+  .perfil-business-card {
+    flex-direction: column;
+  }
+
+  .perfil-business-card__image {
+    width: 100%;
+    height: 180px;
   }
 }

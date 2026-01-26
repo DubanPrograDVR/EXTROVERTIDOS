@@ -15,6 +15,11 @@ import {
   deleteEvent,
   deleteUser,
   updateEvent,
+  getPendingBusinesses,
+  getAllBusinesses,
+  approveBusiness,
+  rejectBusiness,
+  deleteBusiness,
 } from "../../../lib/database";
 
 /**
@@ -23,6 +28,8 @@ import {
 export const useAdminData = (user, isAdmin, isModerator) => {
   const [pendingEvents, setPendingEvents] = useState([]);
   const [allEvents, setAllEvents] = useState([]);
+  const [pendingBusinesses, setPendingBusinesses] = useState([]);
+  const [allBusinesses, setAllBusinesses] = useState([]);
   const [users, setUsers] = useState([]);
   const [stats, setStats] = useState(null);
   const [chartData, setChartData] = useState({
@@ -41,12 +48,12 @@ export const useAdminData = (user, isAdmin, isModerator) => {
     if (!user || !isModerator) {
       if (!user) {
         console.error(
-          "useAdminData: No se pudo cargar el usuario - user es null o undefined"
+          "useAdminData: No se pudo cargar el usuario - user es null o undefined",
         );
       }
       if (!isModerator) {
         console.error(
-          "useAdminData: El usuario no tiene permisos de moderador/admin"
+          "useAdminData: El usuario no tiene permisos de moderador/admin",
         );
       }
       setLoading(false);
@@ -70,6 +77,10 @@ export const useAdminData = (user, isAdmin, isModerator) => {
           console.warn("Error al cargar eventos pendientes:", err);
           return [];
         }),
+        getPendingBusinesses().catch((err) => {
+          console.warn("Error al cargar negocios pendientes:", err);
+          return [];
+        }),
         getAdminStats(user.id).catch((err) => {
           console.warn("Error al cargar estadísticas:", err);
           return defaultStats;
@@ -91,14 +102,21 @@ export const useAdminData = (user, isAdmin, isModerator) => {
             console.warn("Error al cargar usuarios:", err);
             // Fallback a la función antigua
             return getAllUsers(user.id).catch(() => []);
-          })
+          }),
         );
         // También cargar todas las publicaciones para admin
         basePromises.push(
           getAllEvents(user.id).catch((err) => {
             console.warn("Error al cargar todas las publicaciones:", err);
             return [];
-          })
+          }),
+        );
+        // Cargar todos los negocios para admin
+        basePromises.push(
+          getAllBusinesses().catch((err) => {
+            console.warn("Error al cargar todos los negocios:", err);
+            return [];
+          }),
         );
       }
 
@@ -111,15 +129,18 @@ export const useAdminData = (user, isAdmin, isModerator) => {
       // Extraer resultados
       const [
         eventsData,
+        pendingBusinessData,
         statsData,
         eventsPerDayData,
         usersPerDayData,
         usersData,
         allEventsData,
+        allBusinessData,
       ] = results;
 
       // Actualizar estados una sola vez
       setPendingEvents(eventsData || []);
+      setPendingBusinesses(pendingBusinessData || []);
       setStats(statsData || defaultStats);
       setChartData({
         eventsPerDay: eventsPerDayData || [],
@@ -129,6 +150,7 @@ export const useAdminData = (user, isAdmin, isModerator) => {
       if (isAdmin) {
         setUsers(usersData || []);
         setAllEvents(allEventsData || []);
+        setAllBusinesses(allBusinessData || []);
       }
     } catch (err) {
       if (isMountedRef.current) {
@@ -207,7 +229,7 @@ export const useAdminData = (user, isAdmin, isModerator) => {
     try {
       await updateUserRole(targetUserId, newRole, user.id);
       setUsers((prev) =>
-        prev.map((u) => (u.id === targetUserId ? { ...u, rol: newRole } : u))
+        prev.map((u) => (u.id === targetUserId ? { ...u, rol: newRole } : u)),
       );
       return { success: true };
     } catch (err) {
@@ -228,8 +250,8 @@ export const useAdminData = (user, isAdmin, isModerator) => {
         prev.map((u) =>
           u.id === targetUserId
             ? { ...u, is_banned: true, ban_info: banData }
-            : u
-        )
+            : u,
+        ),
       );
       return { success: true };
     } catch (err) {
@@ -248,8 +270,10 @@ export const useAdminData = (user, isAdmin, isModerator) => {
       // Actualizar el estado local del usuario
       setUsers((prev) =>
         prev.map((u) =>
-          u.id === targetUserId ? { ...u, is_banned: false, ban_info: null } : u
-        )
+          u.id === targetUserId
+            ? { ...u, is_banned: false, ban_info: null }
+            : u,
+        ),
       );
       return { success: true };
     } catch (err) {
@@ -280,14 +304,14 @@ export const useAdminData = (user, isAdmin, isModerator) => {
             [estado === "publicado"
               ? "publicados"
               : estado === "pendiente"
-              ? "pendientes"
-              : "rechazados"]:
+                ? "pendientes"
+                : "rechazados"]:
               prev.eventos[
                 estado === "publicado"
                   ? "publicados"
                   : estado === "pendiente"
-                  ? "pendientes"
-                  : "rechazados"
+                    ? "pendientes"
+                    : "rechazados"
               ] - 1,
           },
         };
@@ -347,26 +371,109 @@ export const useAdminData = (user, isAdmin, isModerator) => {
     }
   };
 
+  // ============ FUNCIONES DE NEGOCIOS ============
+
+  // Aprobar negocio
+  const handleApproveBusiness = async (businessId) => {
+    setActionLoading(businessId);
+    try {
+      await approveBusiness(businessId, user.id);
+      setPendingBusinesses((prev) => prev.filter((b) => b.id !== businessId));
+      // Actualizar en allBusinesses
+      setAllBusinesses((prev) =>
+        prev.map((b) =>
+          b.id === businessId ? { ...b, estado: "publicado" } : b,
+        ),
+      );
+      setStats((prev) => ({
+        ...prev,
+        negocios: {
+          ...prev.negocios,
+          pendientes: (prev.negocios?.pendientes || 1) - 1,
+        },
+      }));
+      return { success: true };
+    } catch (err) {
+      console.error("Error al aprobar negocio:", err);
+      return { success: false, error: err.message };
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Rechazar negocio
+  const handleRejectBusiness = async (businessId, reason = "") => {
+    setActionLoading(businessId);
+    try {
+      await rejectBusiness(businessId, reason);
+      setPendingBusinesses((prev) => prev.filter((b) => b.id !== businessId));
+      // Actualizar en allBusinesses
+      setAllBusinesses((prev) =>
+        prev.map((b) =>
+          b.id === businessId
+            ? { ...b, estado: "rechazado", motivo_rechazo: reason }
+            : b,
+        ),
+      );
+      setStats((prev) => ({
+        ...prev,
+        negocios: {
+          ...prev.negocios,
+          pendientes: (prev.negocios?.pendientes || 1) - 1,
+        },
+      }));
+      return { success: true };
+    } catch (err) {
+      console.error("Error al rechazar negocio:", err);
+      return { success: false, error: err.message };
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Eliminar negocio
+  const handleDeleteBusiness = async (businessId) => {
+    setActionLoading(businessId);
+    try {
+      await deleteBusiness(businessId);
+      setAllBusinesses((prev) => prev.filter((b) => b.id !== businessId));
+      setPendingBusinesses((prev) => prev.filter((b) => b.id !== businessId));
+      return { success: true };
+    } catch (err) {
+      console.error("Error al eliminar negocio:", err);
+      return { success: false, error: err.message };
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   return {
     // Estado
     pendingEvents,
     allEvents,
+    pendingBusinesses,
+    allBusinesses,
     users,
     stats,
     chartData,
     loading,
     actionLoading,
     error,
-    // Acciones
+    // Acciones de eventos
     loadData,
     handleApproveEvent,
     handleRejectEvent,
+    handleDeleteEvent,
+    handleUpdateEvent,
+    // Acciones de negocios
+    handleApproveBusiness,
+    handleRejectBusiness,
+    handleDeleteBusiness,
+    // Acciones de usuarios
     handleRoleChange,
     handleBanUser,
     handleUnbanUser,
-    handleDeleteEvent,
     handleDeleteUser,
-    handleUpdateEvent,
   };
 };
 

@@ -78,6 +78,58 @@
   padding: 2rem 1rem 4rem;
 }
 
+/* ===== HEADER ===== */
+.superguia__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.superguia__header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.superguia__header h2 {
+  font-size: 1.5rem;
+  color: #fff;
+  margin: 0;
+  font-weight: 700;
+}
+
+.superguia__count {
+  background: rgba(255, 102, 0, 0.15);
+  color: #ff6600;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.superguia__new-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #ff6600 0%, #ff8533 100%);
+  border: none;
+  border-radius: 10px;
+  color: #000;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.superguia__new-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 102, 0, 0.4);
+}
+
 /* ===== LOADING STATE ===== */
 .superguia__loading {
   display: flex;
@@ -86,6 +138,7 @@
   justify-content: center;
   padding: 4rem 1rem;
   gap: 1rem;
+  color: #ff6600;
 }
 
 .superguia__loading-spinner {
@@ -107,6 +160,38 @@
   color: #888;
   font-size: 1rem;
   margin: 0;
+}
+
+/* ===== ERROR STATE ===== */
+.superguia__error {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 16px;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  margin: 2rem 0;
+}
+
+.superguia__error p {
+  color: #ef4444;
+  font-size: 1rem;
+  margin: 0 0 1rem;
+}
+
+.superguia__error button {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  padding: 0.75rem 2rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.superguia__error button:hover {
+  background: rgba(239, 68, 68, 0.3);
 }
 
 /* ===== CAROUSEL SECTION ===== */
@@ -149,6 +234,7 @@
 .superguia__empty-icon {
   font-size: 3rem;
   margin-bottom: 1rem;
+  color: rgba(255, 102, 0, 0.4);
 }
 
 .superguia__empty h3 {
@@ -201,6 +287,16 @@
 
   .superguia__container {
     padding: 1.5rem 0.75rem 3rem;
+  }
+
+  .superguia__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .superguia__new-btn {
+    width: 100%;
+    justify-content: center;
   }
 
   .superguia__carousel-section {
