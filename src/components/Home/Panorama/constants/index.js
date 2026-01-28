@@ -76,9 +76,16 @@ export const INITIAL_FORM_STATE = {
     facebook: "",
     whatsapp: "",
     tiktok: "",
+    youtube: "", // Nuevo: enlace de YouTube
   },
   // Marketing
   mensaje_marketing: "",
+  mensaje_marketing_2: "", // Nuevo: segundo mensaje de marketing
+  // Contacto
+  telefono_contacto: "", // Nuevo: número de contacto directo
+  // Etiquetas y hashtags
+  hashtags: "", // Nuevo: hashtags personalizados
+  etiqueta_directa: "", // Nuevo: etiqueta directa destacada
   imagenes: [],
 };
 

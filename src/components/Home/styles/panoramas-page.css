@@ -515,6 +515,92 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
+/* ===== SECCIÓN EVENTOS DESTACADOS ===== */
+.panoramas-page__featured {
+  background: linear-gradient(180deg, #0a0a0a 0%, #111 50%, #0a0a0a 100%);
+  padding: 60px 20px 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Efecto decorativo de fondo */
+.panoramas-page__featured::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 102, 0, 0.3) 20%,
+    rgba(255, 102, 0, 0.6) 50%,
+    rgba(255, 102, 0, 0.3) 80%,
+    transparent 100%
+  );
+}
+
+.panoramas-page__featured-header {
+  max-width: 1400px;
+  margin: 0 auto 30px;
+  padding: 0 40px;
+  text-align: center;
+}
+
+.panoramas-page__featured-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 10px;
+}
+
+.panoramas-page__featured-title h2 {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: linear-gradient(135deg, #fff 0%, #ccc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.panoramas-page__featured-icon {
+  font-size: 1.8rem;
+  color: #ff6600;
+  animation: fireGlow 2s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 8px rgba(255, 102, 0, 0.6));
+}
+
+@keyframes fireGlow {
+  0% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 8px rgba(255, 102, 0, 0.6));
+  }
+  100% {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 15px rgba(255, 102, 0, 0.9));
+  }
+}
+
+.panoramas-page__featured-subtitle {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+  font-weight: 400;
+}
+
+/* Contenedor del carrusel en esta sección */
+.panoramas-page__featured .carousel {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .panoramas-page__hero {
@@ -573,6 +659,28 @@
   .panoramas-page__cta-content h2 {
     font-size: 1.5rem;
   }
+
+  /* Responsive para sección destacados */
+  .panoramas-page__featured {
+    padding: 40px 15px 30px;
+  }
+
+  .panoramas-page__featured-header {
+    padding: 0 20px;
+    margin-bottom: 20px;
+  }
+
+  .panoramas-page__featured-title h2 {
+    font-size: 1.5rem;
+  }
+
+  .panoramas-page__featured-icon {
+    font-size: 1.4rem;
+  }
+
+  .panoramas-page__featured-subtitle {
+    font-size: 0.9rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -583,5 +691,14 @@
   .panoramas-page__hero-category {
     font-size: 0.75rem;
     padding: 6px 14px;
+  }
+
+  .panoramas-page__featured-title {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .panoramas-page__featured-title h2 {
+    font-size: 1.3rem;
   }
 }

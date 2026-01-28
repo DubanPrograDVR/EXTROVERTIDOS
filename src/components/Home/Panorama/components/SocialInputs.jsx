@@ -4,6 +4,7 @@ import {
   faFacebook,
   faWhatsapp,
   faTiktok,
+  faYoutube,
 } from "@fortawesome/free-brands-svg-icons";
 
 /**
@@ -30,6 +31,13 @@ const SocialInputs = ({ redes_sociales, onChange }) => {
       icon: faTiktok,
       placeholder: "https://tiktok.com/@tu_evento",
       value: redes_sociales.tiktok,
+      type: "url",
+    },
+    {
+      name: "redes_youtube",
+      icon: faYoutube,
+      placeholder: "https://youtube.com/watch?v=...",
+      value: redes_sociales.youtube || "",
       type: "url",
     },
     {

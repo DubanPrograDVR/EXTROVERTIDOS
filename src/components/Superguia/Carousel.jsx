@@ -5,6 +5,7 @@ import {
   faChevronLeft,
   faChevronRight,
   faMapMarkerAlt,
+  faCalendarAlt,
 } from "@fortawesome/free-solid-svg-icons";
 
 export default function Carousel({ publications, onPublicationClick }) {
@@ -14,7 +15,7 @@ export default function Carousel({ publications, onPublicationClick }) {
   const autoPlayRef = useRef(null);
   const resumeTimeoutRef = useRef(null);
 
-  const itemsToShow = 5;
+  const itemsToShow = 4;
   const totalItems = publications?.length || 0;
   const autoPlayInterval = 3500; // Velocidad del autoplay
   const transitionDuration = 500; // Duración de la transición en ms
@@ -51,7 +52,7 @@ export default function Carousel({ publications, onPublicationClick }) {
       setCurrentIndex(index);
       setTimeout(() => setIsTransitioning(false), transitionDuration);
     },
-    [totalItems, isTransitioning]
+    [totalItems, isTransitioning],
   );
 
   // Auto-play controlado
@@ -150,12 +151,29 @@ export default function Carousel({ publications, onPublicationClick }) {
                 }}
               />
               <div className="carousel__info">
-                <div className="carousel__location">
-                  <FontAwesomeIcon icon={faMapMarkerAlt} />
-                  <span>
-                    {item.comuna || item.ciudad}
-                    {item.provincia ? `, ${item.provincia}` : ""}
-                  </span>
+                <h3 className="carousel__title">{item.titulo}</h3>
+                <div className="carousel__meta">
+                  <div className="carousel__location">
+                    <FontAwesomeIcon icon={faMapMarkerAlt} />
+                    <span>
+                      {item.comuna || item.ciudad}
+                      {item.provincia ? `, ${item.provincia}` : ""}
+                    </span>
+                  </div>
+                  {item.fecha_evento && (
+                    <div className="carousel__date">
+                      <FontAwesomeIcon icon={faCalendarAlt} />
+                      <span>
+                        {new Date(item.fecha_evento).toLocaleDateString(
+                          "es-CL",
+                          {
+                            day: "numeric",
+                            month: "short",
+                          },
+                        )}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

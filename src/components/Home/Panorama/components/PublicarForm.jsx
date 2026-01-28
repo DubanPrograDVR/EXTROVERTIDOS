@@ -13,6 +13,9 @@ import {
   faEye,
   faSave,
   faBullhorn,
+  faPhone,
+  faHashtag,
+  faBookmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { PROVINCIAS, COMUNAS_POR_PROVINCIA } from "../constants";
 import SocialInputs from "./SocialInputs";
@@ -163,6 +166,30 @@ const PublicarForm = ({
           />
           <span className="publicar-form__char-count">
             {formData.mensaje_marketing?.length || 0}/500
+          </span>
+        </div>
+
+        {/* Segundo Mensaje de Marketing */}
+        <div className="publicar-form__group">
+          <label className="publicar-form__label" htmlFor="mensaje_marketing_2">
+            <FontAwesomeIcon icon={faBullhorn} /> Segundo Mensaje de Marketing
+            <span className="publicar-form__label-hint">
+              {" "}
+              (Opcional - Mensaje adicional)
+            </span>
+          </label>
+          <textarea
+            id="mensaje_marketing_2"
+            name="mensaje_marketing_2"
+            className="publicar-form__textarea publicar-form__textarea--marketing"
+            placeholder="Ej: ¡No te pierdas la experiencia VIP con acceso backstage! 🌟 Cupos limitados..."
+            value={formData.mensaje_marketing_2 || ""}
+            onChange={onChange}
+            rows={3}
+            maxLength={500}
+          />
+          <span className="publicar-form__char-count">
+            {formData.mensaje_marketing_2?.length || 0}/500
           </span>
         </div>
 
@@ -386,6 +413,75 @@ const PublicarForm = ({
           redes_sociales={formData.redes_sociales}
           onChange={onChange}
         />
+
+        {/* Número de Contacto */}
+        <div className="publicar-form__group">
+          <label className="publicar-form__label" htmlFor="telefono_contacto">
+            <FontAwesomeIcon icon={faPhone} /> Número de Contacto
+            <span className="publicar-form__label-hint">
+              {" "}
+              (Opcional - Contacto directo)
+            </span>
+          </label>
+          <input
+            type="tel"
+            id="telefono_contacto"
+            name="telefono_contacto"
+            className="publicar-form__input"
+            placeholder="Ej: +56 9 1234 5678"
+            value={formData.telefono_contacto || ""}
+            onChange={onChange}
+            maxLength={20}
+          />
+        </div>
+
+        {/* Hashtags */}
+        <div className="publicar-form__group">
+          <label className="publicar-form__label" htmlFor="hashtags">
+            <FontAwesomeIcon icon={faHashtag} /> Hashtags
+            <span className="publicar-form__label-hint">
+              {" "}
+              (Opcional - Separa con espacios)
+            </span>
+          </label>
+          <input
+            type="text"
+            id="hashtags"
+            name="hashtags"
+            className="publicar-form__input"
+            placeholder="Ej: #Festival2025 #MusicaEnVivo #Talca"
+            value={formData.hashtags || ""}
+            onChange={onChange}
+            maxLength={200}
+          />
+          <span className="publicar-form__hint">
+            Los hashtags ayudan a que más personas encuentren tu evento
+          </span>
+        </div>
+
+        {/* Etiqueta Directa */}
+        <div className="publicar-form__group">
+          <label className="publicar-form__label" htmlFor="etiqueta_directa">
+            <FontAwesomeIcon icon={faBookmark} /> Etiqueta Destacada
+            <span className="publicar-form__label-hint">
+              {" "}
+              (Opcional - Ej: "Imperdible", "Gratis")
+            </span>
+          </label>
+          <input
+            type="text"
+            id="etiqueta_directa"
+            name="etiqueta_directa"
+            className="publicar-form__input"
+            placeholder="Ej: ¡Imperdible! o Entrada Liberada"
+            value={formData.etiqueta_directa || ""}
+            onChange={onChange}
+            maxLength={50}
+          />
+          <span className="publicar-form__hint">
+            Esta etiqueta se mostrará destacada en tu publicación
+          </span>
+        </div>
 
         {/* Imágenes */}
         <ImageUpload

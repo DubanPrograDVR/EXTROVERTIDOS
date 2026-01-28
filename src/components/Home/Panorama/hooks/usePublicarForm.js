@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../../../context/AuthContext";
 import {
@@ -15,14 +15,36 @@ import { INITIAL_FORM_STATE, IMAGE_CONFIG } from "../constants";
 /**
  * Hook personalizado para manejar la lógica del formulario de publicación
  * Soporta creación y edición de eventos
+ *
+ * FIX APLICADO: Se usa useRef para showToast, navigate y funciones del contexto
+ * para evitar loops infinitos causados por dependencias inestables en useEffect
  */
 const usePublicarForm = () => {
-  const { user, isAuthenticated, isAdmin, signInWithGoogle, showToast } =
-    useAuth();
+  const {
+    user,
+    isAuthenticated,
+    isAdmin,
+    isModerator,
+    signInWithGoogle,
+    showToast,
+  } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const editEventId = searchParams.get("editar");
   const isEditing = !!editEventId;
+
+  // === REFS PARA EVITAR DEPENDENCIAS INESTABLES ===
+  // Estas refs se actualizan en cada render pero no causan re-ejecución de efectos
+  const showToastRef = useRef(showToast);
+  const navigateRef = useRef(navigate);
+  const isMountedRef = useRef(true);
+  const lastLoadedEventId = useRef(null); // Evita cargar el mismo evento múltiples veces
+
+  // Mantener refs actualizadas sin causar re-renders
+  useEffect(() => {
+    showToastRef.current = showToast;
+    navigateRef.current = navigate;
+  });
 
   // Estados
   const [categories, setCategories] = useState([]);
@@ -38,22 +60,34 @@ const usePublicarForm = () => {
   const [currentDraftId, setCurrentDraftId] = useState(null); // ID del borrador actual
   const [isSavingDraft, setIsSavingDraft] = useState(false); // Estado de guardado de borrador
 
-  // Cargar categorías al montar
+  // Cargar categorías al montar - SOLO UNA VEZ
   useEffect(() => {
+    let isCancelled = false;
+
     const loadCategories = async () => {
       try {
         const data = await getCategories();
-        setCategories(data || []);
+        if (!isCancelled) {
+          setCategories(data || []);
+        }
       } catch (error) {
         console.error("Error cargando categorías:", error);
-        if (showToast) showToast("Error al cargar categorías", "error");
+        if (!isCancelled) {
+          showToastRef.current?.("Error al cargar categorías", "error");
+        }
       } finally {
-        setLoadingCategories(false);
+        if (!isCancelled) {
+          setLoadingCategories(false);
+        }
       }
     };
 
     loadCategories();
-  }, [showToast]);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []); // ← Sin dependencias: solo se ejecuta al montar
 
   // Cargar borrador desde sessionStorage si existe
   useEffect(() => {
@@ -77,6 +111,7 @@ const usePublicarForm = () => {
           titulo: draftData.titulo || "",
           descripcion: draftData.descripcion || "",
           mensaje_marketing: draftData.mensaje_marketing || "",
+          mensaje_marketing_2: draftData.mensaje_marketing_2 || "",
           organizador: draftData.organizador || "",
           category_id: draftData.category_id || "",
           fecha_evento: draftData.fecha_evento || "",
@@ -91,11 +126,15 @@ const usePublicarForm = () => {
           tipo_entrada: draftData.tipo_entrada || "gratuito",
           precio: draftData.precio || "",
           url_venta: draftData.url_venta || "",
+          telefono_contacto: draftData.telefono_contacto || "",
+          hashtags: draftData.hashtags || "",
+          etiqueta_directa: draftData.etiqueta_directa || "",
           redes_sociales: draftData.redes_sociales || {
             instagram: "",
             facebook: "",
             whatsapp: "",
             tiktok: "",
+            youtube: "",
           },
           imagenes: [], // Las imágenes del borrador son previews, no archivos
         });
@@ -105,40 +144,52 @@ const usePublicarForm = () => {
           setPreviewImages(draftData.imagenes_preview);
         }
 
-        if (showToast) {
-          showToast("Borrador cargado exitosamente", "success");
-        }
+        showToastRef.current?.("Borrador cargado exitosamente", "success");
       } catch (error) {
         console.error("Error cargando borrador:", error);
       }
     };
 
     loadDraftFromStorage();
-  }, [showToast]);
+  }, []); // ← Sin dependencias: solo se ejecuta al montar
 
   // Cargar evento si estamos editando
+  // FIX CRÍTICO: Eliminado showToast y navigate de dependencias para evitar loop infinito
   useEffect(() => {
+    // Evitar cargar el mismo evento múltiples veces
+    if (lastLoadedEventId.current === editEventId && editEventId) {
+      return;
+    }
+
+    let isCancelled = false;
+
     const loadEventForEdit = async () => {
       if (!editEventId || !isAuthenticated) return;
 
       setLoadingEvent(true);
       try {
         const event = await getEventById(editEventId);
+
+        if (isCancelled) return;
+
         if (!event) {
-          showToast?.("No se encontró la publicación", "error");
-          navigate("/");
+          showToastRef.current?.("No se encontró la publicación", "error");
+          navigateRef.current("/");
           return;
         }
 
         // Solo admin o el autor pueden editar
         if (!isAdmin && event.user_id !== user?.id) {
-          showToast?.(
+          showToastRef.current?.(
             "No tienes permisos para editar esta publicación",
             "error",
           );
-          navigate("/");
+          navigateRef.current("/");
           return;
         }
+
+        // Marcar como cargado exitosamente
+        lastLoadedEventId.current = editEventId;
 
         // Mapear datos del evento al formulario
         // Determinar si es multi-día basado en si tiene fecha_fin diferente a fecha_evento
@@ -149,6 +200,7 @@ const usePublicarForm = () => {
           titulo: event.titulo || "",
           descripcion: event.descripcion || "",
           mensaje_marketing: event.mensaje_marketing || "",
+          mensaje_marketing_2: event.mensaje_marketing_2 || "",
           organizador: event.organizador || "",
           category_id: event.category_id || "",
           fecha_evento: event.fecha_evento || "",
@@ -163,11 +215,15 @@ const usePublicarForm = () => {
           tipo_entrada: event.tipo_entrada || "gratuito",
           precio: event.precio || "",
           url_venta: event.url_venta || "",
+          telefono_contacto: event.telefono_contacto || "",
+          hashtags: event.hashtags || "",
+          etiqueta_directa: event.etiqueta_directa || "",
           redes_sociales: event.redes_sociales || {
             instagram: "",
             facebook: "",
             whatsapp: "",
             tiktok: "",
+            youtube: "",
           },
           imagenes: [], // Las nuevas imágenes se agregan aquí
         });
@@ -178,15 +234,23 @@ const usePublicarForm = () => {
           setPreviewImages(event.imagenes);
         }
       } catch (error) {
+        if (isCancelled) return;
         console.error("Error cargando evento para editar:", error);
-        showToast?.("Error al cargar la publicación", "error");
+        showToastRef.current?.("Error al cargar la publicación", "error");
       } finally {
-        setLoadingEvent(false);
+        if (!isCancelled) {
+          setLoadingEvent(false);
+        }
       }
     };
 
     loadEventForEdit();
-  }, [editEventId, isAuthenticated, isAdmin, user?.id, navigate, showToast]);
+
+    // Cleanup function
+    return () => {
+      isCancelled = true;
+    };
+  }, [editEventId, isAuthenticated, isAdmin, user?.id]); // ← showToast y navigate ELIMINADOS
 
   // Verificar autenticación al hacer foco en campos
   const handleFieldFocus = () => {
@@ -492,11 +556,10 @@ const usePublicarForm = () => {
     const hasData =
       formData.titulo || formData.descripcion || formData.category_id;
     if (!hasData) {
-      if (showToast)
-        showToast(
-          "Agrega al menos un título o descripción para guardar el borrador",
-          "warning",
-        );
+      showToastRef.current?.(
+        "Agrega al menos un título o descripción para guardar el borrador",
+        "warning",
+      );
       return false;
     }
 
@@ -534,16 +597,12 @@ const usePublicarForm = () => {
 
       setCurrentDraftId(savedDraft.id);
 
-      if (showToast) {
-        showToast("Borrador guardado exitosamente", "success");
-      }
+      showToastRef.current?.("Borrador guardado exitosamente", "success");
 
       return true;
     } catch (error) {
       console.error("Error guardando borrador:", error);
-      if (showToast) {
-        showToast("Error al guardar el borrador", "error");
-      }
+      showToastRef.current?.("Error al guardar el borrador", "error");
       return false;
     } finally {
       setIsSavingDraft(false);
@@ -566,8 +625,10 @@ const usePublicarForm = () => {
     console.log("Validando formulario...");
     if (!validateForm()) {
       console.log("Validación fallida:", errors);
-      if (showToast)
-        showToast("Por favor completa todos los campos obligatorios", "error");
+      showToastRef.current?.(
+        "Por favor completa todos los campos obligatorios",
+        "error",
+      );
       return;
     }
     console.log("Validación exitosa");
@@ -613,6 +674,7 @@ const usePublicarForm = () => {
         titulo: formData.titulo.trim(),
         descripcion: formData.descripcion.trim(),
         mensaje_marketing: formData.mensaje_marketing?.trim() || null,
+        mensaje_marketing_2: formData.mensaje_marketing_2?.trim() || null,
         organizador:
           formData.organizador.trim() ||
           user.user_metadata?.full_name ||
@@ -635,6 +697,9 @@ const usePublicarForm = () => {
         precio:
           formData.tipo_entrada === "pagado" ? parseInt(formData.precio) : null,
         url_venta: formData.url_venta.trim() || null,
+        telefono_contacto: formData.telefono_contacto?.trim() || null,
+        hashtags: formData.hashtags?.trim() || null,
+        etiqueta_directa: formData.etiqueta_directa?.trim() || null,
         redes_sociales: redesLimpias,
         imagenes: allImageUrls,
       };
@@ -649,24 +714,35 @@ const usePublicarForm = () => {
         console.log("Actualizando evento existente...", editEventId);
         await updateEvent(editEventId, eventData);
         console.log("Evento actualizado exitosamente");
-        if (showToast)
-          showToast("¡Publicación actualizada exitosamente!", "success");
+        showToastRef.current?.(
+          "¡Publicación actualizada exitosamente!",
+          "success",
+        );
       } else {
         // Crear nuevo evento
         eventData.user_id = user.id;
-        // Admins publican directamente, usuarios normales van a cola de aprobación
-        eventData.estado = isAdmin ? "publicado" : "pendiente";
+
+        // Debug: verificar el rol del usuario
+        console.log("=== DEBUG ROLES ===");
+        console.log("isAdmin:", isAdmin);
+        console.log("isModerator:", isModerator);
+
+        // Admins y Moderadores publican directamente, usuarios normales van a cola de aprobación
+        const canPublishDirectly = isAdmin || isModerator;
+        eventData.estado = canPublishDirectly ? "publicado" : "pendiente";
+
+        console.log("canPublishDirectly:", canPublishDirectly);
+        console.log("Estado asignado:", eventData.estado);
 
         const createdEvent = await createEvent(eventData);
         console.log("Evento creado exitosamente:", createdEvent?.id);
 
-        if (showToast)
-          showToast(
-            isAdmin
-              ? "¡Publicación creada y publicada exitosamente!"
-              : "¡Evento creado exitosamente! Será revisado pronto.",
-            "success",
-          );
+        showToastRef.current?.(
+          canPublishDirectly
+            ? "¡Publicación creada y publicada exitosamente!"
+            : "¡Evento creado exitosamente! Será revisado pronto.",
+          "success",
+        );
       }
 
       // Si había un borrador, eliminarlo después de publicar exitosamente
@@ -683,8 +759,10 @@ const usePublicarForm = () => {
       resetForm();
       setExistingImages([]);
 
-      // Redirigir: admin siempre vuelve al panel, usuarios normales al perfil
-      navigate(isAdmin ? "/admin" : "/perfil");
+      // Redirigir: admin/moderador siempre vuelve al panel, usuarios normales al perfil
+      const redirectPath = isAdmin || isModerator ? "/admin" : "/perfil";
+      console.log("Redirigiendo a:", redirectPath);
+      navigateRef.current(redirectPath);
     } catch (error) {
       console.error("=== ERROR EN SUBMIT ===");
       console.error(
@@ -700,7 +778,7 @@ const usePublicarForm = () => {
         error?.message ||
         `Error al ${isEditing ? "actualizar" : "crear"} el evento. Intenta nuevamente.`;
 
-      if (showToast) showToast(errorMessage, "error");
+      showToastRef.current?.(errorMessage, "error");
     } finally {
       console.log("=== FINALLY: Setting isSubmitting = false ===");
       setIsSubmitting(false);

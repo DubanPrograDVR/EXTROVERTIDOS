@@ -8,12 +8,14 @@ import {
   faChevronLeft,
   faChevronRight,
   faPlus,
+  faFire,
 } from "@fortawesome/free-solid-svg-icons";
 import Footer from "./Footer";
 import Pagination from "../Superguia/Pagination";
 import FilterPanel from "../Superguia/FilterPanel";
 import PublicationModal from "../Superguia/PublicationModal";
 import PublicationGrid from "../Superguia/PublicationGrid";
+import Carousel from "../Superguia/Carousel";
 import { formatDateKey } from "../Superguia/DateCalendar";
 import {
   getPublishedEvents,
@@ -424,6 +426,28 @@ export default function PanoramasPage() {
           </>
         )}
       </section>
+
+      {/* Sección de Eventos Destacados con Carrusel Mejorado */}
+      {events.length > 0 && (
+        <section className="panoramas-page__featured">
+          <div className="panoramas-page__featured-header">
+            <div className="panoramas-page__featured-title">
+              <FontAwesomeIcon
+                icon={faFire}
+                className="panoramas-page__featured-icon"
+              />
+              <h2>Descubre más panoramas</h2>
+            </div>
+            <p className="panoramas-page__featured-subtitle">
+              Explora los eventos más populares de la región
+            </p>
+          </div>
+          <Carousel
+            publications={events.slice(0, 10)}
+            onPublicationClick={handleEventClick}
+          />
+        </section>
+      )}
 
       {/* CTA */}
       <section className="panoramas-page__cta">
