@@ -133,12 +133,21 @@ export default function SuperguiaContainer() {
 
     // Filtro de ciudad (provincia)
     if (selectedCity) {
-      result = result.filter((business) => business.provincia === selectedCity);
+      const cityName = LOCATIONS[selectedCity]?.nombre;
+      if (cityName) {
+        result = result.filter(
+          (business) =>
+            business.provincia?.toLowerCase() === cityName.toLowerCase(),
+        );
+      }
     }
 
     // Filtro de comuna
     if (selectedComuna) {
-      result = result.filter((business) => business.comuna === selectedComuna);
+      result = result.filter(
+        (business) =>
+          business.comuna?.toLowerCase() === selectedComuna.toLowerCase(),
+      );
     }
 
     return result;

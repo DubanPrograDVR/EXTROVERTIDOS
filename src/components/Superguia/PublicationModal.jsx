@@ -413,6 +413,23 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
 
           {/* ===== SECCIÓN DERECHA: CONTENIDO ===== */}
           <div className="publication-modal__right">
+            {/* Publicado por - Arriba */}
+            {profiles?.nombre && (
+              <div className="publication-modal__owner publication-modal__owner--top">
+                {profiles.avatar_url ? (
+                  <img src={profiles.avatar_url} alt={profiles.nombre} />
+                ) : (
+                  <div className="publication-modal__owner-placeholder">
+                    <FontAwesomeIcon icon={faUser} />
+                  </div>
+                )}
+                <div>
+                  <span>Publicado por</span>
+                  <strong>{profiles.nombre}</strong>
+                </div>
+              </div>
+            )}
+
             {/* Título y organizador */}
             <div className="publication-modal__title-section">
               <h2>{titulo}</h2>
@@ -650,23 +667,6 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
                 </div>
               )}
             </AccordionSection>
-
-            {/* Publicado por */}
-            {profiles?.nombre && (
-              <div className="publication-modal__owner">
-                {profiles.avatar_url ? (
-                  <img src={profiles.avatar_url} alt={profiles.nombre} />
-                ) : (
-                  <div className="publication-modal__owner-placeholder">
-                    <FontAwesomeIcon icon={faUser} />
-                  </div>
-                )}
-                <div>
-                  <span>Publicado por</span>
-                  <strong>{profiles.nombre}</strong>
-                </div>
-              </div>
-            )}
 
             {/* Botones CTA */}
             <div className="publication-modal__cta-section">

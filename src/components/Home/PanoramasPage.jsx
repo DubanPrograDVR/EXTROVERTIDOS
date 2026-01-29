@@ -165,11 +165,20 @@ export default function PanoramasPage() {
     }
 
     if (selectedCity) {
-      result = result.filter((event) => event.provincia === selectedCity);
+      const cityName = LOCATIONS[selectedCity]?.nombre;
+      if (cityName) {
+        result = result.filter(
+          (event) =>
+            event.provincia?.toLowerCase() === cityName.toLowerCase(),
+        );
+      }
     }
 
     if (selectedComuna) {
-      result = result.filter((event) => event.comuna === selectedComuna);
+      result = result.filter(
+        (event) =>
+          event.comuna?.toLowerCase() === selectedComuna.toLowerCase(),
+      );
     }
 
     // Filtrar por fecha

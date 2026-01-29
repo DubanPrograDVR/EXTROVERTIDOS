@@ -87,7 +87,7 @@
 .publication-modal__left {
   position: relative;
   width: 55%;
-  min-height: 520px;
+  min-height: 450px;
   flex-shrink: 0;
   overflow: hidden;
 }
@@ -242,12 +242,35 @@
 /* ===== SECCIÓN DERECHA (CONTENIDO) ===== */
 .publication-modal__right {
   flex: 1;
-  padding: 20px;
+  padding: 15px 20px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   overflow-y: auto;
-  max-height: 85vh;
+  max-height: calc(90vh - 65px);
+}
+
+/* Scrollbar personalizado */
+.publication-modal__right::-webkit-scrollbar {
+  width: 5px;
+}
+
+.publication-modal__right::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.publication-modal__right::-webkit-scrollbar-thumb {
+  background: rgba(255, 102, 0, 0.4);
+  border-radius: 3px;
+}
+
+/* Owner/Publicado por - Versión compacta arriba */
+.publication-modal__owner--top {
+  margin-top: 0;
+  margin-bottom: 4px;
+  padding: 8px 10px;
+  background: rgba(255, 102, 0, 0.08);
+  border: 1px solid rgba(255, 102, 0, 0.15);
 }
 
 /* Título y slogan */
@@ -384,7 +407,7 @@
 
 /* Secciones */
 .publication-modal__section {
-  padding: 10px 0;
+  padding: 6px 0;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -392,9 +415,9 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: #ff6600;
-  margin: 0 0 8px;
+  margin: 0 0 4px;
 }
 
 .publication-modal__section p {
@@ -665,30 +688,30 @@
 .publication-modal__owner {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px;
+  gap: 8px;
+  padding: 8px 10px;
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-  margin-top: auto;
+  border-radius: 8px;
 }
 
 .publication-modal__owner img {
-  width: 38px;
-  height: 38px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid rgba(255, 102, 0, 0.3);
 }
 
 .publication-modal__owner-placeholder {
-  width: 38px;
-  height: 38px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: rgba(255, 102, 0, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #ff6600;
+  font-size: 0.8rem;
 }
 
 .publication-modal__owner div {
@@ -697,21 +720,22 @@
 }
 
 .publication-modal__owner span {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   color: rgba(255, 255, 255, 0.5);
 }
 
 .publication-modal__owner strong {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: #fff;
 }
 
 /* ===== CTA SECTION ===== */
 .publication-modal__cta-section {
   display: flex;
-  gap: 8px;
-  padding-top: 12px;
+  gap: 6px;
+  padding-top: 8px;
   border-top: 1px solid rgba(255, 102, 0, 0.2);
+  margin-top: auto;
 }
 
 .publication-modal__cta-btn {
