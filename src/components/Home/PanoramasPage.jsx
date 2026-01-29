@@ -16,6 +16,7 @@ import FilterPanel from "../Superguia/FilterPanel";
 import PublicationModal from "../Superguia/PublicationModal";
 import PublicationGrid from "../Superguia/PublicationGrid";
 import Carousel from "../Superguia/Carousel";
+import EmptyPanoramas from "../Superguia/EmptyPanoramas";
 import { formatDateKey } from "../Superguia/DateCalendar";
 import {
   getPublishedEvents,
@@ -168,16 +169,14 @@ export default function PanoramasPage() {
       const cityName = LOCATIONS[selectedCity]?.nombre;
       if (cityName) {
         result = result.filter(
-          (event) =>
-            event.provincia?.toLowerCase() === cityName.toLowerCase(),
+          (event) => event.provincia?.toLowerCase() === cityName.toLowerCase(),
         );
       }
     }
 
     if (selectedComuna) {
       result = result.filter(
-        (event) =>
-          event.comuna?.toLowerCase() === selectedComuna.toLowerCase(),
+        (event) => event.comuna?.toLowerCase() === selectedComuna.toLowerCase(),
       );
     }
 
@@ -245,6 +244,15 @@ export default function PanoramasPage() {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredEvents.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredEvents, currentPage]);
+
+  // Verificar si hay filtros activos
+  const hasActiveFilters =
+    selectedCategory ||
+    selectedCity ||
+    selectedComuna ||
+    selectedDate ||
+    selectedPrice ||
+    searchQuery.trim();
 
   // Eventos destacados (primeros 5)
   const featuredEvents = useMemo(() => {
@@ -410,12 +418,10 @@ export default function PanoramasPage() {
             <p>Cargando panoramas...</p>
           </div>
         ) : filteredEvents.length === 0 ? (
-          <div className="panoramas-page__empty">
-            <p>No se encontraron panoramas con los filtros seleccionados.</p>
-            <button onClick={handleClearFilters}>
-              Ver todos los panoramas
-            </button>
-          </div>
+          <EmptyPanoramas
+            onClearFilters={handleClearFilters}
+            hasFilters={hasActiveFilters}
+          />
         ) : (
           <>
             {/* Grid de publicaciones usando el componente de Superguia */}
