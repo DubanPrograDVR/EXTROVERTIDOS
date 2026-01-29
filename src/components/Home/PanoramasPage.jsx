@@ -55,12 +55,29 @@ export default function PanoramasPage() {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Leer query params al cargar y sincronizar con CityContext
+  // Leer query params al cargar y sincronizar con CityContext y filtros
   useEffect(() => {
     const ciudadParam = searchParams.get("ciudad");
     if (ciudadParam) {
+      // Sincronizar con CityContext
       selectCity(ciudadParam);
-      setSearchQuery(ciudadParam);
+
+      // Buscar la key de la ciudad en LOCATIONS para el filtro
+      const cityKey = Object.keys(LOCATIONS).find(
+        (key) =>
+          LOCATIONS[key].nombre.toLowerCase() === ciudadParam.toLowerCase() ||
+          LOCATIONS[key].comunas.some(
+            (comuna) => comuna.toLowerCase() === ciudadParam.toLowerCase(),
+          ),
+      );
+
+      if (cityKey) {
+        // Si encontramos la ciudad, seleccionarla en el filtro
+        setSelectedCity(cityKey);
+      } else {
+        // Si no, usar como búsqueda de texto
+        setSearchQuery(ciudadParam);
+      }
     }
   }, [searchParams, selectCity]);
 
@@ -93,11 +110,26 @@ export default function PanoramasPage() {
   }, [searchParams]);
 
   // Handlers para filtros
-  const handleCityChange = useCallback((city) => {
-    setSelectedCity(city);
-    setSelectedComuna(null);
-    setCurrentPage(1);
-  }, []);
+  const handleCityChange = useCallback(
+    (city) => {
+      setSelectedCity(city);
+      setSelectedComuna(null);
+      setCurrentPage(1);
+
+      // Actualizar URL si se selecciona una ciudad
+      if (city) {
+        const cityName = LOCATIONS[city]?.nombre;
+        if (cityName) {
+          setSearchParams({ ciudad: cityName });
+          selectCity(cityName);
+        }
+      } else {
+        // Si se limpia la ciudad, remover el param
+        setSearchParams({});
+      }
+    },
+    [setSearchParams, selectCity],
+  );
 
   const handleCategoryChange = useCallback((category) => {
     setSelectedCategory(category);
