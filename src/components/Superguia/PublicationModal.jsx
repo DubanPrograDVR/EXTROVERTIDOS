@@ -323,372 +323,385 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
   return (
     <div className="publication-modal-overlay" onClick={handleOverlayClick}>
       <div className="publication-modal publication-modal--business-style">
-        {/* Botón cerrar */}
-        <button className="publication-modal__close" onClick={onClose}>
-          <FontAwesomeIcon icon={faTimes} />
-        </button>
-
-        {/* ===== SECCIÓN IZQUIERDA: IMAGEN ===== */}
-        <div className="publication-modal__left">
-          {/* Fondo blur */}
-          <div
-            className="publication-modal__image-bg"
-            style={{
-              backgroundImage: `url(${validImages[currentImageIndex]})`,
-            }}
-          />
-          <img
-            src={validImages[currentImageIndex]}
-            alt={titulo}
-            className="publication-modal__main-image"
-            onError={(e) => {
-              e.target.src = "/img/Home1.png";
-            }}
-          />
-
-          {/* Navegación de imágenes */}
-          {hasMultipleImages && (
-            <>
-              <button
-                className="publication-modal__nav publication-modal__nav--prev"
-                onClick={handlePrevImage}
-                aria-label="Imagen anterior">
-                <FontAwesomeIcon icon={faChevronLeft} />
-              </button>
-              <button
-                className="publication-modal__nav publication-modal__nav--next"
-                onClick={handleNextImage}
-                aria-label="Imagen siguiente">
-                <FontAwesomeIcon icon={faChevronRight} />
-              </button>
-
-              {/* Indicadores */}
-              <div className="publication-modal__indicators">
-                {validImages.map((_, index) => (
-                  <span
-                    key={index}
-                    className={`publication-modal__indicator ${
-                      index === currentImageIndex ? "active" : ""
-                    }`}
-                    onClick={() => setCurrentImageIndex(index)}
-                  />
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* Badge de duración para eventos multi-día */}
-          {isMultiDay && duracionDias && (
-            <span className="publication-modal__duration-badge">
-              🎉 {duracionDias} días
-            </span>
-          )}
-
-          {/* Categoría */}
-          {categories?.nombre && (
+        {/* Categoría en la parte superior con logo */}
+        {categories?.nombre && (
+          <div className="publication-modal__category-header">
+            <img
+              src="/img/P_Extro.png"
+              alt="Extrovertidos"
+              className="publication-modal__brand-logo"
+            />
             <span
               className="publication-modal__category-badge"
               style={{ backgroundColor: categories.color || "#ff6600" }}>
               {categories.icono && <span>{categories.icono}</span>}
               {categories.nombre}
             </span>
-          )}
+          </div>
+        )}
 
-          {/* Etiqueta directa destacada */}
-          {etiqueta_directa && (
-            <span className="publication-modal__featured-tag">
-              <FontAwesomeIcon icon={faTag} />
-              {etiqueta_directa}
-            </span>
-          )}
-        </div>
+        {/* Botón cerrar */}
+        <button className="publication-modal__close" onClick={onClose}>
+          <FontAwesomeIcon icon={faTimes} />
+        </button>
 
-        {/* ===== SECCIÓN DERECHA: CONTENIDO ===== */}
-        <div className="publication-modal__right">
-          {/* Título y organizador */}
-          <div className="publication-modal__title-section">
-            <h2>{titulo}</h2>
-            {subtitulo && (
-              <p className="publication-modal__slogan">{subtitulo}</p>
+        {/* Cuerpo del modal (imagen + contenido) */}
+        <div className="publication-modal__body">
+          {/* ===== SECCIÓN IZQUIERDA: IMAGEN ===== */}
+          <div className="publication-modal__left">
+            {/* Fondo blur */}
+            <div
+              className="publication-modal__image-bg"
+              style={{
+                backgroundImage: `url(${validImages[currentImageIndex]})`,
+              }}
+            />
+            <img
+              src={validImages[currentImageIndex]}
+              alt={titulo}
+              className="publication-modal__main-image"
+              onError={(e) => {
+                e.target.src = "/img/Home1.png";
+              }}
+            />
+            {/* Navegación de imágenes */}
+            {hasMultipleImages && (
+              <>
+                <button
+                  className="publication-modal__nav publication-modal__nav--prev"
+                  onClick={handlePrevImage}
+                  aria-label="Imagen anterior">
+                  <FontAwesomeIcon icon={faChevronLeft} />
+                </button>
+                <button
+                  className="publication-modal__nav publication-modal__nav--next"
+                  onClick={handleNextImage}
+                  aria-label="Imagen siguiente">
+                  <FontAwesomeIcon icon={faChevronRight} />
+                </button>
+
+                {/* Indicadores */}
+                <div className="publication-modal__indicators">
+                  {validImages.map((_, index) => (
+                    <span
+                      key={index}
+                      className={`publication-modal__indicator ${
+                        index === currentImageIndex ? "active" : ""
+                      }`}
+                      onClick={() => setCurrentImageIndex(index)}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Badge de duración para eventos multi-día */}
+            {isMultiDay && duracionDias && (
+              <span className="publication-modal__duration-badge">
+                🎉 {duracionDias} días
+              </span>
+            )}
+
+            {/* Etiqueta directa destacada */}
+            {etiqueta_directa && (
+              <span className="publication-modal__featured-tag">
+                <FontAwesomeIcon icon={faTag} />
+                {etiqueta_directa}
+              </span>
             )}
           </div>
 
-          {/* Organizador */}
-          {(organizador || profiles?.nombre) && (
-            <p className="publication-modal__organizer-line">
-              <FontAwesomeIcon icon={faUser} />
-              Organiza: {organizador || profiles?.nombre}
-            </p>
-          )}
-
-          {/* Mensaje de Marketing Principal */}
-          {mensaje_marketing && (
-            <div className="publication-modal__marketing">
-              <FontAwesomeIcon
-                icon={faBullhorn}
-                className="publication-modal__marketing-icon"
-              />
-              <p className="publication-modal__marketing-text">
-                {mensaje_marketing}
-              </p>
-            </div>
-          )}
-
-          {/* Mensaje de Marketing 2 */}
-          {mensaje_marketing_2 && (
-            <div className="publication-modal__marketing publication-modal__marketing--secondary">
-              <FontAwesomeIcon
-                icon={faBullhorn}
-                className="publication-modal__marketing-icon"
-              />
-              <p className="publication-modal__marketing-text">
-                {mensaje_marketing_2}
-              </p>
-            </div>
-          )}
-
-          {/* Descripción */}
-          {descripcion && (
-            <div className="publication-modal__description-box">
-              <p>{descripcion}</p>
-            </div>
-          )}
-
-          {/* Hashtags */}
-          {hashtagsList.length > 0 && (
-            <div className="publication-modal__hashtags">
-              {hashtagsList.map((tag, index) => (
-                <span key={index} className="publication-modal__hashtag">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Sección: Ubicación */}
-          <div className="publication-modal__section">
-            <h3>
-              <FontAwesomeIcon icon={faMapMarkerAlt} />
-              Ubicación
-            </h3>
-            <p>
-              {direccion && `${direccion}, `}
-              {comuna}
-              {provincia && `, ${provincia}`}
-            </p>
-            {(ubicacion_url || direccion) && (
-              <button
-                className="publication-modal__directions-btn"
-                onClick={() => window.open(getDirectionsUrl(), "_blank")}>
-                <FontAwesomeIcon icon={faRoute} />
-                Cómo llegar
-              </button>
-            )}
-          </div>
-
-          {/* Sección: Fecha y Hora */}
-          <div className="publication-modal__section">
-            <h3>
-              <FontAwesomeIcon icon={faClock} />
-              Horarios
-            </h3>
-            <div className="publication-modal__schedule">
-              <div className="publication-modal__schedule-row">
-                <span className="publication-modal__schedule-day">
-                  {isMultiDay ? "Fechas" : "Fecha"}
-                </span>
-                <span className="publication-modal__schedule-time">
-                  {getFechaDisplay() || "Por confirmar"}
-                </span>
-              </div>
-              <div className="publication-modal__schedule-row">
-                <span className="publication-modal__schedule-day">Horario</span>
-                <span className="publication-modal__schedule-time">
-                  {getHorarioDisplay()}
-                </span>
-              </div>
-              <div className="publication-modal__schedule-row">
-                <span className="publication-modal__schedule-day">Entrada</span>
-                <span className="publication-modal__schedule-time publication-modal__schedule-time--price">
-                  {getEntradaDisplay()}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Sección: Contacto */}
-          <div className="publication-modal__section">
-            <h3>Contacto</h3>
-            <div className="publication-modal__contact">
-              {contactPhone && (
-                <a
-                  href={`tel:${contactPhone}`}
-                  className="publication-modal__contact-item">
-                  <FontAwesomeIcon icon={faPhone} />
-                  {contactPhone}
-                </a>
+          {/* ===== SECCIÓN DERECHA: CONTENIDO ===== */}
+          <div className="publication-modal__right">
+            {/* Título y organizador */}
+            <div className="publication-modal__title-section">
+              <h2>{titulo}</h2>
+              {subtitulo && (
+                <p className="publication-modal__slogan">{subtitulo}</p>
               )}
             </div>
-          </div>
 
-          {/* Redes sociales */}
-          {(instagram || facebook || whatsapp || youtube || tiktok) && (
-            <div className="publication-modal__social">
-              {whatsapp && (
+            {/* Organizador */}
+            {(organizador || profiles?.nombre) && (
+              <p className="publication-modal__organizer-line">
+                <FontAwesomeIcon icon={faUser} />
+                Organiza: {organizador || profiles?.nombre}
+              </p>
+            )}
+
+            {/* Mensaje de Marketing Principal */}
+            {mensaje_marketing && (
+              <div className="publication-modal__marketing">
+                <FontAwesomeIcon
+                  icon={faBullhorn}
+                  className="publication-modal__marketing-icon"
+                />
+                <p className="publication-modal__marketing-text">
+                  {mensaje_marketing}
+                </p>
+              </div>
+            )}
+
+            {/* Mensaje de Marketing 2 */}
+            {mensaje_marketing_2 && (
+              <div className="publication-modal__marketing publication-modal__marketing--secondary">
+                <FontAwesomeIcon
+                  icon={faBullhorn}
+                  className="publication-modal__marketing-icon"
+                />
+                <p className="publication-modal__marketing-text">
+                  {mensaje_marketing_2}
+                </p>
+              </div>
+            )}
+
+            {/* Descripción */}
+            {descripcion && (
+              <div className="publication-modal__description-box">
+                <p>{descripcion}</p>
+              </div>
+            )}
+
+            {/* Hashtags */}
+            {hashtagsList.length > 0 && (
+              <div className="publication-modal__hashtags">
+                {hashtagsList.map((tag, index) => (
+                  <span key={index} className="publication-modal__hashtag">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Sección: Ubicación */}
+            <div className="publication-modal__section">
+              <h3>
+                <FontAwesomeIcon icon={faMapMarkerAlt} />
+                Ubicación
+              </h3>
+              <p>
+                {direccion && `${direccion}, `}
+                {comuna}
+                {provincia && `, ${provincia}`}
+              </p>
+              {(ubicacion_url || direccion) && (
                 <button
-                  className="publication-modal__social-btn publication-modal__social-btn--whatsapp"
-                  onClick={handleWhatsApp}>
-                  <FontAwesomeIcon icon={faWhatsapp} />
-                  WhatsApp
+                  className="publication-modal__directions-btn"
+                  onClick={() => window.open(getDirectionsUrl(), "_blank")}>
+                  <FontAwesomeIcon icon={faRoute} />
+                  Cómo llegar
                 </button>
               )}
-              {instagram && (
-                <a
-                  href={
-                    instagram.startsWith("http")
-                      ? instagram
-                      : `https://instagram.com/${instagram.replace("@", "")}`
-                  }
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="publication-modal__social-btn publication-modal__social-btn--instagram">
-                  <FontAwesomeIcon icon={faInstagram} />
-                  Instagram
-                </a>
-              )}
-              {facebook && (
-                <a
-                  href={
-                    facebook.startsWith("http")
-                      ? facebook
-                      : `https://facebook.com/${facebook}`
-                  }
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="publication-modal__social-btn publication-modal__social-btn--facebook">
-                  <FontAwesomeIcon icon={faFacebook} />
-                  Facebook
-                </a>
-              )}
-              {youtube && (
-                <a
-                  href={
-                    youtube.startsWith("http")
-                      ? youtube
-                      : `https://youtube.com/${youtube}`
-                  }
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="publication-modal__social-btn publication-modal__social-btn--youtube">
-                  <FontAwesomeIcon icon={faYoutube} />
-                  YouTube
-                </a>
-              )}
-              {tiktok && (
-                <a
-                  href={
-                    tiktok.startsWith("http")
-                      ? tiktok
-                      : `https://tiktok.com/@${tiktok.replace("@", "")}`
-                  }
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="publication-modal__social-btn publication-modal__social-btn--tiktok">
-                  <FontAwesomeIcon icon={faTiktok} />
-                  TikTok
-                </a>
-              )}
             </div>
-          )}
 
-          {/* Mapa expandible */}
-          <AccordionSection
-            title="MAPA"
-            isOpen={showLocation}
-            onToggle={() => setShowLocation(!showLocation)}>
-            {coordinates ? (
-              <div className="publication-modal__map-section">
-                <div className="publication-modal__map-container">
-                  <MapContainer
-                    center={[coordinates.lat, coordinates.lng]}
-                    zoom={15}
-                    scrollWheelZoom={false}
-                    className="publication-modal__map"
-                    key={`${coordinates.lat}-${coordinates.lng}`}>
-                    <TileLayer
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                    <Marker
-                      position={[coordinates.lat, coordinates.lng]}
-                      icon={orangeIcon}>
-                      <Popup>
-                        <strong>{titulo}</strong>
-                        <br />
-                        {direccion || `${comuna}, ${provincia}`}
-                      </Popup>
-                    </Marker>
-                  </MapContainer>
+            {/* Sección: Fecha y Hora */}
+            <div className="publication-modal__section">
+              <h3>
+                <FontAwesomeIcon icon={faClock} />
+                Horarios
+              </h3>
+              <div className="publication-modal__schedule">
+                <div className="publication-modal__schedule-row">
+                  <span className="publication-modal__schedule-day">
+                    {isMultiDay ? "Fechas" : "Fecha"}
+                  </span>
+                  <span className="publication-modal__schedule-time">
+                    {getFechaDisplay() || "Por confirmar"}
+                  </span>
+                </div>
+                <div className="publication-modal__schedule-row">
+                  <span className="publication-modal__schedule-day">
+                    Horario
+                  </span>
+                  <span className="publication-modal__schedule-time">
+                    {getHorarioDisplay()}
+                  </span>
+                </div>
+                <div className="publication-modal__schedule-row">
+                  <span className="publication-modal__schedule-day">
+                    Entrada
+                  </span>
+                  <span className="publication-modal__schedule-time publication-modal__schedule-time--price">
+                    {getEntradaDisplay()}
+                  </span>
                 </div>
               </div>
-            ) : (
-              <div className="publication-modal__map-empty">
-                <FontAwesomeIcon icon={faMap} />
-                <p>Ubicación no disponible en el mapa</p>
+            </div>
+
+            {/* Sección: Contacto */}
+            <div className="publication-modal__section">
+              <h3>Contacto</h3>
+              <div className="publication-modal__contact">
+                {contactPhone && (
+                  <a
+                    href={`tel:${contactPhone}`}
+                    className="publication-modal__contact-item">
+                    <FontAwesomeIcon icon={faPhone} />
+                    {contactPhone}
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* Redes sociales */}
+            {(instagram || facebook || whatsapp || youtube || tiktok) && (
+              <div className="publication-modal__social">
+                {whatsapp && (
+                  <button
+                    className="publication-modal__social-btn publication-modal__social-btn--whatsapp"
+                    onClick={handleWhatsApp}>
+                    <FontAwesomeIcon icon={faWhatsapp} />
+                    WhatsApp
+                  </button>
+                )}
+                {instagram && (
+                  <a
+                    href={
+                      instagram.startsWith("http")
+                        ? instagram
+                        : `https://instagram.com/${instagram.replace("@", "")}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="publication-modal__social-btn publication-modal__social-btn--instagram">
+                    <FontAwesomeIcon icon={faInstagram} />
+                    Instagram
+                  </a>
+                )}
+                {facebook && (
+                  <a
+                    href={
+                      facebook.startsWith("http")
+                        ? facebook
+                        : `https://facebook.com/${facebook}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="publication-modal__social-btn publication-modal__social-btn--facebook">
+                    <FontAwesomeIcon icon={faFacebook} />
+                    Facebook
+                  </a>
+                )}
+                {youtube && (
+                  <a
+                    href={
+                      youtube.startsWith("http")
+                        ? youtube
+                        : `https://youtube.com/${youtube}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="publication-modal__social-btn publication-modal__social-btn--youtube">
+                    <FontAwesomeIcon icon={faYoutube} />
+                    YouTube
+                  </a>
+                )}
+                {tiktok && (
+                  <a
+                    href={
+                      tiktok.startsWith("http")
+                        ? tiktok
+                        : `https://tiktok.com/@${tiktok.replace("@", "")}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="publication-modal__social-btn publication-modal__social-btn--tiktok">
+                    <FontAwesomeIcon icon={faTiktok} />
+                    TikTok
+                  </a>
+                )}
               </div>
             )}
-          </AccordionSection>
 
-          {/* Publicado por */}
-          {profiles?.nombre && (
-            <div className="publication-modal__owner">
-              {profiles.avatar_url ? (
-                <img src={profiles.avatar_url} alt={profiles.nombre} />
+            {/* Mapa expandible */}
+            <AccordionSection
+              title="MAPA"
+              isOpen={showLocation}
+              onToggle={() => setShowLocation(!showLocation)}>
+              {coordinates ? (
+                <div className="publication-modal__map-section">
+                  <div className="publication-modal__map-container">
+                    <MapContainer
+                      center={[coordinates.lat, coordinates.lng]}
+                      zoom={15}
+                      scrollWheelZoom={false}
+                      className="publication-modal__map"
+                      key={`${coordinates.lat}-${coordinates.lng}`}>
+                      <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      />
+                      <Marker
+                        position={[coordinates.lat, coordinates.lng]}
+                        icon={orangeIcon}>
+                        <Popup>
+                          <strong>{titulo}</strong>
+                          <br />
+                          {direccion || `${comuna}, ${provincia}`}
+                        </Popup>
+                      </Marker>
+                    </MapContainer>
+                  </div>
+                </div>
               ) : (
-                <div className="publication-modal__owner-placeholder">
-                  <FontAwesomeIcon icon={faUser} />
+                <div className="publication-modal__map-empty">
+                  <FontAwesomeIcon icon={faMap} />
+                  <p>Ubicación no disponible en el mapa</p>
                 </div>
               )}
-              <div>
-                <span>Publicado por</span>
-                <strong>{profiles.nombre}</strong>
-              </div>
-            </div>
-          )}
+            </AccordionSection>
 
-          {/* Botones CTA */}
-          <div className="publication-modal__cta-section">
-            <button
-              className="publication-modal__cta-btn publication-modal__cta-btn--primary"
-              onClick={() =>
-                ubicacion_url && window.open(ubicacion_url, "_blank")
-              }>
-              <FontAwesomeIcon icon={faExternalLinkAlt} />
-              Ver evento
-            </button>
-            <button
-              className="publication-modal__cta-btn publication-modal__cta-btn--secondary"
-              onClick={() => {
-                if (navigator.share) {
-                  navigator.share({
-                    title: titulo,
-                    text: `¡Mira este evento! ${titulo}`,
-                    url: window.location.href,
-                  });
-                } else {
-                  navigator.clipboard.writeText(window.location.href);
-                  alert("¡Enlace copiado al portapapeles!");
-                }
-              }}>
-              <FontAwesomeIcon icon={faShareAlt} />
-              Compartir
-            </button>
-            <button
-              className="publication-modal__cta-btn publication-modal__cta-btn--outline"
-              onClick={() => alert("Funcionalidad de guardar próximamente")}>
-              <FontAwesomeIcon icon={faBookmark} />
-              Guardar
-            </button>
+            {/* Publicado por */}
+            {profiles?.nombre && (
+              <div className="publication-modal__owner">
+                {profiles.avatar_url ? (
+                  <img src={profiles.avatar_url} alt={profiles.nombre} />
+                ) : (
+                  <div className="publication-modal__owner-placeholder">
+                    <FontAwesomeIcon icon={faUser} />
+                  </div>
+                )}
+                <div>
+                  <span>Publicado por</span>
+                  <strong>{profiles.nombre}</strong>
+                </div>
+              </div>
+            )}
+
+            {/* Botones CTA */}
+            <div className="publication-modal__cta-section">
+              <button
+                className="publication-modal__cta-btn publication-modal__cta-btn--primary"
+                onClick={() =>
+                  ubicacion_url && window.open(ubicacion_url, "_blank")
+                }>
+                <FontAwesomeIcon icon={faExternalLinkAlt} />
+                Ver evento
+              </button>
+              <button
+                className="publication-modal__cta-btn publication-modal__cta-btn--secondary"
+                onClick={() => {
+                  if (navigator.share) {
+                    navigator.share({
+                      title: titulo,
+                      text: `¡Mira este evento! ${titulo}`,
+                      url: window.location.href,
+                    });
+                  } else {
+                    navigator.clipboard.writeText(window.location.href);
+                    alert("¡Enlace copiado al portapapeles!");
+                  }
+                }}>
+                <FontAwesomeIcon icon={faShareAlt} />
+                Compartir
+              </button>
+              <button
+                className="publication-modal__cta-btn publication-modal__cta-btn--outline"
+                onClick={() => alert("Funcionalidad de guardar próximamente")}>
+                <FontAwesomeIcon icon={faBookmark} />
+                Guardar
+              </button>
+            </div>
           </div>
         </div>
       </div>
