@@ -26,9 +26,9 @@ export default function Home() {
     navigate(`/panoramas?ciudad=${encodeURIComponent(cityName)}`);
   };
 
-  // Ir a panoramas sin filtro
+  // Ir a panoramas con la ciudad seleccionada
   const handlePanoramasClick = () => {
-    navigate("/panoramas");
+    navigate(`/panoramas?ciudad=${encodeURIComponent(cityName)}`);
   };
 
   // Ir a superguía
