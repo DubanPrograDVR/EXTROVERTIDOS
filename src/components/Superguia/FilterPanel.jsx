@@ -15,6 +15,9 @@ import "./styles/FilterPanel.css";
 
 /**
  * Panel de filtros con opciones siempre visibles
+ * @param {boolean} showDateFilter - Mostrar filtro de fecha (default: true)
+ * @param {boolean} showPriceFilter - Mostrar filtro de precio (default: true)
+ * @param {boolean} showSubcategories - Mostrar subcategorías (default: true)
  */
 export default function FilterPanel({
   categories = [],
@@ -38,6 +41,9 @@ export default function FilterPanel({
   onSearchChange,
   onClearFilters,
   totalResults = 0,
+  showDateFilter = true,
+  showPriceFilter = true,
+  showSubcategories = true,
 }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const panelRef = useRef(null);
@@ -180,9 +186,11 @@ export default function FilterPanel({
                         onCategoryChange(
                           selectedCategory === cat.id ? null : cat.id,
                         );
-                        onSubcategoryChange(null);
+                        onSubcategoryChange && onSubcategoryChange(null);
                       }}>
-                      <FontAwesomeIcon icon={cat.icon} />
+                      {(cat.icon || cat.icono) && (
+                        <FontAwesomeIcon icon={cat.icon || cat.icono} />
+                      )}
                       <span>{cat.nombre}</span>
                       {selectedCategory === cat.id && (
                         <FontAwesomeIcon icon={faCheck} className="check" />
@@ -190,7 +198,7 @@ export default function FilterPanel({
                     </button>
                   ))}
 
-                  {filteredSubcategories.length > 0 && (
+                  {showSubcategories && filteredSubcategories.length > 0 && (
                     <>
                       <p className="filter-panel__dropdown-label">
                         Subcategorías
@@ -296,83 +304,93 @@ export default function FilterPanel({
           </div>
 
           {/* Precio */}
-          <div className="filter-panel__dropdown-wrapper">
-            <button
-              className={`filter-panel__filter-btn ${
-                activeDropdown === "price" ? "active" : ""
-              } ${selectedPrice ? "has-value" : ""}`}
-              onClick={() => toggleDropdown("price")}>
-              <FontAwesomeIcon icon={faTag} />
-              <span>{priceLabel}</span>
-              <FontAwesomeIcon icon={faChevronDown} className="chevron" />
-            </button>
+          {showPriceFilter && (
+            <div className="filter-panel__dropdown-wrapper">
+              <button
+                className={`filter-panel__filter-btn ${
+                  activeDropdown === "price" ? "active" : ""
+                } ${selectedPrice ? "has-value" : ""}`}
+                onClick={() => toggleDropdown("price")}>
+                <FontAwesomeIcon icon={faTag} />
+                <span>{priceLabel}</span>
+                <FontAwesomeIcon icon={faChevronDown} className="chevron" />
+              </button>
 
-            {activeDropdown === "price" && (
-              <div className="filter-panel__dropdown">
-                <div className="filter-panel__dropdown-header">
-                  <span>Rango de precio</span>
-                  {selectedPrice && (
-                    <button onClick={() => onPriceChange(null)}>Limpiar</button>
-                  )}
+              {activeDropdown === "price" && (
+                <div className="filter-panel__dropdown">
+                  <div className="filter-panel__dropdown-header">
+                    <span>Rango de precio</span>
+                    {selectedPrice && (
+                      <button onClick={() => onPriceChange(null)}>
+                        Limpiar
+                      </button>
+                    )}
+                  </div>
+                  <div className="filter-panel__dropdown-list">
+                    {priceOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        className={`filter-panel__dropdown-item ${
+                          selectedPrice === option.value ? "selected" : ""
+                        }`}
+                        onClick={() => {
+                          onPriceChange(
+                            selectedPrice === option.value
+                              ? null
+                              : option.value,
+                          );
+                          setActiveDropdown(null);
+                        }}>
+                        <span>{option.icon}</span>
+                        <span>{option.label}</span>
+                        {selectedPrice === option.value && (
+                          <FontAwesomeIcon icon={faCheck} className="check" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="filter-panel__dropdown-list">
-                  {priceOptions.map((option) => (
-                    <button
-                      key={option.value}
-                      className={`filter-panel__dropdown-item ${
-                        selectedPrice === option.value ? "selected" : ""
-                      }`}
-                      onClick={() => {
-                        onPriceChange(
-                          selectedPrice === option.value ? null : option.value,
-                        );
-                        setActiveDropdown(null);
-                      }}>
-                      <span>{option.icon}</span>
-                      <span>{option.label}</span>
-                      {selectedPrice === option.value && (
-                        <FontAwesomeIcon icon={faCheck} className="check" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           {/* Calendario */}
-          <div className="filter-panel__dropdown-wrapper filter-panel__dropdown-wrapper--calendar">
-            <button
-              className={`filter-panel__filter-btn ${
-                activeDropdown === "calendar" ? "active" : ""
-              } ${selectedDate ? "has-value" : ""}`}
-              onClick={() => toggleDropdown("calendar")}>
-              <FontAwesomeIcon icon={faCalendarAlt} />
-              <span>{calendarLabel}</span>
-              <FontAwesomeIcon icon={faChevronDown} className="chevron" />
-            </button>
+          {showDateFilter && (
+            <div className="filter-panel__dropdown-wrapper filter-panel__dropdown-wrapper--calendar">
+              <button
+                className={`filter-panel__filter-btn ${
+                  activeDropdown === "calendar" ? "active" : ""
+                } ${selectedDate ? "has-value" : ""}`}
+                onClick={() => toggleDropdown("calendar")}>
+                <FontAwesomeIcon icon={faCalendarAlt} />
+                <span>{calendarLabel}</span>
+                <FontAwesomeIcon icon={faChevronDown} className="chevron" />
+              </button>
 
-            {activeDropdown === "calendar" && (
-              <div className="filter-panel__dropdown filter-panel__dropdown--calendar">
-                <div className="filter-panel__dropdown-header">
-                  <span>Seleccionar fecha</span>
-                  {selectedDate && (
-                    <button onClick={() => onDateChange(null)}>Limpiar</button>
-                  )}
+              {activeDropdown === "calendar" && (
+                <div className="filter-panel__dropdown filter-panel__dropdown--calendar">
+                  <div className="filter-panel__dropdown-header">
+                    <span>Seleccionar fecha</span>
+                    {selectedDate && (
+                      <button onClick={() => onDateChange(null)}>
+                        Limpiar
+                      </button>
+                    )}
+                  </div>
+                  <div className="filter-panel__calendar-content">
+                    <DateCalendar
+                      selectedDate={selectedDate}
+                      onDateChange={(date) => {
+                        onDateChange(date);
+                        // No cerrar el dropdown para permitir ver el calendario
+                      }}
+                      eventsPerDay={eventsPerDay}
+                    />
+                  </div>
                 </div>
-                <div className="filter-panel__calendar-content">
-                  <DateCalendar
-                    selectedDate={selectedDate}
-                    onDateChange={(date) => {
-                      onDateChange(date);
-                      // No cerrar el dropdown para permitir ver el calendario
-                    }}
-                    eventsPerDay={eventsPerDay}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

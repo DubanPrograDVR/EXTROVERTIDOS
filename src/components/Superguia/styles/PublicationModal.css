@@ -88,24 +88,38 @@
 /* ===== SECCIÓN IZQUIERDA (IMAGEN) ===== */
 .publication-modal__left {
   position: relative;
-  width: 55%;
-  min-height: 450px;
+  width: 50%;
+  min-height: 400px;
   flex-shrink: 0;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
 }
 
-/* Fondo blur de la imagen - oculto */
+/* Fondo blur de la imagen */
 .publication-modal__image-bg {
-  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  filter: blur(20px) brightness(0.4);
+  transform: scale(1.1);
+  z-index: 0;
 }
 
 .publication-modal__main-image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  position: absolute;
-  top: 0;
-  left: 0;
+  object-fit: contain;
+  object-position: center;
+  position: relative;
+  z-index: 1;
+  max-height: 100%;
 }
 
 /* Botón cerrar */
@@ -1051,9 +1065,15 @@
 
   .publication-modal__left {
     width: 100%;
-    min-height: 280px;
-    max-height: 300px;
+    min-height: 300px;
+    max-height: 45vh;
     flex-shrink: 0;
+  }
+
+  .publication-modal__main-image {
+    object-fit: contain;
+    width: 100%;
+    height: 100%;
   }
 
   .publication-modal__right {
@@ -1082,12 +1102,22 @@
 
 @media (max-width: 600px) {
   .publication-modal-overlay {
-    padding: 10px;
+    padding: 8px;
+  }
+
+  .publication-modal.publication-modal--business-style {
+    height: 98vh;
+    max-height: 98vh;
+    border-radius: 12px;
   }
 
   .publication-modal__left {
-    min-height: 220px;
-    max-height: 250px;
+    min-height: 250px;
+    max-height: 40vh;
+  }
+
+  .publication-modal__main-image {
+    object-fit: contain;
   }
 
   .publication-modal__right {
@@ -1179,5 +1209,46 @@
 
   .publication-modal__map-container {
     height: 180px;
+  }
+}
+
+/* Pantallas muy pequeñas */
+@media (max-width: 400px) {
+  .publication-modal__left {
+    min-height: 200px;
+    max-height: 35vh;
+  }
+
+  .publication-modal__title-section h2 {
+    font-size: 1rem;
+  }
+
+  .publication-modal__category-badge {
+    font-size: 0.7rem;
+    padding: 5px 10px;
+  }
+}
+
+/* Modo landscape en móviles */
+@media (max-height: 500px) and (orientation: landscape) {
+  .publication-modal.publication-modal--business-style {
+    flex-direction: row;
+    height: 95vh;
+  }
+
+  .publication-modal__body {
+    flex-direction: row;
+  }
+
+  .publication-modal__left {
+    width: 45%;
+    min-height: auto;
+    max-height: none;
+    height: 100%;
+  }
+
+  .publication-modal__right {
+    width: 55%;
+    overflow-y: auto;
   }
 }

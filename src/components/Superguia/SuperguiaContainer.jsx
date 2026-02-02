@@ -13,8 +13,9 @@ import Pagination from "./Pagination";
 import FilterPanel from "./FilterPanel";
 import BusinessGrid from "./BusinessGrid";
 import BusinessModal from "./BusinessModal";
-import { getPublishedBusinesses, getCategories } from "../../lib/database";
-import { LOCATIONS, mapCategoriesToUI } from "./data";
+import { getPublishedBusinesses } from "../../lib/database";
+import { LOCATIONS } from "./data";
+import { BUSINESS_CATEGORIES } from "./businessCategories";
 import "./styles/SuperguiaContainer.css";
 
 const ITEMS_PER_PAGE = 8;
@@ -48,13 +49,10 @@ export default function SuperguiaContainer() {
       setLoading(true);
       setError(null);
       try {
-        const [businessesData, categoriesData] = await Promise.all([
-          getPublishedBusinesses(),
-          getCategories(),
-        ]);
-
+        const businessesData = await getPublishedBusinesses();
         setBusinesses(businessesData || []);
-        setCategories(mapCategoriesToUI(categoriesData || []));
+        // Usar categorías de negocios locales en lugar de las de la BD
+        setCategories(BUSINESS_CATEGORIES);
       } catch (err) {
         console.error("Error cargando datos:", err);
         setError("No se pudieron cargar los negocios");
@@ -124,11 +122,16 @@ export default function SuperguiaContainer() {
       );
     }
 
-    // Filtro de categoría
+    // Filtro de categoría (buscar por nombre de categoría)
     if (selectedCategory) {
-      result = result.filter(
-        (business) => business.category_id === selectedCategory,
-      );
+      const selectedCat = categories.find((c) => c.id === selectedCategory);
+      if (selectedCat) {
+        result = result.filter(
+          (business) =>
+            business.categories?.nombre?.toLowerCase() ===
+            selectedCat.nombre.toLowerCase(),
+        );
+      }
     }
 
     // Filtro de ciudad (provincia)
@@ -151,7 +154,14 @@ export default function SuperguiaContainer() {
     }
 
     return result;
-  }, [businesses, searchQuery, selectedCategory, selectedCity, selectedComuna]);
+  }, [
+    businesses,
+    searchQuery,
+    selectedCategory,
+    selectedCity,
+    selectedComuna,
+    categories,
+  ]);
 
   // Comunas disponibles según ciudad seleccionada
   const availableComunas = useMemo(() => {
@@ -216,6 +226,7 @@ export default function SuperguiaContainer() {
           {/* Panel de filtros */}
           <FilterPanel
             categories={categories}
+            locations={LOCATIONS}
             selectedCategory={selectedCategory}
             onCategoryChange={handleCategoryChange}
             selectedCity={selectedCity}
@@ -224,10 +235,12 @@ export default function SuperguiaContainer() {
             onComunaChange={handleComunaChange}
             availableComunas={availableComunas}
             searchQuery={searchQuery}
-            onSearch={handleSearch}
+            onSearchChange={handleSearch}
             onClearFilters={handleClearFilters}
+            totalResults={filteredBusinesses.length}
             showDateFilter={false}
             showPriceFilter={false}
+            showSubcategories={false}
           />
 
           {/* Estado de carga */}
@@ -253,28 +266,57 @@ export default function SuperguiaContainer() {
             <>
               {filteredBusinesses.length === 0 ? (
                 <div className="superguia__empty">
-                  <div className="superguia__empty-icon">
-                    <FontAwesomeIcon icon={faStore} />
+                  {/* Logo SG */}
+                  <div className="superguia__empty-logo">
+                    <img src="/img/SG_Extro.png" alt="Superguía" />
                   </div>
-                  <h3>
+
+                  <h2 className="superguia__empty-title">
+                    UPS.... AUN NO HAY UNA PUBLICACIÓN
+                  </h2>
+                  <p className="superguia__empty-subtitle">
                     {hasActiveFilters
-                      ? "No se encontraron negocios"
-                      : "Aún no hay negocios publicados"}
-                  </h3>
-                  <p>
-                    {hasActiveFilters
-                      ? "Intenta con otros filtros de búsqueda"
-                      : "¡Sé el primero en publicar tu negocio!"}
+                      ? "TE INVITAMOS A SEGUIR TU BÚSQUEDA EN OTRA CATEGORÍA"
+                      : "TE INVITAMOS A SEGUIR TU BÚSQUEDA EN OTRA CATEGORÍA"}
                   </p>
-                  {hasActiveFilters ? (
-                    <button onClick={handleClearFilters}>
-                      Limpiar filtros
-                    </button>
-                  ) : (
-                    <button onClick={() => navigate("/publicar-negocio")}>
+
+                  <h3 className="superguia__empty-cta">
+                    ¡PUBLICA AHORA TU NEGOCIO!
+                  </h3>
+
+                  <p className="superguia__empty-description">
+                    EXPERIMENTA UNA NUEVA FORMA PARA QUE LOS CLIENTES
+                    <br />
+                    TE ENCUENTREN
+                  </p>
+
+                  <p className="superguia__empty-tagline">
+                    SE PARTE DE EXTROVERTIDOS
+                  </p>
+
+                  {/* Logo Extrovertidos */}
+                  <div className="superguia__empty-brand">
+                    <img
+                      src="/img/Logo_extrovertidos.png"
+                      alt="Extrovertidos"
+                    />
+                  </div>
+
+                  {/* Botones de acción */}
+                  <div className="superguia__empty-actions">
+                    {hasActiveFilters && (
+                      <button
+                        className="superguia__empty-btn superguia__empty-btn--secondary"
+                        onClick={handleClearFilters}>
+                        Limpiar filtros
+                      </button>
+                    )}
+                    <button
+                      className="superguia__empty-btn superguia__empty-btn--primary"
+                      onClick={() => navigate("/publicar-negocio")}>
                       Publicar Negocio
                     </button>
-                  )}
+                  </div>
                 </div>
               ) : (
                 <>

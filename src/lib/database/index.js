@@ -23,7 +23,13 @@
 export { invalidateCache, clearCache } from "./cache";
 
 // ============ CATEGORÍAS ============
-export { getCategories, getCategoryById } from "./categories";
+export {
+  getCategories,
+  getCategoryById,
+  getSubcategories,
+  getSubcategoriesByCategoryId,
+  getCategoriesWithSubcategories,
+} from "./categories";
 
 // ============ EVENTOS ============
 export {
