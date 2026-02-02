@@ -18,8 +18,10 @@ import "./styles/FilterPanel.css";
  */
 export default function FilterPanel({
   categories = [],
+  subcategories = [],
   locations = {},
   selectedCategory,
+  selectedSubcategory,
   selectedCity,
   selectedComuna,
   selectedDate,
@@ -28,6 +30,7 @@ export default function FilterPanel({
   eventsPerDay = {},
   availableComunas = [],
   onCategoryChange,
+  onSubcategoryChange,
   onCityChange,
   onComunaChange,
   onDateChange,
@@ -52,6 +55,7 @@ export default function FilterPanel({
 
   const hasActiveFilters =
     selectedCategory ||
+    selectedSubcategory ||
     selectedCity ||
     selectedComuna ||
     selectedDate ||
@@ -64,7 +68,7 @@ export default function FilterPanel({
       { value: "moderado", label: "Moderado", icon: "💵💵" },
       { value: "premium", label: "Premium", icon: "💵💵💵" },
     ],
-    []
+    [],
   );
 
   const toggleDropdown = useCallback((dropdown) => {
@@ -73,10 +77,20 @@ export default function FilterPanel({
 
   // Memoizar labels para evitar recálculos innecesarios
   const categoryLabel = useMemo(() => {
+    if (selectedSubcategory) {
+      const subcat = subcategories.find((s) => s.id === selectedSubcategory);
+      return subcat?.nombre || "Categoría";
+    }
     if (!selectedCategory) return "Categoría";
     const cat = categories.find((c) => c.id === selectedCategory);
     return cat?.nombre || "Categoría";
-  }, [selectedCategory, categories]);
+  }, [selectedCategory, selectedSubcategory, categories, subcategories]);
+
+  // Filtrar subcategorías por la categoría seleccionada
+  const filteredSubcategories = useMemo(() => {
+    if (!selectedCategory) return [];
+    return subcategories.filter((s) => s.category_id === selectedCategory);
+  }, [selectedCategory, subcategories]);
 
   const locationLabel = useMemo(() => {
     if (selectedComuna) return selectedComuna;
@@ -144,13 +158,18 @@ export default function FilterPanel({
               <div className="filter-panel__dropdown">
                 <div className="filter-panel__dropdown-header">
                   <span>Seleccionar categoría</span>
-                  {selectedCategory && (
-                    <button onClick={() => onCategoryChange(null)}>
+                  {(selectedCategory || selectedSubcategory) && (
+                    <button
+                      onClick={() => {
+                        onCategoryChange(null);
+                        onSubcategoryChange(null);
+                      }}>
                       Limpiar
                     </button>
                   )}
                 </div>
                 <div className="filter-panel__dropdown-list">
+                  <p className="filter-panel__dropdown-label">Categorías</p>
                   {categories.map((cat) => (
                     <button
                       key={cat.id}
@@ -159,9 +178,9 @@ export default function FilterPanel({
                       }`}
                       onClick={() => {
                         onCategoryChange(
-                          selectedCategory === cat.id ? null : cat.id
+                          selectedCategory === cat.id ? null : cat.id,
                         );
-                        setActiveDropdown(null);
+                        onSubcategoryChange(null);
                       }}>
                       <FontAwesomeIcon icon={cat.icon} />
                       <span>{cat.nombre}</span>
@@ -170,6 +189,34 @@ export default function FilterPanel({
                       )}
                     </button>
                   ))}
+
+                  {filteredSubcategories.length > 0 && (
+                    <>
+                      <p className="filter-panel__dropdown-label">
+                        Subcategorías
+                      </p>
+                      {filteredSubcategories.map((subcat) => (
+                        <button
+                          key={subcat.id}
+                          className={`filter-panel__dropdown-item filter-panel__dropdown-item--subcategory ${
+                            selectedSubcategory === subcat.id ? "selected" : ""
+                          }`}
+                          onClick={() => {
+                            onSubcategoryChange(
+                              selectedSubcategory === subcat.id
+                                ? null
+                                : subcat.id,
+                            );
+                            setActiveDropdown(null);
+                          }}>
+                          <span>{subcat.nombre}</span>
+                          {selectedSubcategory === subcat.id && (
+                            <FontAwesomeIcon icon={faCheck} className="check" />
+                          )}
+                        </button>
+                      ))}
+                    </>
+                  )}
                 </div>
               </div>
             )}
@@ -231,7 +278,7 @@ export default function FilterPanel({
                           }`}
                           onClick={() => {
                             onComunaChange(
-                              selectedComuna === comuna ? null : comuna
+                              selectedComuna === comuna ? null : comuna,
                             );
                             setActiveDropdown(null);
                           }}>
@@ -277,7 +324,7 @@ export default function FilterPanel({
                       }`}
                       onClick={() => {
                         onPriceChange(
-                          selectedPrice === option.value ? null : option.value
+                          selectedPrice === option.value ? null : option.value,
                         );
                         setActiveDropdown(null);
                       }}>

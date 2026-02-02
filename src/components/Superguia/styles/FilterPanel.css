@@ -248,6 +248,22 @@
   font-size: 0.8rem;
 }
 
+/* === Subcategorías === */
+.filter-panel__dropdown-item--subcategory {
+  padding-left: 1.5rem;
+  font-size: 0.85rem;
+  color: #aaa;
+}
+
+.filter-panel__dropdown-item--subcategory:hover {
+  color: #fff;
+}
+
+.filter-panel__dropdown-item--subcategory.selected {
+  background: rgba(255, 107, 53, 0.1);
+  color: #ff8f5e;
+}
+
 /* === Calendario siempre visible === */
 .filter-panel__calendar {
   flex-shrink: 0;

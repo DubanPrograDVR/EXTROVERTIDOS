@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -27,6 +27,8 @@ import {
   faBullhorn,
   faTag,
   faHashtag,
+  faAlignLeft,
+  faAddressCard,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faInstagram,
@@ -59,23 +61,46 @@ const orangeIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
+// Tipos de secciones del acordeón
+const ACCORDION_SECTIONS = {
+  DESCRIPTION: "description",
+  LOCATION: "location",
+  SCHEDULE: "schedule",
+  CONTACT: "contact",
+  MAP: "map",
+};
+
 /**
- * Componente AccordionSection reutilizable
+ * Componente AccordionSection reutilizable con icono
  */
-const AccordionSection = ({ title, isOpen, onToggle, children }) => {
+const AccordionSection = ({ title, icon, isOpen, onToggle, children }) => {
   return (
-    <div className="accordion-section">
+    <div
+      className={`accordion-section ${isOpen ? "accordion-section--open" : ""}`}>
       <button
         className={`accordion-section__header ${isOpen ? "open" : ""}`}
         onClick={onToggle}
-        aria-expanded={isOpen}>
-        <span className="accordion-section__title">{title}</span>
+        aria-expanded={isOpen}
+        aria-controls={`accordion-content-${title.toLowerCase().replace(/\s/g, "-")}`}>
+        <span className="accordion-section__title">
+          {icon && (
+            <FontAwesomeIcon
+              icon={icon}
+              className="accordion-section__title-icon"
+            />
+          )}
+          {title}
+        </span>
         <FontAwesomeIcon
           icon={isOpen ? faChevronUp : faChevronDown}
           className="accordion-section__icon"
         />
       </button>
-      <div className={`accordion-section__content ${isOpen ? "open" : ""}`}>
+      <div
+        className={`accordion-section__content ${isOpen ? "open" : ""}`}
+        id={`accordion-content-${title.toLowerCase().replace(/\s/g, "-")}`}
+        role="region"
+        aria-hidden={!isOpen}>
         <div className="accordion-section__body">{children}</div>
       </div>
     </div>
@@ -83,12 +108,18 @@ const AccordionSection = ({ title, isOpen, onToggle, children }) => {
 };
 
 export default function PublicationModal({ publication, isOpen, onClose }) {
-  const [showDescription, setShowDescription] = useState(true);
-  const [showInfo, setShowInfo] = useState(false);
-  const [showLocation, setShowLocation] = useState(false);
+  // Estado único para controlar qué sección del acordeón está abierta (null = ninguna)
+  const [activeSection, setActiveSection] = useState(
+    ACCORDION_SECTIONS.DESCRIPTION,
+  );
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Cerrar con ESC
+  // Función para alternar secciones del acordeón (solo una abierta a la vez)
+  const toggleSection = useCallback((section) => {
+    setActiveSection((prev) => (prev === section ? null : section));
+  }, []);
+
+  // Cerrar con ESC y resetear estado al cerrar
   useEffect(() => {
     const handleEsc = (e) => {
       if (e.key === "Escape") onClose();
@@ -96,6 +127,9 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
     if (isOpen) {
       document.addEventListener("keydown", handleEsc);
       document.body.style.overflow = "hidden";
+    } else {
+      // Resetear sección activa cuando se cierra el modal
+      setActiveSection(ACCORDION_SECTIONS.DESCRIPTION);
     }
     return () => {
       document.removeEventListener("keydown", handleEsc);
@@ -413,23 +447,6 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
 
           {/* ===== SECCIÓN DERECHA: CONTENIDO ===== */}
           <div className="publication-modal__right">
-            {/* Publicado por - Arriba */}
-            {profiles?.nombre && (
-              <div className="publication-modal__owner publication-modal__owner--top">
-                {profiles.avatar_url ? (
-                  <img src={profiles.avatar_url} alt={profiles.nombre} />
-                ) : (
-                  <div className="publication-modal__owner-placeholder">
-                    <FontAwesomeIcon icon={faUser} />
-                  </div>
-                )}
-                <div>
-                  <span>Publicado por</span>
-                  <strong>{profiles.nombre}</strong>
-                </div>
-              </div>
-            )}
-
             {/* Título y organizador */}
             <div className="publication-modal__title-section">
               <h2>{titulo}</h2>
@@ -472,201 +489,249 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
               </div>
             )}
 
-            {/* Descripción */}
-            {descripcion && (
-              <div className="publication-modal__description-box">
-                <p>{descripcion}</p>
-              </div>
-            )}
-
-            {/* Hashtags */}
-            {hashtagsList.length > 0 && (
-              <div className="publication-modal__hashtags">
-                {hashtagsList.map((tag, index) => (
-                  <span key={index} className="publication-modal__hashtag">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {/* Sección: Ubicación */}
-            <div className="publication-modal__section">
-              <h3>
-                <FontAwesomeIcon icon={faMapMarkerAlt} />
-                Ubicación
-              </h3>
-              <p>
-                {direccion && `${direccion}, `}
-                {comuna}
-                {provincia && `, ${provincia}`}
-              </p>
-              {(ubicacion_url || direccion) && (
-                <button
-                  className="publication-modal__directions-btn"
-                  onClick={() => window.open(getDirectionsUrl(), "_blank")}>
-                  <FontAwesomeIcon icon={faRoute} />
-                  Cómo llegar
-                </button>
+            {/* ===== ACORDEÓN DE INFORMACIÓN ===== */}
+            <div className="publication-modal__accordion-container">
+              {/* Sección: Descripción */}
+              {descripcion && (
+                <AccordionSection
+                  title="Descripción"
+                  icon={faAlignLeft}
+                  isOpen={activeSection === ACCORDION_SECTIONS.DESCRIPTION}
+                  onToggle={() =>
+                    toggleSection(ACCORDION_SECTIONS.DESCRIPTION)
+                  }>
+                  <div className="publication-modal__description-content">
+                    <p>{descripcion}</p>
+                    {/* Hashtags dentro de descripción */}
+                    {hashtagsList.length > 0 && (
+                      <div className="publication-modal__hashtags">
+                        {hashtagsList.map((tag, index) => (
+                          <span
+                            key={index}
+                            className="publication-modal__hashtag">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </AccordionSection>
               )}
-            </div>
 
-            {/* Sección: Fecha y Hora */}
-            <div className="publication-modal__section">
-              <h3>
-                <FontAwesomeIcon icon={faClock} />
-                Horarios
-              </h3>
-              <div className="publication-modal__schedule">
-                <div className="publication-modal__schedule-row">
-                  <span className="publication-modal__schedule-day">
-                    {isMultiDay ? "Fechas" : "Fecha"}
-                  </span>
-                  <span className="publication-modal__schedule-time">
-                    {getFechaDisplay() || "Por confirmar"}
-                  </span>
+              {/* Sección: Ubicación */}
+              <AccordionSection
+                title="Ubicación"
+                icon={faMapMarkerAlt}
+                isOpen={activeSection === ACCORDION_SECTIONS.LOCATION}
+                onToggle={() => toggleSection(ACCORDION_SECTIONS.LOCATION)}>
+                <div className="publication-modal__location-content">
+                  <p className="publication-modal__location-address">
+                    {direccion && `${direccion}, `}
+                    {comuna}
+                    {provincia && `, ${provincia}`}
+                  </p>
+                  {(ubicacion_url || direccion) && (
+                    <button
+                      className="publication-modal__directions-btn"
+                      onClick={() => window.open(getDirectionsUrl(), "_blank")}>
+                      <FontAwesomeIcon icon={faRoute} />
+                      Cómo llegar
+                    </button>
+                  )}
                 </div>
-                <div className="publication-modal__schedule-row">
-                  <span className="publication-modal__schedule-day">
-                    Horario
-                  </span>
-                  <span className="publication-modal__schedule-time">
-                    {getHorarioDisplay()}
-                  </span>
-                </div>
-                <div className="publication-modal__schedule-row">
-                  <span className="publication-modal__schedule-day">
-                    Entrada
-                  </span>
-                  <span className="publication-modal__schedule-time publication-modal__schedule-time--price">
-                    {getEntradaDisplay()}
-                  </span>
-                </div>
-              </div>
-            </div>
+              </AccordionSection>
 
-            {/* Sección: Contacto */}
-            <div className="publication-modal__section">
-              <h3>Contacto</h3>
-              <div className="publication-modal__contact">
-                {contactPhone && (
-                  <a
-                    href={`tel:${contactPhone}`}
-                    className="publication-modal__contact-item">
-                    <FontAwesomeIcon icon={faPhone} />
-                    {contactPhone}
-                  </a>
-                )}
-              </div>
-            </div>
-
-            {/* Redes sociales */}
-            {(instagram || facebook || whatsapp || youtube || tiktok) && (
-              <div className="publication-modal__social">
-                {whatsapp && (
-                  <button
-                    className="publication-modal__social-btn publication-modal__social-btn--whatsapp"
-                    onClick={handleWhatsApp}>
-                    <FontAwesomeIcon icon={faWhatsapp} />
-                    WhatsApp
-                  </button>
-                )}
-                {instagram && (
-                  <a
-                    href={
-                      instagram.startsWith("http")
-                        ? instagram
-                        : `https://instagram.com/${instagram.replace("@", "")}`
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="publication-modal__social-btn publication-modal__social-btn--instagram">
-                    <FontAwesomeIcon icon={faInstagram} />
-                    Instagram
-                  </a>
-                )}
-                {facebook && (
-                  <a
-                    href={
-                      facebook.startsWith("http")
-                        ? facebook
-                        : `https://facebook.com/${facebook}`
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="publication-modal__social-btn publication-modal__social-btn--facebook">
-                    <FontAwesomeIcon icon={faFacebook} />
-                    Facebook
-                  </a>
-                )}
-                {youtube && (
-                  <a
-                    href={
-                      youtube.startsWith("http")
-                        ? youtube
-                        : `https://youtube.com/${youtube}`
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="publication-modal__social-btn publication-modal__social-btn--youtube">
-                    <FontAwesomeIcon icon={faYoutube} />
-                    YouTube
-                  </a>
-                )}
-                {tiktok && (
-                  <a
-                    href={
-                      tiktok.startsWith("http")
-                        ? tiktok
-                        : `https://tiktok.com/@${tiktok.replace("@", "")}`
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="publication-modal__social-btn publication-modal__social-btn--tiktok">
-                    <FontAwesomeIcon icon={faTiktok} />
-                    TikTok
-                  </a>
-                )}
-              </div>
-            )}
-
-            {/* Mapa expandible */}
-            <AccordionSection
-              title="MAPA"
-              isOpen={showLocation}
-              onToggle={() => setShowLocation(!showLocation)}>
-              {coordinates ? (
-                <div className="publication-modal__map-section">
-                  <div className="publication-modal__map-container">
-                    <MapContainer
-                      center={[coordinates.lat, coordinates.lng]}
-                      zoom={15}
-                      scrollWheelZoom={false}
-                      className="publication-modal__map"
-                      key={`${coordinates.lat}-${coordinates.lng}`}>
-                      <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      />
-                      <Marker
-                        position={[coordinates.lat, coordinates.lng]}
-                        icon={orangeIcon}>
-                        <Popup>
-                          <strong>{titulo}</strong>
-                          <br />
-                          {direccion || `${comuna}, ${provincia}`}
-                        </Popup>
-                      </Marker>
-                    </MapContainer>
+              {/* Sección: Horarios */}
+              <AccordionSection
+                title="Horarios"
+                icon={faClock}
+                isOpen={activeSection === ACCORDION_SECTIONS.SCHEDULE}
+                onToggle={() => toggleSection(ACCORDION_SECTIONS.SCHEDULE)}>
+                <div className="publication-modal__schedule">
+                  <div className="publication-modal__schedule-row">
+                    <span className="publication-modal__schedule-label">
+                      <FontAwesomeIcon icon={faCalendarDays} />
+                      {isMultiDay ? "Fechas" : "Fecha"}
+                    </span>
+                    <span className="publication-modal__schedule-value">
+                      {getFechaDisplay() || "Por confirmar"}
+                    </span>
+                  </div>
+                  <div className="publication-modal__schedule-row">
+                    <span className="publication-modal__schedule-label">
+                      <FontAwesomeIcon icon={faClock} />
+                      Horario
+                    </span>
+                    <span className="publication-modal__schedule-value">
+                      {getHorarioDisplay()}
+                    </span>
+                  </div>
+                  <div className="publication-modal__schedule-row">
+                    <span className="publication-modal__schedule-label">
+                      <FontAwesomeIcon icon={faTicket} />
+                      Entrada
+                    </span>
+                    <span className="publication-modal__schedule-value publication-modal__schedule-value--price">
+                      {getEntradaDisplay()}
+                    </span>
                   </div>
                 </div>
-              ) : (
-                <div className="publication-modal__map-empty">
-                  <FontAwesomeIcon icon={faMap} />
-                  <p>Ubicación no disponible en el mapa</p>
-                </div>
+              </AccordionSection>
+
+              {/* Sección: Contacto */}
+              {(contactPhone ||
+                instagram ||
+                facebook ||
+                whatsapp ||
+                youtube ||
+                tiktok) && (
+                <AccordionSection
+                  title="Contacto"
+                  icon={faAddressCard}
+                  isOpen={activeSection === ACCORDION_SECTIONS.CONTACT}
+                  onToggle={() => toggleSection(ACCORDION_SECTIONS.CONTACT)}>
+                  <div className="publication-modal__contact-content">
+                    {contactPhone && (
+                      <a
+                        href={`tel:${contactPhone}`}
+                        className="publication-modal__contact-item">
+                        <FontAwesomeIcon icon={faPhone} />
+                        <span>{contactPhone}</span>
+                      </a>
+                    )}
+                    {/* Redes sociales */}
+                    {(instagram ||
+                      facebook ||
+                      whatsapp ||
+                      youtube ||
+                      tiktok) && (
+                      <div className="publication-modal__social">
+                        {whatsapp && (
+                          <button
+                            className="publication-modal__social-btn publication-modal__social-btn--whatsapp"
+                            onClick={handleWhatsApp}>
+                            <FontAwesomeIcon icon={faWhatsapp} />
+                            WhatsApp
+                          </button>
+                        )}
+                        {instagram && (
+                          <a
+                            href={
+                              instagram.startsWith("http")
+                                ? instagram
+                                : `https://instagram.com/${instagram.replace("@", "")}`
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="publication-modal__social-btn publication-modal__social-btn--instagram">
+                            <FontAwesomeIcon icon={faInstagram} />
+                            Instagram
+                          </a>
+                        )}
+                        {facebook && (
+                          <a
+                            href={
+                              facebook.startsWith("http")
+                                ? facebook
+                                : `https://facebook.com/${facebook}`
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="publication-modal__social-btn publication-modal__social-btn--facebook">
+                            <FontAwesomeIcon icon={faFacebook} />
+                            Facebook
+                          </a>
+                        )}
+                        {youtube && (
+                          <a
+                            href={
+                              youtube.startsWith("http")
+                                ? youtube
+                                : `https://youtube.com/${youtube}`
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="publication-modal__social-btn publication-modal__social-btn--youtube">
+                            <FontAwesomeIcon icon={faYoutube} />
+                            YouTube
+                          </a>
+                        )}
+                        {tiktok && (
+                          <a
+                            href={
+                              tiktok.startsWith("http")
+                                ? tiktok
+                                : `https://tiktok.com/@${tiktok.replace("@", "")}`
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="publication-modal__social-btn publication-modal__social-btn--tiktok">
+                            <FontAwesomeIcon icon={faTiktok} />
+                            TikTok
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </AccordionSection>
               )}
-            </AccordionSection>
+
+              {/* Sección: Mapa */}
+              <AccordionSection
+                title="Mapa"
+                icon={faMap}
+                isOpen={activeSection === ACCORDION_SECTIONS.MAP}
+                onToggle={() => toggleSection(ACCORDION_SECTIONS.MAP)}>
+                {coordinates ? (
+                  <div className="publication-modal__map-section">
+                    <div className="publication-modal__map-container">
+                      <MapContainer
+                        center={[coordinates.lat, coordinates.lng]}
+                        zoom={15}
+                        scrollWheelZoom={false}
+                        className="publication-modal__map"
+                        key={`${coordinates.lat}-${coordinates.lng}`}>
+                        <TileLayer
+                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        />
+                        <Marker
+                          position={[coordinates.lat, coordinates.lng]}
+                          icon={orangeIcon}>
+                          <Popup>
+                            <strong>{titulo}</strong>
+                            <br />
+                            {direccion || `${comuna}, ${provincia}`}
+                          </Popup>
+                        </Marker>
+                      </MapContainer>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="publication-modal__map-empty">
+                    <FontAwesomeIcon icon={faMap} />
+                    <p>Ubicación no disponible en el mapa</p>
+                  </div>
+                )}
+              </AccordionSection>
+            </div>
+
+            {/* Publicado por - Abajo */}
+            {profiles?.nombre && (
+              <div className="publication-modal__owner publication-modal__owner--bottom">
+                {profiles.avatar_url ? (
+                  <img src={profiles.avatar_url} alt={profiles.nombre} />
+                ) : (
+                  <div className="publication-modal__owner-placeholder">
+                    <FontAwesomeIcon icon={faUser} />
+                  </div>
+                )}
+                <div>
+                  <span>Publicado por</span>
+                  <strong>{profiles.nombre}</strong>
+                </div>
+              </div>
+            )}
 
             {/* Botones CTA */}
             <div className="publication-modal__cta-section">

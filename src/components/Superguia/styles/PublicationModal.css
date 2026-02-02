@@ -28,9 +28,11 @@
 .publication-modal.publication-modal--business-style {
   background: #111;
   border-radius: 16px;
-  max-width: 950px;
-  width: 100%;
-  max-height: 90vh;
+  max-width: 1100px;
+  width: 95%;
+  height: 90vh;
+  max-height: 850px;
+  min-height: 600px;
   position: relative;
   border: 1px solid rgba(255, 102, 0, 0.2);
   display: flex;
@@ -247,7 +249,7 @@
   flex-direction: column;
   gap: 8px;
   overflow-y: auto;
-  max-height: calc(90vh - 65px);
+  min-height: 0; /* Importante para flex con overflow */
 }
 
 /* Scrollbar personalizado */
@@ -264,13 +266,54 @@
   border-radius: 3px;
 }
 
-/* Owner/Publicado por - Versión compacta arriba */
-.publication-modal__owner--top {
-  margin-top: 0;
-  margin-bottom: 4px;
-  padding: 8px 10px;
-  background: rgba(255, 102, 0, 0.08);
-  border: 1px solid rgba(255, 102, 0, 0.15);
+/* Owner/Publicado por - Versión en la parte inferior */
+.publication-modal__owner--bottom {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.publication-modal__owner--bottom img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 102, 0, 0.4);
+}
+
+.publication-modal__owner--bottom .publication-modal__owner-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 102, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ff6600;
+  font-size: 1rem;
+}
+
+.publication-modal__owner--bottom div {
+  display: flex;
+  flex-direction: column;
+}
+
+.publication-modal__owner--bottom span {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.publication-modal__owner--bottom strong {
+  font-size: 0.9rem;
+  color: #fff;
+  font-weight: 600;
 }
 
 /* Título y slogan */
@@ -587,11 +630,23 @@
   color: #ff0050;
 }
 
-/* ===== ACCORDION SECTION ===== */
+/* ===== ACCORDION SECTION - Sistema unificado de acordeón ===== */
+.publication-modal__accordion-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
 .accordion-section {
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
   background: transparent;
+  transition: all 0.3s ease;
+}
+
+.accordion-section--open {
+  box-shadow: 0 4px 20px rgba(255, 102, 0, 0.15);
 }
 
 .accordion-section__header {
@@ -599,54 +654,236 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 14px;
-  background: linear-gradient(135deg, #ff6600 0%, #e55a00 100%);
-  color: #000;
-  border: none;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
+  padding: 12px 16px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 102, 0, 0.12) 0%,
+    rgba(255, 102, 0, 0.06) 100%
+  );
+  color: #fff;
+  border: 1px solid rgba(255, 102, 0, 0.2);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
   cursor: pointer;
-  transition: all 0.25s ease;
-  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 10px;
 }
 
 .accordion-section__header:hover {
-  background: linear-gradient(135deg, #ff7722 0%, #ff6600 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 102, 0, 0.2) 0%,
+    rgba(255, 102, 0, 0.12) 100%
+  );
+  border-color: rgba(255, 102, 0, 0.4);
+}
+
+.accordion-section__header:focus {
+  outline: 2px solid #ff6600;
+  outline-offset: 2px;
 }
 
 .accordion-section__header.open {
-  border-radius: 8px 8px 0 0;
-  background: linear-gradient(135deg, #ff6600 0%, #cc5200 100%);
+  border-radius: 10px 10px 0 0;
+  background: linear-gradient(135deg, #ff6600 0%, #e55a00 100%);
+  color: #000;
+  border-color: #ff6600;
 }
 
 .accordion-section__title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+}
+
+.accordion-section__title-icon {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.accordion-section__header.open .accordion-section__title-icon {
+  color: #000;
 }
 
 .accordion-section__icon {
-  font-size: 0.7rem;
-  transition: transform 0.3s ease;
+  font-size: 0.75rem;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0.7;
+}
+
+.accordion-section__header.open .accordion-section__icon {
+  transform: rotate(180deg);
+  opacity: 1;
 }
 
 .accordion-section__content {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s ease;
+  opacity: 0;
 }
 
 .accordion-section__content.open {
-  max-height: 300px;
+  max-height: 280px;
+  opacity: 1;
+  overflow-y: auto;
+}
+
+/* Scrollbar para contenido del acordeón */
+.accordion-section__content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.accordion-section__content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.accordion-section__content::-webkit-scrollbar-thumb {
+  background: rgba(255, 102, 0, 0.4);
+  border-radius: 4px;
+}
+
+.accordion-section__content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 102, 0, 0.6);
 }
 
 .accordion-section__body {
-  padding: 12px;
-  background: #1a1a1a;
-  border: 1px solid rgba(255, 102, 0, 0.25);
+  padding: 16px;
+  background: rgba(26, 26, 26, 0.95);
+  border: 1px solid rgba(255, 102, 0, 0.2);
   border-top: none;
-  border-radius: 0 0 8px 8px;
+  border-radius: 0 0 10px 10px;
+}
+
+/* ===== Contenido de secciones del acordeón ===== */
+
+/* Descripción */
+.publication-modal__description-content {
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.6;
+  font-size: 0.9rem;
+}
+
+.publication-modal__description-content p {
+  margin: 0 0 12px 0;
+}
+
+.publication-modal__description-content .publication-modal__hashtags {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Ubicación */
+.publication-modal__location-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.publication-modal__location-address {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+  margin: 0;
+  line-height: 1.5;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+/* Horarios - Dentro del acordeón */
+.accordion-section__body .publication-modal__schedule {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.accordion-section__body .publication-modal__schedule-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.2s ease;
+}
+
+.accordion-section__body .publication-modal__schedule-row:hover {
+  background: rgba(255, 102, 0, 0.08);
+  border-color: rgba(255, 102, 0, 0.15);
+}
+
+.publication-modal__schedule-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+}
+
+.publication-modal__schedule-label svg {
+  color: #ff6600;
+  font-size: 0.9rem;
+  width: 18px;
+}
+
+.publication-modal__schedule-value {
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: right;
+}
+
+.publication-modal__schedule-value--price {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+/* Contacto */
+.publication-modal__contact-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.publication-modal__contact-content .publication-modal__contact-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #fff;
+  font-size: 0.9rem;
+  text-decoration: none;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.25s ease;
+}
+
+.publication-modal__contact-content .publication-modal__contact-item:hover {
+  background: rgba(255, 102, 0, 0.15);
+  border-color: rgba(255, 102, 0, 0.4);
+  color: #ff6600;
+}
+
+.publication-modal__contact-content .publication-modal__contact-item svg {
+  color: #ff6600;
+  font-size: 1.1rem;
+  width: 20px;
+}
+
+/* Redes sociales dentro del acordeón */
+.publication-modal__contact-content .publication-modal__social {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  padding: 0;
+  margin-top: 4px;
 }
 
 /* Mapa */
@@ -657,8 +894,8 @@
 }
 
 .publication-modal__map-container {
-  height: 250px;
-  border-radius: 8px;
+  height: 220px;
+  border-radius: 10px;
   overflow: hidden;
   border: 1px solid rgba(255, 102, 0, 0.3);
 }
@@ -674,14 +911,20 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 20px;
+  gap: 12px;
+  padding: 30px 20px;
   color: rgba(255, 255, 255, 0.5);
+  text-align: center;
 }
 
 .publication-modal__map-empty svg {
-  font-size: 1.5rem;
+  font-size: 2rem;
   color: rgba(255, 102, 0, 0.3);
+}
+
+.publication-modal__map-empty p {
+  margin: 0;
+  font-size: 0.9rem;
 }
 
 /* Owner/Publicado por */
@@ -794,12 +1037,16 @@
 @media (max-width: 900px) {
   .publication-modal.publication-modal--business-style {
     flex-direction: column;
+    height: 95vh;
     max-height: 95vh;
+    min-height: auto;
   }
 
   .publication-modal__body {
     flex-direction: column;
     overflow-y: auto;
+    flex: 1;
+    min-height: 0;
   }
 
   .publication-modal__left {
@@ -810,9 +1057,10 @@
   }
 
   .publication-modal__right {
-    max-height: none;
+    flex: 1;
     padding: 20px;
-    overflow-y: visible;
+    overflow-y: auto;
+    min-height: 0;
   }
 
   .publication-modal__category-header {
@@ -899,5 +1147,37 @@
 
   .publication-modal__marketing {
     padding: 8px 12px;
+  }
+
+  /* Acordeón responsive en móvil */
+  .publication-modal__accordion-container {
+    gap: 4px;
+  }
+
+  .accordion-section__header {
+    padding: 10px 12px;
+  }
+
+  .accordion-section__body {
+    padding: 12px;
+  }
+
+  .accordion-section__body .publication-modal__schedule-row {
+    padding: 8px 10px;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .publication-modal__schedule-label,
+  .publication-modal__schedule-value {
+    font-size: 0.8rem;
+  }
+
+  .publication-modal__contact-content .publication-modal__social {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .publication-modal__map-container {
+    height: 180px;
   }
 }
