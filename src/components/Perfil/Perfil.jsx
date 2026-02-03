@@ -47,22 +47,22 @@ export default function Perfil() {
   }, [isAuthenticated, loading, navigate]);
 
   // Cargar publicaciones del usuario
-  useEffect(() => {
-    const loadUserPublications = async () => {
-      if (isAuthenticated && user?.id) {
-        setLoadingPublications(true);
-        try {
-          const publications = await getEventsByUser(user.id);
-          setUserPublications(publications || []);
-        } catch (error) {
-          console.error("Error cargando publicaciones:", error);
-          setUserPublications([]);
-        } finally {
-          setLoadingPublications(false);
-        }
+  const loadUserPublications = async () => {
+    if (isAuthenticated && user?.id) {
+      setLoadingPublications(true);
+      try {
+        const publications = await getEventsByUser(user.id);
+        setUserPublications(publications || []);
+      } catch (error) {
+        console.error("Error cargando publicaciones:", error);
+        setUserPublications([]);
+      } finally {
+        setLoadingPublications(false);
       }
-    };
+    }
+  };
 
+  useEffect(() => {
     loadUserPublications();
   }, [isAuthenticated, user?.id]);
 
@@ -141,7 +141,7 @@ export default function Perfil() {
     try {
       await markNotificationAsRead(notificationId, user.id);
       setNotifications((prev) =>
-        prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n))
+        prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n)),
       );
     } catch (error) {
       console.error("Error al marcar como leída:", error);
@@ -246,6 +246,7 @@ export default function Perfil() {
             <PerfilPublicaciones
               publications={userPublications}
               loading={loadingPublications}
+              onPublicationUpdate={loadUserPublications}
             />
           )}
 

@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -8,11 +9,94 @@ import {
   faEye,
   faEdit,
 } from "@fortawesome/free-solid-svg-icons";
+import { getCategories, updateEvent } from "../../../lib/database";
+import { useAuth } from "../../../context/AuthContext";
+import PublicationModal from "../../Superguia/PublicationModal";
+import { UserEditModal } from "./editar";
 import "./styles/section.css";
 import "./styles/publicaciones.css";
 
-export default function PerfilPublicaciones({ publications, loading }) {
+export default function PerfilPublicaciones({
+  publications,
+  loading,
+  onPublicationUpdate,
+}) {
   const navigate = useNavigate();
+  const { showToast } = useAuth();
+
+  // Estados para los modales
+  const [viewModal, setViewModal] = useState({
+    open: false,
+    publication: null,
+  });
+  const [editModal, setEditModal] = useState({
+    open: false,
+    publication: null,
+  });
+  const [categories, setCategories] = useState([]);
+  const [saving, setSaving] = useState(false);
+
+  // Cargar categorías para el modal de edición
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const data = await getCategories();
+        setCategories(data || []);
+      } catch (error) {
+        console.error("Error cargando categorías:", error);
+      }
+    };
+    loadCategories();
+  }, []);
+
+  // Abrir modal de ver
+  const handleView = (publication) => {
+    setViewModal({ open: true, publication });
+  };
+
+  // Cerrar modal de ver
+  const handleCloseView = () => {
+    setViewModal({ open: false, publication: null });
+  };
+
+  // Abrir modal de editar
+  const handleEdit = (publication) => {
+    setEditModal({ open: true, publication });
+  };
+
+  // Cerrar modal de editar
+  const handleCloseEdit = () => {
+    setEditModal({ open: false, publication: null });
+  };
+
+  // Guardar cambios de edición
+  const handleSaveEdit = async (eventId, eventData) => {
+    setSaving(true);
+    try {
+      await updateEvent(eventId, eventData);
+
+      if (showToast) {
+        showToast(
+          "Publicación actualizada. Pasará a revisión nuevamente.",
+          "success",
+        );
+      }
+
+      handleCloseEdit();
+
+      // Notificar al padre para recargar las publicaciones
+      if (onPublicationUpdate) {
+        onPublicationUpdate();
+      }
+    } catch (error) {
+      console.error("Error al actualizar publicación:", error);
+      if (showToast) {
+        showToast("Error al actualizar la publicación", "error");
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="perfil-section">
@@ -83,11 +167,15 @@ export default function PerfilPublicaciones({ publications, loading }) {
                     })}
                   </p>
                   <div className="perfil-publication-card__actions">
-                    <button className="perfil-publication-card__btn">
+                    <button
+                      className="perfil-publication-card__btn"
+                      onClick={() => handleView(pub)}>
                       <FontAwesomeIcon icon={faEye} />
                       Ver
                     </button>
-                    <button className="perfil-publication-card__btn">
+                    <button
+                      className="perfil-publication-card__btn"
+                      onClick={() => handleEdit(pub)}>
                       <FontAwesomeIcon icon={faEdit} />
                       Editar
                     </button>
@@ -98,6 +186,23 @@ export default function PerfilPublicaciones({ publications, loading }) {
           })}
         </div>
       )}
+
+      {/* Modal de vista previa */}
+      <PublicationModal
+        publication={viewModal.publication}
+        isOpen={viewModal.open}
+        onClose={handleCloseView}
+      />
+
+      {/* Modal de edición */}
+      <UserEditModal
+        isOpen={editModal.open}
+        onClose={handleCloseEdit}
+        event={editModal.publication}
+        categories={categories}
+        onSave={handleSaveEdit}
+        loading={saving}
+      />
     </div>
   );
 }
