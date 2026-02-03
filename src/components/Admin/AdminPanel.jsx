@@ -333,13 +333,19 @@ export default function AdminPanel() {
             ))}
         </nav>
 
-        {/* Botón Nueva Publicación - Siempre visible */}
-        <div className="admin-sidebar__action">
+        {/* Botones de acción - Siempre visibles */}
+        <div className="admin-sidebar__actions">
           <button
             className="admin-sidebar__new-btn"
             onClick={() => navigate("/publicar-panorama")}>
             <FontAwesomeIcon icon={faPlus} />
             <span>Nueva Publicación</span>
+          </button>
+          <button
+            className="admin-sidebar__new-btn admin-sidebar__new-btn--business"
+            onClick={() => navigate("/publicar-negocio")}>
+            <FontAwesomeIcon icon={faStore} />
+            <span>Nuevo Negocio</span>
           </button>
         </div>
 

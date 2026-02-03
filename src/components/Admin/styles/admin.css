@@ -103,6 +103,15 @@
 }
 
 /* Botón Nueva Publicación en Sidebar */
+.admin-sidebar__actions {
+  padding: 16px 12px;
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Soporte legacy para single action */
 .admin-sidebar__action {
   padding: 16px 12px;
   margin-top: auto;
@@ -128,6 +137,14 @@
 .admin-sidebar__new-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(255, 102, 0, 0.4);
+}
+
+.admin-sidebar__new-btn--business {
+  background: linear-gradient(135deg, #00c853 0%, #69f0ae 100%);
+}
+
+.admin-sidebar__new-btn--business:hover {
+  box-shadow: 0 8px 25px rgba(0, 200, 83, 0.4);
 }
 
 .admin-sidebar__new-btn svg {

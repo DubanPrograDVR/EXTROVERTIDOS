@@ -1,316 +1,193 @@
 /* ===== DRAFT PREVIEW - Vista Previa del Borrador ===== */
+/* Importar estilos base de PublicationModal */
+@import "../../../Superguia/styles/PublicationModal.css";
 
-.draft-preview-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.85);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-  animation: fadeIn 0.2s ease;
-}
+/* ===== ESTILOS ESPECÍFICOS PARA EL BORRADOR ===== */
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.draft-preview {
-  background: #111;
-  border-radius: 20px;
-  width: 100%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  border: 1px solid rgba(255, 102, 0, 0.3);
-  animation: slideUp 0.3s ease;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Header */
-.draft-preview__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  background: linear-gradient(135deg, #ff6600 0%, #ff8533 100%);
-  color: #000;
-}
-
-.draft-preview__header h2 {
-  font-size: 1.1rem;
-  font-weight: 700;
-  margin: 0;
-}
-
-.draft-preview__close {
-  background: rgba(0, 0, 0, 0.2);
-  border: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: #000;
-  font-size: 1rem;
-  transition: all 0.2s ease;
-}
-
-.draft-preview__close:hover {
-  background: rgba(0, 0, 0, 0.3);
-  transform: rotate(90deg);
-}
-
-/* Content */
-.draft-preview__content {
-  flex: 1;
-  overflow-y: auto;
-  padding-bottom: 10px;
-}
-
-/* Image Container */
-.draft-preview__image-container {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  background: #1a1a1a;
-  overflow: hidden;
-}
-
-.draft-preview__image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.draft-preview__no-image {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  color: rgba(255, 255, 255, 0.3);
-}
-
-.draft-preview__no-image svg {
-  font-size: 3rem;
-}
-
-.draft-preview__no-image span {
-  font-size: 0.9rem;
-}
-
-.draft-preview__image-count {
-  position: absolute;
-  bottom: 12px;
-  right: 12px;
-  background: rgba(0, 0, 0, 0.7);
-  color: #fff;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.draft-preview__category {
-  position: absolute;
-  top: 12px;
-  left: 12px;
+/* Badge de Vista Previa */
+.publication-modal__draft-badge {
   padding: 6px 14px;
   border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #fff;
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+  border: 1px solid rgba(255, 193, 7, 0.3);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-/* Info Section */
-.draft-preview__info {
-  padding: 20px;
+/* Variante del modal para Draft */
+.publication-modal.publication-modal--draft {
+  max-width: 1000px;
+  height: 85vh;
+  max-height: 750px;
 }
 
-.draft-preview__title {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: #fff;
-  margin: 0 0 12px;
-  line-height: 1.3;
+/* Estado sin imagen para el borrador */
+.publication-modal__no-image {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
 }
 
-.draft-preview__organizer {
+.publication-modal__no-image svg {
+  font-size: 4rem;
+  opacity: 0.5;
+}
+
+.publication-modal__no-image span {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.publication-modal__no-image p {
+  font-size: 0.85rem;
+  margin: 0;
+  opacity: 0.7;
+}
+
+/* Footer del borrador */
+.publication-modal__draft-footer {
+  margin-top: auto;
+  padding: 12px 16px;
+  background: rgba(255, 193, 7, 0.1);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 193, 7, 0.2);
+}
+
+.publication-modal__draft-footer p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.publication-modal__draft-footer strong {
+  color: #ffc107;
+}
+
+/* Estilos de horarios simplificados para borrador */
+.publication-modal__schedule-simple .publication-modal__schedule-icon {
+  font-size: 1.2rem;
+  color: #ff6600;
+  width: 30px;
   display: flex;
   align-items: center;
+  justify-content: center;
+}
+
+/* ===== MENSAJE DE MARKETING ===== */
+.publication-modal__marketing-section {
+  margin-top: 15px;
+  padding: 15px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 102, 0, 0.1) 0%,
+    rgba(255, 133, 51, 0.05) 100%
+  );
+  border-radius: 12px;
+  border: 1px solid rgba(255, 102, 0, 0.2);
+}
+
+.publication-modal__marketing-badge {
+  display: inline-flex;
+  align-items: center;
   gap: 8px;
+  padding: 6px 12px;
+  background: rgba(255, 102, 0, 0.2);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
   color: #ff6600;
-  font-size: 0.9rem;
-  margin: 0 0 16px;
-}
-
-.draft-preview__organizer svg {
-  font-size: 0.85rem;
-}
-
-/* Details */
-.draft-preview__detail {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   margin-bottom: 12px;
 }
 
-.draft-preview__detail svg {
-  color: #ff6600;
-  font-size: 1rem;
-  margin-top: 2px;
-  flex-shrink: 0;
-  width: 18px;
+.publication-modal__marketing-badge svg {
+  font-size: 0.8rem;
 }
 
-.draft-preview__detail--ticket {
-  background: rgba(255, 102, 0, 0.1);
-  padding: 10px 14px;
-  border-radius: 10px;
-  margin-top: 16px;
-}
-
-.draft-preview__detail--ticket span {
-  font-weight: 600;
-  color: #ff6600;
-}
-
-/* Description */
-.draft-preview__description {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.draft-preview__description h4 {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #ff6600;
-  margin: 0 0 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.draft-preview__description p {
-  color: rgba(255, 255, 255, 0.7);
+.publication-modal__marketing-text {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
   font-size: 0.9rem;
   line-height: 1.6;
-  margin: 0;
-  white-space: pre-wrap;
-  max-height: 150px;
-  overflow-y: auto;
+  font-style: italic;
 }
 
-/* Socials */
-.draft-preview__socials {
-  margin-top: 20px;
-  padding-top: 16px;
+.publication-modal__marketing-text--secondary {
+  margin-top: 10px;
+  padding-top: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
 }
 
-.draft-preview__socials h4 {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #ff6600;
-  margin: 0 0 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.draft-preview__socials-list {
+/* ===== MAPA VACÍO ===== */
+.publication-modal__map-empty {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.draft-preview__social {
-  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 20px;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.85rem;
+  justify-content: center;
+  padding: 30px;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
 }
 
-.draft-preview__social svg {
-  font-size: 1rem;
-  color: #ff6600;
+.publication-modal__map-empty svg {
+  font-size: 2rem;
+  opacity: 0.5;
 }
 
-/* Footer */
-.draft-preview__footer {
-  padding: 14px 20px;
-  background: rgba(255, 102, 0, 0.1);
-  border-top: 1px solid rgba(255, 102, 0, 0.2);
-}
-
-.draft-preview__footer p {
+.publication-modal__map-empty p {
   margin: 0;
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
   text-align: center;
 }
 
-.draft-preview__footer strong {
-  color: #ff6600;
+/* ===== RESPONSIVE ESPECÍFICO PARA BORRADOR ===== */
+@media (max-width: 900px) {
+  .publication-modal.publication-modal--draft {
+    height: 90vh;
+    max-height: none;
+  }
 }
 
-/* Responsive */
 @media (max-width: 768px) {
-  .draft-preview-overlay {
-    padding: 10px;
+  .publication-modal__draft-badge {
+    font-size: 0.7rem;
+    padding: 5px 10px;
   }
 
-  .draft-preview {
-    max-height: 95vh;
-    border-radius: 16px;
+  .publication-modal__no-image svg {
+    font-size: 3rem;
   }
 
-  .draft-preview__header {
-    padding: 14px 16px;
-  }
-
-  .draft-preview__header h2 {
+  .publication-modal__no-image span {
     font-size: 1rem;
   }
+}
 
-  .draft-preview__info {
-    padding: 16px;
+@media (max-width: 500px) {
+  .publication-modal.publication-modal--draft {
+    height: 95vh;
   }
 
-  .draft-preview__title {
-    font-size: 1.2rem;
+  .publication-modal__draft-footer {
+    padding: 10px 12px;
+  }
+
+  .publication-modal__draft-footer p {
+    font-size: 0.75rem;
   }
 }
