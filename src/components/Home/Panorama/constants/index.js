@@ -83,6 +83,7 @@ export const INITIAL_FORM_STATE = {
   mensaje_marketing_2: "", // Nuevo: segundo mensaje de marketing
   // Contacto
   telefono_contacto: "", // Nuevo: número de contacto directo
+  sitio_web: "", // Nuevo: sitio web del evento
   // Etiquetas y hashtags
   hashtags: "", // Nuevo: hashtags personalizados
   etiqueta_directa: "", // Nuevo: etiqueta directa destacada

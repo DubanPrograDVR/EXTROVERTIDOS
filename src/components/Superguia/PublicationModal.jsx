@@ -29,6 +29,7 @@ import {
   faHashtag,
   faAlignLeft,
   faAddressCard,
+  faGlobe,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faInstagram,
@@ -155,6 +156,7 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
     mensaje_marketing,
     mensaje_marketing_2,
     telefono_contacto,
+    sitio_web,
     hashtags,
     etiqueta_directa,
     fecha_evento,
@@ -580,6 +582,7 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
 
               {/* Sección: Contacto */}
               {(contactPhone ||
+                sitio_web ||
                 instagram ||
                 facebook ||
                 whatsapp ||
@@ -597,6 +600,20 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
                         className="publication-modal__contact-item">
                         <FontAwesomeIcon icon={faPhone} />
                         <span>{contactPhone}</span>
+                      </a>
+                    )}
+                    {sitio_web && (
+                      <a
+                        href={
+                          sitio_web.startsWith("http")
+                            ? sitio_web
+                            : `https://${sitio_web}`
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="publication-modal__contact-item publication-modal__contact-item--website">
+                        <FontAwesomeIcon icon={faGlobe} />
+                        <span>Sitio Web</span>
                       </a>
                     )}
                     {/* Redes sociales */}

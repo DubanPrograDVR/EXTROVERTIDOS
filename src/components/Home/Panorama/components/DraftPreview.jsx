@@ -26,6 +26,8 @@ import {
   faBookmark,
   faTag,
   faBullhorn,
+  faGlobe,
+  faPhone,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faInstagram,
@@ -201,13 +203,14 @@ const DraftPreview = ({
     }
   };
 
-  // Verificar si hay redes sociales
+  // Verificar si hay redes sociales o contacto
   const hasRedesSociales = () => {
     return (
       formData.redes_sociales?.instagram ||
       formData.redes_sociales?.facebook ||
       formData.redes_sociales?.whatsapp ||
-      formData.telefono
+      formData.telefono_contacto ||
+      formData.sitio_web
     );
   };
 
@@ -470,11 +473,17 @@ const DraftPreview = ({
                   isOpen={activeSection === ACCORDION_SECTIONS.CONTACT}
                   onToggle={() => toggleSection(ACCORDION_SECTIONS.CONTACT)}>
                   <div className="publication-modal__contact-content">
-                    {formData.telefono && (
-                      <a href="#" className="publication-modal__contact-item">
-                        <FontAwesomeIcon icon={faWhatsapp} />
-                        <span>{formData.telefono}</span>
-                      </a>
+                    {formData.telefono_contacto && (
+                      <span className="publication-modal__contact-item">
+                        <FontAwesomeIcon icon={faPhone} />
+                        <span>{formData.telefono_contacto}</span>
+                      </span>
+                    )}
+                    {formData.sitio_web && (
+                      <span className="publication-modal__contact-item publication-modal__contact-item--website">
+                        <FontAwesomeIcon icon={faGlobe} />
+                        <span>Sitio Web</span>
+                      </span>
                     )}
 
                     {/* Redes sociales */}
