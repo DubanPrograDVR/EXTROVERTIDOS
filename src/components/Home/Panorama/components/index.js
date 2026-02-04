@@ -7,3 +7,4 @@ export { default as SocialInputs } from "./SocialInputs";
 export { default as ImageUpload } from "./ImageUpload";
 export { default as DateRangePicker } from "./DateRangePicker";
 export { default as DraftPreview } from "./DraftPreview";
+export { default as TagsModal } from "./TagsModal";

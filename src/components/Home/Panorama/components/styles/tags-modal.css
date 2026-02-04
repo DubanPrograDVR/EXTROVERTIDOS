@@ -1,0 +1,252 @@
+/* ===== TAGS MODAL ===== */
+
+.tags-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: tagsModalFadeIn 0.2s ease;
+}
+
+@keyframes tagsModalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.tags-modal {
+  background: #1a1a1a;
+  border-radius: 16px;
+  border: 2px solid #ff6600;
+  width: 100%;
+  max-width: 700px;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: tagsModalSlideUp 0.3s ease;
+}
+
+@keyframes tagsModalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== HEADER ===== */
+.tags-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 25px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.tags-modal__title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.tags-modal__title svg {
+  color: #ff6600;
+}
+
+.tags-modal__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tags-modal__close:hover {
+  background: rgba(255, 102, 0, 0.2);
+  color: #ff6600;
+}
+
+/* ===== CONTENT ===== */
+.tags-modal__content {
+  padding: 25px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.tags-modal__loading {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 40px;
+}
+
+.tags-modal__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+/* ===== TAG BUTTON ===== */
+.tags-modal__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: transparent;
+  border: 2px solid #ff6600;
+  border-radius: 25px;
+  color: #ff6600;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.tags-modal__tag:hover:not(.disabled) {
+  background: rgba(255, 102, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.tags-modal__tag.selected {
+  background: #ff6600;
+  color: #000;
+  box-shadow: 0 0 15px rgba(255, 102, 0, 0.4);
+}
+
+.tags-modal__tag.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tags-modal__tag-check {
+  font-size: 0.75rem;
+}
+
+/* ===== FOOTER ===== */
+.tags-modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 25px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.tags-modal__count {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.tags-modal__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.tags-modal__btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tags-modal__btn--cancel {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.tags-modal__btn--cancel:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.tags-modal__btn--save {
+  background: linear-gradient(135deg, #ff6600, #ff8533);
+  border: none;
+  color: #000;
+  font-weight: 700;
+}
+
+.tags-modal__btn--save:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(255, 102, 0, 0.4);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .tags-modal {
+    max-width: 95%;
+    max-height: 90vh;
+  }
+
+  .tags-modal__header {
+    padding: 15px 20px;
+  }
+
+  .tags-modal__title {
+    font-size: 0.95rem;
+  }
+
+  .tags-modal__content {
+    padding: 20px;
+  }
+
+  .tags-modal__grid {
+    gap: 8px;
+  }
+
+  .tags-modal__tag {
+    padding: 8px 12px;
+    font-size: 0.75rem;
+  }
+
+  .tags-modal__footer {
+    flex-direction: column;
+    gap: 15px;
+    padding: 15px 20px;
+  }
+
+  .tags-modal__actions {
+    width: 100%;
+  }
+
+  .tags-modal__btn {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .tags-modal__tag {
+    padding: 7px 10px;
+    font-size: 0.7rem;
+  }
+}

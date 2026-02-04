@@ -16,6 +16,7 @@ import {
   faPhone,
   faHashtag,
   faBookmark,
+  faTags,
 } from "@fortawesome/free-solid-svg-icons";
 import { PROVINCIAS, COMUNAS_POR_PROVINCIA } from "../constants";
 import SocialInputs from "./SocialInputs";
@@ -24,6 +25,7 @@ import DateRangePicker from "./DateRangePicker";
 import TicketModal from "./TicketModal";
 import LocationPicker from "./LocationPicker";
 import DraftPreview from "./DraftPreview";
+import TagsModal from "./TagsModal";
 import "../styles/draft-preview.css";
 
 /**
@@ -48,6 +50,7 @@ const PublicarForm = ({
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
   const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
   const [isDraftPreviewOpen, setIsDraftPreviewOpen] = useState(false);
+  const [isTagsModalOpen, setIsTagsModalOpen] = useState(false);
 
   // Helper para mostrar el texto del tipo de entrada seleccionado
   const getTicketDisplayText = () => {
@@ -75,6 +78,22 @@ const PublicarForm = ({
   // Handler para guardar la ubicación del mapa
   const handleLocationSave = (locationUrl) => {
     onChange({ target: { name: "ubicacion_url", value: locationUrl } });
+  };
+
+  // Handler para guardar tags seleccionados
+  const handleTagsSave = (tags) => {
+    // Convertir array de tags a string separado por espacios
+    const tagsString = tags.join(" ");
+    onChange({ target: { name: "hashtags", value: tagsString } });
+  };
+
+  // Parsear hashtags actuales a array
+  const getSelectedTags = () => {
+    if (!formData.hashtags) return [];
+    return formData.hashtags
+      .split(" ")
+      .filter((tag) => tag.startsWith("#"))
+      .map((tag) => tag.toUpperCase());
   };
 
   return (
@@ -435,28 +454,28 @@ const PublicarForm = ({
           />
         </div>
 
-        {/* Hashtags */}
+        {/* Etiquetas Complementarias */}
         <div className="publicar-form__group">
-          <label className="publicar-form__label" htmlFor="hashtags">
-            <FontAwesomeIcon icon={faHashtag} /> Hashtags
-            <span className="publicar-form__label-hint">
-              {" "}
-              (Opcional - Separa con espacios)
-            </span>
+          <label className="publicar-form__label">
+            <FontAwesomeIcon icon={faTags} /> Etiquetas Complementarias (10 Max)
           </label>
-          <input
-            type="text"
-            id="hashtags"
-            name="hashtags"
-            className="publicar-form__input"
-            placeholder="Ej: #Festival2025 #MusicaEnVivo #Talca"
-            value={formData.hashtags || ""}
-            onChange={onChange}
-            maxLength={200}
-          />
-          <span className="publicar-form__hint">
-            Los hashtags ayudan a que más personas encuentren tu evento
-          </span>
+          <button
+            type="button"
+            className="publicar-form__modal-trigger publicar-form__modal-trigger--tags"
+            onClick={() => setIsTagsModalOpen(true)}>
+            <FontAwesomeIcon icon={faTags} />
+            Ver Etiquetas
+          </button>
+          {/* Mostrar tags seleccionados */}
+          {getSelectedTags().length > 0 && (
+            <div className="publicar-form__selected-tags">
+              {getSelectedTags().map((tag) => (
+                <span key={tag} className="publicar-form__tag">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Etiqueta Directa */}
@@ -569,6 +588,14 @@ const PublicarForm = ({
         formData={formData}
         previewImages={previewImages}
         categories={categories}
+      />
+
+      {/* Modal de selección de etiquetas */}
+      <TagsModal
+        isOpen={isTagsModalOpen}
+        onClose={() => setIsTagsModalOpen(false)}
+        selectedTags={getSelectedTags()}
+        onSave={handleTagsSave}
       />
     </section>
   );

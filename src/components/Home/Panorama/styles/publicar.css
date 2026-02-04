@@ -991,3 +991,56 @@
     font-size: 1rem;
   }
 }
+
+/* ===== TAGS MODAL TRIGGER ===== */
+.publicar-form__modal-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 28px;
+  background: transparent;
+  border: 2px solid #ff6600;
+  border-radius: 30px;
+  color: #ff6600;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.publicar-form__modal-trigger:hover {
+  background: #ff6600;
+  color: #000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(255, 102, 0, 0.4);
+}
+
+.publicar-form__modal-trigger svg {
+  font-size: 1.1rem;
+}
+
+/* ===== SELECTED TAGS ===== */
+.publicar-form__selected-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 15px;
+  padding: 15px;
+  background: rgba(255, 102, 0, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 102, 0, 0.2);
+}
+
+.publicar-form__tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  background: rgba(255, 102, 0, 0.15);
+  border: 1px solid #ff6600;
+  border-radius: 20px;
+  color: #ff6600;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
