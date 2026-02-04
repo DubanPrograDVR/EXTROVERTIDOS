@@ -114,9 +114,13 @@ export const createEvent = async (eventData) => {
 
 /**
  * Obtiene todos los eventos publicados con información del autor
+ * Solo muestra eventos vigentes (fecha_fin >= hoy)
  * @returns {Promise<Array>} Lista de eventos publicados
  */
 export const getPublishedEvents = async () => {
+  // Obtener fecha actual en formato ISO (solo fecha, sin hora)
+  const today = new Date().toISOString().split("T")[0];
+
   const { data, error } = await supabase
     .from("events")
     .select(
@@ -142,6 +146,7 @@ export const getPublishedEvents = async () => {
     `,
     )
     .eq("estado", "publicado")
+    .gte("fecha_fin", today) // Solo eventos que no han terminado
     .order("fecha_evento", { ascending: true });
 
   if (error) {
@@ -154,11 +159,15 @@ export const getPublishedEvents = async () => {
 
 /**
  * Obtiene eventos publicados filtrados por ciudad/comuna
+ * Solo muestra eventos vigentes (fecha_fin >= hoy)
  * @param {string} ciudad - Nombre de la ciudad o comuna a filtrar
  * @param {string} provincia - Nombre de la provincia (opcional)
  * @returns {Promise<Array>} Eventos filtrados por ubicación
  */
 export const getEventsByCity = async (ciudad, provincia = null) => {
+  // Obtener fecha actual en formato ISO (solo fecha, sin hora)
+  const today = new Date().toISOString().split("T")[0];
+
   let query = supabase
     .from("events")
     .select(
@@ -183,7 +192,8 @@ export const getEventsByCity = async (ciudad, provincia = null) => {
       )
     `,
     )
-    .eq("estado", "publicado");
+    .eq("estado", "publicado")
+    .gte("fecha_fin", today); // Solo eventos que no han terminado
 
   // Filtrar por comuna o provincia
   if (ciudad) {
@@ -287,6 +297,9 @@ export const getEventById = async (eventId) => {
  * @returns {Promise<Array>} Eventos filtrados
  */
 export const getFilteredEvents = async (filters = {}) => {
+  // Obtener fecha actual en formato ISO (solo fecha, sin hora)
+  const today = new Date().toISOString().split("T")[0];
+
   let query = supabase
     .from("events")
     .select(
@@ -311,7 +324,8 @@ export const getFilteredEvents = async (filters = {}) => {
       )
     `,
     )
-    .eq("estado", "publicado");
+    .eq("estado", "publicado")
+    .gte("fecha_fin", today); // Solo eventos que no han terminado
 
   // Filtro por categoría
   if (filters.categoryId) {

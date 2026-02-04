@@ -194,7 +194,20 @@ export default function PanoramasPage() {
 
   // Filtrar eventos (misma lógica que SuperguiaContainer)
   const filteredEvents = useMemo(() => {
-    let result = [...events];
+    // Primero filtrar eventos pasados (respaldo del filtro de BD)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Inicio del día actual
+
+    let result = events.filter((event) => {
+      // Usar fecha_fin si existe, sino fecha_evento
+      const eventEndDate = event.fecha_fin || event.fecha_evento;
+      if (!eventEndDate) return true; // Si no hay fecha, mostrar el evento
+
+      const endDate = new Date(eventEndDate);
+      endDate.setHours(23, 59, 59, 999); // Fin del día del evento
+
+      return endDate >= today; // Solo eventos que no han terminado
+    });
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -308,9 +321,20 @@ export default function PanoramasPage() {
     selectedPrice ||
     searchQuery.trim();
 
-  // Eventos destacados (primeros 5)
+  // Eventos destacados (primeros 5 eventos vigentes)
   const featuredEvents = useMemo(() => {
-    return events.slice(0, 5);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return events
+      .filter((event) => {
+        const eventEndDate = event.fecha_fin || event.fecha_evento;
+        if (!eventEndDate) return true;
+        const endDate = new Date(eventEndDate);
+        endDate.setHours(23, 59, 59, 999);
+        return endDate >= today;
+      })
+      .slice(0, 5);
   }, [events]);
 
   // Navegación del carrusel
