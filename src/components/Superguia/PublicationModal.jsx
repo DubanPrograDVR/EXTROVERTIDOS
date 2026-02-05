@@ -588,14 +588,8 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
                 </div>
               </AccordionSection>
 
-              {/* Sección: Contacto */}
-              {(contactPhone ||
-                sitio_web ||
-                instagram ||
-                facebook ||
-                whatsapp ||
-                youtube ||
-                tiktok) && (
+              {/* Sección: Contacto (solo teléfono y sitio web) */}
+              {(contactPhone || sitio_web) && (
                 <AccordionSection
                   title="Contacto"
                   icon={faAddressCard}
@@ -623,79 +617,6 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
                         <FontAwesomeIcon icon={faGlobe} />
                         <span>Sitio Web</span>
                       </a>
-                    )}
-                    {/* Redes sociales */}
-                    {(instagram ||
-                      facebook ||
-                      whatsapp ||
-                      youtube ||
-                      tiktok) && (
-                      <div className="publication-modal__social">
-                        {whatsapp && (
-                          <button
-                            className="publication-modal__social-btn publication-modal__social-btn--whatsapp"
-                            onClick={handleWhatsApp}>
-                            <FontAwesomeIcon icon={faWhatsapp} />
-                            WhatsApp
-                          </button>
-                        )}
-                        {instagram && (
-                          <a
-                            href={
-                              instagram.startsWith("http")
-                                ? instagram
-                                : `https://instagram.com/${instagram.replace("@", "")}`
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="publication-modal__social-btn publication-modal__social-btn--instagram">
-                            <FontAwesomeIcon icon={faInstagram} />
-                            Instagram
-                          </a>
-                        )}
-                        {facebook && (
-                          <a
-                            href={
-                              facebook.startsWith("http")
-                                ? facebook
-                                : `https://facebook.com/${facebook}`
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="publication-modal__social-btn publication-modal__social-btn--facebook">
-                            <FontAwesomeIcon icon={faFacebook} />
-                            Facebook
-                          </a>
-                        )}
-                        {youtube && (
-                          <a
-                            href={
-                              youtube.startsWith("http")
-                                ? youtube
-                                : `https://youtube.com/${youtube}`
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="publication-modal__social-btn publication-modal__social-btn--youtube">
-                            <FontAwesomeIcon icon={faYoutube} />
-                            YouTube
-                          </a>
-                        )}
-                        {tiktok && (
-                          <a
-                            href={
-                              tiktok.startsWith("http")
-                                ? tiktok
-                                : `https://tiktok.com/@${tiktok.replace("@", "")}`
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="publication-modal__social-btn publication-modal__social-btn--tiktok">
-                            <FontAwesomeIcon icon={faTiktok} />
-                            TikTok
-                          </a>
-                        )}
-                      </div>
                     )}
                   </div>
                 </AccordionSection>
@@ -740,6 +661,82 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
                 )}
               </AccordionSection>
             </div>
+
+            {/* ===== SECCIÓN DE REDES SOCIALES (Debajo del mapa) ===== */}
+            {(instagram || facebook || whatsapp || youtube || tiktok) && (
+              <div className="publication-modal__social-section">
+                <h4 className="publication-modal__social-title">
+                  <FontAwesomeIcon icon={faShareAlt} />
+                  Síguenos en redes
+                </h4>
+                <div className="publication-modal__social-bar">
+                  {whatsapp && (
+                    <button
+                      className="publication-modal__social-icon publication-modal__social-icon--whatsapp"
+                      onClick={handleWhatsApp}
+                      title="WhatsApp">
+                      <FontAwesomeIcon icon={faWhatsapp} />
+                    </button>
+                  )}
+                  {instagram && (
+                    <a
+                      href={
+                        instagram.startsWith("http")
+                          ? instagram
+                          : `https://instagram.com/${instagram.replace("@", "")}`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="publication-modal__social-icon publication-modal__social-icon--instagram"
+                      title="Instagram">
+                      <FontAwesomeIcon icon={faInstagram} />
+                    </a>
+                  )}
+                  {facebook && (
+                    <a
+                      href={
+                        facebook.startsWith("http")
+                          ? facebook
+                          : `https://facebook.com/${facebook}`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="publication-modal__social-icon publication-modal__social-icon--facebook"
+                      title="Facebook">
+                      <FontAwesomeIcon icon={faFacebook} />
+                    </a>
+                  )}
+                  {youtube && (
+                    <a
+                      href={
+                        youtube.startsWith("http")
+                          ? youtube
+                          : `https://youtube.com/${youtube}`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="publication-modal__social-icon publication-modal__social-icon--youtube"
+                      title="YouTube">
+                      <FontAwesomeIcon icon={faYoutube} />
+                    </a>
+                  )}
+                  {tiktok && (
+                    <a
+                      href={
+                        tiktok.startsWith("http")
+                          ? tiktok
+                          : `https://tiktok.com/@${tiktok.replace("@", "")}`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="publication-modal__social-icon publication-modal__social-icon--tiktok"
+                      title="TikTok">
+                      <FontAwesomeIcon icon={faTiktok} />
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Publicado por - Abajo */}
             {profiles?.nombre && (

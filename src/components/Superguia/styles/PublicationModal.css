@@ -358,6 +358,122 @@
   color: #ff6600;
 }
 
+/* ===== SECCIÓN DE REDES SOCIALES (Debajo del mapa) ===== */
+.publication-modal__social-section {
+  margin: 16px 0;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.publication-modal__social-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 0 12px 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
+}
+
+.publication-modal__social-title svg {
+  color: #ff6600;
+}
+
+/* ===== BARRA DE REDES SOCIALES (Visible, íconos centrados) ===== */
+.publication-modal__social-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.publication-modal__social-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.publication-modal__social-icon--whatsapp {
+  background: rgba(37, 211, 102, 0.15);
+  color: #25d366;
+  border-color: rgba(37, 211, 102, 0.4);
+}
+
+.publication-modal__social-icon--whatsapp:hover {
+  background: #25d366;
+  color: #fff;
+  transform: scale(1.1);
+}
+
+.publication-modal__social-icon--instagram {
+  background: rgba(225, 48, 108, 0.15);
+  color: #e1306c;
+  border-color: rgba(225, 48, 108, 0.4);
+}
+
+.publication-modal__social-icon--instagram:hover {
+  background: linear-gradient(
+    45deg,
+    #f09433,
+    #e6683c,
+    #dc2743,
+    #cc2366,
+    #bc1888
+  );
+  color: #fff;
+  transform: scale(1.1);
+}
+
+.publication-modal__social-icon--facebook {
+  background: rgba(24, 119, 242, 0.15);
+  color: #1877f2;
+  border-color: rgba(24, 119, 242, 0.4);
+}
+
+.publication-modal__social-icon--facebook:hover {
+  background: #1877f2;
+  color: #fff;
+  transform: scale(1.1);
+}
+
+.publication-modal__social-icon--youtube {
+  background: rgba(255, 0, 0, 0.15);
+  color: #ff0000;
+  border-color: rgba(255, 0, 0, 0.4);
+}
+
+.publication-modal__social-icon--youtube:hover {
+  background: #ff0000;
+  color: #fff;
+  transform: scale(1.1);
+}
+
+.publication-modal__social-icon--tiktok {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.publication-modal__social-icon--tiktok:hover {
+  background: #000;
+  border-color: #00f2ea;
+  color: #00f2ea;
+  transform: scale(1.1);
+}
+
 /* Mensaje de Marketing */
 .publication-modal__marketing {
   display: flex;
@@ -1225,6 +1341,18 @@
 
   .publication-modal__contact-content .publication-modal__social {
     grid-template-columns: 1fr 1fr;
+  }
+
+  /* Barra de redes sociales responsive */
+  .publication-modal__social-bar {
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .publication-modal__social-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 1rem;
   }
 
   .publication-modal__map-container {
