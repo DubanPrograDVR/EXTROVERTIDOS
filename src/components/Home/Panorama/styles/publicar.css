@@ -270,6 +270,32 @@
   box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.25);
 }
 
+/* Grupo de marketing con título */
+.publicar-form__group--marketing {
+  background: linear-gradient(135deg, #1a1a1a 0%, #1f1a15 100%);
+  border: 1px solid #ff8533;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.publicar-form__marketing-title {
+  margin-bottom: 15px;
+}
+
+.publicar-form__label-small {
+  display: block;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.publicar-form__group--marketing .publicar-form__textarea--marketing {
+  background: rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 133, 51, 0.5);
+}
+
 /* Row (2 columns) */
 .publicar-form__row {
   display: grid;

@@ -121,7 +121,9 @@ const useEventSubmit = ({
       return {
         titulo: formData.titulo.trim(),
         descripcion: formData.descripcion.trim(),
+        titulo_marketing: formData.titulo_marketing?.trim() || null,
         mensaje_marketing: formData.mensaje_marketing?.trim() || null,
+        titulo_marketing_2: formData.titulo_marketing_2?.trim() || null,
         mensaje_marketing_2: formData.mensaje_marketing_2?.trim() || null,
         organizador:
           formData.organizador.trim() ||
@@ -145,6 +147,7 @@ const useEventSubmit = ({
           formData.tipo_entrada === "pagado" ? parseInt(formData.precio) : null,
         url_venta: formData.url_venta?.trim() || null,
         telefono_contacto: formData.telefono_contacto?.trim() || null,
+        sitio_web: formData.sitio_web?.trim() || null,
         hashtags: formData.hashtags?.trim() || null,
         etiqueta_directa: formData.etiqueta_directa?.trim() || null,
         redes_sociales: redesLimpias,

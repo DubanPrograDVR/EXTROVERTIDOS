@@ -79,7 +79,9 @@ export const INITIAL_FORM_STATE = {
     youtube: "", // Nuevo: enlace de YouTube
   },
   // Marketing
+  titulo_marketing: "", // Título del primer mensaje de marketing
   mensaje_marketing: "",
+  titulo_marketing_2: "", // Título del segundo mensaje de marketing
   mensaje_marketing_2: "", // Nuevo: segundo mensaje de marketing
   // Contacto
   telefono_contacto: "", // Nuevo: número de contacto directo

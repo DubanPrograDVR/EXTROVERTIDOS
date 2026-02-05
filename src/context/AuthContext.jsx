@@ -304,9 +304,18 @@ export const AuthProvider = ({ children }) => {
   };
 
   const signInWithGoogle = async () => {
+    // Guardar la URL actual para redirigir después del login
+    const currentPath = window.location.pathname + window.location.search;
+    if (currentPath !== '/' && currentPath !== '/auth/callback') {
+      sessionStorage.setItem("authReturnUrl", currentPath);
+    }
+
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: window.location.origin },
+      options: { 
+        // Usar ruta dedicada de callback para procesar la autenticación
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
     });
     return { data, error };
   };

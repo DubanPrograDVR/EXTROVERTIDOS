@@ -65,6 +65,8 @@ const orangeIcon = new L.Icon({
 // Tipos de secciones del acordeón
 const ACCORDION_SECTIONS = {
   DESCRIPTION: "description",
+  MARKETING_1: "marketing_1",
+  MARKETING_2: "marketing_2",
   LOCATION: "location",
   SCHEDULE: "schedule",
   CONTACT: "contact",
@@ -153,7 +155,9 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
     provincia,
     categories,
     descripcion,
+    titulo_marketing,
     mensaje_marketing,
+    titulo_marketing_2,
     mensaje_marketing_2,
     telefono_contacto,
     sitio_web,
@@ -465,32 +469,6 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
               </p>
             )}
 
-            {/* Mensaje de Marketing Principal */}
-            {mensaje_marketing && (
-              <div className="publication-modal__marketing">
-                <FontAwesomeIcon
-                  icon={faBullhorn}
-                  className="publication-modal__marketing-icon"
-                />
-                <p className="publication-modal__marketing-text">
-                  {mensaje_marketing}
-                </p>
-              </div>
-            )}
-
-            {/* Mensaje de Marketing 2 */}
-            {mensaje_marketing_2 && (
-              <div className="publication-modal__marketing publication-modal__marketing--secondary">
-                <FontAwesomeIcon
-                  icon={faBullhorn}
-                  className="publication-modal__marketing-icon"
-                />
-                <p className="publication-modal__marketing-text">
-                  {mensaje_marketing_2}
-                </p>
-              </div>
-            )}
-
             {/* ===== ACORDEÓN DE INFORMACIÓN ===== */}
             <div className="publication-modal__accordion-container">
               {/* Sección: Descripción */}
@@ -516,6 +494,36 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
                         ))}
                       </div>
                     )}
+                  </div>
+                </AccordionSection>
+              )}
+
+              {/* Sección: Mensaje de Marketing 1 */}
+              {mensaje_marketing && (
+                <AccordionSection
+                  title={titulo_marketing || "¡Información Destacada!"}
+                  icon={faBullhorn}
+                  isOpen={activeSection === ACCORDION_SECTIONS.MARKETING_1}
+                  onToggle={() =>
+                    toggleSection(ACCORDION_SECTIONS.MARKETING_1)
+                  }>
+                  <div className="publication-modal__marketing-content">
+                    <p>{mensaje_marketing}</p>
+                  </div>
+                </AccordionSection>
+              )}
+
+              {/* Sección: Mensaje de Marketing 2 */}
+              {mensaje_marketing_2 && (
+                <AccordionSection
+                  title={titulo_marketing_2 || "¡No te lo pierdas!"}
+                  icon={faBullhorn}
+                  isOpen={activeSection === ACCORDION_SECTIONS.MARKETING_2}
+                  onToggle={() =>
+                    toggleSection(ACCORDION_SECTIONS.MARKETING_2)
+                  }>
+                  <div className="publication-modal__marketing-content">
+                    <p>{mensaje_marketing_2}</p>
                   </div>
                 </AccordionSection>
               )}

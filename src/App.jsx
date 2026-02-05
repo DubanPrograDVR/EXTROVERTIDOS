@@ -1,13 +1,15 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { CityProvider } from "./context/CityContext";
 import ErrorBoundary from "./components/ErrorBoundary";
 import ProtectedRoute from "./components/Auth/ProtectedRoute";
 import UserOnlyRoute from "./components/Auth/UserOnlyRoute";
+import AuthCallback from "./components/Auth/AuthCallback";
 import Navbar from "./components/Home/Navbar";
 import Home from "./components/Home/Home";
 import { SuperguiaContainer } from "./components/Superguia";
+import { cleanAuthTokensFromUrl } from "./lib/supabase";
 
 // Lazy loading de rutas menos frecuentes para optimizar bundle inicial
 const Publicar = lazy(() => import("./components/Home/Panorama/Publicar"));
@@ -27,21 +29,42 @@ const PageLoader = () => (
   </div>
 );
 
+/**
+ * Componente wrapper que limpia tokens de URL al montar.
+ * Actúa como backup de seguridad en caso de que lleguen tokens
+ * a rutas que no son /auth/callback.
+ */
+const AppWithCleanup = ({ children }) => {
+  useEffect(() => {
+    // Limpiar tokens de la URL al cargar la app (backup de seguridad)
+    // Solo si NO estamos en la ruta de callback (esa ruta lo maneja específicamente)
+    if (!window.location.pathname.includes('/auth/callback')) {
+      cleanAuthTokensFromUrl();
+    }
+  }, []);
+
+  return children;
+};
+
 function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
         <CityProvider>
           <Router>
-            <Navbar />
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                {/* Rutas públicas frecuentes */}
-                <Route path="/" element={<Home />} />
-                <Route path="/superguia" element={<SuperguiaContainer />} />
+            <AppWithCleanup>
+              <Navbar />
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  {/* Callback de autenticación OAuth - DEBE estar antes de las rutas protegidas */}
+                  <Route path="/auth/callback" element={<AuthCallback />} />
 
-                {/* Rutas públicas menos frecuentes (lazy loaded) */}
-                <Route path="/panoramas" element={<PanoramasPage />} />
+                  {/* Rutas públicas frecuentes */}
+                  <Route path="/" element={<Home />} />
+                  <Route path="/superguia" element={<SuperguiaContainer />} />
+
+                  {/* Rutas públicas menos frecuentes (lazy loaded) */}
+                  <Route path="/panoramas" element={<PanoramasPage />} />
                 <Route
                   path="/publicar-panorama"
                   element={
@@ -83,6 +106,7 @@ function App() {
                 />
               </Routes>
             </Suspense>
+            </AppWithCleanup>
           </Router>
         </CityProvider>
       </AuthProvider>

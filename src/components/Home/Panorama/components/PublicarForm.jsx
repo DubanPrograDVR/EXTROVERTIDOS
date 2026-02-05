@@ -165,15 +165,36 @@ const PublicarForm = ({
           )}
         </div>
 
-        {/* Mensaje de Marketing */}
-        <div className="publicar-form__group">
-          <label className="publicar-form__label" htmlFor="mensaje_marketing">
-            <FontAwesomeIcon icon={faBullhorn} /> Mensaje de Marketing
+        {/* Mensaje de Marketing 1 */}
+        <div className="publicar-form__group publicar-form__group--marketing">
+          <label className="publicar-form__label">
+            <FontAwesomeIcon icon={faBullhorn} /> Mensaje de Marketing N° 1
             <span className="publicar-form__label-hint">
               {" "}
               (Opcional - Engancha a tu público)
             </span>
           </label>
+
+          {/* Título del mensaje 1 */}
+          <div className="publicar-form__marketing-title">
+            <label
+              className="publicar-form__label-small"
+              htmlFor="titulo_marketing">
+              Título
+            </label>
+            <input
+              type="text"
+              id="titulo_marketing"
+              name="titulo_marketing"
+              className="publicar-form__input"
+              placeholder="Ej: ¡Oferta Especial! o Beneficios Exclusivos"
+              value={formData.titulo_marketing || ""}
+              onChange={onChange}
+              maxLength={100}
+            />
+          </div>
+
+          {/* Contenido del mensaje 1 */}
           <textarea
             id="mensaje_marketing"
             name="mensaje_marketing"
@@ -189,15 +210,36 @@ const PublicarForm = ({
           </span>
         </div>
 
-        {/* Segundo Mensaje de Marketing */}
-        <div className="publicar-form__group">
-          <label className="publicar-form__label" htmlFor="mensaje_marketing_2">
-            <FontAwesomeIcon icon={faBullhorn} /> Segundo Mensaje de Marketing
+        {/* Mensaje de Marketing 2 */}
+        <div className="publicar-form__group publicar-form__group--marketing">
+          <label className="publicar-form__label">
+            <FontAwesomeIcon icon={faBullhorn} /> Mensaje de Marketing N° 2
             <span className="publicar-form__label-hint">
               {" "}
               (Opcional - Mensaje adicional)
             </span>
           </label>
+
+          {/* Título del mensaje 2 */}
+          <div className="publicar-form__marketing-title">
+            <label
+              className="publicar-form__label-small"
+              htmlFor="titulo_marketing_2">
+              Título
+            </label>
+            <input
+              type="text"
+              id="titulo_marketing_2"
+              name="titulo_marketing_2"
+              className="publicar-form__input"
+              placeholder="Ej: ¡No te lo pierdas! o Información Importante"
+              value={formData.titulo_marketing_2 || ""}
+              onChange={onChange}
+              maxLength={100}
+            />
+          </div>
+
+          {/* Contenido del mensaje 2 */}
           <textarea
             id="mensaje_marketing_2"
             name="mensaje_marketing_2"

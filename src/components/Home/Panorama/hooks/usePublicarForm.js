@@ -12,6 +12,29 @@ import {
 } from "../../../../lib/database";
 import { INITIAL_FORM_STATE, IMAGE_CONFIG } from "../constants";
 
+// Timeout para operaciones de base de datos (30 segundos)
+const DB_OPERATION_TIMEOUT = 30000;
+
+/**
+ * Envuelve una promesa con un timeout
+ * @param {Promise} promise - Promesa a ejecutar
+ * @param {number} ms - Tiempo máximo en milisegundos
+ * @param {string} errorMessage - Mensaje de error si se excede el tiempo
+ * @returns {Promise} Resultado de la promesa o error por timeout
+ */
+const withTimeout = (promise, ms, errorMessage) => {
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(errorMessage));
+    }, ms);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    clearTimeout(timeoutId);
+  });
+};
+
 /**
  * Hook personalizado para manejar la lógica del formulario de publicación
  * Soporta creación y edición de eventos
@@ -110,7 +133,9 @@ const usePublicarForm = () => {
         setFormData({
           titulo: draftData.titulo || "",
           descripcion: draftData.descripcion || "",
+          titulo_marketing: draftData.titulo_marketing || "",
           mensaje_marketing: draftData.mensaje_marketing || "",
+          titulo_marketing_2: draftData.titulo_marketing_2 || "",
           mensaje_marketing_2: draftData.mensaje_marketing_2 || "",
           organizador: draftData.organizador || "",
           category_id: draftData.category_id || "",
@@ -127,6 +152,7 @@ const usePublicarForm = () => {
           precio: draftData.precio || "",
           url_venta: draftData.url_venta || "",
           telefono_contacto: draftData.telefono_contacto || "",
+          sitio_web: draftData.sitio_web || "",
           hashtags: draftData.hashtags || "",
           etiqueta_directa: draftData.etiqueta_directa || "",
           redes_sociales: draftData.redes_sociales || {
@@ -199,7 +225,9 @@ const usePublicarForm = () => {
         setFormData({
           titulo: event.titulo || "",
           descripcion: event.descripcion || "",
+          titulo_marketing: event.titulo_marketing || "",
           mensaje_marketing: event.mensaje_marketing || "",
+          titulo_marketing_2: event.titulo_marketing_2 || "",
           mensaje_marketing_2: event.mensaje_marketing_2 || "",
           organizador: event.organizador || "",
           category_id: event.category_id || "",
@@ -216,6 +244,7 @@ const usePublicarForm = () => {
           precio: event.precio || "",
           url_venta: event.url_venta || "",
           telefono_contacto: event.telefono_contacto || "",
+          sitio_web: event.sitio_web || "",
           hashtags: event.hashtags || "",
           etiqueta_directa: event.etiqueta_directa || "",
           redes_sociales: event.redes_sociales || {
@@ -612,7 +641,18 @@ const usePublicarForm = () => {
   // Manejar envío del formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("=== INICIO SUBMIT ===");
+
+    // 🛡️ PROTECCIÓN CONTRA DOBLE SUBMIT
+    if (isSubmitting) {
+      console.warn("⚠️ Submit bloqueado: ya hay un envío en proceso");
+      return;
+    }
+
+    if (import.meta.env.DEV) {
+      console.log("=== INICIO SUBMIT ===");
+      console.time("📊 SUBMIT_TOTAL");
+      console.time("📊 VALIDACION");
+    }
 
     // Verificar autenticación
     if (!isAuthenticated) {
@@ -622,40 +662,52 @@ const usePublicarForm = () => {
     }
 
     // Validar formulario
-    console.log("Validando formulario...");
+    if (import.meta.env.DEV) console.log("Validando formulario...");
     if (!validateForm()) {
-      console.log("Validación fallida:", errors);
+      if (import.meta.env.DEV) {
+        console.log("Validación fallida:", errors);
+        console.timeEnd("📊 VALIDACION");
+      }
       showToastRef.current?.(
         "Por favor completa todos los campos obligatorios",
         "error",
       );
       return;
     }
-    console.log("Validación exitosa");
+    if (import.meta.env.DEV) {
+      console.log("Validación exitosa");
+      console.timeEnd("📊 VALIDACION");
+    }
 
     setIsSubmitting(true);
-    console.log("isSubmitting = true");
+    if (import.meta.env.DEV) console.log("isSubmitting = true");
 
     try {
       // 1. Subir nuevas imágenes (secuencialmente para mejor manejo de errores)
-      console.log(`Subiendo ${formData.imagenes.length} imágenes...`);
+      if (import.meta.env.DEV) {
+        console.log(`Subiendo ${formData.imagenes.length} imágenes...`);
+        console.time("📊 UPLOAD_IMAGENES");
+      }
       const newImageUrls = [];
 
       for (let i = 0; i < formData.imagenes.length; i++) {
         const file = formData.imagenes[i];
-        console.log(
-          `Subiendo imagen ${i + 1} de ${formData.imagenes.length}: ${
-            file.name
-          }`,
-        );
+        if (import.meta.env.DEV) {
+          console.log(
+            `Subiendo imagen ${i + 1} de ${formData.imagenes.length}: ${file.name}`,
+          );
+        }
         try {
           const url = await uploadEventImage(file, user.id);
           newImageUrls.push(url);
         } catch (uploadError) {
           console.error(`Error subiendo imagen ${i + 1}:`, uploadError);
-          throw new Error(`Error al subir la imagen ${file.name}`);
+          throw new Error(
+            `Error al subir la imagen ${file.name}: ${uploadError.message}`,
+          );
         }
       }
+      if (import.meta.env.DEV) console.timeEnd("📊 UPLOAD_IMAGENES");
 
       // Combinar imágenes existentes con las nuevas
       const allImageUrls = [...existingImages, ...newImageUrls];
@@ -673,7 +725,9 @@ const usePublicarForm = () => {
       const eventData = {
         titulo: formData.titulo.trim(),
         descripcion: formData.descripcion.trim(),
+        titulo_marketing: formData.titulo_marketing?.trim() || null,
         mensaje_marketing: formData.mensaje_marketing?.trim() || null,
+        titulo_marketing_2: formData.titulo_marketing_2?.trim() || null,
         mensaje_marketing_2: formData.mensaje_marketing_2?.trim() || null,
         organizador:
           formData.organizador.trim() ||
@@ -698,22 +752,33 @@ const usePublicarForm = () => {
           formData.tipo_entrada === "pagado" ? parseInt(formData.precio) : null,
         url_venta: formData.url_venta.trim() || null,
         telefono_contacto: formData.telefono_contacto?.trim() || null,
+        sitio_web: formData.sitio_web?.trim() || null,
         hashtags: formData.hashtags?.trim() || null,
         etiqueta_directa: formData.etiqueta_directa?.trim() || null,
         redes_sociales: redesLimpias,
         imagenes: allImageUrls,
       };
 
-      console.log(
-        "Datos del evento a enviar:",
-        JSON.stringify(eventData, null, 2),
-      );
+      if (import.meta.env.DEV) {
+        console.log(
+          "Datos del evento a enviar:",
+          JSON.stringify(eventData, null, 2),
+        );
+        console.time("📊 DB_OPERATION");
+      }
 
       if (isEditing) {
         // Actualizar evento existente
-        console.log("Actualizando evento existente...", editEventId);
-        await updateEvent(editEventId, eventData);
-        console.log("Evento actualizado exitosamente");
+        if (import.meta.env.DEV)
+          console.log("Actualizando evento existente...", editEventId);
+
+        await withTimeout(
+          updateEvent(editEventId, eventData),
+          DB_OPERATION_TIMEOUT,
+          "La actualización está tardando demasiado. Verifica tu conexión e intenta nuevamente.",
+        );
+
+        if (import.meta.env.DEV) console.log("Evento actualizado exitosamente");
         showToastRef.current?.(
           "¡Publicación actualizada exitosamente!",
           "success",
@@ -723,19 +788,29 @@ const usePublicarForm = () => {
         eventData.user_id = user.id;
 
         // Debug: verificar el rol del usuario
-        console.log("=== DEBUG ROLES ===");
-        console.log("isAdmin:", isAdmin);
-        console.log("isModerator:", isModerator);
+        if (import.meta.env.DEV) {
+          console.log("=== DEBUG ROLES ===");
+          console.log("isAdmin:", isAdmin);
+          console.log("isModerator:", isModerator);
+        }
 
         // Admins y Moderadores publican directamente, usuarios normales van a cola de aprobación
         const canPublishDirectly = isAdmin || isModerator;
         eventData.estado = canPublishDirectly ? "publicado" : "pendiente";
 
-        console.log("canPublishDirectly:", canPublishDirectly);
-        console.log("Estado asignado:", eventData.estado);
+        if (import.meta.env.DEV) {
+          console.log("canPublishDirectly:", canPublishDirectly);
+          console.log("Estado asignado:", eventData.estado);
+        }
 
-        const createdEvent = await createEvent(eventData);
-        console.log("Evento creado exitosamente:", createdEvent?.id);
+        const createdEvent = await withTimeout(
+          createEvent(eventData),
+          DB_OPERATION_TIMEOUT,
+          "La publicación está tardando demasiado. Verifica tu conexión e intenta nuevamente.",
+        );
+
+        if (import.meta.env.DEV)
+          console.log("Evento creado exitosamente:", createdEvent?.id);
 
         showToastRef.current?.(
           canPublishDirectly
@@ -744,6 +819,7 @@ const usePublicarForm = () => {
           "success",
         );
       }
+      if (import.meta.env.DEV) console.timeEnd("📊 DB_OPERATION");
 
       // Si había un borrador, eliminarlo después de publicar exitosamente
       if (currentDraftId) {
@@ -769,18 +845,50 @@ const usePublicarForm = () => {
         `Error al ${isEditing ? "actualizar" : "crear"} evento:`,
         error,
       );
-      console.error("Error name:", error?.name);
-      console.error("Error message:", error?.message);
-      console.error("Error stack:", error?.stack);
 
-      // Mostrar mensaje de error específico si está disponible
-      const errorMessage =
-        error?.message ||
-        `Error al ${isEditing ? "actualizar" : "crear"} el evento. Intenta nuevamente.`;
+      if (import.meta.env.DEV) {
+        console.error("Error name:", error?.name);
+        console.error("Error message:", error?.message);
+        console.error("Error stack:", error?.stack);
+      }
+
+      // Detectar tipo de error para mensaje más útil
+      let errorMessage = `Error al ${isEditing ? "actualizar" : "crear"} el evento. Intenta nuevamente.`;
+
+      if (error?.message) {
+        if (
+          error.message.includes("timeout") ||
+          error.message.includes("tardando")
+        ) {
+          errorMessage = error.message; // Usar mensaje de timeout directamente
+        } else if (
+          error.message.includes("sesión") ||
+          error.message.includes("session")
+        ) {
+          errorMessage =
+            "Tu sesión ha expirado. Por favor recarga la página e inicia sesión nuevamente.";
+        } else if (
+          error.message.includes("subir") ||
+          error.message.includes("imagen")
+        ) {
+          errorMessage = error.message; // Usar mensaje de error de imagen
+        } else if (
+          error.message.includes("conexión") ||
+          error.message.includes("network")
+        ) {
+          errorMessage =
+            "Error de conexión. Verifica tu internet e intenta nuevamente.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
 
       showToastRef.current?.(errorMessage, "error");
     } finally {
-      console.log("=== FINALLY: Setting isSubmitting = false ===");
+      if (import.meta.env.DEV) {
+        console.log("=== FINALLY: Setting isSubmitting = false ===");
+        console.timeEnd("📊 SUBMIT_TOTAL");
+      }
       setIsSubmitting(false);
     }
   };
