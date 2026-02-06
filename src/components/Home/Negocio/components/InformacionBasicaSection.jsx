@@ -21,7 +21,8 @@ const InformacionBasicaSection = ({
 
       <div className="publicar-negocio__field">
         <label htmlFor="nombre">
-          Nombre del Negocio <span className="required">*</span>
+          Nombre del Negocio
+          <span className="publicar-negocio__label-required">Obligatorio</span>
         </label>
         <input
           type="text"
@@ -40,7 +41,8 @@ const InformacionBasicaSection = ({
 
       <div className="publicar-negocio__field">
         <label htmlFor="descripcion">
-          Descripción <span className="required">*</span>
+          Descripción
+          <span className="publicar-negocio__label-required">Obligatorio</span>
         </label>
         <textarea
           id="descripcion"
@@ -60,7 +62,8 @@ const InformacionBasicaSection = ({
       <div className="publicar-negocio__field">
         <label htmlFor="category_id">
           <FontAwesomeIcon icon={faTag} />
-          Categoría <span className="required">*</span>
+          Categoría
+          <span className="publicar-negocio__label-required">Obligatorio</span>
         </label>
         {loadingCategories ? (
           <p>Cargando categorías...</p>

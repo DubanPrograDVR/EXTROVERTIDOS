@@ -21,7 +21,8 @@ const ImagenesSection = ({
 
       <div className="publicar-negocio__field">
         <label>
-          Fotos del negocio <span className="required">*</span>
+          Fotos del negocio
+          <span className="publicar-negocio__label-required">Obligatorio</span>
         </label>
         <p className="publicar-negocio__hint">
           <FontAwesomeIcon icon={faInfoCircle} />

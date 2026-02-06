@@ -20,7 +20,8 @@ const ContactoSection = ({
       <div className="publicar-negocio__row">
         <div className="publicar-negocio__field">
           <label htmlFor="telefono">
-            Teléfono <span className="required">*</span>
+            Teléfono
+            <span className="publicar-negocio__label-required">Obligatorio</span>
           </label>
           <input
             type="tel"
@@ -38,7 +39,10 @@ const ContactoSection = ({
         </div>
 
         <div className="publicar-negocio__field">
-          <label htmlFor="email">Email (opcional)</label>
+          <label htmlFor="email">
+            Email
+            <span className="publicar-negocio__label-hint">(Opcional)</span>
+          </label>
           <input
             type="email"
             id="email"
@@ -54,7 +58,8 @@ const ContactoSection = ({
       <div className="publicar-negocio__field">
         <label htmlFor="sitio_web">
           <FontAwesomeIcon icon={faGlobe} />
-          Sitio Web (opcional)
+          Sitio Web
+          <span className="publicar-negocio__label-hint">(Opcional)</span>
         </label>
         <input
           type="url"

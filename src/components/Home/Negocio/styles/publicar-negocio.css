@@ -76,27 +76,24 @@
   margin-bottom: 8px;
 }
 
-.publicar-negocio__field label .required {
-  color: #ff6600;
-}
-
 .publicar-negocio__field label svg {
   color: #ff6600;
   font-size: 0.85rem;
 }
 
+/* Inputs - mismo estilo que publicar-panorama */
 .publicar-negocio__field input,
 .publicar-negocio__field select,
 .publicar-negocio__field textarea {
   width: 100%;
-  padding: 12px 15px;
+  padding: 15px 18px;
   background: #1a1a1a;
-  border: 2px solid #333;
-  border-radius: 10px;
+  border: 2px solid #ff6600;
+  border-radius: 12px;
   color: #fff;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-family: inherit;
-  transition: border-color 0.3s, box-shadow 0.3s;
+  transition: all 0.3s ease;
 }
 
 .publicar-negocio__field input:focus,
@@ -104,7 +101,8 @@
 .publicar-negocio__field textarea:focus {
   outline: none;
   border-color: #ff6600;
-  box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.1);
+  box-shadow: 0 0 0 3px rgba(220, 60, 60, 0.3);
+  background: #1d1919;
 }
 
 .publicar-negocio__field input.error,
@@ -115,21 +113,65 @@
 
 .publicar-negocio__field input::placeholder,
 .publicar-negocio__field textarea::placeholder {
-  color: #666;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.publicar-negocio__field input[type="date"],
+.publicar-negocio__field input[type="time"] {
+  color-scheme: dark;
 }
 
 .publicar-negocio__field select {
   cursor: pointer;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23ff6600' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23ff6600' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: calc(100% - 15px) center;
+  background-position: right 15px center;
+  background-size: 20px;
   padding-right: 40px;
 }
 
 .publicar-negocio__field select option {
   background: #1a1a1a;
   color: #fff;
+}
+
+.publicar-negocio__field select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.publicar-negocio__field textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+/* Badges - Obligatorio */
+.publicar-negocio__label-required {
+  font-weight: 600;
+  font-size: 0.7rem;
+  color: #ff6600;
+  background: rgba(255, 102, 0, 0.12);
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-left: 8px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+/* Badges - Opcional */
+.publicar-negocio__label-hint {
+  font-weight: 600;
+  font-size: 0.7rem;
+  color: #8bb8e8;
+  background: rgba(139, 184, 232, 0.1);
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-left: 8px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  vertical-align: middle;
 }
 
 /* Row (dos columnas) */
@@ -401,6 +443,57 @@
 
 .publicar-negocio__google-btn svg {
   font-size: 1.2rem;
+}
+
+/* Location Picker */
+.publicar-negocio__location-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  padding: 20px 0;
+}
+
+.publicar-negocio__location-icon {
+  width: 60px;
+  height: 75px;
+  color: #ff6600;
+  opacity: 0.8;
+}
+
+.publicar-negocio__location-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.publicar-negocio__location-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 30px;
+  background: transparent;
+  border: 2px solid #ff6600;
+  border-radius: 50px;
+  color: #ff6600;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.publicar-negocio__location-btn:hover {
+  background: rgba(255, 102, 0, 0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 20px rgba(255, 102, 0, 0.2);
+}
+
+.publicar-negocio__location-hint-text {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+  max-width: 350px;
 }
 
 /* Responsive */

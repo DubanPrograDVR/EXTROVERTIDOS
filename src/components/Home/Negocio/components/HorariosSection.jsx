@@ -20,7 +20,10 @@ const HorariosSection = ({
 
       <div className="publicar-negocio__row">
         <div className="publicar-negocio__field">
-          <label htmlFor="horario_apertura">Hora de apertura</label>
+          <label htmlFor="horario_apertura">
+            Hora de apertura
+            <span className="publicar-negocio__label-hint">(Opcional)</span>
+          </label>
           <input
             type="time"
             id="horario_apertura"
@@ -32,7 +35,10 @@ const HorariosSection = ({
         </div>
 
         <div className="publicar-negocio__field">
-          <label htmlFor="horario_cierre">Hora de cierre</label>
+          <label htmlFor="horario_cierre">
+            Hora de cierre
+            <span className="publicar-negocio__label-hint">(Opcional)</span>
+          </label>
           <input
             type="time"
             id="horario_cierre"
@@ -45,7 +51,10 @@ const HorariosSection = ({
       </div>
 
       <div className="publicar-negocio__field">
-        <label>Días de atención</label>
+        <label>
+          Días de atención
+          <span className="publicar-negocio__label-hint">(Opcional)</span>
+        </label>
         <div className="publicar-negocio__dias">
           {DIAS_SEMANA.map((dia) => (
             <label key={dia} className="publicar-negocio__dia-checkbox">

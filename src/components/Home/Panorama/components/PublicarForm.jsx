@@ -92,9 +92,10 @@ const PublicarForm = ({
   const getSelectedTags = () => {
     if (!formData.hashtags) return [];
     return formData.hashtags
-      .split(" ")
-      .filter((tag) => tag.startsWith("#"))
-      .map((tag) => tag.toUpperCase());
+      .split("#")
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.length > 0)
+      .map((tag) => `#${tag.toUpperCase()}`);
   };
 
   return (

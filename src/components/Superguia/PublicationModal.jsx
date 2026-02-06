@@ -198,9 +198,10 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
   const parseHashtags = () => {
     if (!hashtags) return [];
     return hashtags
-      .split(/[,\s]+/)
-      .filter((tag) => tag.trim())
-      .map((tag) => (tag.startsWith("#") ? tag : `#${tag}`));
+      .split("#")
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.length > 0)
+      .map((tag) => `#${tag}`);
   };
 
   const hashtagsList = parseHashtags();

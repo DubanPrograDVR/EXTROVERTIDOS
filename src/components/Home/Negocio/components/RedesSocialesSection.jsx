@@ -14,7 +14,8 @@ const RedesSocialesSection = ({
     <section className="publicar-negocio__section">
       <h2 className="publicar-negocio__section-title">
         <FontAwesomeIcon icon={faLink} />
-        Redes Sociales (opcional)
+        Redes Sociales
+        <span className="publicar-negocio__label-hint">(Opcional)</span>
       </h2>
 
       <div className="publicar-negocio__field">
