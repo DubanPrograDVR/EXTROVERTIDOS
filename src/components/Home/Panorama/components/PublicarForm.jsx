@@ -106,7 +106,8 @@ const PublicarForm = ({
         {/* Título */}
         <div className="publicar-form__group">
           <label className="publicar-form__label" htmlFor="titulo">
-            Título del Evento *
+            Título del Evento
+            <span className="publicar-form__label-required">Obligatorio</span>
           </label>
           <input
             type="text"
@@ -127,6 +128,7 @@ const PublicarForm = ({
         <div className="publicar-form__group">
           <label className="publicar-form__label" htmlFor="organizador">
             <FontAwesomeIcon icon={faBuilding} /> Organizador
+            <span className="publicar-form__label-hint"> (Opcional)</span>
           </label>
           <input
             type="text"
@@ -143,7 +145,8 @@ const PublicarForm = ({
         {/* Descripción */}
         <div className="publicar-form__group">
           <label className="publicar-form__label" htmlFor="descripcion">
-            Descripción *
+            Descripción
+            <span className="publicar-form__label-required">Obligatorio</span>
           </label>
           <textarea
             id="descripcion"
@@ -258,7 +261,8 @@ const PublicarForm = ({
         {/* Categoría */}
         <div className="publicar-form__group">
           <label className="publicar-form__label" htmlFor="category_id">
-            <FontAwesomeIcon icon={faTag} /> Categoría *
+            <FontAwesomeIcon icon={faTag} /> Categoría
+            <span className="publicar-form__label-required">Obligatorio</span>
           </label>
           <select
             id="category_id"
@@ -307,10 +311,11 @@ const PublicarForm = ({
           <div className="publicar-form__group">
             <label className="publicar-form__label" htmlFor="hora_inicio">
               <FontAwesomeIcon icon={faClock} /> Hora Inicio
+              <span className="publicar-form__label-hint"> (Opcional)</span>
               {formData.es_multidia && formData.mismo_horario && (
                 <span className="publicar-form__label-hint">
                   {" "}
-                  (todos los días)
+                  - todos los días
                 </span>
               )}
             </label>
@@ -327,6 +332,7 @@ const PublicarForm = ({
           <div className="publicar-form__group">
             <label className="publicar-form__label" htmlFor="hora_fin">
               <FontAwesomeIcon icon={faClock} /> Hora Fin
+              <span className="publicar-form__label-hint"> (Opcional)</span>
             </label>
             <input
               type="time"
@@ -343,7 +349,8 @@ const PublicarForm = ({
         <div className="publicar-form__row">
           <div className="publicar-form__group">
             <label className="publicar-form__label" htmlFor="provincia">
-              <FontAwesomeIcon icon={faLocationDot} /> Provincia *
+              <FontAwesomeIcon icon={faLocationDot} /> Provincia
+              <span className="publicar-form__label-required">Obligatorio</span>
             </label>
             <select
               id="provincia"
@@ -367,7 +374,8 @@ const PublicarForm = ({
 
           <div className="publicar-form__group">
             <label className="publicar-form__label" htmlFor="comuna">
-              Comuna *
+              Comuna
+              <span className="publicar-form__label-required">Obligatorio</span>
             </label>
             <select
               id="comuna"
@@ -397,7 +405,8 @@ const PublicarForm = ({
         {/* Dirección */}
         <div className="publicar-form__group">
           <label className="publicar-form__label" htmlFor="direccion">
-            <FontAwesomeIcon icon={faLocationDot} /> Dirección *
+            <FontAwesomeIcon icon={faLocationDot} /> Dirección
+            <span className="publicar-form__label-required">Obligatorio</span>
           </label>
           <input
             type="text"
@@ -459,7 +468,8 @@ const PublicarForm = ({
         {/* Opciones de Entrada - Botón que abre modal */}
         <div className="publicar-form__group">
           <label className="publicar-form__label">
-            <FontAwesomeIcon icon={faTicket} /> *Opciones de Entrada
+            <FontAwesomeIcon icon={faTicket} /> Opciones de Entrada
+            <span className="publicar-form__label-required">Obligatorio</span>
           </label>
           <button
             type="button"
@@ -525,6 +535,7 @@ const PublicarForm = ({
         <div className="publicar-form__group">
           <label className="publicar-form__label">
             <FontAwesomeIcon icon={faTags} /> Etiquetas Complementarias (10 Max)
+            <span className="publicar-form__label-hint"> (Opcional)</span>
           </label>
           <button
             type="button"
