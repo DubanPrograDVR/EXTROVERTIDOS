@@ -54,6 +54,26 @@ export const DIAS_SEMANA = [
   "Domingo",
 ];
 
+// Abreviaturas para los pills circulares
+export const DIAS_SEMANA_SHORT = {
+  Lunes: "LUN",
+  Martes: "MAR",
+  Miércoles: "MIE",
+  Jueves: "JUE",
+  Viernes: "VIE",
+  Sábado: "SAB",
+  Domingo: "DOM",
+};
+
+// Turno por defecto al agregar un día
+export const DEFAULT_TURNO = { apertura: "09:00", cierre: "18:00" };
+
+// Horas y minutos para los selectores del modal
+export const HOURS = Array.from({ length: 24 }, (_, i) =>
+  String(i).padStart(2, "0"),
+);
+export const MINUTES = ["00", "15", "30", "45"];
+
 // Estado inicial del formulario
 export const INITIAL_FORM_STATE = {
   nombre: "",
@@ -65,9 +85,9 @@ export const INITIAL_FORM_STATE = {
   telefono: "",
   email: "",
   sitio_web: "",
-  horario_apertura: "",
-  horario_cierre: "",
   dias_atencion: [],
+  horarios_detalle: {},
+  abierto_24h: false,
   redes_sociales: {
     instagram: "",
     facebook: "",

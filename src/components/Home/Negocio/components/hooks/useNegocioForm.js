@@ -73,13 +73,34 @@ export const useNegocioForm = () => {
     setErrors((prev) => ({ ...prev, [name]: "" }));
   }, []);
 
-  // Manejar cambio de días de atención
+  // Manejar cambio de días de atención (toggle)
   const handleDiaChange = useCallback((dia) => {
+    setFormData((prev) => {
+      const isRemoving = prev.dias_atencion.includes(dia);
+      const newDias = isRemoving
+        ? prev.dias_atencion.filter((d) => d !== dia)
+        : [...prev.dias_atencion, dia];
+
+      // Limpiar horarios del día si se desmarca
+      const newHorarios = { ...prev.horarios_detalle };
+      if (isRemoving) {
+        delete newHorarios[dia];
+      }
+
+      return {
+        ...prev,
+        dias_atencion: newDias,
+        horarios_detalle: newHorarios,
+      };
+    });
+  }, []);
+
+  // Guardar horarios configurados desde el modal
+  const handleSaveHorarios = useCallback((horarios, abierto24h) => {
     setFormData((prev) => ({
       ...prev,
-      dias_atencion: prev.dias_atencion.includes(dia)
-        ? prev.dias_atencion.filter((d) => d !== dia)
-        : [...prev.dias_atencion, dia],
+      horarios_detalle: horarios,
+      abierto_24h: abierto24h,
     }));
   }, []);
 
@@ -196,6 +217,18 @@ export const useNegocioForm = () => {
 
       // 2. Preparar datos del negocio
       // Si es admin, se publica automáticamente sin revisión
+
+      // Construir JSONB de horarios para la BD
+      const horarios = {};
+      if (formData.abierto_24h) {
+        horarios.abierto_24h = true;
+      }
+      formData.dias_atencion.forEach((dia) => {
+        horarios[dia] = formData.horarios_detalle[dia] || [
+          { apertura: "09:00", cierre: "18:00" },
+        ];
+      });
+
       const businessData = {
         user_id: user.id,
         nombre: formData.nombre.trim(),
@@ -207,9 +240,7 @@ export const useNegocioForm = () => {
         telefono: formData.telefono.trim(),
         email: formData.email.trim() || null,
         sitio_web: formData.sitio_web.trim() || null,
-        horario_apertura: formData.horario_apertura || null,
-        horario_cierre: formData.horario_cierre || null,
-        dias_atencion: formData.dias_atencion,
+        horarios: Object.keys(horarios).length > 0 ? horarios : {},
         redes_sociales: formData.redes_sociales,
         ubicacion_url: formData.ubicacion_url.trim() || null,
         imagen_url: imageUrls[0] || null,
@@ -254,6 +285,7 @@ export const useNegocioForm = () => {
     // Acciones
     handleChange,
     handleDiaChange,
+    handleSaveHorarios,
     handleImageChange,
     removeImage,
     handleFieldFocus,

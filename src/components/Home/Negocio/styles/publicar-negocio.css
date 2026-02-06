@@ -203,36 +203,415 @@
   color: #ff6600;
 }
 
-/* Días de atención */
-.publicar-negocio__dias {
+/* Días de atención — Pills circulares */
+.publicar-negocio__dias-pills {
   display: flex;
+  gap: 12px;
+  justify-content: center;
   flex-wrap: wrap;
+}
+
+.publicar-negocio__dia-pill {
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  border: 2px solid #ff6600;
+  background: transparent;
+  color: #ff6600;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.5px;
+}
+
+.publicar-negocio__dia-pill:hover {
+  background: rgba(255, 102, 0, 0.1);
+  transform: scale(1.08);
+}
+
+.publicar-negocio__dia-pill.active {
+  background: #ff6600;
+  color: #000;
+  box-shadow: 0 4px 15px rgba(255, 102, 0, 0.4);
+}
+
+/* Botón Configurar Horarios */
+.publicar-negocio__configurar-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.publicar-negocio__configurar-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 28px;
+  background: transparent;
+  border: 2px solid #ff6600;
+  border-radius: 50px;
+  color: #ff6600;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.publicar-negocio__configurar-btn:hover {
+  background: rgba(255, 102, 0, 0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 20px rgba(255, 102, 0, 0.2);
+}
+
+/* Resumen de horarios */
+.publicar-negocio__horarios-summary {
+  margin-top: 20px;
+  background: #1a1a1a;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid rgba(255, 102, 0, 0.15);
+}
+
+.publicar-negocio__summary-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #ff6600;
+  margin: 0 0 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.publicar-negocio__24h-badge {
+  background: rgba(255, 102, 0, 0.15);
+  color: #ff6600;
+  padding: 10px 15px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.publicar-negocio__summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.publicar-negocio__summary-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #111;
+}
+
+.publicar-negocio__summary-dia {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #ff6600;
+  min-width: 40px;
+}
+
+.publicar-negocio__summary-horario {
+  font-size: 0.9rem;
+  color: #ccc;
+}
+
+/* ===== HORARIOS MODAL ===== */
+.horarios-modal__overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 20px;
+}
+
+.horarios-modal__container {
+  background: #1a1a1a;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 700px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 102, 0, 0.3);
+  overflow: hidden;
+}
+
+.horarios-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 25px;
+  border-bottom: 1px solid rgba(255, 102, 0, 0.2);
+}
+
+.horarios-modal__title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  display: flex;
+  align-items: center;
   gap: 10px;
 }
 
-.publicar-negocio__dia-checkbox {
+.horarios-modal__title svg {
+  color: #ff6600;
+}
+
+.horarios-modal__close {
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: 2px solid #444;
+  border-radius: 8px;
+  color: #888;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: #1a1a1a;
-  padding: 8px 12px;
-  border-radius: 8px;
+  justify-content: center;
+  font-size: 1rem;
+  transition: all 0.3s;
+}
+
+.horarios-modal__close:hover {
+  border-color: #ff6600;
+  color: #ff6600;
+}
+
+.horarios-modal__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 25px;
+}
+
+/* Toggle 24h */
+.horarios-modal__24h-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 15px;
+  background: #111;
+  border-radius: 10px;
+  margin-bottom: 20px;
   cursor: pointer;
   transition: background 0.3s;
 }
 
-.publicar-negocio__dia-checkbox:hover {
-  background: #252525;
+.horarios-modal__24h-toggle:hover {
+  background: #1d1d1d;
 }
 
-.publicar-negocio__dia-checkbox input {
-  width: auto;
+.horarios-modal__24h-toggle input {
+  width: 18px;
+  height: 18px;
   accent-color: #ff6600;
+  cursor: pointer;
 }
 
-.publicar-negocio__dia-checkbox span {
-  font-size: 0.85rem;
+.horarios-modal__24h-toggle span {
+  font-size: 0.95rem;
+  font-weight: 500;
   color: #ccc;
+}
+
+/* Day cards */
+.horarios-modal__day-card {
+  background: #222;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 15px;
+  border: 1px solid #333;
+}
+
+.horarios-modal__day-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #ff6600;
+  margin: 0 0 15px;
+  text-align: center;
+}
+
+/* Turno row */
+.horarios-modal__turno {
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+  justify-content: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.horarios-modal__time-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.horarios-modal__time-label {
+  font-size: 0.8rem;
+  color: #888;
+  font-weight: 500;
+}
+
+.horarios-modal__time-selects {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.horarios-modal__time-select {
+  width: 70px;
+  padding: 10px 8px;
+  background: #1a1a1a;
+  border: 2px solid #ff6600;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 1rem;
+  text-align: center;
+  font-weight: 600;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  font-family: inherit;
+}
+
+.horarios-modal__time-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(220, 60, 60, 0.3);
+  background: #1d1919;
+}
+
+.horarios-modal__time-separator {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.horarios-modal__remove-turno {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 68, 68, 0.15);
+  border: 1px solid rgba(255, 68, 68, 0.3);
+  border-radius: 8px;
+  color: #ff4444;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  transition: all 0.3s;
+  margin-bottom: 2px;
+}
+
+.horarios-modal__remove-turno:hover {
+  background: rgba(255, 68, 68, 0.25);
+  transform: scale(1.05);
+}
+
+/* Day actions */
+.horarios-modal__day-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.horarios-modal__add-turno {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(76, 175, 80, 0.15);
+  border: 1px solid rgba(76, 175, 80, 0.4);
+  border-radius: 20px;
+  color: #4caf50;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.horarios-modal__add-turno:hover {
+  background: rgba(76, 175, 80, 0.25);
+}
+
+.horarios-modal__apply-all {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(33, 150, 243, 0.15);
+  border: 1px solid rgba(33, 150, 243, 0.4);
+  border-radius: 20px;
+  color: #2196f3;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.horarios-modal__apply-all:hover {
+  background: rgba(33, 150, 243, 0.25);
+}
+
+/* Footer */
+.horarios-modal__footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 15px 25px;
+  border-top: 1px solid rgba(255, 102, 0, 0.2);
+}
+
+.horarios-modal__cancel {
+  padding: 10px 25px;
+  background: transparent;
+  border: 2px solid #555;
+  border-radius: 10px;
+  color: #ccc;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.horarios-modal__cancel:hover {
+  border-color: #888;
+  color: #fff;
+}
+
+.horarios-modal__save {
+  padding: 10px 25px;
+  background: #ff6600;
+  border: none;
+  border-radius: 10px;
+  color: #000;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.horarios-modal__save:hover {
+  background: #ff8533;
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px rgba(255, 102, 0, 0.3);
 }
 
 /* Grid de imágenes */
@@ -517,6 +896,14 @@
   .publicar-negocio__images-grid {
     grid-template-columns: repeat(3, 1fr);
   }
+
+  .horarios-modal__container {
+    max-height: 90vh;
+  }
+
+  .horarios-modal__turno {
+    gap: 12px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -528,15 +915,30 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .publicar-negocio__dias {
+  .publicar-negocio__dias-pills {
     gap: 8px;
   }
 
-  .publicar-negocio__dia-checkbox {
-    padding: 6px 10px;
+  .publicar-negocio__dia-pill {
+    width: 45px;
+    height: 45px;
+    font-size: 0.7rem;
   }
 
-  .publicar-negocio__dia-checkbox span {
-    font-size: 0.8rem;
+  .horarios-modal__time-select {
+    width: 60px;
+    padding: 8px 5px;
+    font-size: 0.9rem;
+  }
+
+  .horarios-modal__turno {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .horarios-modal__day-actions {
+    flex-direction: column;
+    align-items: center;
   }
 }

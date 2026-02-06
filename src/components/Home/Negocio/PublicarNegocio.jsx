@@ -27,6 +27,7 @@ const PublicarNegocio = () => {
     showAuthModal,
     handleChange,
     handleDiaChange,
+    handleSaveHorarios,
     handleImageChange,
     removeImage,
     handleFieldFocus,
@@ -75,8 +76,8 @@ const PublicarNegocio = () => {
         {/* Horarios */}
         <HorariosSection
           formData={formData}
-          onChange={handleChange}
           onDiaChange={handleDiaChange}
+          onSaveHorarios={handleSaveHorarios}
           onFieldFocus={handleFieldFocus}
         />
 
