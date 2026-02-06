@@ -2,16 +2,93 @@ import {
   createContext,
   useContext,
   useEffect,
-  useState,
+  useReducer,
   useRef,
   useCallback,
+  useMemo,
 } from "react";
 import { supabase } from "../lib/supabase";
 import { ROLES, checkBanStatus } from "../lib/database";
-import Toast from "../components/UI/Toast";
+import { useToast } from "./ToastContext";
 import BannedUserCard from "../components/UI/BannedUserCard";
 
-const AuthContext = createContext({});
+// ──────────────────────────────────────────────────────────────
+// HELPER: Logger condicional (solo en dev)
+// ──────────────────────────────────────────────────────────────
+const log = {
+  info: (...args) => import.meta.env.DEV && console.log("[Auth]", ...args),
+  warn: (...args) => console.warn("[Auth]", ...args),
+  error: (...args) => console.error("[Auth]", ...args),
+};
+
+// ──────────────────────────────────────────────────────────────
+// REDUCER: Un solo dispatch para user + role = un solo re-render
+// ──────────────────────────────────────────────────────────────
+const AUTH_ACTIONS = {
+  SET_AUTH: "SET_AUTH", // user + role en un solo dispatch
+  CLEAR_AUTH: "CLEAR_AUTH", // logout
+  SET_LOADING: "SET_LOADING",
+  INITIALIZED: "INITIALIZED",
+  SET_BAN: "SET_BAN",
+  CLEAR_BAN: "CLEAR_BAN",
+};
+
+const initialState = {
+  user: null,
+  userRole: ROLES.USER,
+  loading: true,
+  initialized: false,
+  banInfo: null,
+  showBanCard: false,
+};
+
+function authReducer(state, action) {
+  switch (action.type) {
+    case AUTH_ACTIONS.SET_AUTH:
+      return {
+        ...state,
+        user: action.payload.user,
+        userRole: action.payload.role ?? state.userRole,
+        loading: false,
+      };
+
+    case AUTH_ACTIONS.CLEAR_AUTH:
+      return {
+        ...state,
+        user: null,
+        userRole: ROLES.USER,
+        loading: false,
+      };
+
+    case AUTH_ACTIONS.SET_LOADING:
+      return { ...state, loading: action.payload };
+
+    case AUTH_ACTIONS.INITIALIZED:
+      return { ...state, initialized: true, loading: false };
+
+    case AUTH_ACTIONS.SET_BAN:
+      return {
+        ...state,
+        banInfo: action.payload,
+        showBanCard: true,
+      };
+
+    case AUTH_ACTIONS.CLEAR_BAN:
+      return {
+        ...state,
+        banInfo: null,
+        showBanCard: false,
+      };
+
+    default:
+      return state;
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+// CONTEXTO
+// ──────────────────────────────────────────────────────────────
+const AuthContext = createContext(null);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -21,58 +98,61 @@ export const useAuth = () => {
   return context;
 };
 
+/**
+ * AuthProvider refactorizado
+ *
+ * MEJORAS vs versión anterior:
+ * 1. useReducer → user + role se actualizan en UN solo re-render
+ * 2. Toast separado → cambios de toast ya no re-renderizan consumidores de auth
+ * 3. Funciones con useCallback → referencias estables en el value
+ * 4. console.log solo en DEV → sin ruido en producción
+ * 5. Visibilitychange usa ref → no se re-registra al cambiar user
+ * 6. useMemo en el value → evita object nuevo cada render si nada cambió
+ */
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [userRole, setUserRole] = useState(ROLES.USER);
-  const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState(null);
-  const [initialized, setInitialized] = useState(false);
+  const [state, dispatch] = useReducer(authReducer, initialState);
+  const { user, userRole, loading, initialized, banInfo, showBanCard } = state;
 
-  // Estado para usuario baneado
-  const [banInfo, setBanInfo] = useState(null);
-  const [showBanCard, setShowBanCard] = useState(false);
+  // Toast vive en su propio contexto ahora
+  const { showToast } = useToast();
 
-  // Refs para evitar consultas duplicadas
+  // ── Refs ──────────────────────────────────────────────────
   const roleCache = useRef({ userId: null, role: ROLES.USER });
   const isLoadingRole = useRef(false);
   const isMountedRef = useRef(true);
+  // Ref para user en el listener de visibilidad (evita re-registrar el listener)
+  const userRef = useRef(user);
+  const showToastRef = useRef(showToast);
 
-  const showToast = useCallback((message, type = "success") => {
-    setToast({ message, type });
-  }, []);
+  // Mantener refs sincronizadas sin causar re-renders
+  useEffect(() => {
+    userRef.current = user;
+    showToastRef.current = showToast;
+  });
 
-  const closeToast = useCallback(() => {
-    setToast(null);
-  }, []);
+  // ── Cargar rol con cache y timeout ────────────────────────
+  const loadUserRole = useCallback(async (userId, forceRefresh = false) => {
+    if (!userId) return ROLES.USER;
 
-  // Función para cargar el rol con cache y timeout
-  const loadUserRole = async (userId, forceRefresh = false) => {
-    if (!userId) {
-      return ROLES.USER;
-    }
-
-    // Si ya tenemos el rol en cache para este usuario, usarlo
+    // Cache hit
     if (!forceRefresh && roleCache.current.userId === userId) {
-      console.log("Usando rol desde cache:", roleCache.current.role);
+      log.info("Rol desde cache:", roleCache.current.role);
       return roleCache.current.role;
     }
 
     // Evitar consultas simultáneas
     if (isLoadingRole.current) {
-      console.log("Ya hay una consulta en progreso, esperando...");
-      // Esperar un poco y devolver el cache actual
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((r) => setTimeout(r, 100));
       return roleCache.current.role;
     }
 
     isLoadingRole.current = true;
 
     try {
-      console.log("Cargando rol desde DB para:", userId);
+      log.info("Cargando rol desde DB para:", userId);
 
-      // Crear una promesa con timeout de 5 segundos
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Timeout")), 5000);
+        setTimeout(() => reject(new Error("Timeout cargando rol")), 5000);
       });
 
       const queryPromise = supabase
@@ -87,33 +167,30 @@ export const AuthProvider = ({ children }) => {
       ]);
 
       if (error) {
-        console.error("Error al obtener rol:", error);
+        log.error("Error al obtener rol:", error);
         return roleCache.current.userId === userId
           ? roleCache.current.role
           : ROLES.USER;
       }
 
       const role = data?.rol || ROLES.USER;
-
-      // Guardar en cache
       roleCache.current = { userId, role };
-      console.log("Rol obtenido y cacheado:", role);
+      log.info("Rol cacheado:", role);
 
       return role;
     } catch (error) {
-      console.error("Error/Timeout al cargar rol:", error);
+      log.error("Error/Timeout al cargar rol:", error);
       return roleCache.current.userId === userId
         ? roleCache.current.role
         : ROLES.USER;
     } finally {
       isLoadingRole.current = false;
     }
-  };
+  }, []);
 
-  // Inicialización - solo se ejecuta una vez
+  // ── Inicialización (una sola vez) ─────────────────────────
   useEffect(() => {
     if (initialized) return;
-
     isMountedRef.current = true;
 
     const initialize = async () => {
@@ -121,122 +198,127 @@ export const AuthProvider = ({ children }) => {
         const {
           data: { session },
         } = await supabase.auth.getSession();
-
         if (!isMountedRef.current) return;
 
         if (session?.user) {
-          // Verificar si el usuario está baneado al inicializar
+          // Verificar ban
           const banStatus = await checkBanStatus(session.user.id);
-
           if (!isMountedRef.current) return;
 
           if (banStatus.isBanned) {
-            setBanInfo(banStatus);
-            setShowBanCard(true);
+            dispatch({ type: AUTH_ACTIONS.SET_BAN, payload: banStatus });
             await supabase.auth.signOut();
             if (isMountedRef.current) {
-              setLoading(false);
-              setInitialized(true);
+              dispatch({ type: AUTH_ACTIONS.INITIALIZED });
             }
             return;
           }
 
-          setUser(session.user);
+          // Cargar user + role en un solo dispatch
           const role = await loadUserRole(session.user.id);
           if (isMountedRef.current) {
-            setUserRole(role);
+            dispatch({
+              type: AUTH_ACTIONS.SET_AUTH,
+              payload: { user: session.user, role },
+            });
           }
         }
       } catch (error) {
-        console.error("Error inicializando auth:", error);
+        log.error("Error inicializando:", error);
       } finally {
         if (isMountedRef.current) {
-          setLoading(false);
-          setInitialized(true);
+          dispatch({ type: AUTH_ACTIONS.INITIALIZED });
         }
       }
     };
 
     initialize();
-
     return () => {
       isMountedRef.current = false;
     };
-  }, [initialized]);
+  }, [initialized, loadUserRole]);
 
-  // Listener de cambios de auth
+  // ── Listener de auth events ───────────────────────────────
   useEffect(() => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // Ignorar durante la inicialización
-      if (!initialized) return;
+      if (!initialized || event === "INITIAL_SESSION") return;
 
-      // Ignorar INITIAL_SESSION
-      if (event === "INITIAL_SESSION") return;
-
-      console.log("Auth event:", event);
+      log.info("Auth event:", event);
 
       switch (event) {
         case "SIGNED_IN":
           if (session?.user) {
-            // Verificar si el usuario está baneado
             const banStatus = await checkBanStatus(session.user.id);
 
             if (banStatus.isBanned) {
-              // Usuario baneado - cerrar sesión y mostrar card
-              console.log("Usuario baneado detectado, cerrando sesión...");
-              setBanInfo(banStatus);
-              setShowBanCard(true);
+              log.info("Usuario baneado detectado");
+              dispatch({ type: AUTH_ACTIONS.SET_BAN, payload: banStatus });
               await supabase.auth.signOut();
               return;
             }
 
-            setUser(session.user);
-            // Solo cargar rol si es un usuario diferente
-            if (roleCache.current.userId !== session.user.id) {
-              const role = await loadUserRole(session.user.id);
-              setUserRole(role);
-            } else {
-              // Usar rol cacheado
-              setUserRole(roleCache.current.role);
-            }
-            showToast("¡Has iniciado sesión correctamente!", "success");
+            // Cargar rol (o usar cache) + set user en un dispatch
+            const role =
+              roleCache.current.userId !== session.user.id
+                ? await loadUserRole(session.user.id)
+                : roleCache.current.role;
+
+            dispatch({
+              type: AUTH_ACTIONS.SET_AUTH,
+              payload: { user: session.user, role },
+            });
+
+            showToastRef.current?.(
+              "¡Has iniciado sesión correctamente!",
+              "success",
+            );
           }
           break;
 
         case "SIGNED_OUT":
-          // Solo limpiar si no se hizo ya (el estado local puede estar ya limpio)
-          // Esto evita doble limpieza y toast duplicado
-          if (user !== null) {
-            setUser(null);
-            setUserRole(ROLES.USER);
+          // Solo limpiar si había un user (evitar toast duplicado)
+          if (userRef.current !== null) {
             roleCache.current = { userId: null, role: ROLES.USER };
-            showToast("Has cerrado sesión correctamente", "success");
+            dispatch({ type: AUTH_ACTIONS.CLEAR_AUTH });
+            showToastRef.current?.(
+              "Has cerrado sesión correctamente",
+              "success",
+            );
           }
           break;
 
         case "TOKEN_REFRESHED":
-          // Solo actualizar el usuario, NO recargar el rol
           if (session?.user) {
-            setUser(session.user);
-            // Mantener el rol actual del cache
-            if (roleCache.current.userId === session.user.id) {
-              setUserRole(roleCache.current.role);
-            }
+            // Actualizar user, mantener rol
+            dispatch({
+              type: AUTH_ACTIONS.SET_AUTH,
+              payload: {
+                user: session.user,
+                role:
+                  roleCache.current.userId === session.user.id
+                    ? roleCache.current.role
+                    : undefined,
+              },
+            });
           } else {
-            // TOKEN_REFRESHED sin sesión válida = refresh falló
-            console.warn("[Auth] TOKEN_REFRESHED pero sin sesión válida, forzando signOut");
-            setUser(null);
-            setUserRole(ROLES.USER);
+            log.warn("TOKEN_REFRESHED sin sesión válida, forzando signOut");
             roleCache.current = { userId: null, role: ROLES.USER };
-            showToast("Tu sesión ha expirado. Por favor inicia sesión nuevamente.", "error");
+            dispatch({ type: AUTH_ACTIONS.CLEAR_AUTH });
+            showToastRef.current?.(
+              "Tu sesión ha expirado. Por favor inicia sesión nuevamente.",
+              "error",
+            );
           }
           break;
 
         case "USER_UPDATED":
           if (session?.user) {
-            setUser(session.user);
+            dispatch({
+              type: AUTH_ACTIONS.SET_AUTH,
+              payload: { user: session.user },
+            });
           }
           break;
 
@@ -246,182 +328,196 @@ export const AuthProvider = ({ children }) => {
     });
 
     return () => subscription.unsubscribe();
-  }, [initialized]);
+  }, [initialized, loadUserRole]);
 
-  // Revalidar sesión cuando la pestaña vuelve a estar visible
+  // ── Revalidar sesión al volver al tab ─────────────────────
+  // Usa userRef para no re-registrar el listener cada vez que cambia user
   useEffect(() => {
     if (!initialized) return;
 
     const handleVisibilityChange = async () => {
       if (document.visibilityState !== "visible") return;
-      if (!user) return; // No hay usuario logueado, nada que revalidar
+      if (!userRef.current) return;
 
       try {
-        console.log("[Auth] Tab visible, revalidando sesión...");
-        const { data: { session }, error } = await supabase.auth.getSession();
+        log.info("Tab visible, revalidando sesión...");
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
 
         if (error || !session) {
-          console.warn("[Auth] Sesión inválida al volver al tab, intentando refresh...");
-          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          log.warn("Sesión inválida, intentando refresh...");
+          const { data: refreshData, error: refreshError } =
+            await supabase.auth.refreshSession();
 
           if (refreshError || !refreshData?.session) {
-            console.error("[Auth] No se pudo recuperar la sesión, forzando signOut");
-            setUser(null);
-            setUserRole(ROLES.USER);
+            log.error("No se pudo recuperar la sesión");
             roleCache.current = { userId: null, role: ROLES.USER };
-            showToast("Tu sesión ha expirado. Por favor inicia sesión nuevamente.", "error");
+            dispatch({ type: AUTH_ACTIONS.CLEAR_AUTH });
+            showToastRef.current?.(
+              "Tu sesión ha expirado. Por favor inicia sesión nuevamente.",
+              "error",
+            );
             await supabase.auth.signOut().catch(() => {});
             return;
           }
 
           // Refresh exitoso
-          setUser(refreshData.session.user);
-          console.log("[Auth] Sesión recuperada exitosamente");
+          dispatch({
+            type: AUTH_ACTIONS.SET_AUTH,
+            payload: { user: refreshData.session.user },
+          });
+          log.info("Sesión recuperada");
         } else {
-          // Verificar si el token está por expirar (< 2 minutos)
+          // Refrescar preventivamente si le quedan menos de 2 minutos
           const expiresAt = session.expires_at;
           const now = Math.floor(Date.now() / 1000);
-          if (expiresAt && (expiresAt - now) < 120) {
-            console.log("[Auth] Token cerca de expirar, refrescando preventivamente...");
+          if (expiresAt && expiresAt - now < 120) {
+            log.info("Token cerca de expirar, refrescando preventivamente...");
             const { data: refreshData } = await supabase.auth.refreshSession();
             if (refreshData?.session) {
-              setUser(refreshData.session.user);
+              dispatch({
+                type: AUTH_ACTIONS.SET_AUTH,
+                payload: { user: refreshData.session.user },
+              });
             }
           }
         }
       } catch (err) {
-        console.error("[Auth] Error revalidando sesión:", err);
+        log.error("Error revalidando sesión:", err);
       }
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
+    return () =>
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [initialized, user]);
+  }, [initialized]); // ← SIN user → no se re-registra
 
-  const signUp = async (email, password, metadata = {}) => {
+  // ── Auth Actions (todas con useCallback para referencia estable) ──
+
+  const signUp = useCallback(async (email, password, metadata = {}) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: metadata },
     });
     return { data, error };
-  };
+  }, []);
 
-  const signIn = async (email, password) => {
+  const signIn = useCallback(async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     return { data, error };
-  };
+  }, []);
 
-  const signOut = async () => {
-    // Limpiar estado local PRIMERO para evitar UI bloqueada
-    // Esto asegura que la UI responda inmediatamente
-    const previousUser = user;
-    const previousRole = userRole;
-
-    // Limpiar cache y estados inmediatamente
+  const signOut = useCallback(async () => {
+    // Limpiar estado local PRIMERO para UI responsiva inmediata
     roleCache.current = { userId: null, role: ROLES.USER };
-    isLoadingRole.current = false; // Cancelar cualquier carga de rol en progreso
-    setUser(null);
-    setUserRole(ROLES.USER);
+    isLoadingRole.current = false;
+    dispatch({ type: AUTH_ACTIONS.CLEAR_AUTH });
 
     try {
-      // Crear promesa con timeout de 5 segundos
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Timeout al cerrar sesión")), 5000);
+        setTimeout(() => reject(new Error("Timeout")), 5000);
       });
 
-      const signOutPromise = supabase.auth.signOut();
-
-      // Race entre signOut y timeout
-      const { error } = await Promise.race([signOutPromise, timeoutPromise]);
+      const { error } = await Promise.race([
+        supabase.auth.signOut(),
+        timeoutPromise,
+      ]);
 
       if (error) {
-        console.error("Error en signOut:", error);
-        // Mostrar toast de éxito de todos modos porque ya limpiamos el estado local
-        showToast("Sesión cerrada localmente", "success");
-        return { error };
+        log.error("Error en signOut:", error);
       }
-
-      return { error: null };
+      return { error: error || null };
     } catch (error) {
-      // Si hay timeout o error de red, la sesión ya está cerrada localmente
-      console.error("Error/Timeout en signOut:", error);
-      showToast("Sesión cerrada", "success");
-
-      // Intentar limpiar la sesión de Supabase en segundo plano sin bloquear
-      supabase.auth.signOut().catch(() => {
-        // Ignorar errores silenciosamente en el retry
-      });
-
+      log.error("Timeout en signOut:", error);
+      // Reintentar en background sin bloquear
+      supabase.auth.signOut().catch(() => {});
       return { error };
     }
-  };
+  }, []);
 
-  const signInWithGoogle = async () => {
-    // Guardar la URL actual para redirigir después del login
+  const signInWithGoogle = useCallback(async () => {
+    // Guardar URL para redirigir después del login
     const currentPath = window.location.pathname + window.location.search;
-    if (currentPath !== '/' && currentPath !== '/auth/callback') {
+    if (currentPath !== "/" && currentPath !== "/auth/callback") {
       sessionStorage.setItem("authReturnUrl", currentPath);
     }
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { 
-        // Usar ruta dedicada de callback para procesar la autenticación
+      options: {
         redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
     return { data, error };
-  };
+  }, []);
 
-  const resetPassword = async (email) => {
+  const resetPassword = useCallback(async (email) => {
     const { data, error } = await supabase.auth.resetPasswordForEmail(email);
     return { data, error };
-  };
+  }, []);
 
-  const refreshRole = async () => {
-    if (user?.id) {
-      const role = await loadUserRole(user.id, true); // forceRefresh = true
-      setUserRole(role);
+  const refreshRole = useCallback(async () => {
+    if (userRef.current?.id) {
+      const role = await loadUserRole(userRef.current.id, true);
+      dispatch({
+        type: AUTH_ACTIONS.SET_AUTH,
+        payload: { user: userRef.current, role },
+      });
       return role;
     }
     return ROLES.USER;
-  };
+  }, [loadUserRole]);
 
-  // Cerrar tarjeta de baneo
-  const closeBanCard = () => {
-    setShowBanCard(false);
-    setBanInfo(null);
-  };
+  const closeBanCard = useCallback(() => {
+    dispatch({ type: AUTH_ACTIONS.CLEAR_BAN });
+  }, []);
 
-  const value = {
-    user,
-    userRole,
-    loading,
-    isAuthenticated: !!user,
-    isAdmin: userRole === ROLES.ADMIN,
-    isModerator: userRole === ROLES.ADMIN || userRole === ROLES.MODERATOR,
-    signUp,
-    signIn,
-    signOut,
-    signInWithGoogle,
-    resetPassword,
-    showToast,
-    refreshRole,
-  };
+  // ── Context value (useMemo para evitar object nuevo si nada cambió) ──
+  const value = useMemo(
+    () => ({
+      // Estado
+      user,
+      userRole,
+      loading,
+      isAuthenticated: !!user,
+      isAdmin: userRole === ROLES.ADMIN,
+      isModerator: userRole === ROLES.ADMIN || userRole === ROLES.MODERATOR,
+
+      // Acciones de auth
+      signUp,
+      signIn,
+      signOut,
+      signInWithGoogle,
+      resetPassword,
+      refreshRole,
+
+      // Compatibilidad: exponer showToast desde aquí también
+      // para no romper componentes existentes que hacen useAuth().showToast
+      showToast,
+    }),
+    [
+      user,
+      userRole,
+      loading,
+      signUp,
+      signIn,
+      signOut,
+      signInWithGoogle,
+      resetPassword,
+      refreshRole,
+      showToast,
+    ],
+  );
 
   return (
     <AuthContext.Provider value={value}>
       {children}
-      {toast && (
-        <Toast message={toast.message} type={toast.type} onClose={closeToast} />
-      )}
       {showBanCard && banInfo && (
         <BannedUserCard
           reason={banInfo.reason}

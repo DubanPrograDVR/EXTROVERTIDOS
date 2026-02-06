@@ -10,7 +10,7 @@ import {
   faEdit,
 } from "@fortawesome/free-solid-svg-icons";
 import { getCategories, updateEvent } from "../../../lib/database";
-import { useAuth } from "../../../context/AuthContext";
+import { useToast } from "../../../context/ToastContext";
 import PublicationModal from "../../Superguia/PublicationModal";
 import { UserEditModal } from "./editar";
 import "./styles/section.css";
@@ -22,7 +22,7 @@ export default function PerfilPublicaciones({
   onPublicationUpdate,
 }) {
   const navigate = useNavigate();
-  const { showToast } = useAuth();
+  const { showToast } = useToast();
 
   // Estados para los modales
   const [viewModal, setViewModal] = useState({
