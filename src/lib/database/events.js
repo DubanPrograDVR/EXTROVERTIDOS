@@ -6,43 +6,104 @@
 import { supabase } from "../supabase";
 
 /**
+ * Detecta si un error de Supabase es de autenticación
+ * @param {Object} error - Error de Supabase
+ * @returns {boolean}
+ */
+const isSupabaseAuthError = (error) => {
+  if (!error) return false;
+  const msg = (error.message || "").toLowerCase();
+  const code = String(error.code || error.status || "");
+  return (
+    msg.includes("jwt") ||
+    msg.includes("token") ||
+    msg.includes("expired") ||
+    msg.includes("invalid claim") ||
+    msg.includes("not authenticated") ||
+    msg.includes("unauthorized") ||
+    msg.includes("permission denied") ||
+    code === "401" ||
+    code === "403" ||
+    code === "PGRST301"
+  );
+};
+
+/**
+ * Envuelve un error de Supabase en un Error con mensaje claro para auth
+ * @param {Object} error - Error de Supabase
+ * @param {string} defaultMsg - Mensaje por defecto
+ * @returns {Error}
+ */
+const wrapSupabaseError = (error, defaultMsg) => {
+  if (isSupabaseAuthError(error)) {
+    const authError = new Error("Tu sesión ha expirado. Por favor inicia sesión nuevamente.");
+    authError.code = "AUTH_EXPIRED";
+    authError.status = 401;
+    return authError;
+  }
+  const wrapped = new Error(error.message || defaultMsg);
+  wrapped.code = error.code;
+  wrapped.status = error.status;
+  return wrapped;
+};
+
+/**
  * Asegura que el perfil del usuario exista antes de crear un evento
  * @param {string} userId - ID del usuario
  */
 const ensureProfileExists = async (userId) => {
-  // Verificar si el perfil existe
-  const { data: profile, error: checkError } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("id", userId)
-    .single();
+  try {
+    // Verificar si el perfil existe
+    const { data: profile, error: checkError } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", userId)
+      .single();
 
-  // Si no existe el perfil, crearlo
-  if (checkError?.code === "PGRST116" || !profile) {
-    // Obtener datos del usuario desde auth
-    const { data: authData } = await supabase.auth.getUser();
-    const user = authData?.user;
+    // Si hay un error de auth, propagar inmediatamente
+    if (checkError && isSupabaseAuthError(checkError)) {
+      throw wrapSupabaseError(checkError, "Error verificando perfil");
+    }
 
-    if (user) {
-      const { error: insertError } = await supabase.from("profiles").insert([
-        {
-          id: userId,
-          email: user.email,
-          nombre:
-            user.user_metadata?.full_name ||
-            user.user_metadata?.name ||
-            user.email?.split("@")[0] ||
-            "Usuario",
-          avatar_url: user.user_metadata?.avatar_url || null,
-        },
-      ]);
+    // Si no existe el perfil, crearlo
+    if (checkError?.code === "PGRST116" || !profile) {
+      // Obtener datos del usuario desde auth
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        console.warn("No se pudo obtener datos del usuario para crear perfil:", authError);
+        return; // No bloquear si no podemos crear perfil
+      }
+      
+      const user = authData?.user;
 
-      if (insertError && insertError.code !== "23505") {
-        // 23505 = ya existe (ignorar)
-        console.error("Error creando perfil:", insertError);
-        throw new Error("No se pudo crear el perfil del usuario");
+      if (user) {
+        const { error: insertError } = await supabase.from("profiles").insert([
+          {
+            id: userId,
+            email: user.email,
+            nombre:
+              user.user_metadata?.full_name ||
+              user.user_metadata?.name ||
+              user.email?.split("@")[0] ||
+              "Usuario",
+            avatar_url: user.user_metadata?.avatar_url || null,
+          },
+        ]);
+
+        if (insertError && insertError.code !== "23505") {
+          // 23505 = ya existe (ignorar)
+          console.error("Error creando perfil:", insertError);
+          // No bloquear el flujo por un error de perfil
+        }
       }
     }
+  } catch (error) {
+    // Re-lanzar errores de auth, ignorar otros errores de perfil
+    if (error.code === "AUTH_EXPIRED" || isSupabaseAuthError(error)) {
+      throw error;
+    }
+    console.warn("Error no crítico en ensureProfileExists:", error);
   }
 };
 
@@ -89,7 +150,7 @@ export const createEvent = async (eventData) => {
 
   if (error) {
     console.error("Error al crear evento:", error);
-    throw error;
+    throw wrapSupabaseError(error, "Error al crear el evento");
   }
 
   // Crear notificación de "en revisión" para el autor
@@ -378,7 +439,7 @@ export const updateEvent = async (eventId, eventData) => {
 
   if (error) {
     console.error("Error al actualizar evento:", error);
-    throw error;
+    throw wrapSupabaseError(error, "Error al actualizar el evento");
   }
 
   return data;

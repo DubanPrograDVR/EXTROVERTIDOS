@@ -1,0 +1,505 @@
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "../../../../context/AuthContext";
+import { getCategories } from "../../../../lib/database";
+import { supabase } from "../../../../lib/supabase";
+import { INITIAL_FORM_STATE } from "../constants";
+
+// Hooks especializados
+import useFormValidation from "./useFormValidation";
+import useImageManager from "./useImageManager";
+import useDraftManager from "./useDraftManager";
+import useEventEditor from "./useEventEditor";
+import useEventSubmit from "./useEventSubmit";
+
+/**
+ * Hook principal para el formulario de publicación de eventos
+ *
+ * ARQUITECTURA MODULAR:
+ * Este hook orquesta varios hooks especializados:
+ * - useFormValidation: Validación de campos
+ * - useImageManager: Gestión de imágenes
+ * - useDraftManager: Borradores
+ * - useEventEditor: Carga de eventos para edición
+ * - useEventSubmit: Envío del formulario
+ *
+ * PROTECCIONES:
+ * - AbortController para operaciones cancelables
+ * - Refs estables para funciones de callback
+ * - Cleanup automático al desmontar
+ * - Detección de sesión expirada
+ * - Protección contra double-submit
+ *
+ * ESCALABILIDAD:
+ * - Fácil de extender con nuevos campos
+ * - Validación declarativa via schema
+ * - Hooks independientes y testeables
+ *
+ * @returns {Object} Estado y funciones del formulario
+ */
+const usePublicarFormV2 = () => {
+  // === CONTEXTO Y NAVEGACIÓN ===
+  const {
+    user,
+    isAuthenticated,
+    isAdmin,
+    isModerator,
+    signInWithGoogle,
+    showToast,
+  } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // === REFS ESTABLES ===
+  const showToastRef = useRef(showToast);
+  const isMountedRef = useRef(true);
+
+  // Mantener refs actualizadas
+  useEffect(() => {
+    showToastRef.current = showToast;
+  }, [showToast]);
+
+  // Cleanup al desmontar
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  // === ESTADO DEL FORMULARIO ===
+  const [formData, setFormData] = useState(INITIAL_FORM_STATE);
+  const [categories, setCategories] = useState([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  // === HOOKS ESPECIALIZADOS ===
+
+  // Hook de validación
+  const {
+    errors,
+    validateForm,
+    clearFieldError,
+    clearAllErrors,
+    setFieldError,
+    touchField,
+    validateFieldDebounced,
+  } = useFormValidation();
+
+  // Hook de imágenes
+  const {
+    newImages,
+    existingImages,
+    previewUrls,
+    error: imageError,
+    isCompressing,
+    addImages,
+    removeImage: removeImageFromManager,
+    clearAllImages,
+    setExistingImages,
+    imageToBase64,
+    totalImages,
+    remainingSlots,
+  } = useImageManager();
+
+  // Hook de borradores
+  const draftManager = useDraftManager({
+    userId: user?.id,
+    isAuthenticated,
+    showToast,
+  });
+
+  // Hook de edición
+  const {
+    isEditing,
+    editEventId,
+    loadingEvent,
+    eventFormData,
+    existingImages: editorExistingImages,
+    resetEditState,
+  } = useEventEditor({
+    user,
+    isAuthenticated,
+    isAdmin,
+    showToast,
+  });
+
+  // Función de validación para el submit hook
+  const validateFormForSubmit = useCallback(() => {
+    const result = validateForm(formData, {
+      checkImages: true,
+      existingImagesCount: existingImages.length,
+      newImagesCount: newImages.length,
+      isEditing,
+    });
+    return result.isValid;
+  }, [
+    validateForm,
+    formData,
+    existingImages.length,
+    newImages.length,
+    isEditing,
+  ]);
+
+  // Hook de submit
+  const {
+    isSubmitting,
+    uploadProgress,
+    handleSubmit: submitEvent,
+    cancelSubmit,
+    cleanup: cleanupSubmit,
+  } = useEventSubmit({
+    user,
+    isAuthenticated,
+    isAdmin,
+    isModerator,
+    showToast,
+    validateForm: validateFormForSubmit,
+    setShowAuthModal,
+  });
+
+  // === CARGA INICIAL DE CATEGORÍAS ===
+  useEffect(() => {
+    let isCancelled = false;
+
+    const loadCategories = async () => {
+      try {
+        const data = await getCategories();
+        if (!isCancelled && isMountedRef.current) {
+          setCategories(data || []);
+        }
+      } catch (error) {
+        console.error("Error cargando categorías:", error);
+        if (!isCancelled && isMountedRef.current) {
+          showToastRef.current?.("Error al cargar categorías", "error");
+        }
+      } finally {
+        if (!isCancelled && isMountedRef.current) {
+          setLoadingCategories(false);
+        }
+      }
+    };
+
+    loadCategories();
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  // === CARGAR BORRADOR DESDE STORAGE ===
+  useEffect(() => {
+    const draft = draftManager.loadFromStorage();
+    if (draft?.data) {
+      setFormData((prev) => ({
+        ...prev,
+        ...draft.data,
+        imagenes: [], // Las imágenes se manejan separadamente
+      }));
+
+      // Cargar preview de imágenes si existe
+      if (draft.data.imagenes_preview?.length > 0) {
+        // Las imágenes del borrador son URLs o base64
+        // No las cargamos como nuevas imágenes, solo como preview
+      }
+
+      showToastRef.current?.("Borrador cargado exitosamente", "success");
+    }
+  }, [draftManager.loadFromStorage]);
+
+  // === SINCRONIZAR DATOS DE EVENTO EN EDICIÓN ===
+  useEffect(() => {
+    if (eventFormData) {
+      setFormData({
+        ...INITIAL_FORM_STATE,
+        ...eventFormData,
+      });
+    }
+  }, [eventFormData]);
+
+  // Sincronizar imágenes existentes desde editor
+  useEffect(() => {
+    if (editorExistingImages?.length > 0) {
+      setExistingImages(editorExistingImages);
+    }
+  }, [editorExistingImages, setExistingImages]);
+
+  // === HANDLERS ===
+
+  /**
+   * Verifica autenticación al enfocar campos
+   */
+  const handleFieldFocus = useCallback(() => {
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+    }
+  }, [isAuthenticated]);
+
+  /**
+   * Login con Google
+   */
+  const handleGoogleLogin = useCallback(async () => {
+    setIsGoogleLoading(true);
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) {
+        console.error("Error al iniciar sesión con Google:", error);
+        showToastRef.current?.("Error al iniciar sesión con Google", "error");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      if (isMountedRef.current) {
+        setIsGoogleLoading(false);
+      }
+    }
+  }, [signInWithGoogle]);
+
+  /**
+   * Maneja cambios en inputs del formulario
+   */
+  const handleChange = useCallback(
+    (e) => {
+      const { name, value, type } = e.target;
+
+      // Manejar checkboxes
+      if (type === "checkbox") {
+        setFormData((prev) => ({
+          ...prev,
+          [name]: value,
+        }));
+        return;
+      }
+
+      // Manejar redes sociales (campos anidados)
+      if (name.startsWith("redes_")) {
+        const socialNetwork = name.replace("redes_", "");
+        setFormData((prev) => ({
+          ...prev,
+          redes_sociales: {
+            ...prev.redes_sociales,
+            [socialNetwork]: value,
+          },
+        }));
+        clearFieldError(name);
+        return;
+      }
+
+      // Actualizar campo normal
+      setFormData((prev) => {
+        const newData = { ...prev, [name]: value };
+
+        // Lógica especial para provincia -> comuna
+        if (name === "provincia") {
+          newData.comuna = "";
+        }
+
+        // Lógica especial para fecha_evento -> fecha_fin
+        if (name === "fecha_evento" && prev.fecha_fin) {
+          if (new Date(value) > new Date(prev.fecha_fin)) {
+            newData.fecha_fin = "";
+          }
+        }
+
+        return newData;
+      });
+
+      // Limpiar error del campo
+      clearFieldError(name);
+    },
+    [clearFieldError],
+  );
+
+  /**
+   * Maneja cambio de imágenes
+   */
+  const handleImageChange = useCallback(
+    async (e) => {
+      const files = e.target.files;
+      if (!files?.length) return;
+
+      const result = await addImages(files);
+
+      if (result.errors?.length > 0) {
+        setFieldError("imagenes", result.errors[0]);
+      } else {
+        clearFieldError("imagenes");
+      }
+    },
+    [addImages, setFieldError, clearFieldError],
+  );
+
+  /**
+   * Elimina una imagen
+   */
+  const handleRemoveImage = useCallback(
+    (index) => {
+      removeImageFromManager(index);
+      clearFieldError("imagenes");
+    },
+    [removeImageFromManager, clearFieldError],
+  );
+
+  /**
+   * Guarda borrador manualmente
+   */
+  const handleSaveDraft = useCallback(async () => {
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return false;
+    }
+
+    const selectedCategory = categories.find(
+      (c) => c.id === parseInt(formData.category_id),
+    );
+
+    // Obtener preview de imagen
+    let imagePreview = null;
+    if (previewUrls.length > 0) {
+      imagePreview = await imageToBase64(previewUrls[0]);
+    }
+
+    return draftManager.saveDraftData(formData, {
+      categoryName: selectedCategory?.nombre || "",
+      imagePreview,
+      imageCount: totalImages,
+    });
+  }, [
+    isAuthenticated,
+    categories,
+    formData,
+    previewUrls,
+    imageToBase64,
+    draftManager,
+    totalImages,
+  ]);
+
+  /**
+   * Envía el formulario
+   */
+  const handleSubmit = useCallback(
+    async (e) => {
+      e?.preventDefault();
+
+      // Preparar datos para submit
+      const submitResult = await submitEvent({
+        formData: {
+          ...formData,
+          imagenes: newImages,
+        },
+        existingImages,
+        editEventId,
+        currentDraftId: draftManager.currentDraftId,
+        onSuccess: () => {
+          // Limpiar después de éxito
+          resetForm();
+          draftManager.cleanupAfterPublish();
+        },
+      });
+
+      return submitResult;
+    },
+    [
+      formData,
+      newImages,
+      existingImages,
+      editEventId,
+      draftManager,
+      submitEvent,
+    ],
+  );
+
+  /**
+   * Resetea el formulario
+   */
+  const resetForm = useCallback(() => {
+    setFormData(INITIAL_FORM_STATE);
+    clearAllImages();
+    clearAllErrors();
+    draftManager.reset();
+    resetEditState();
+  }, [clearAllImages, clearAllErrors, draftManager, resetEditState]);
+
+  /**
+   * Cierra modal de autenticación
+   */
+  const closeAuthModal = useCallback(() => {
+    setShowAuthModal(false);
+  }, []);
+
+  // === COMPUTED VALUES ===
+
+  // Combinar errores del formulario y de imágenes
+  const allErrors = useMemo(
+    () => ({
+      ...errors,
+      ...(imageError ? { imagenes: imageError } : {}),
+    }),
+    [errors, imageError],
+  );
+
+  // Estado de carga combinado
+  const isLoading = loadingCategories || loadingEvent;
+
+  // === CLEANUP AL DESMONTAR ===
+  useEffect(() => {
+    return () => {
+      cleanupSubmit();
+      cancelSubmit();
+    };
+  }, [cleanupSubmit, cancelSubmit]);
+
+  // === RETORNO ===
+  return {
+    // Estado del formulario
+    formData,
+    categories,
+    errors: allErrors,
+
+    // Estados de carga
+    loadingCategories,
+    loadingEvent,
+    isLoading,
+    isSubmitting,
+    isCompressing,
+    isSavingDraft: draftManager.isSaving,
+    isGoogleLoading,
+
+    // Estado de edición
+    isEditing,
+    editEventId,
+
+    // Estado de imágenes
+    previewImages: previewUrls,
+    uploadProgress,
+    totalImages,
+    remainingSlots,
+
+    // Estado de UI
+    showAuthModal,
+
+    // Estado de borradores
+    currentDraftId: draftManager.currentDraftId,
+    lastSaved: draftManager.lastSaved,
+
+    // Handlers principales
+    handleFieldFocus,
+    handleGoogleLogin,
+    handleChange,
+    handleImageChange,
+    removeImage: handleRemoveImage,
+    handleSubmit,
+    handleSaveDraft,
+    closeAuthModal,
+    resetForm,
+
+    // Validación
+    touchField,
+    validateFieldDebounced,
+
+    // Cancelación
+    cancelSubmit,
+  };
+};
+
+export default usePublicarFormV2;

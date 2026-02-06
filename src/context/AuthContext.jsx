@@ -224,6 +224,13 @@ export const AuthProvider = ({ children }) => {
             if (roleCache.current.userId === session.user.id) {
               setUserRole(roleCache.current.role);
             }
+          } else {
+            // TOKEN_REFRESHED sin sesión válida = refresh falló
+            console.warn("[Auth] TOKEN_REFRESHED pero sin sesión válida, forzando signOut");
+            setUser(null);
+            setUserRole(ROLES.USER);
+            roleCache.current = { userId: null, role: ROLES.USER };
+            showToast("Tu sesión ha expirado. Por favor inicia sesión nuevamente.", "error");
           }
           break;
 
@@ -240,6 +247,59 @@ export const AuthProvider = ({ children }) => {
 
     return () => subscription.unsubscribe();
   }, [initialized]);
+
+  // Revalidar sesión cuando la pestaña vuelve a estar visible
+  useEffect(() => {
+    if (!initialized) return;
+
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState !== "visible") return;
+      if (!user) return; // No hay usuario logueado, nada que revalidar
+
+      try {
+        console.log("[Auth] Tab visible, revalidando sesión...");
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (error || !session) {
+          console.warn("[Auth] Sesión inválida al volver al tab, intentando refresh...");
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+
+          if (refreshError || !refreshData?.session) {
+            console.error("[Auth] No se pudo recuperar la sesión, forzando signOut");
+            setUser(null);
+            setUserRole(ROLES.USER);
+            roleCache.current = { userId: null, role: ROLES.USER };
+            showToast("Tu sesión ha expirado. Por favor inicia sesión nuevamente.", "error");
+            await supabase.auth.signOut().catch(() => {});
+            return;
+          }
+
+          // Refresh exitoso
+          setUser(refreshData.session.user);
+          console.log("[Auth] Sesión recuperada exitosamente");
+        } else {
+          // Verificar si el token está por expirar (< 2 minutos)
+          const expiresAt = session.expires_at;
+          const now = Math.floor(Date.now() / 1000);
+          if (expiresAt && (expiresAt - now) < 120) {
+            console.log("[Auth] Token cerca de expirar, refrescando preventivamente...");
+            const { data: refreshData } = await supabase.auth.refreshSession();
+            if (refreshData?.session) {
+              setUser(refreshData.session.user);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("[Auth] Error revalidando sesión:", err);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [initialized, user]);
 
   const signUp = async (email, password, metadata = {}) => {
     const { data, error } = await supabase.auth.signUp({

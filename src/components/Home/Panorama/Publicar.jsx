@@ -1,4 +1,4 @@
-import usePublicarForm from "./hooks/usePublicarForm";
+import usePublicarForm from "./hooks/usePublicarFormV2";
 import {
   PublicarHeader,
   PublicarInfo,
