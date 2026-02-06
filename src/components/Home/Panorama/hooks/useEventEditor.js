@@ -98,7 +98,7 @@ const useEventEditor = ({ user, isAuthenticated, isAdmin, showToast }) => {
 
         // Determinar si es multi-día
         const esMultidia =
-          event.fecha_fin && event.fecha_fin !== event.fecha_evento;
+          event.fecha_fin && event.fecha_fin !== event.fecha_evento && !event.es_recurrente;
 
         // Mapear datos del evento al formato del formulario
         const mappedFormData = {
@@ -112,6 +112,11 @@ const useEventEditor = ({ user, isAuthenticated, isAdmin, showToast }) => {
           fecha_fin: event.fecha_fin || "",
           es_multidia: esMultidia,
           mismo_horario: event.mismo_horario !== false,
+          // Campos de recurrencia
+          es_recurrente: event.es_recurrente || false,
+          dia_recurrencia: event.dia_recurrencia || "",
+          cantidad_repeticiones: event.cantidad_repeticiones || 2,
+          fechas_recurrencia: event.fechas_recurrencia || [],
           hora_inicio: event.hora_inicio || "",
           hora_fin: event.hora_fin || "",
           provincia: event.provincia || "",

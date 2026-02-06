@@ -20,6 +20,10 @@ export const useEditForm = (event, isOpen) => {
         fecha_evento: event.fecha_evento || "",
         fecha_fin: event.fecha_fin || "",
         es_multidia: event.es_multidia || false,
+        es_recurrente: event.es_recurrente || false,
+        dia_recurrencia: event.dia_recurrencia || "",
+        cantidad_repeticiones: event.cantidad_repeticiones || 2,
+        fechas_recurrencia: event.fechas_recurrencia || [],
         hora_inicio: event.hora_inicio?.slice(0, 5) || "",
         hora_fin: event.hora_fin?.slice(0, 5) || "",
         provincia: event.provincia || "",
@@ -112,6 +116,17 @@ export const useEditForm = (event, isOpen) => {
       fecha_fin: formData.es_multidia
         ? formData.fecha_fin
         : formData.fecha_evento,
+      // Campos de recurrencia
+      es_recurrente: formData.es_recurrente || false,
+      dia_recurrencia: formData.es_recurrente
+        ? formData.dia_recurrencia
+        : null,
+      cantidad_repeticiones: formData.es_recurrente
+        ? formData.cantidad_repeticiones
+        : 1,
+      fechas_recurrencia: formData.es_recurrente
+        ? formData.fechas_recurrencia
+        : [],
       // Cuando el usuario edita, el estado vuelve a pendiente para revisión
       estado: "pendiente",
     };

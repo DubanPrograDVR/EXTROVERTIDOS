@@ -57,6 +57,11 @@ export const INITIAL_FORM_STATE = {
   fecha_evento: "",
   fecha_fin: "", // Nueva: fecha de finalización para eventos multi-día
   es_multidia: false, // Nueva: indica si el evento dura más de un día
+  // Recurrencia
+  es_recurrente: false, // Indica si el evento se repite ciertos días
+  dia_recurrencia: "", // Día de la semana en que se repite
+  cantidad_repeticiones: 2, // Cuántas veces se repite (2-12)
+  fechas_recurrencia: [], // Array de fechas calculadas
   // Horarios
   hora_inicio: "",
   hora_fin: "",

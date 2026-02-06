@@ -29,8 +29,7 @@
 .date-range-picker__checkbox-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding-top: 28px; /* Alinear con el input de fecha */
+  gap: 4px;
 }
 
 .date-range-picker__checkbox-label {
@@ -263,11 +262,217 @@
   font-weight: 500;
 }
 
+/* ===== OPCIONES COLUMNA (multi-día + recurrente) ===== */
+.date-range-picker__options-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 28px; /* Alinear con el input de fecha */
+}
+
+/* ===== PANEL RECURRENTE ===== */
+.date-range-picker__expanded-content--recurrent {
+  border-color: rgba(255, 102, 0, 0.25);
+  background: rgba(255, 102, 0, 0.03);
+}
+
+.date-range-picker__expanded.open .date-range-picker__expanded-content--recurrent {
+  padding: 20px;
+}
+
+/* Día detectado */
+.date-range-picker__detected-day {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: rgba(255, 102, 0, 0.1);
+  border: 1px solid rgba(255, 102, 0, 0.3);
+  border-radius: 10px;
+  margin-bottom: 16px;
+  color: #ff8533;
+  font-size: 0.95rem;
+}
+
+.date-range-picker__detected-day svg {
+  font-size: 1.1rem;
+  color: #ff8533;
+}
+
+.date-range-picker__detected-day strong {
+  color: #ffad66;
+  font-weight: 700;
+}
+
+.date-range-picker__detected-day--warning {
+  background: rgba(255, 193, 7, 0.08);
+  border-color: rgba(255, 193, 7, 0.25);
+  color: rgba(255, 193, 7, 0.8);
+}
+
+.date-range-picker__detected-day--warning svg {
+  color: rgba(255, 193, 7, 0.7);
+}
+
+/* Selector de repeticiones */
+.date-range-picker__repeticiones {
+  margin-bottom: 16px;
+}
+
+.date-range-picker__repeticiones-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 10px;
+}
+
+.date-range-picker__repeticiones-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.date-range-picker__repeticiones-btn {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 102, 0, 0.1);
+  border: 2px solid rgba(255, 102, 0, 0.4);
+  border-radius: 10px;
+  color: #ff8533;
+  font-size: 1.3rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.date-range-picker__repeticiones-btn:hover:not(:disabled) {
+  background: rgba(255, 102, 0, 0.2);
+  border-color: #ff8533;
+  transform: scale(1.05);
+}
+
+.date-range-picker__repeticiones-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.date-range-picker__repeticiones-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  height: 38px;
+  padding: 0 10px;
+  background: rgba(255, 102, 0, 0.15);
+  border: 2px solid rgba(255, 102, 0, 0.5);
+  border-radius: 10px;
+  color: #ffad66;
+  font-size: 1.2rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.date-range-picker__repeticiones-suffix {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+}
+
+/* Vista previa de fechas */
+.date-range-picker__fechas-preview {
+  margin-bottom: 16px;
+}
+
+.date-range-picker__fechas-title {
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-range-picker__fechas-title svg {
+  color: #ff6600;
+}
+
+.date-range-picker__fechas-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.date-range-picker__fecha-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(255, 102, 0, 0.1);
+  border: 1px solid rgba(255, 102, 0, 0.25);
+  border-radius: 20px;
+  color: #ffad66;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  animation: chipAppear 0.3s ease backwards;
+}
+
+.date-range-picker__fecha-chip:nth-child(1) { animation-delay: 0s; }
+.date-range-picker__fecha-chip:nth-child(2) { animation-delay: 0.05s; }
+.date-range-picker__fecha-chip:nth-child(3) { animation-delay: 0.1s; }
+.date-range-picker__fecha-chip:nth-child(4) { animation-delay: 0.15s; }
+.date-range-picker__fecha-chip:nth-child(5) { animation-delay: 0.2s; }
+.date-range-picker__fecha-chip:nth-child(6) { animation-delay: 0.25s; }
+.date-range-picker__fecha-chip:nth-child(7) { animation-delay: 0.3s; }
+.date-range-picker__fecha-chip:nth-child(8) { animation-delay: 0.35s; }
+.date-range-picker__fecha-chip:nth-child(9) { animation-delay: 0.4s; }
+.date-range-picker__fecha-chip:nth-child(10) { animation-delay: 0.45s; }
+.date-range-picker__fecha-chip:nth-child(11) { animation-delay: 0.5s; }
+.date-range-picker__fecha-chip:nth-child(12) { animation-delay: 0.55s; }
+
+@keyframes chipAppear {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.date-range-picker__fecha-chip--first {
+  background: rgba(255, 102, 0, 0.2);
+  border-color: #ff8533;
+  font-weight: 700;
+}
+
+.date-range-picker__fecha-badge {
+  padding: 2px 8px;
+  background: #ff6600;
+  color: #000;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .date-range-picker__main-row {
     grid-template-columns: 1fr;
     gap: 15px;
+  }
+
+  .date-range-picker__options-column {
+    padding-top: 0;
   }
 
   .date-range-picker__checkbox-wrapper {
@@ -293,6 +498,19 @@
   .date-range-picker__duration-badge {
     align-self: center;
   }
+
+  .date-range-picker__repeticiones-control {
+    flex-wrap: wrap;
+  }
+
+  .date-range-picker__fechas-list {
+    gap: 6px;
+  }
+
+  .date-range-picker__fecha-chip {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -317,5 +535,15 @@
   .date-range-picker__range-end {
     padding: 6px 10px;
     font-size: 0.8rem;
+  }
+
+  .date-range-picker__detected-day {
+    font-size: 0.85rem;
+    padding: 10px 12px;
+  }
+
+  .date-range-picker__repeticiones-suffix {
+    width: 100%;
+    font-size: 0.85rem;
   }
 }

@@ -48,6 +48,26 @@ export const EVENT_VALIDATION_SCHEMA = {
     },
     validateMessage: "La fecha de fin debe ser posterior a la fecha de inicio",
   },
+  cantidad_repeticiones: {
+    required: false,
+    condition: (formData) => formData.es_recurrente,
+    message: "Indica cuántas veces se repite el evento",
+    validate: (value, formData) => {
+      if (!formData.es_recurrente) return true;
+      const num = parseInt(value);
+      return num >= 2 && num <= 12;
+    },
+    validateMessage: "La cantidad de repeticiones debe ser entre 2 y 12",
+  },
+  fecha_evento_recurrente: {
+    required: false,
+    condition: (formData) => formData.es_recurrente,
+    validate: (value, formData) => {
+      if (!formData.es_recurrente) return true;
+      return !!formData.fecha_evento;
+    },
+    message: "Selecciona la primera fecha para calcular las repeticiones",
+  },
   provincia: {
     required: true,
     message: "Selecciona una provincia",

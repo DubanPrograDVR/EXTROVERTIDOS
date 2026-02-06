@@ -136,6 +136,17 @@ const useEventSubmit = ({
           : formData.fecha_evento,
         es_multidia: formData.es_multidia,
         mismo_horario: formData.mismo_horario,
+        // Campos de recurrencia
+        es_recurrente: formData.es_recurrente || false,
+        dia_recurrencia: formData.es_recurrente
+          ? formData.dia_recurrencia
+          : null,
+        cantidad_repeticiones: formData.es_recurrente
+          ? formData.cantidad_repeticiones
+          : 1,
+        fechas_recurrencia: formData.es_recurrente
+          ? formData.fechas_recurrencia
+          : [],
         hora_inicio: formData.hora_inicio || null,
         hora_fin: formData.hora_fin || null,
         provincia: formData.provincia,

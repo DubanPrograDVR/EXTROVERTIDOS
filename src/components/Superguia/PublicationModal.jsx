@@ -30,6 +30,7 @@ import {
   faAlignLeft,
   faAddressCard,
   faGlobe,
+  faRepeat,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faInstagram,
@@ -166,6 +167,10 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
     fecha_evento,
     fecha_fin,
     es_multidia,
+    es_recurrente,
+    dia_recurrencia,
+    cantidad_repeticiones,
+    fechas_recurrencia,
     hora_inicio,
     hora_fin,
     tipo_entrada,
@@ -225,7 +230,13 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
   };
 
   // Determinar si es evento multi-día
-  const isMultiDay = es_multidia || (fecha_fin && fecha_fin !== fecha_evento);
+  const isMultiDay = es_multidia || (fecha_fin && fecha_fin !== fecha_evento && !es_recurrente);
+
+  // Determinar si es evento recurrente
+  const isRecurring = es_recurrente && cantidad_repeticiones > 1;
+  const diaCapitalizado = dia_recurrencia
+    ? dia_recurrencia.charAt(0).toUpperCase() + dia_recurrencia.slice(1)
+    : null;
 
   // Calcular duración en días
   const calcularDuracion = () => {
@@ -257,8 +268,14 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
     });
   };
 
-  // Obtener display de fecha (simple o rango)
+  // Obtener display de fecha (simple, rango o recurrente)
   const getFechaDisplay = () => {
+    if (isRecurring && fechas_recurrencia?.length > 0) {
+      const primera = formatearFecha(fechas_recurrencia[0], "corto");
+      const ultima = formatearFecha(fechas_recurrencia[fechas_recurrencia.length - 1], "corto");
+      const anio = new Date(fechas_recurrencia[0] + "T00:00:00").getFullYear();
+      return `${primera} al ${ultima}, ${anio}`;
+    }
     if (isMultiDay && fecha_fin) {
       const inicioCorto = formatearFecha(fecha_evento, "corto");
       const finCorto = formatearFecha(fecha_fin, "corto");
@@ -442,6 +459,14 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
               </span>
             )}
 
+            {/* Badge de recurrencia */}
+            {isRecurring && diaCapitalizado && (
+              <span className="publication-modal__recurrence-badge">
+                <FontAwesomeIcon icon={faRepeat} />
+                {cantidad_repeticiones} {diaCapitalizado}s
+              </span>
+            )}
+
             {/* Etiqueta directa destacada */}
             {etiqueta_directa && (
               <span className="publication-modal__featured-tag">
@@ -561,12 +586,34 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
                   <div className="publication-modal__schedule-row">
                     <span className="publication-modal__schedule-label">
                       <FontAwesomeIcon icon={faCalendarDays} />
-                      {isMultiDay ? "Fechas" : "Fecha"}
+                      {isRecurring ? "Fechas" : isMultiDay ? "Fechas" : "Fecha"}
                     </span>
                     <span className="publication-modal__schedule-value">
                       {getFechaDisplay() || "Por confirmar"}
                     </span>
                   </div>
+
+                  {/* Fechas individuales de recurrencia */}
+                  {isRecurring && fechas_recurrencia?.length > 0 && (
+                    <div className="publication-modal__recurrence-dates">
+                      <span className="publication-modal__recurrence-label">
+                        <FontAwesomeIcon icon={faRepeat} />
+                        Se repite {cantidad_repeticiones} {diaCapitalizado}s
+                      </span>
+                      <div className="publication-modal__recurrence-chips">
+                        {fechas_recurrencia.map((fecha, index) => (
+                          <span key={index} className="publication-modal__recurrence-chip">
+                            {new Date(fecha + "T00:00:00").toLocaleDateString("es-CL", {
+                              weekday: "short",
+                              day: "numeric",
+                              month: "short",
+                            })}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="publication-modal__schedule-row">
                     <span className="publication-modal__schedule-label">
                       <FontAwesomeIcon icon={faClock} />

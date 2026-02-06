@@ -261,6 +261,24 @@
   width: fit-content;
 }
 
+/* Badge de recurrencia */
+.publication-card__recurrence {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: linear-gradient(135deg, #ff6600, #ff8533);
+  color: #000;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 10px;
+  width: fit-content;
+}
+
+.publication-card__recurrence svg {
+  font-size: 0.6rem;
+}
+
 .publication-card__time {
   display: flex;
   align-items: center;

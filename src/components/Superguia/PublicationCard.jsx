@@ -13,6 +13,7 @@ import {
   faBookmark as faBookmarkSolid,
   faThumbsUp as faThumbsUpSolid,
   faBullhorn,
+  faRepeat,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faHeart as faHeartRegular,
@@ -46,6 +47,10 @@ export default function PublicationCard({
     fecha_evento,
     fecha_fin,
     es_multidia,
+    es_recurrente,
+    dia_recurrencia,
+    cantidad_repeticiones,
+    fechas_recurrencia,
     hora_inicio,
     hora_fin,
     tipo_entrada,
@@ -123,7 +128,16 @@ export default function PublicationCard({
   };
 
   // Determinar si es evento multi-día
-  const isMultiDay = es_multidia || (fecha_fin && fecha_fin !== fecha_evento);
+  const isMultiDay =
+    es_multidia || (fecha_fin && fecha_fin !== fecha_evento && !es_recurrente);
+
+  // Determinar si es evento recurrente
+  const isRecurring = es_recurrente && cantidad_repeticiones > 1;
+
+  // Capitalizar día de recurrencia
+  const diaCapitalizado = dia_recurrencia
+    ? dia_recurrencia.charAt(0).toUpperCase() + dia_recurrencia.slice(1)
+    : null;
 
   // Calcular duración en días
   const calcularDuracion = () => {
@@ -137,7 +151,7 @@ export default function PublicationCard({
 
   const duracionDias = isMultiDay ? calcularDuracion() : null;
 
-  // Formatear fecha (con soporte para rango)
+  // Formatear fecha (con soporte para rango y recurrencia)
   const getFormattedDate = () => {
     if (!fecha_evento) return null;
 
@@ -147,6 +161,14 @@ export default function PublicationCard({
         month: "short",
       });
     };
+
+    if (isRecurring && fechas_recurrencia?.length > 0) {
+      const primera = formatShort(fechas_recurrencia[0]);
+      const ultima = formatShort(
+        fechas_recurrencia[fechas_recurrencia.length - 1],
+      );
+      return `${primera} - ${ultima}`;
+    }
 
     if (isMultiDay && fecha_fin) {
       return `${formatShort(fecha_evento)} - ${formatShort(fecha_fin)}`;
@@ -356,6 +378,13 @@ export default function PublicationCard({
           {isMultiDay && duracionDias && (
             <span className="publication-card__duration">
               {duracionDias} días
+            </span>
+          )}
+          {/* Badge de recurrencia */}
+          {isRecurring && diaCapitalizado && (
+            <span className="publication-card__recurrence">
+              <FontAwesomeIcon icon={faRepeat} />
+              {cantidad_repeticiones} {diaCapitalizado}s
             </span>
           )}
           {horarioShort && (

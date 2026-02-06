@@ -1,43 +1,137 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCalendarDays,
   faCalendarWeek,
   faArrowRight,
   faInfoCircle,
+  faRepeat,
+  faCalendarCheck,
 } from "@fortawesome/free-solid-svg-icons";
 import "./styles/date-range-picker.css";
 
+/** Nombres de días en español */
+const DIAS_SEMANA = [
+  "domingo",
+  "lunes",
+  "martes",
+  "miércoles",
+  "jueves",
+  "viernes",
+  "sábado",
+];
+
 /**
- * Componente para selección de fechas con soporte para eventos multi-día
- * Incluye checkbox animado y selector de rango de fechas
+ * Calcula las fechas de recurrencia a partir de una fecha inicio,
+ * repitiendo el mismo día de la semana N veces.
+ * @param {string} fechaInicio - Fecha ISO (YYYY-MM-DD)
+ * @param {number} cantidad - Cantidad de repeticiones (incluye la primera)
+ * @returns {string[]} Array de fechas ISO
+ */
+const calcularFechasRecurrencia = (fechaInicio, cantidad) => {
+  if (!fechaInicio || !cantidad || cantidad < 1) return [];
+  const fechas = [];
+  const inicio = new Date(fechaInicio + "T00:00:00");
+
+  for (let i = 0; i < cantidad; i++) {
+    const fecha = new Date(inicio);
+    fecha.setDate(inicio.getDate() + i * 7); // cada 7 días = mismo día de semana
+    fechas.push(fecha.toISOString().split("T")[0]);
+  }
+
+  return fechas;
+};
+
+/**
+ * Componente para selección de fechas con soporte para:
+ * - Eventos de un solo día
+ * - Eventos multi-día (festivales, ferias)
+ * - Eventos recurrentes (talleres que se repiten N semanas)
  */
 const DateRangePicker = ({
   fechaEvento,
   fechaFin,
   esMultidia,
+  esRecurrente,
+  cantidadRepeticiones,
+  fechasRecurrencia,
   mismoHorario,
   horaInicio,
   horaFin,
   onChange,
   errors,
 }) => {
-  // Estado local para animación del panel
+  // Estado local para animación de paneles
   const [isExpanded, setIsExpanded] = useState(esMultidia);
+  const [isRecurrentExpanded, setIsRecurrentExpanded] = useState(esRecurrente);
 
-  // Sincronizar estado expandido con prop
+  // Sincronizar estados expandidos con props
   useEffect(() => {
     setIsExpanded(esMultidia);
   }, [esMultidia]);
 
+  useEffect(() => {
+    setIsRecurrentExpanded(esRecurrente);
+  }, [esRecurrente]);
+
   // Obtener fecha mínima (hoy)
   const today = new Date().toISOString().split("T")[0];
+
+  // Detectar día de la semana de la fecha seleccionada
+  const diaDetectado = useMemo(() => {
+    if (!fechaEvento) return null;
+    const date = new Date(fechaEvento + "T00:00:00");
+    return DIAS_SEMANA[date.getDay()];
+  }, [fechaEvento]);
+
+  // Calcular fechas de recurrencia automáticamente
+  const fechasCalculadas = useMemo(() => {
+    if (!esRecurrente || !fechaEvento) return [];
+    return calcularFechasRecurrencia(fechaEvento, cantidadRepeticiones || 2);
+  }, [esRecurrente, fechaEvento, cantidadRepeticiones]);
+
+  // Propagar fechas calculadas al padre cuando cambien
+  useEffect(() => {
+    if (esRecurrente && fechasCalculadas.length > 0) {
+      onChange({
+        target: {
+          name: "fechas_recurrencia",
+          value: fechasCalculadas,
+        },
+      });
+      // También actualizar el día de recurrencia
+      if (diaDetectado) {
+        onChange({
+          target: {
+            name: "dia_recurrencia",
+            value: diaDetectado,
+          },
+        });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fechasCalculadas.length, esRecurrente, diaDetectado]);
 
   // Manejar cambio del checkbox multi-día
   const handleMultidiaChange = (e) => {
     const checked = e.target.checked;
 
-    // Crear evento sintético para el onChange padre
+    // Si se activa multidía, desactivar recurrente
+    if (checked) {
+      onChange({
+        target: { name: "es_recurrente", value: false, type: "checkbox" },
+      });
+      onChange({
+        target: { name: "fechas_recurrencia", value: [] },
+      });
+      onChange({
+        target: { name: "dia_recurrencia", value: "" },
+      });
+      onChange({
+        target: { name: "cantidad_repeticiones", value: 2 },
+      });
+    }
+
     onChange({
       target: { name: "es_multidia", value: checked, type: "checkbox" },
     });
@@ -46,6 +140,42 @@ const DateRangePicker = ({
     if (!checked) {
       onChange({ target: { name: "fecha_fin", value: "" } });
     }
+  };
+
+  // Manejar cambio del checkbox recurrente
+  const handleRecurrenteChange = (e) => {
+    const checked = e.target.checked;
+
+    // Si se activa recurrente, desactivar multidía
+    if (checked) {
+      onChange({
+        target: { name: "es_multidia", value: false, type: "checkbox" },
+      });
+      onChange({ target: { name: "fecha_fin", value: "" } });
+    } else {
+      // Limpiar campos de recurrencia
+      onChange({
+        target: { name: "fechas_recurrencia", value: [] },
+      });
+      onChange({
+        target: { name: "dia_recurrencia", value: "" },
+      });
+      onChange({
+        target: { name: "cantidad_repeticiones", value: 2 },
+      });
+    }
+
+    onChange({
+      target: { name: "es_recurrente", value: checked, type: "checkbox" },
+    });
+  };
+
+  // Manejar cambio de cantidad de repeticiones
+  const handleRepeticionesChange = (e) => {
+    const value = Math.min(12, Math.max(2, parseInt(e.target.value) || 2));
+    onChange({
+      target: { name: "cantidad_repeticiones", value },
+    });
   };
 
   // Manejar cambio de mismo horario
@@ -86,13 +216,17 @@ const DateRangePicker = ({
 
   return (
     <div className="date-range-picker">
-      {/* Fila principal: Fecha inicio y checkbox */}
+      {/* Fila principal: Fecha inicio y checkboxes */}
       <div className="date-range-picker__main-row">
         {/* Fecha de inicio (siempre visible) */}
         <div className="date-range-picker__date-group">
           <label className="publicar-form__label" htmlFor="fecha_evento">
             <FontAwesomeIcon icon={faCalendarDays} />
-            {esMultidia ? " Fecha Inicio *" : " Fecha del Evento *"}
+            {esMultidia
+              ? " Fecha Inicio *"
+              : esRecurrente
+                ? " Primera Fecha *"
+                : " Fecha del Evento *"}
           </label>
           <input
             type="date"
@@ -110,24 +244,47 @@ const DateRangePicker = ({
           )}
         </div>
 
-        {/* Checkbox multi-día */}
-        <div className="date-range-picker__checkbox-wrapper">
-          <label className="date-range-picker__checkbox-label">
-            <input
-              type="checkbox"
-              checked={esMultidia}
-              onChange={handleMultidiaChange}
-              className="date-range-picker__checkbox"
-            />
-            <span className="date-range-picker__checkbox-custom"></span>
-            <span className="date-range-picker__checkbox-text">
-              <FontAwesomeIcon icon={faCalendarWeek} />
-              ¿Tu panorama dura más de un día?
-            </span>
-          </label>
-          <p className="date-range-picker__checkbox-hint">
-            Festivales, ferias, exposiciones, etc.
-          </p>
+        {/* Checkboxes: multi-día y recurrente */}
+        <div className="date-range-picker__options-column">
+          {/* Checkbox multi-día */}
+          <div className="date-range-picker__checkbox-wrapper">
+            <label className="date-range-picker__checkbox-label">
+              <input
+                type="checkbox"
+                checked={esMultidia}
+                onChange={handleMultidiaChange}
+                className="date-range-picker__checkbox"
+              />
+              <span className="date-range-picker__checkbox-custom"></span>
+              <span className="date-range-picker__checkbox-text">
+                <FontAwesomeIcon icon={faCalendarWeek} />
+                ¿Dura más de un día?
+              </span>
+            </label>
+            <p className="date-range-picker__checkbox-hint">
+              Festivales, ferias, exposiciones
+            </p>
+          </div>
+
+          {/* Checkbox recurrente */}
+          <div className="date-range-picker__checkbox-wrapper">
+            <label className="date-range-picker__checkbox-label">
+              <input
+                type="checkbox"
+                checked={esRecurrente}
+                onChange={handleRecurrenteChange}
+                className="date-range-picker__checkbox"
+              />
+              <span className="date-range-picker__checkbox-custom"></span>
+              <span className="date-range-picker__checkbox-text">
+                <FontAwesomeIcon icon={faRepeat} />
+                ¿Se repite ciertos días?
+              </span>
+            </label>
+            <p className="date-range-picker__checkbox-hint">
+              Talleres, clases, eventos semanales
+            </p>
+          </div>
         </div>
       </div>
 
@@ -205,6 +362,108 @@ const DateRangePicker = ({
                   Puedes indicar horarios diferentes en la descripción.
                 </span>
               )}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* ===== Panel expandible para eventos recurrentes ===== */}
+      <div
+        className={`date-range-picker__expanded ${isRecurrentExpanded ? "open" : ""}`}>
+        <div className="date-range-picker__expanded-content date-range-picker__expanded-content--recurrent">
+          {/* Día detectado automáticamente */}
+          {diaDetectado && (
+            <div className="date-range-picker__detected-day">
+              <FontAwesomeIcon icon={faCalendarCheck} />
+              <span>
+                Tu evento cae en día{" "}
+                <strong>
+                  {diaDetectado.charAt(0).toUpperCase() + diaDetectado.slice(1)}
+                </strong>
+              </span>
+            </div>
+          )}
+
+          {!fechaEvento && (
+            <div className="date-range-picker__detected-day date-range-picker__detected-day--warning">
+              <FontAwesomeIcon icon={faInfoCircle} />
+              <span>
+                Primero selecciona la fecha de inicio para detectar el día
+              </span>
+            </div>
+          )}
+
+          {/* Selector de cantidad de repeticiones */}
+          <div className="date-range-picker__repeticiones">
+            <label className="date-range-picker__repeticiones-label">
+              ¿Cuántas veces se repite?
+            </label>
+            <div className="date-range-picker__repeticiones-control">
+              <button
+                type="button"
+                className="date-range-picker__repeticiones-btn"
+                onClick={() =>
+                  handleRepeticionesChange({
+                    target: { value: (cantidadRepeticiones || 2) - 1 },
+                  })
+                }
+                disabled={cantidadRepeticiones <= 2}>
+                −
+              </button>
+              <span className="date-range-picker__repeticiones-value">
+                {cantidadRepeticiones || 2}
+              </span>
+              <button
+                type="button"
+                className="date-range-picker__repeticiones-btn"
+                onClick={() =>
+                  handleRepeticionesChange({
+                    target: { value: (cantidadRepeticiones || 2) + 1 },
+                  })
+                }
+                disabled={cantidadRepeticiones >= 12}>
+                +
+              </button>
+              <span className="date-range-picker__repeticiones-suffix">
+                {diaDetectado
+                  ? `${diaDetectado.charAt(0).toUpperCase() + diaDetectado.slice(1)}s seguidos`
+                  : "semanas seguidas"}
+              </span>
+            </div>
+          </div>
+
+          {/* Vista previa de fechas calculadas */}
+          {fechasCalculadas.length > 0 && (
+            <div className="date-range-picker__fechas-preview">
+              <p className="date-range-picker__fechas-title">
+                <FontAwesomeIcon icon={faCalendarDays} /> Tu evento aparecerá
+                estas fechas:
+              </p>
+              <div className="date-range-picker__fechas-list">
+                {fechasCalculadas.map((fecha, index) => (
+                  <span
+                    key={fecha}
+                    className={`date-range-picker__fecha-chip ${
+                      index === 0 ? "date-range-picker__fecha-chip--first" : ""
+                    }`}>
+                    {formatearFecha(fecha)}
+                    {index === 0 && (
+                      <span className="date-range-picker__fecha-badge">
+                        Inicio
+                      </span>
+                    )}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Info adicional */}
+          <div className="date-range-picker__info">
+            <FontAwesomeIcon icon={faInfoCircle} />
+            <p>
+              Tu evento se mostrará en la superguía en cada una de las fechas
+              indicadas. El horario será el mismo para todas las fechas.
             </p>
           </div>
         </div>

@@ -218,6 +218,27 @@
   z-index: 5;
 }
 
+/* Badge de recurrencia */
+.publication-modal__recurrence-badge {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: rgba(255, 102, 0, 0.9);
+  color: #fff;
+  z-index: 5;
+}
+
+.publication-modal__recurrence-badge svg {
+  font-size: 0.7rem;
+}
+
 /* Categoría badge - en header superior */
 .publication-modal__category-badge {
   padding: 8px 20px;
@@ -992,6 +1013,48 @@
 .publication-modal__schedule-value--price {
   color: #4ade80;
   font-weight: 600;
+}
+
+/* Recurrencia en horarios */
+.publication-modal__recurrence-dates {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  background: rgba(255, 102, 0, 0.08);
+  border: 1px solid rgba(255, 102, 0, 0.2);
+  border-radius: 10px;
+  margin: 4px 0;
+}
+
+.publication-modal__recurrence-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ff6600;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.publication-modal__recurrence-label svg {
+  font-size: 0.75rem;
+}
+
+.publication-modal__recurrence-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.publication-modal__recurrence-chip {
+  padding: 4px 10px;
+  background: rgba(255, 102, 0, 0.15);
+  border: 1px solid rgba(255, 102, 0, 0.3);
+  border-radius: 8px;
+  color: #ffad66;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: capitalize;
 }
 
 /* Contacto */
