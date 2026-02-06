@@ -4,6 +4,7 @@ import {
   faChevronLeft,
   faChevronRight,
   faCalendarDay,
+  faRepeat,
 } from "@fortawesome/free-solid-svg-icons";
 import "./styles/DateCalendar.css";
 
@@ -30,6 +31,7 @@ export default function DateCalendar({
   selectedDate,
   onDateChange,
   eventsPerDay = {},
+  recurringDates = new Set(),
   minDate = null,
 }) {
   const today = new Date();
@@ -62,6 +64,7 @@ export default function DateCalendar({
         dateStr,
         hasEvents: eventsPerDay[dateStr] > 0,
         eventCount: eventsPerDay[dateStr] || 0,
+        isRecurring: recurringDates.has(dateStr),
         isToday: isSameDay(date, today),
         isPast: date < today,
         isSelected: selectedDate && isSameDay(date, selectedDate),
@@ -69,7 +72,7 @@ export default function DateCalendar({
     }
 
     return days;
-  }, [currentMonth, currentYear, eventsPerDay, selectedDate, today]);
+  }, [currentMonth, currentYear, eventsPerDay, recurringDates, selectedDate, today]);
 
   // Navegar al mes anterior
   const goToPrevMonth = () => {
@@ -153,12 +156,19 @@ export default function DateCalendar({
               dayInfo.isPast ? "date-calendar__day--past" : ""
             } ${dayInfo.isSelected ? "date-calendar__day--selected" : ""} ${
               dayInfo.hasEvents ? "date-calendar__day--has-events" : ""
+            } ${
+              dayInfo.isRecurring ? "date-calendar__day--recurring" : ""
             }`}
             onClick={() => handleDateClick(dayInfo)}
             disabled={!dayInfo.day || dayInfo.isPast}>
             {dayInfo.day && (
               <>
                 <span className="date-calendar__day-number">{dayInfo.day}</span>
+                {dayInfo.isRecurring && (
+                  <span className="date-calendar__recurring-icon">
+                    <FontAwesomeIcon icon={faRepeat} />
+                  </span>
+                )}
                 {dayInfo.hasEvents && (
                   <span className="date-calendar__event-dot">
                     {dayInfo.eventCount > 9 ? "9+" : dayInfo.eventCount}
@@ -179,6 +189,10 @@ export default function DateCalendar({
         <span className="date-calendar__legend-item">
           <span className="date-calendar__legend-dot date-calendar__legend-dot--today"></span>
           Hoy
+        </span>
+        <span className="date-calendar__legend-item">
+          <span className="date-calendar__legend-dot date-calendar__legend-dot--recurring"></span>
+          Recurrente
         </span>
       </div>
     </div>

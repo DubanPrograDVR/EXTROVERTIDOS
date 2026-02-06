@@ -31,6 +31,7 @@ export default function FilterPanel({
   selectedPrice,
   searchQuery,
   eventsPerDay = {},
+  recurringDates = new Set(),
   availableComunas = [],
   onCategoryChange,
   onSubcategoryChange,
@@ -385,6 +386,7 @@ export default function FilterPanel({
                         // No cerrar el dropdown para permitir ver el calendario
                       }}
                       eventsPerDay={eventsPerDay}
+                      recurringDates={recurringDates}
                     />
                   </div>
                 </div>

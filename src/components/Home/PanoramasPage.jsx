@@ -203,8 +203,7 @@ export default function PanoramasPage() {
       const eventEndDate = event.fecha_fin || event.fecha_evento;
       if (!eventEndDate) return true; // Si no hay fecha, mostrar el evento
 
-      const endDate = new Date(eventEndDate);
-      endDate.setHours(23, 59, 59, 999); // Fin del día del evento
+      const endDate = new Date(eventEndDate + "T23:59:59");
 
       return endDate >= today; // Solo eventos que no han terminado
     });
@@ -245,13 +244,33 @@ export default function PanoramasPage() {
       );
     }
 
-    // Filtrar por fecha
+    // Filtrar por fecha (incluye fechas de recurrencia y rango multi-día)
     if (selectedDate) {
       const dateStr = formatDateKey(selectedDate);
       result = result.filter((event) => {
         if (!event.fecha_evento) return false;
-        const eventDate = new Date(event.fecha_evento);
-        return formatDateKey(eventDate) === dateStr;
+
+        // Coincide con fecha principal
+        const eventDateStr = formatDateKey(new Date(event.fecha_evento + "T00:00:00"));
+        if (eventDateStr === dateStr) return true;
+
+        // Coincide con alguna fecha de recurrencia
+        if (event.es_recurrente && Array.isArray(event.fechas_recurrencia)) {
+          const matchRecurring = event.fechas_recurrencia.some(
+            (fecha) => formatDateKey(new Date(fecha + "T00:00:00")) === dateStr
+          );
+          if (matchRecurring) return true;
+        }
+
+        // Coincide dentro del rango multi-día
+        if (event.es_multidia && event.fecha_fin) {
+          const inicio = new Date(event.fecha_evento + "T00:00:00");
+          const fin = new Date(event.fecha_fin + "T00:00:00");
+          const selected = new Date(dateStr + "T00:00:00");
+          if (selected >= inicio && selected <= fin) return true;
+        }
+
+        return false;
       });
     }
 
@@ -286,16 +305,28 @@ export default function PanoramasPage() {
     selectedPrice,
   ]);
 
-  // Calcular eventos por día para el calendario
-  const eventsPerDay = useMemo(() => {
+  // Calcular eventos por día para el calendario (incluye fechas de recurrencia)
+  const { eventsPerDay, recurringDates } = useMemo(() => {
     const counts = {};
+    const recurring = new Set();
+
     events.forEach((event) => {
       if (event.fecha_evento) {
-        const dateStr = formatDateKey(new Date(event.fecha_evento));
+        const dateStr = formatDateKey(new Date(event.fecha_evento + "T00:00:00"));
         counts[dateStr] = (counts[dateStr] || 0) + 1;
       }
+
+      // Agregar fechas de recurrencia
+      if (event.es_recurrente && Array.isArray(event.fechas_recurrencia) && event.fechas_recurrencia.length > 0) {
+        event.fechas_recurrencia.forEach((fecha) => {
+          const dateStr = formatDateKey(new Date(fecha + "T00:00:00"));
+          counts[dateStr] = (counts[dateStr] || 0) + 1;
+          recurring.add(dateStr);
+        });
+      }
     });
-    return counts;
+
+    return { eventsPerDay: counts, recurringDates: recurring };
   }, [events]);
 
   // Comunas disponibles según ciudad seleccionada
@@ -330,8 +361,7 @@ export default function PanoramasPage() {
       .filter((event) => {
         const eventEndDate = event.fecha_fin || event.fecha_evento;
         if (!eventEndDate) return true;
-        const endDate = new Date(eventEndDate);
-        endDate.setHours(23, 59, 59, 999);
+        const endDate = new Date(eventEndDate + "T23:59:59");
         return endDate >= today;
       })
       .slice(0, 5);
@@ -361,7 +391,7 @@ export default function PanoramasPage() {
   // Formatear fecha
   const formatDate = (dateString) => {
     if (!dateString) return "Por confirmar";
-    return new Date(dateString).toLocaleDateString("es-CL", {
+    return new Date(dateString + "T00:00:00").toLocaleDateString("es-CL", {
       day: "numeric",
       month: "short",
       year: "numeric",
@@ -467,6 +497,7 @@ export default function PanoramasPage() {
         selectedPrice={selectedPrice}
         searchQuery={searchQuery}
         eventsPerDay={eventsPerDay}
+        recurringDates={recurringDates}
         availableComunas={availableComunas}
         onCategoryChange={handleCategoryChange}
         onSubcategoryChange={handleSubcategoryChange}
