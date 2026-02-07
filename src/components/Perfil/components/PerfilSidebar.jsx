@@ -8,7 +8,9 @@ import {
   faStore,
   faCog,
   faFileAlt,
+  faShieldAlt,
 } from "@fortawesome/free-solid-svg-icons";
+import { useNavigate } from "react-router-dom";
 import "./styles/sidebar.css";
 
 export default function PerfilSidebar({
@@ -20,7 +22,10 @@ export default function PerfilSidebar({
   draftsCount = 0,
   userAvatar,
   userName,
+  isStaff = false,
 }) {
+  const navigate = useNavigate();
+
   // Opciones del menú lateral
   const menuItems = [
     { id: "publicaciones", label: "Mis Publicaciones", icon: faNewspaper },
@@ -49,6 +54,13 @@ export default function PerfilSidebar({
     }
   };
 
+  const handleGoToAdmin = () => {
+    if (window.innerWidth < 1024) {
+      setSidebarOpen(false);
+    }
+    navigate("/admin");
+  };
+
   return (
     <>
       {/* Botón hamburguesa móvil */}
@@ -75,6 +87,18 @@ export default function PerfilSidebar({
           <img src="/img/logo-extrovertidos.png" alt="Extrovertidos" />
         </div>
 
+        {/* Link al panel admin */}
+        {isStaff && (
+          <div className="perfil-sidebar__admin-section">
+            <button
+              className="perfil-sidebar__admin-btn"
+              onClick={handleGoToAdmin}>
+              <FontAwesomeIcon icon={faShieldAlt} />
+              <span>Panel Admin</span>
+            </button>
+          </div>
+        )}
+
         {/* Navegación */}
         <nav className="perfil-sidebar__nav">
           {menuItems.map((item) => (
@@ -98,7 +122,7 @@ export default function PerfilSidebar({
           <img src={userAvatar} alt={userName} referrerPolicy="no-referrer" />
           <div>
             <p>{userName}</p>
-            <span>Mi Cuenta</span>
+            <span>{isStaff ? "Staff" : "Mi Cuenta"}</span>
           </div>
         </div>
       </aside>

@@ -118,7 +118,7 @@ export const AuthProvider = ({ children }) => {
 
   // ── Refs ──────────────────────────────────────────────────
   const roleCache = useRef({ userId: null, role: ROLES.USER });
-  const isLoadingRole = useRef(false);
+  const rolePendingPromise = useRef(null);
   const isMountedRef = useRef(true);
   // Ref para user en el listener de visibilidad (evita re-registrar el listener)
   const userRef = useRef(user);
@@ -130,7 +130,7 @@ export const AuthProvider = ({ children }) => {
     showToastRef.current = showToast;
   });
 
-  // ── Cargar rol con cache y timeout ────────────────────────
+  // ── Cargar rol con cache y deduplicación de promesas ─────
   const loadUserRole = useCallback(async (userId, forceRefresh = false) => {
     if (!userId) return ROLES.USER;
 
@@ -140,52 +140,60 @@ export const AuthProvider = ({ children }) => {
       return roleCache.current.role;
     }
 
-    // Evitar consultas simultáneas
-    if (isLoadingRole.current) {
-      await new Promise((r) => setTimeout(r, 100));
-      return roleCache.current.role;
+    // Si ya hay una consulta en vuelo para este userId, reusar la promesa
+    if (rolePendingPromise.current) {
+      log.info("Esperando consulta de rol en curso...");
+      try {
+        return await rolePendingPromise.current;
+      } catch {
+        return ROLES.USER;
+      }
     }
 
-    isLoadingRole.current = true;
+    // Crear nueva consulta y almacenar la promesa
+    const fetchRole = async () => {
+      try {
+        log.info("Cargando rol desde DB para:", userId);
 
-    try {
-      log.info("Cargando rol desde DB para:", userId);
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error("Timeout cargando rol")), 5000);
+        });
 
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Timeout cargando rol")), 5000);
-      });
+        const queryPromise = supabase
+          .from("profiles")
+          .select("rol")
+          .eq("id", userId)
+          .maybeSingle();
 
-      const queryPromise = supabase
-        .from("profiles")
-        .select("rol")
-        .eq("id", userId)
-        .maybeSingle();
+        const { data, error } = await Promise.race([
+          queryPromise,
+          timeoutPromise,
+        ]);
 
-      const { data, error } = await Promise.race([
-        queryPromise,
-        timeoutPromise,
-      ]);
+        if (error) {
+          log.error("Error al obtener rol:", error);
+          return roleCache.current.userId === userId
+            ? roleCache.current.role
+            : ROLES.USER;
+        }
 
-      if (error) {
-        log.error("Error al obtener rol:", error);
+        const role = data?.rol || ROLES.USER;
+        roleCache.current = { userId, role };
+        log.info("Rol cacheado:", role);
+
+        return role;
+      } catch (error) {
+        log.error("Error/Timeout al cargar rol:", error);
         return roleCache.current.userId === userId
           ? roleCache.current.role
           : ROLES.USER;
+      } finally {
+        rolePendingPromise.current = null;
       }
+    };
 
-      const role = data?.rol || ROLES.USER;
-      roleCache.current = { userId, role };
-      log.info("Rol cacheado:", role);
-
-      return role;
-    } catch (error) {
-      log.error("Error/Timeout al cargar rol:", error);
-      return roleCache.current.userId === userId
-        ? roleCache.current.role
-        : ROLES.USER;
-    } finally {
-      isLoadingRole.current = false;
-    }
+    rolePendingPromise.current = fetchRole();
+    return rolePendingPromise.current;
   }, []);
 
   // ── Inicialización (una sola vez) ─────────────────────────
@@ -291,15 +299,17 @@ export const AuthProvider = ({ children }) => {
 
         case "TOKEN_REFRESHED":
           if (session?.user) {
-            // Actualizar user, mantener rol
+            // Siempre reconsultar rol si el cache no coincide
+            const refreshedRole =
+              roleCache.current.userId === session.user.id
+                ? roleCache.current.role
+                : await loadUserRole(session.user.id);
+
             dispatch({
               type: AUTH_ACTIONS.SET_AUTH,
               payload: {
                 user: session.user,
-                role:
-                  roleCache.current.userId === session.user.id
-                    ? roleCache.current.role
-                    : undefined,
+                role: refreshedRole,
               },
             });
           } else {
@@ -416,7 +426,7 @@ export const AuthProvider = ({ children }) => {
   const signOut = useCallback(async () => {
     // Limpiar estado local PRIMERO para UI responsiva inmediata
     roleCache.current = { userId: null, role: ROLES.USER };
-    isLoadingRole.current = false;
+    rolePendingPromise.current = null;
     dispatch({ type: AUTH_ACTIONS.CLEAR_AUTH });
 
     try {

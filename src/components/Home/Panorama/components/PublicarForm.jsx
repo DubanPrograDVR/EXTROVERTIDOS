@@ -147,7 +147,7 @@ const PublicarForm = ({
         <div className="publicar-form__group">
           <label className="publicar-form__label" htmlFor="descripcion">
             Descripción
-            <span className="publicar-form__label-required">Obligatorio</span>
+            <span className="publicar-form__label-hint"> (Opcional)</span>
           </label>
           <textarea
             id="descripcion"
@@ -561,16 +561,13 @@ const PublicarForm = ({
         <div className="publicar-form__group">
           <label className="publicar-form__label" htmlFor="etiqueta_directa">
             <FontAwesomeIcon icon={faBookmark} /> Etiqueta Destacada
-            <span className="publicar-form__label-hint">
-              {" "}
-              (Opcional - Ej: "Imperdible", "Gratis")
-            </span>
+            <span className="publicar-form__label-required">Obligatorio</span>
           </label>
           <input
             type="text"
             id="etiqueta_directa"
             name="etiqueta_directa"
-            className="publicar-form__input"
+            className={`publicar-form__input ${errors.etiqueta_directa ? "error" : ""}`}
             placeholder="Ej: ¡Imperdible! o Entrada Liberada"
             value={formData.etiqueta_directa || ""}
             onChange={onChange}
@@ -579,6 +576,11 @@ const PublicarForm = ({
           <span className="publicar-form__hint">
             Esta etiqueta se mostrará destacada en tu publicación
           </span>
+          {errors.etiqueta_directa && (
+            <span className="publicar-form__error">
+              {errors.etiqueta_directa}
+            </span>
+          )}
         </div>
 
         {/* Imágenes */}

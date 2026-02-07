@@ -24,10 +24,13 @@ export const EVENT_VALIDATION_SCHEMA = {
     validateMessage: "El título debe tener al menos 3 caracteres",
   },
   descripcion: {
-    required: true,
-    message: "La descripción es obligatoria",
-    validate: (value) => value?.trim()?.length >= 10,
-    validateMessage: "La descripción debe tener al menos 10 caracteres",
+    required: false,
+    validate: (value) => {
+      if (!value || value.trim().length === 0) return true;
+      return value.trim().length >= 10;
+    },
+    validateMessage:
+      "La descripción debe tener al menos 10 caracteres si se proporciona",
   },
   category_id: {
     required: true,
@@ -92,6 +95,12 @@ export const EVENT_VALIDATION_SCHEMA = {
       return !isNaN(precio) && precio > 0;
     },
     validateMessage: "El precio debe ser un número mayor a 0",
+  },
+  etiqueta_directa: {
+    required: true,
+    message: "La etiqueta destacada es obligatoria",
+    validate: (value) => value?.trim()?.length >= 2,
+    validateMessage: "La etiqueta debe tener al menos 2 caracteres",
   },
   url_venta: {
     required: false,

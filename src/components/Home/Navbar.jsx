@@ -168,15 +168,13 @@ export default function Navbar() {
                   />
                   <span className="navbar-mobile-user-name">{userName}</span>
                 </div>
-                {/* Mi Perfil solo visible para usuarios regulares (no admin/moderador) */}
-                {!isModerator && (
-                  <button
-                    onClick={goToProfile}
-                    className="navbar-mobile-auth-btn navbar-mobile-auth-btn--profile">
-                    <FontAwesomeIcon icon={faUser} />
-                    <span>Mi Perfil</span>
-                  </button>
-                )}
+                {/* Mi Perfil visible para todos los usuarios autenticados */}
+                <button
+                  onClick={goToProfile}
+                  className="navbar-mobile-auth-btn navbar-mobile-auth-btn--profile">
+                  <FontAwesomeIcon icon={faUser} />
+                  <span>Mi Perfil</span>
+                </button>
                 {isModerator && (
                   <button
                     onClick={() => {
@@ -249,18 +247,16 @@ export default function Navbar() {
                       </span>
                     </div>
                     <div className="navbar-dropdown-divider"></div>
-                    {/* Mi Perfil solo visible para usuarios regulares (no admin/moderador) */}
-                    {!isModerator && (
-                      <button
-                        onClick={goToProfile}
-                        className="navbar-dropdown-item">
-                        <FontAwesomeIcon
-                          icon={faUser}
-                          className="navbar-dropdown-icon"
-                        />
-                        <span>Mi Perfil</span>
-                      </button>
-                    )}
+                    {/* Mi Perfil visible para todos los usuarios autenticados */}
+                    <button
+                      onClick={goToProfile}
+                      className="navbar-dropdown-item">
+                      <FontAwesomeIcon
+                        icon={faUser}
+                        className="navbar-dropdown-icon"
+                      />
+                      <span>Mi Perfil</span>
+                    </button>
                     {isModerator && (
                       <button
                         onClick={() => {

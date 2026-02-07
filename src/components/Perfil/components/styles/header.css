@@ -13,6 +13,17 @@
   background: linear-gradient(135deg, #ff6600 0%, #ff8533 50%, #ffaa00 100%);
 }
 
+/* Admin/mod gradient */
+.perfil-header__background--staff {
+  background: linear-gradient(
+    135deg,
+    #1a1a2e 0%,
+    #16213e 40%,
+    #0f3460 70%,
+    #ff6600 100%
+  );
+}
+
 .perfil-header__content {
   position: relative;
   max-width: 900px;
@@ -24,6 +35,7 @@
 
 .perfil-header__avatar-wrapper {
   flex-shrink: 0;
+  position: relative;
 }
 
 .perfil-header__avatar {
@@ -35,9 +47,43 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
+/* Badge sobre el avatar (shield icon) */
+.perfil-header__avatar-badge {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  border: 3px solid #000;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+}
+
+.perfil-header__avatar-badge.perfil-header__role-badge--admin {
+  background: linear-gradient(135deg, #ff6600, #ffaa00);
+  color: #000;
+}
+
+.perfil-header__avatar-badge.perfil-header__role-badge--moderator {
+  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+  color: #fff;
+}
+
 .perfil-header__info {
   flex: 1;
   padding-bottom: 10px;
+}
+
+/* Name row con badge de rol */
+.perfil-header__name-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
 }
 
 .perfil-header__name {
@@ -45,6 +91,30 @@
   font-weight: 900;
   color: #fff;
   margin: 0 0 10px;
+}
+
+/* Badge de rol inline */
+.perfil-header__role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.perfil-header__role-badge--admin {
+  background: linear-gradient(135deg, #ff6600, #ffaa00);
+  color: #000;
+}
+
+.perfil-header__role-badge--moderator {
+  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+  color: #fff;
 }
 
 .perfil-header__email,
@@ -122,6 +192,10 @@
 
   .perfil-header__email,
   .perfil-header__date {
+    justify-content: center;
+  }
+
+  .perfil-header__name-row {
     justify-content: center;
   }
 

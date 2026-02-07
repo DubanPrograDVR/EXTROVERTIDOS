@@ -4,19 +4,39 @@ import {
   faCalendarAlt,
   faEdit,
   faSignOutAlt,
+  faShieldAlt,
+  faUserShield,
 } from "@fortawesome/free-solid-svg-icons";
 import "./styles/header.css";
+
+const ROLE_CONFIG = {
+  admin: {
+    label: "Administrador",
+    icon: faShieldAlt,
+    className: "perfil-header__role-badge--admin",
+  },
+  moderator: {
+    label: "Moderador",
+    icon: faUserShield,
+    className: "perfil-header__role-badge--moderator",
+  },
+};
 
 export default function PerfilHeader({
   userAvatar,
   userName,
   userEmail,
   createdAt,
+  userRole,
   onSignOut,
 }) {
+  const roleConfig = ROLE_CONFIG[userRole];
+
   return (
-    <header className="perfil-header">
-      <div className="perfil-header__background"></div>
+    <header
+      className={`perfil-header ${roleConfig ? "perfil-header--staff" : ""}`}>
+      <div
+        className={`perfil-header__background ${roleConfig ? "perfil-header__background--staff" : ""}`}></div>
       <div className="perfil-header__content">
         <div className="perfil-header__avatar-wrapper">
           <img
@@ -25,9 +45,24 @@ export default function PerfilHeader({
             className="perfil-header__avatar"
             referrerPolicy="no-referrer"
           />
+          {roleConfig && (
+            <span
+              className={`perfil-header__avatar-badge ${roleConfig.className}`}>
+              <FontAwesomeIcon icon={roleConfig.icon} />
+            </span>
+          )}
         </div>
         <div className="perfil-header__info">
-          <h1 className="perfil-header__name">{userName}</h1>
+          <div className="perfil-header__name-row">
+            <h1 className="perfil-header__name">{userName}</h1>
+            {roleConfig && (
+              <span
+                className={`perfil-header__role-badge ${roleConfig.className}`}>
+                <FontAwesomeIcon icon={roleConfig.icon} />
+                {roleConfig.label}
+              </span>
+            )}
+          </div>
           <p className="perfil-header__email">
             <FontAwesomeIcon icon={faEnvelope} />
             {userEmail}

@@ -23,7 +23,8 @@ import {
 import "./styles/perfil.css";
 
 export default function Perfil() {
-  const { user, signOut, isAuthenticated, loading } = useAuth();
+  const { user, signOut, isAuthenticated, loading, isModerator, userRole } =
+    useAuth();
   const navigate = useNavigate();
 
   // Estados principales
@@ -225,6 +226,7 @@ export default function Perfil() {
         draftsCount={draftsCount}
         userAvatar={userAvatar}
         userName={userName}
+        isStaff={isModerator}
       />
 
       <main className="perfil-main">
@@ -233,6 +235,7 @@ export default function Perfil() {
           userName={userName}
           userEmail={userEmail}
           createdAt={createdAt}
+          userRole={userRole}
           onSignOut={handleSignOut}
         />
 
