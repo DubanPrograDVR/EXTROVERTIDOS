@@ -231,13 +231,53 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
   };
 
   // Determinar si es evento multi-día
-  const isMultiDay = es_multidia || (fecha_fin && fecha_fin !== fecha_evento && !es_recurrente);
+  const isMultiDay =
+    es_multidia || (fecha_fin && fecha_fin !== fecha_evento && !es_recurrente);
 
   // Determinar si es evento recurrente
   const isRecurring = es_recurrente && cantidad_repeticiones > 1;
-  const diaCapitalizado = dia_recurrencia
-    ? dia_recurrencia.charAt(0).toUpperCase() + dia_recurrencia.slice(1)
-    : null;
+  // Obtener texto inteligente de recurrencia
+  const getRecurrenciaText = () => {
+    if (!fechas_recurrencia || fechas_recurrencia.length === 0) {
+      if (dia_recurrencia) {
+        const cap =
+          dia_recurrencia.charAt(0).toUpperCase() + dia_recurrencia.slice(1);
+        return `Se repite ${cantidad_repeticiones} ${cap}s`;
+      }
+      return null;
+    }
+
+    const diasNombres = [
+      "Domingo",
+      "Lunes",
+      "Martes",
+      "Miércoles",
+      "Jueves",
+      "Viernes",
+      "Sábado",
+    ];
+    const diasUnicos = [
+      ...new Set(
+        fechas_recurrencia.map((f) => new Date(f + "T00:00:00").getDay()),
+      ),
+    ];
+
+    if (diasUnicos.length === 1) {
+      return `Se repite ${fechas_recurrencia.length} ${diasNombres[diasUnicos[0]]}s`;
+    }
+
+    // Días variados
+    const diasOrdenados = diasUnicos.sort((a, b) => a - b);
+    const diasTexto = diasOrdenados.map((d) => diasNombres[d]);
+
+    if (diasTexto.length === 2) {
+      return `Se repite: ${diasTexto[0]} y ${diasTexto[1]}`;
+    }
+    const last = diasTexto.pop();
+    return `Se repite: ${diasTexto.join(", ")} y ${last}`;
+  };
+
+  const recurrenciaText = isRecurring ? getRecurrenciaText() : null;
 
   // Calcular duración en días
   const calcularDuracion = () => {
@@ -273,7 +313,10 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
   const getFechaDisplay = () => {
     if (isRecurring && fechas_recurrencia?.length > 0) {
       const primera = formatearFecha(fechas_recurrencia[0], "corto");
-      const ultima = formatearFecha(fechas_recurrencia[fechas_recurrencia.length - 1], "corto");
+      const ultima = formatearFecha(
+        fechas_recurrencia[fechas_recurrencia.length - 1],
+        "corto",
+      );
       const anio = new Date(fechas_recurrencia[0] + "T00:00:00").getFullYear();
       return `${primera} al ${ultima}, ${anio}`;
     }
@@ -461,10 +504,10 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
             )}
 
             {/* Badge de recurrencia */}
-            {isRecurring && diaCapitalizado && (
+            {isRecurring && recurrenciaText && (
               <span className="publication-modal__recurrence-badge">
                 <FontAwesomeIcon icon={faRepeat} />
-                {cantidad_repeticiones} {diaCapitalizado}s
+                {recurrenciaText}
               </span>
             )}
 
@@ -599,16 +642,21 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
                     <div className="publication-modal__recurrence-dates">
                       <span className="publication-modal__recurrence-label">
                         <FontAwesomeIcon icon={faRepeat} />
-                        Se repite {cantidad_repeticiones} {diaCapitalizado}s
+                        {recurrenciaText}
                       </span>
                       <div className="publication-modal__recurrence-chips">
                         {fechas_recurrencia.map((fecha, index) => (
-                          <span key={index} className="publication-modal__recurrence-chip">
-                            {new Date(fecha + "T00:00:00").toLocaleDateString("es-CL", {
-                              weekday: "short",
-                              day: "numeric",
-                              month: "short",
-                            })}
+                          <span
+                            key={index}
+                            className="publication-modal__recurrence-chip">
+                            {new Date(fecha + "T00:00:00").toLocaleDateString(
+                              "es-CL",
+                              {
+                                weekday: "short",
+                                day: "numeric",
+                                month: "short",
+                              },
+                            )}
                           </span>
                         ))}
                       </div>

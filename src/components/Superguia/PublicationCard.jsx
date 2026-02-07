@@ -134,10 +134,51 @@ export default function PublicationCard({
   // Determinar si es evento recurrente
   const isRecurring = es_recurrente && cantidad_repeticiones > 1;
 
-  // Capitalizar día de recurrencia
-  const diaCapitalizado = dia_recurrencia
-    ? dia_recurrencia.charAt(0).toUpperCase() + dia_recurrencia.slice(1)
-    : null;
+  // Obtener texto inteligente de recurrencia
+  const getRecurrenciaText = () => {
+    if (!fechas_recurrencia || fechas_recurrencia.length === 0) {
+      // Fallback al campo dia_recurrencia
+      if (dia_recurrencia) {
+        const cap =
+          dia_recurrencia.charAt(0).toUpperCase() + dia_recurrencia.slice(1);
+        return `${cantidad_repeticiones} ${cap}s`;
+      }
+      return null;
+    }
+
+    // Detectar los días de la semana únicos de las fechas
+    const diasSemana = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+    const diasNombres = [
+      "Domingo",
+      "Lunes",
+      "Martes",
+      "Miércoles",
+      "Jueves",
+      "Viernes",
+      "Sábado",
+    ];
+    const diasUnicos = [
+      ...new Set(
+        fechas_recurrencia.map((f) => new Date(f + "T00:00:00").getDay()),
+      ),
+    ];
+
+    if (diasUnicos.length === 1) {
+      // Todas las fechas caen en el mismo día
+      return `${fechas_recurrencia.length} ${diasNombres[diasUnicos[0]]}s`;
+    }
+
+    // Días variados: mostrar lista de días abreviados
+    const diasOrdenados = diasUnicos.sort((a, b) => a - b);
+    const diasTexto = diasOrdenados.map((d) => diasSemana[d]);
+
+    if (diasTexto.length <= 3) {
+      return diasTexto.join(", ");
+    }
+    return `${fechas_recurrencia.length} fechas`;
+  };
+
+  const recurrenciaText = isRecurring ? getRecurrenciaText() : null;
 
   // Calcular duración en días
   const calcularDuracion = () => {
@@ -381,10 +422,10 @@ export default function PublicationCard({
             </span>
           )}
           {/* Badge de recurrencia */}
-          {isRecurring && diaCapitalizado && (
+          {isRecurring && recurrenciaText && (
             <span className="publication-card__recurrence">
               <FontAwesomeIcon icon={faRepeat} />
-              {cantidad_repeticiones} {diaCapitalizado}s
+              {recurrenciaText}
             </span>
           )}
           {horarioShort && (

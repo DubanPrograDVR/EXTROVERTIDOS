@@ -131,8 +131,10 @@
 .date-range-picker__expanded {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-    margin 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+  transition:
+    grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    margin 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s ease;
   opacity: 0;
   margin-top: 0;
 }
@@ -276,7 +278,8 @@
   background: rgba(255, 102, 0, 0.03);
 }
 
-.date-range-picker__expanded.open .date-range-picker__expanded-content--recurrent {
+.date-range-picker__expanded.open
+  .date-range-picker__expanded-content--recurrent {
   padding: 20px;
 }
 
@@ -406,6 +409,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  align-items: center;
 }
 
 .date-range-picker__fecha-chip {
@@ -421,20 +425,56 @@
   font-weight: 500;
   transition: all 0.2s ease;
   animation: chipAppear 0.3s ease backwards;
+  position: relative;
 }
 
-.date-range-picker__fecha-chip:nth-child(1) { animation-delay: 0s; }
-.date-range-picker__fecha-chip:nth-child(2) { animation-delay: 0.05s; }
-.date-range-picker__fecha-chip:nth-child(3) { animation-delay: 0.1s; }
-.date-range-picker__fecha-chip:nth-child(4) { animation-delay: 0.15s; }
-.date-range-picker__fecha-chip:nth-child(5) { animation-delay: 0.2s; }
-.date-range-picker__fecha-chip:nth-child(6) { animation-delay: 0.25s; }
-.date-range-picker__fecha-chip:nth-child(7) { animation-delay: 0.3s; }
-.date-range-picker__fecha-chip:nth-child(8) { animation-delay: 0.35s; }
-.date-range-picker__fecha-chip:nth-child(9) { animation-delay: 0.4s; }
-.date-range-picker__fecha-chip:nth-child(10) { animation-delay: 0.45s; }
-.date-range-picker__fecha-chip:nth-child(11) { animation-delay: 0.5s; }
-.date-range-picker__fecha-chip:nth-child(12) { animation-delay: 0.55s; }
+.date-range-picker__fecha-chip:hover {
+  border-color: #ff6600;
+  background: rgba(255, 102, 0, 0.18);
+}
+
+.date-range-picker__fecha-chip--editing {
+  padding: 4px 6px;
+  border-color: #ff6600;
+  background: rgba(255, 102, 0, 0.2);
+}
+
+.date-range-picker__fecha-chip:nth-child(1) {
+  animation-delay: 0s;
+}
+.date-range-picker__fecha-chip:nth-child(2) {
+  animation-delay: 0.05s;
+}
+.date-range-picker__fecha-chip:nth-child(3) {
+  animation-delay: 0.1s;
+}
+.date-range-picker__fecha-chip:nth-child(4) {
+  animation-delay: 0.15s;
+}
+.date-range-picker__fecha-chip:nth-child(5) {
+  animation-delay: 0.2s;
+}
+.date-range-picker__fecha-chip:nth-child(6) {
+  animation-delay: 0.25s;
+}
+.date-range-picker__fecha-chip:nth-child(7) {
+  animation-delay: 0.3s;
+}
+.date-range-picker__fecha-chip:nth-child(8) {
+  animation-delay: 0.35s;
+}
+.date-range-picker__fecha-chip:nth-child(9) {
+  animation-delay: 0.4s;
+}
+.date-range-picker__fecha-chip:nth-child(10) {
+  animation-delay: 0.45s;
+}
+.date-range-picker__fecha-chip:nth-child(11) {
+  animation-delay: 0.5s;
+}
+.date-range-picker__fecha-chip:nth-child(12) {
+  animation-delay: 0.55s;
+}
 
 @keyframes chipAppear {
   from {
@@ -451,6 +491,86 @@
   background: rgba(255, 102, 0, 0.2);
   border-color: #ff8533;
   font-weight: 700;
+}
+
+.date-range-picker__fecha-text {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.date-range-picker__fecha-edit-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 0.7rem;
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.date-range-picker__fecha-edit-btn:hover {
+  color: #ff6600;
+}
+
+.date-range-picker__fecha-remove-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 68, 68, 0.4);
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 0.65rem;
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.date-range-picker__fecha-remove-btn:hover {
+  color: #ff4444;
+}
+
+.date-range-picker__fecha-edit-input {
+  background: transparent;
+  border: none;
+  color: #ffad66;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  width: 130px;
+  padding: 4px 6px;
+  color-scheme: dark;
+  outline: none;
+}
+
+.date-range-picker__fecha-add {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2px dashed rgba(255, 102, 0, 0.4);
+  background: transparent;
+  color: #ff6600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+}
+
+.date-range-picker__fecha-add:hover {
+  border-color: #ff6600;
+  background: rgba(255, 102, 0, 0.1);
+  transform: scale(1.08);
+}
+
+.date-range-picker__fechas-hint {
+  margin: 0 0 10px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
 }
 
 .date-range-picker__fecha-badge {
@@ -545,5 +665,21 @@
   .date-range-picker__repeticiones-suffix {
     width: 100%;
     font-size: 0.85rem;
+  }
+
+  .date-range-picker__fecha-chip {
+    padding: 6px 10px;
+    font-size: 0.78rem;
+  }
+
+  .date-range-picker__fecha-edit-input {
+    width: 110px;
+    font-size: 0.78rem;
+  }
+
+  .date-range-picker__fecha-add {
+    width: 32px;
+    height: 32px;
+    font-size: 0.75rem;
   }
 }

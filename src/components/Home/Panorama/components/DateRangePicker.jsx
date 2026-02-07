@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCalendarDays,
@@ -7,6 +7,9 @@ import {
   faInfoCircle,
   faRepeat,
   faCalendarCheck,
+  faPen,
+  faPlus,
+  faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import "./styles/date-range-picker.css";
 
@@ -64,6 +67,8 @@ const DateRangePicker = ({
   // Estado local para animación de paneles
   const [isExpanded, setIsExpanded] = useState(esMultidia);
   const [isRecurrentExpanded, setIsRecurrentExpanded] = useState(esRecurrente);
+  const [editingIndex, setEditingIndex] = useState(null);
+  const dateInputRefs = useRef({});
 
   // Sincronizar estados expandidos con props
   useEffect(() => {
@@ -84,21 +89,33 @@ const DateRangePicker = ({
     return DIAS_SEMANA[date.getDay()];
   }, [fechaEvento]);
 
-  // Calcular fechas de recurrencia automáticamente
+  // Calcular fechas de recurrencia automáticamente (base sugerida)
   const fechasCalculadas = useMemo(() => {
     if (!esRecurrente || !fechaEvento) return [];
     return calcularFechasRecurrencia(fechaEvento, cantidadRepeticiones || 2);
   }, [esRecurrente, fechaEvento, cantidadRepeticiones]);
 
-  // Propagar fechas calculadas al padre cuando cambien
+  // Las fechas finales son las personalizadas si existen, si no las calculadas
+  const fechasFinales = useMemo(() => {
+    if (fechasRecurrencia && fechasRecurrencia.length > 0) {
+      return fechasRecurrencia;
+    }
+    return fechasCalculadas;
+  }, [fechasRecurrencia, fechasCalculadas]);
+
+  // Propagar fechas calculadas al padre cuando cambien (solo si no hay ediciones manuales)
   useEffect(() => {
     if (esRecurrente && fechasCalculadas.length > 0) {
-      onChange({
-        target: {
-          name: "fechas_recurrencia",
-          value: fechasCalculadas,
-        },
-      });
+      // Solo auto-propagar si no hay fechas personalizadas o si la cantidad cambió
+      const currentLen = fechasRecurrencia?.length || 0;
+      if (currentLen === 0 || currentLen !== fechasCalculadas.length) {
+        onChange({
+          target: {
+            name: "fechas_recurrencia",
+            value: fechasCalculadas,
+          },
+        });
+      }
       // También actualizar el día de recurrencia
       if (diaDetectado) {
         onChange({
@@ -111,6 +128,75 @@ const DateRangePicker = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fechasCalculadas.length, esRecurrente, diaDetectado]);
+
+  // === Handlers para editar fechas individuales ===
+
+  // Editar una fecha específica por índice
+  const handleEditFecha = useCallback((index) => {
+    setEditingIndex(index);
+    // Abrir el date picker nativo después de un tick
+    setTimeout(() => {
+      const input = dateInputRefs.current[index];
+      if (input) {
+        input.showPicker?.();
+        input.focus();
+      }
+    }, 50);
+  }, []);
+
+  // Guardar fecha editada
+  const handleFechaChange = useCallback(
+    (index, newDate) => {
+      if (!newDate) return;
+      const updated = [...fechasFinales];
+      updated[index] = newDate;
+      // Ordenar cronológicamente
+      updated.sort();
+      onChange({
+        target: { name: "fechas_recurrencia", value: updated },
+      });
+      setEditingIndex(null);
+    },
+    [fechasFinales, onChange],
+  );
+
+  // Agregar una nueva fecha
+  const handleAddFecha = useCallback(() => {
+    // Sugerir la próxima semana después de la última fecha
+    const lastDate = fechasFinales[fechasFinales.length - 1];
+    let newDate = "";
+    if (lastDate) {
+      const d = new Date(lastDate + "T00:00:00");
+      d.setDate(d.getDate() + 7);
+      newDate = d.toISOString().split("T")[0];
+    }
+    const updated = [...fechasFinales, newDate];
+    updated.sort((a, b) => (a && b ? a.localeCompare(b) : 0));
+    onChange({
+      target: { name: "fechas_recurrencia", value: updated },
+    });
+    // Abrir el editor en la nueva fecha
+    setTimeout(() => {
+      const newIndex = updated.indexOf(newDate);
+      handleEditFecha(newIndex >= 0 ? newIndex : updated.length - 1);
+    }, 100);
+  }, [fechasFinales, onChange, handleEditFecha]);
+
+  // Eliminar una fecha (mínimo 2)
+  const handleRemoveFecha = useCallback(
+    (index) => {
+      if (fechasFinales.length <= 2) return;
+      const updated = fechasFinales.filter((_, i) => i !== index);
+      onChange({
+        target: { name: "fechas_recurrencia", value: updated },
+      });
+      // Actualizar cantidad de repeticiones
+      onChange({
+        target: { name: "cantidad_repeticiones", value: updated.length },
+      });
+    },
+    [fechasFinales, onChange],
+  );
 
   // Manejar cambio del checkbox multi-día
   const handleMultidiaChange = (e) => {
@@ -432,28 +518,79 @@ const DateRangePicker = ({
             </div>
           </div>
 
-          {/* Vista previa de fechas calculadas */}
-          {fechasCalculadas.length > 0 && (
+          {/* Vista previa de fechas — editables */}
+          {fechasFinales.length > 0 && (
             <div className="date-range-picker__fechas-preview">
               <p className="date-range-picker__fechas-title">
                 <FontAwesomeIcon icon={faCalendarDays} /> Tu evento aparecerá
                 estas fechas:
               </p>
+              <p className="date-range-picker__fechas-hint">
+                Haz clic en una fecha para cambiarla
+              </p>
               <div className="date-range-picker__fechas-list">
-                {fechasCalculadas.map((fecha, index) => (
-                  <span
-                    key={fecha}
+                {fechasFinales.map((fecha, index) => (
+                  <div
+                    key={`${fecha}-${index}`}
                     className={`date-range-picker__fecha-chip ${
                       index === 0 ? "date-range-picker__fecha-chip--first" : ""
-                    }`}>
-                    {formatearFecha(fecha)}
-                    {index === 0 && (
-                      <span className="date-range-picker__fecha-badge">
-                        Inicio
-                      </span>
+                    } ${editingIndex === index ? "date-range-picker__fecha-chip--editing" : ""}`}>
+                    {editingIndex === index ? (
+                      <input
+                        ref={(el) => (dateInputRefs.current[index] = el)}
+                        type="date"
+                        className="date-range-picker__fecha-edit-input"
+                        value={fecha}
+                        min={today}
+                        onChange={(e) =>
+                          handleFechaChange(index, e.target.value)
+                        }
+                        onBlur={() => setEditingIndex(null)}
+                      />
+                    ) : (
+                      <>
+                        <span
+                          className="date-range-picker__fecha-text"
+                          onClick={() => handleEditFecha(index)}
+                          title="Clic para cambiar esta fecha">
+                          {formatearFecha(fecha)}
+                          {index === 0 && (
+                            <span className="date-range-picker__fecha-badge">
+                              Inicio
+                            </span>
+                          )}
+                        </span>
+                        <button
+                          type="button"
+                          className="date-range-picker__fecha-edit-btn"
+                          onClick={() => handleEditFecha(index)}
+                          title="Editar fecha">
+                          <FontAwesomeIcon icon={faPen} />
+                        </button>
+                        {fechasFinales.length > 2 && (
+                          <button
+                            type="button"
+                            className="date-range-picker__fecha-remove-btn"
+                            onClick={() => handleRemoveFecha(index)}
+                            title="Eliminar fecha">
+                            <FontAwesomeIcon icon={faTrash} />
+                          </button>
+                        )}
+                      </>
                     )}
-                  </span>
+                  </div>
                 ))}
+
+                {/* Botón para agregar más fechas */}
+                {fechasFinales.length < 12 && (
+                  <button
+                    type="button"
+                    className="date-range-picker__fecha-add"
+                    onClick={handleAddFecha}
+                    title="Agregar otra fecha">
+                    <FontAwesomeIcon icon={faPlus} />
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -463,7 +600,8 @@ const DateRangePicker = ({
             <FontAwesomeIcon icon={faInfoCircle} />
             <p>
               Tu evento se mostrará en la superguía en cada una de las fechas
-              indicadas. El horario será el mismo para todas las fechas.
+              indicadas. Puedes editar cualquier fecha para ajustarla a tu
+              necesidad. El horario será el mismo para todas las fechas.
             </p>
           </div>
         </div>
