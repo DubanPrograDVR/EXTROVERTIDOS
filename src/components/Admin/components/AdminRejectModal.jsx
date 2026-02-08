@@ -29,7 +29,12 @@ export default function AdminRejectModal({
 
   return (
     <div className="admin-modal-overlay" onClick={handleClose}>
-      <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="admin-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Rechazar publicación"
+        onClick={(e) => e.stopPropagation()}>
         <h3>{title}</h3>
         <p>Por favor, indica el motivo del rechazo (opcional):</p>
 

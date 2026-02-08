@@ -41,7 +41,11 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }) {
     <div
       className="auth-modal-overlay"
       onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="auth-modal auth-modal--simple">
+      <div
+        className="auth-modal auth-modal--simple"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Autenticación">
         <button className="auth-modal__close" onClick={onClose}>
           <FontAwesomeIcon icon={faTimes} />
         </button>

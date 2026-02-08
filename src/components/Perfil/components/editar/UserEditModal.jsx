@@ -75,7 +75,12 @@ export default function UserEditModal({
 
   return (
     <div className="user-edit-modal__overlay" onClick={onClose}>
-      <div className="user-edit-modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="user-edit-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Editar perfil"
+        onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="user-edit-modal__header">
           <h2>Editar Publicación</h2>

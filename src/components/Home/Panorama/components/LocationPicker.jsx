@@ -205,8 +205,8 @@ const LocationPicker = ({ isOpen, onClose, currentLocation, onSave }) => {
       // Usar Nominatim (OpenStreetMap) para geocodificación gratuita
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          searchQuery + ", Chile"
-        )}&limit=1`
+          searchQuery + ", Chile",
+        )}&limit=1`,
       );
       const data = await response.json();
 
@@ -238,7 +238,7 @@ const LocationPicker = ({ isOpen, onClose, currentLocation, onSave }) => {
         (error) => {
           console.error("Error obteniendo ubicación:", error);
           alert("No se pudo obtener tu ubicación. Verifica los permisos.");
-        }
+        },
       );
     } else {
       alert("Tu navegador no soporta geolocalización.");
@@ -278,7 +278,11 @@ const LocationPicker = ({ isOpen, onClose, currentLocation, onSave }) => {
 
   return (
     <div className="location-picker-overlay" onClick={handleOverlayClick}>
-      <div className="location-picker">
+      <div
+        className="location-picker"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Seleccionar ubicación">
         {/* Header */}
         <div className="location-picker__header">
           <h2 className="location-picker__title">

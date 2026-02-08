@@ -47,7 +47,7 @@ const TICKET_OPTIONS = [
  */
 const TicketModal = ({ isOpen, onClose, currentValues, onSave }) => {
   const [selectedType, setSelectedType] = useState(
-    currentValues?.tipo_entrada || "sin_entrada"
+    currentValues?.tipo_entrada || "sin_entrada",
   );
   const [precio, setPrecio] = useState(currentValues?.precio || "");
   const [urlVenta, setUrlVenta] = useState(currentValues?.url_venta || "");
@@ -88,7 +88,11 @@ const TicketModal = ({ isOpen, onClose, currentValues, onSave }) => {
 
   return (
     <div className="ticket-modal-overlay" onClick={handleOverlayClick}>
-      <div className="ticket-modal">
+      <div
+        className="ticket-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Información de entrada">
         {/* Header */}
         <div className="ticket-modal__header">
           <h2 className="ticket-modal__title">

@@ -252,7 +252,12 @@ function DraftPreviewModal({ draft, onClose, onContinue }) {
 
   return (
     <div className="draft-preview-modal__overlay" onClick={onClose}>
-      <div className="draft-preview-modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="draft-preview-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Vista previa del borrador"
+        onClick={(e) => e.stopPropagation()}>
         <div className="draft-preview-modal__header">
           <h3>Vista previa del borrador</h3>
           <button className="draft-preview-modal__close" onClick={onClose}>

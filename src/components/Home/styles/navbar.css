@@ -181,6 +181,29 @@
   width: 80%;
 }
 
+/* Activar Plan - highlighted */
+.nav-link--highlight {
+  color: #ff6600;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 0.78rem;
+}
+
+.nav-link--highlight::before {
+  width: 100%;
+  background: linear-gradient(90deg, #ff6600, #ffaa00);
+  opacity: 0.5;
+}
+
+.nav-link--highlight:hover {
+  color: #ffaa00;
+}
+
+.nav-link--highlight:hover::before {
+  opacity: 1;
+}
+
 /* ===== SECCIÓN DE USUARIO (SEPARADOR + BOTÓN) ===== */
 .navbar-user-section {
   display: flex;

@@ -6,6 +6,18 @@
 import { supabase } from "../supabase";
 
 /**
+ * Sanitiza un valor para usar en filtros PostgREST.
+ * Remueve caracteres que podrían inyectar operadores (., ,, (, )).
+ * @param {string} value - Valor a sanitizar
+ * @returns {string} Valor seguro
+ */
+const sanitizeFilterValue = (value) => {
+  if (!value || typeof value !== 'string') return '';
+  // Remover operadores PostgREST (.,()) y wildcards ILIKE (%_) y backslash
+  return value.replace(/[.,()\\%_]/g, '').trim();
+};
+
+/**
  * Detecta si un error de Supabase es de autenticación
  * @param {Object} error - Error de Supabase
  * @returns {boolean}
@@ -258,11 +270,17 @@ export const getEventsByCity = async (ciudad, provincia = null) => {
 
   // Filtrar por comuna o provincia
   if (ciudad) {
-    query = query.or(`comuna.ilike.%${ciudad}%,provincia.ilike.%${ciudad}%`);
+    const safeCiudad = sanitizeFilterValue(ciudad);
+    if (safeCiudad) {
+      query = query.or(`comuna.ilike.%${safeCiudad}%,provincia.ilike.%${safeCiudad}%`);
+    }
   }
 
   if (provincia) {
-    query = query.ilike("provincia", `%${provincia}%`);
+    const safeProvincia = sanitizeFilterValue(provincia);
+    if (safeProvincia) {
+      query = query.ilike("provincia", `%${safeProvincia}%`);
+    }
   }
 
   const { data, error } = await query.order("fecha_evento", {
@@ -405,9 +423,12 @@ export const getFilteredEvents = async (filters = {}) => {
 
   // Búsqueda por texto
   if (filters.search) {
-    query = query.or(
-      `titulo.ilike.%${filters.search}%,descripcion.ilike.%${filters.search}%,comuna.ilike.%${filters.search}%`,
-    );
+    const safeSearch = sanitizeFilterValue(filters.search);
+    if (safeSearch) {
+      query = query.or(
+        `titulo.ilike.%${safeSearch}%,descripcion.ilike.%${safeSearch}%,comuna.ilike.%${safeSearch}%`,
+      );
+    }
   }
 
   // Ordenamiento
@@ -424,15 +445,63 @@ export const getFilteredEvents = async (filters = {}) => {
 };
 
 /**
+ * Campos permitidos para actualizar un evento.
+ * SEGURIDAD: Evita mass-assignment de 'estado', 'user_id', 'published_at'.
+ */
+const ALLOWED_EVENT_UPDATE_FIELDS = [
+  'titulo', 'descripcion', 'organizador', 'category_id',
+  'fecha_evento', 'fecha_fin', 'hora_inicio', 'hora_fin',
+  'provincia', 'comuna', 'direccion', 'coordenadas',
+  'imagenes', 'tipo_entrada', 'precio', 'url_venta',
+  'redes_sociales', 'motivo_rechazo', 'sitio_web',
+  'ubicacion_url', 'es_recurrente', 'tipo_recurrencia',
+  'dias_recurrencia', 'fechas_recurrentes',
+  'etiqueta_destacada', 'hashtags', 'mensaje_marketing',
+  'titulo_marketing',
+];
+
+/**
+ * Campos adicionales que solo un admin/moderador puede modificar.
+ */
+const ADMIN_ONLY_EVENT_FIELDS = ['estado', 'published_at'];
+
+/**
  * Actualiza un evento
+ * SEGURIDAD: Solo permite campos de la whitelist.
+ * Si se necesita cambiar 'estado', pasar options.adminOverride = true.
  * @param {string} eventId - ID del evento
  * @param {Object} eventData - Datos a actualizar
+ * @param {Object} [options] - Opciones adicionales
+ * @param {boolean} [options.adminOverride=false] - Permite campos admin (estado, published_at)
  * @returns {Promise<Object>} Evento actualizado
  */
-export const updateEvent = async (eventId, eventData) => {
+export const updateEvent = async (eventId, eventData, options = {}) => {
+  const { adminOverride = false } = options;
+
+  // Determinar campos permitidos según contexto
+  const allowedFields = adminOverride
+    ? [...ALLOWED_EVENT_UPDATE_FIELDS, ...ADMIN_ONLY_EVENT_FIELDS]
+    : ALLOWED_EVENT_UPDATE_FIELDS;
+
+  // Sanitizar: solo permitir campos seguros
+  const sanitized = {};
+  for (const key of allowedFields) {
+    if (eventData[key] !== undefined) {
+      sanitized[key] = eventData[key];
+    }
+  }
+
+  // Caso especial: usuarios normales pueden volver su evento a "pendiente"
+  // (para re-revisión tras editar), pero NO pueden ponerlo en "publicado"
+  if (!adminOverride && eventData.estado === "pendiente") {
+    sanitized.estado = "pendiente";
+  }
+
+  sanitized.updated_at = new Date().toISOString();
+
   const { data, error } = await supabase
     .from("events")
-    .update({ ...eventData, updated_at: new Date().toISOString() })
+    .update(sanitized)
     .eq("id", eventId)
     .select()
     .single();

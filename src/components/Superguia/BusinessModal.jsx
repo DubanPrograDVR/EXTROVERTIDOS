@@ -364,7 +364,11 @@ export default function BusinessModal({ business, isOpen, onClose }) {
 
   return (
     <div className="publication-modal-overlay" onClick={handleOverlayClick}>
-      <div className="publication-modal publication-modal--business">
+      <div
+        className="publication-modal publication-modal--business"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Detalle del negocio">
         {/* Categoría en la parte superior con logo */}
         {categories?.nombre && (
           <div className="publication-modal__category-header">

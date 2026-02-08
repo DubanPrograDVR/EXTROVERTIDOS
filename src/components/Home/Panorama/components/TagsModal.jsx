@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTimes, faHashtag, faCheck, faPlus } from "@fortawesome/free-solid-svg-icons";
+import {
+  faTimes,
+  faHashtag,
+  faCheck,
+  faPlus,
+} from "@fortawesome/free-solid-svg-icons";
 import { getTags } from "../../../../lib/database";
 import "./styles/tags-modal.css";
 
@@ -148,7 +153,10 @@ const TagsModal = ({ isOpen, onClose, selectedTags = [], onSave }) => {
       setCustomTagError("El hashtag es demasiado largo (máx. 30)");
       return;
     }
-    if (internalSelected.includes(formatted) || ETIQUETAS_PREDEFINIDAS.includes(formatted)) {
+    if (
+      internalSelected.includes(formatted) ||
+      ETIQUETAS_PREDEFINIDAS.includes(formatted)
+    ) {
       setCustomTagError("Esta etiqueta ya existe");
       return;
     }
@@ -202,7 +210,12 @@ const TagsModal = ({ isOpen, onClose, selectedTags = [], onSave }) => {
 
   return (
     <div className="tags-modal-overlay" onClick={handleCancel}>
-      <div className="tags-modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="tags-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Seleccionar etiquetas"
+        onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="tags-modal__header">
           <h3 className="tags-modal__title">
@@ -245,7 +258,9 @@ const TagsModal = ({ isOpen, onClose, selectedTags = [], onSave }) => {
               type="button"
               className="tags-modal__custom-add"
               onClick={handleAddCustomTag}
-              disabled={!customTag.trim() || internalSelected.length >= MAX_TAGS}>
+              disabled={
+                !customTag.trim() || internalSelected.length >= MAX_TAGS
+              }>
               <FontAwesomeIcon icon={faPlus} />
               Agregar
             </button>
@@ -264,7 +279,9 @@ const TagsModal = ({ isOpen, onClose, selectedTags = [], onSave }) => {
               {/* Tags personalizados guardados */}
               {savedCustomTags.length > 0 && (
                 <div className="tags-modal__section">
-                  <p className="tags-modal__section-title">Mis hashtags personalizados</p>
+                  <p className="tags-modal__section-title">
+                    Mis hashtags personalizados
+                  </p>
                   <div className="tags-modal__grid">
                     {savedCustomTags.map((tag) => (
                       <div key={tag} className="tags-modal__tag-wrapper">
@@ -307,35 +324,37 @@ const TagsModal = ({ isOpen, onClose, selectedTags = [], onSave }) => {
               {/* Etiquetas predefinidas */}
               <div className="tags-modal__section">
                 {savedCustomTags.length > 0 && (
-                  <p className="tags-modal__section-title">Etiquetas predefinidas</p>
+                  <p className="tags-modal__section-title">
+                    Etiquetas predefinidas
+                  </p>
                 )}
                 <div className="tags-modal__grid">
                   {ETIQUETAS_PREDEFINIDAS.map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  className={`tags-modal__tag ${
-                    internalSelected.includes(tag) ? "selected" : ""
-                  } ${
-                    internalSelected.length >= MAX_TAGS &&
-                    !internalSelected.includes(tag)
-                      ? "disabled"
-                      : ""
-                  }`}
-                  onClick={() => handleToggleTag(tag)}
-                  disabled={
-                    internalSelected.length >= MAX_TAGS &&
-                    !internalSelected.includes(tag)
-                  }>
-                  {tag}
-                  {internalSelected.includes(tag) && (
-                    <FontAwesomeIcon
-                      icon={faCheck}
-                      className="tags-modal__tag-check"
-                    />
-                  )}
-                </button>
-              ))}
+                    <button
+                      key={tag}
+                      type="button"
+                      className={`tags-modal__tag ${
+                        internalSelected.includes(tag) ? "selected" : ""
+                      } ${
+                        internalSelected.length >= MAX_TAGS &&
+                        !internalSelected.includes(tag)
+                          ? "disabled"
+                          : ""
+                      }`}
+                      onClick={() => handleToggleTag(tag)}
+                      disabled={
+                        internalSelected.length >= MAX_TAGS &&
+                        !internalSelected.includes(tag)
+                      }>
+                      {tag}
+                      {internalSelected.includes(tag) && (
+                        <FontAwesomeIcon
+                          icon={faCheck}
+                          className="tags-modal__tag-check"
+                        />
+                      )}
+                    </button>
+                  ))}
                 </div>
               </div>
             </>

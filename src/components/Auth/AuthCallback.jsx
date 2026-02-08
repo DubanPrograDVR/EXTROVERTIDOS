@@ -1,16 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase, cleanAuthTokensFromUrl } from "../../lib/supabase";
 
 /**
  * AuthCallback - Componente para manejar el callback de autenticación OAuth.
- * 
+ *
  * Este componente se encarga de:
  * 1. Procesar el código de autorización de OAuth (PKCE flow)
  * 2. Intercambiar el código por una sesión válida
  * 3. Limpiar la URL de cualquier token o código sensible
  * 4. Redirigir al usuario a la página principal
- * 
+ *
  * ⚠️ IMPORTANTE: Esta ruta debe estar configurada en Supabase Dashboard
  * como una URL de redirección permitida:
  * - Development: http://localhost:5173/auth/callback
@@ -20,19 +20,37 @@ const AuthCallback = () => {
   const navigate = useNavigate();
   const [error, setError] = useState(null);
 
+  const redirectTimerRef = useRef(null);
+
+  // Limpiar timeout al desmontar
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current);
+    };
+  }, []);
+
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
         console.log("[AuthCallback] Procesando callback de autenticación...");
 
         // Obtener la sesión - esto procesa automáticamente el código PKCE
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
 
         if (sessionError) {
-          console.error("[AuthCallback] Error obteniendo sesión:", sessionError);
+          console.error(
+            "[AuthCallback] Error obteniendo sesión:",
+            sessionError,
+          );
           setError(sessionError.message);
           // Esperar un momento antes de redirigir para que el usuario vea el error
-          setTimeout(() => navigate("/", { replace: true }), 2000);
+          redirectTimerRef.current = setTimeout(
+            () => navigate("/", { replace: true }),
+            2000,
+          );
           return;
         }
 
@@ -42,21 +60,31 @@ const AuthCallback = () => {
         if (session) {
           console.log("[AuthCallback] Sesión establecida correctamente");
         } else {
-          console.log("[AuthCallback] No hay sesión, el listener de auth se encargará");
+          console.log(
+            "[AuthCallback] No hay sesión, el listener de auth se encargará",
+          );
         }
 
         // Obtener la URL de retorno guardada o usar la raíz
-        const returnUrl = sessionStorage.getItem("authReturnUrl") || "/";
+        let returnUrl = sessionStorage.getItem("authReturnUrl") || "/";
         sessionStorage.removeItem("authReturnUrl");
+
+        // SEGURIDAD: Validar que la URL sea una ruta interna válida
+        // Previene open redirect si alguien inyecta una URL externa
+        if (!returnUrl.startsWith("/") || returnUrl.startsWith("//")) {
+          returnUrl = "/";
+        }
 
         // Redirigir a la página de destino
         navigate(returnUrl, { replace: true });
-
       } catch (err) {
         console.error("[AuthCallback] Error inesperado:", err);
         setError("Error procesando la autenticación");
         cleanAuthTokensFromUrl();
-        setTimeout(() => navigate("/", { replace: true }), 2000);
+        redirectTimerRef.current = setTimeout(
+          () => navigate("/", { replace: true }),
+          2000,
+        );
       }
     };
 

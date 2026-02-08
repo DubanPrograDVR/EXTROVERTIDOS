@@ -14,6 +14,7 @@ export default function Carousel({ publications, onPublicationClick }) {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const autoPlayRef = useRef(null);
   const resumeTimeoutRef = useRef(null);
+  const transitionTimerRef = useRef(null);
 
   const itemsToShow = 4;
   const totalItems = publications?.length || 0;
@@ -25,6 +26,7 @@ export default function Carousel({ publications, onPublicationClick }) {
     return () => {
       if (autoPlayRef.current) clearInterval(autoPlayRef.current);
       if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
+      if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
     };
   }, []);
 
@@ -33,7 +35,10 @@ export default function Carousel({ publications, onPublicationClick }) {
     if (isTransitioning || totalItems === 0) return;
     setIsTransitioning(true);
     setCurrentIndex((prev) => (prev + 1) % totalItems);
-    setTimeout(() => setIsTransitioning(false), transitionDuration);
+    transitionTimerRef.current = setTimeout(
+      () => setIsTransitioning(false),
+      transitionDuration,
+    );
   }, [totalItems, isTransitioning]);
 
   // Navegar al anterior con protección de transición
@@ -41,7 +46,10 @@ export default function Carousel({ publications, onPublicationClick }) {
     if (isTransitioning || totalItems === 0) return;
     setIsTransitioning(true);
     setCurrentIndex((prev) => (prev - 1 + totalItems) % totalItems);
-    setTimeout(() => setIsTransitioning(false), transitionDuration);
+    transitionTimerRef.current = setTimeout(
+      () => setIsTransitioning(false),
+      transitionDuration,
+    );
   }, [totalItems, isTransitioning]);
 
   // Ir a un índice específico
@@ -50,7 +58,10 @@ export default function Carousel({ publications, onPublicationClick }) {
       if (isTransitioning || totalItems === 0) return;
       setIsTransitioning(true);
       setCurrentIndex(index);
-      setTimeout(() => setIsTransitioning(false), transitionDuration);
+      transitionTimerRef.current = setTimeout(
+        () => setIsTransitioning(false),
+        transitionDuration,
+      );
     },
     [totalItems, isTransitioning],
   );

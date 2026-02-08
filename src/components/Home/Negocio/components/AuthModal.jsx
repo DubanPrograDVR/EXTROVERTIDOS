@@ -32,8 +32,10 @@ const AuthModal = ({ isOpen, onClose }) => {
     <div className="publicar-negocio__auth-modal" onClick={onClose}>
       <div
         className="publicar-negocio__auth-content"
-        onClick={(e) => e.stopPropagation()}
-      >
+        role="dialog"
+        aria-modal="true"
+        aria-label="Iniciar sesión"
+        onClick={(e) => e.stopPropagation()}>
         <button className="publicar-negocio__auth-close" onClick={onClose}>
           <FontAwesomeIcon icon={faTimes} />
         </button>
@@ -42,8 +44,7 @@ const AuthModal = ({ isOpen, onClose }) => {
         <button
           className="publicar-negocio__google-btn"
           onClick={handleGoogleLogin}
-          disabled={isGoogleLoading}
-        >
+          disabled={isGoogleLoading}>
           {isGoogleLoading ? (
             <FontAwesomeIcon icon={faSpinner} spin />
           ) : (

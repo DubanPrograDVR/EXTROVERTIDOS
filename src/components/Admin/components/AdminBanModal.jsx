@@ -49,6 +49,9 @@ export default function AdminBanModal({
     <div className="admin-modal-overlay" onClick={handleClose}>
       <div
         className="admin-modal admin-modal--ban"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Suspender usuario"
         onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="admin-modal__header admin-modal__header--warning">

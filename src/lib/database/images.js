@@ -403,11 +403,21 @@ export const uploadMultipleImages = async (
 
 /**
  * Elimina una imagen del storage
+ * SEGURIDAD: Verifica sesión activa antes de eliminar.
  * @param {string} imageUrl - URL de la imagen a eliminar
  * @returns {Promise<boolean>} true si se eliminó correctamente
  */
 export const deleteEventImage = async (imageUrl) => {
   try {
+    // Verificar sesión antes de eliminar
+    const { session, error: sessionError } = await verifySession();
+    if (!session || sessionError) {
+      throw (
+        sessionError ||
+        new Error("Debes iniciar sesión para eliminar imágenes.")
+      );
+    }
+
     // Extraer el path de la URL
     const urlParts = imageUrl.split("/storage/v1/object/public/Imagenes/");
     if (urlParts.length < 2) {
@@ -416,6 +426,16 @@ export const deleteEventImage = async (imageUrl) => {
     }
 
     const filePath = urlParts[1];
+
+    // Verificar que el path pertenece al usuario actual
+    const userId = session.user?.id;
+    if (
+      userId &&
+      !filePath.startsWith(`events/${userId}/`) &&
+      !filePath.startsWith(`businesses/${userId}/`)
+    ) {
+      throw new Error("No tienes permisos para eliminar esta imagen.");
+    }
 
     const { error } = await supabase.storage
       .from("Imagenes")

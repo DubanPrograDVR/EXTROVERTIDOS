@@ -10,18 +10,12 @@ import { isModerator, ESTADOS_PUBLICACION } from "./roles";
 /**
  * Obtiene todas las publicaciones pendientes de aprobación
  * @param {string} adminUserId - ID del usuario admin/moderador
- * @param {boolean} skipPermissionCheck - Si ya se verificó el permiso
  * @returns {Promise<Array>} Eventos pendientes
  */
-export const getPendingEvents = async (
-  adminUserId,
-  skipPermissionCheck = false
-) => {
-  if (!skipPermissionCheck) {
-    const canModerate = await isModerator(adminUserId);
-    if (!canModerate) {
-      throw new Error("No tienes permisos para ver publicaciones pendientes");
-    }
+export const getPendingEvents = async (adminUserId) => {
+  const canModerate = await isModerator(adminUserId);
+  if (!canModerate) {
+    throw new Error("No tienes permisos para ver publicaciones pendientes");
   }
 
   const { data, error } = await supabase
@@ -48,7 +42,7 @@ export const getPendingEvents = async (
         avatar_url,
         email
       )
-    `
+    `,
     )
     .eq("estado", "pendiente")
     .order("created_at", { ascending: true })
@@ -90,7 +84,7 @@ export const getAllEvents = async (adminUserId) => {
         avatar_url,
         email
       )
-    `
+    `,
     )
     .order("created_at", { ascending: false });
 
@@ -260,7 +254,7 @@ export const getPendingBusinesses = async (adminUserId) => {
         avatar_url,
         email
       )
-    `
+    `,
     )
     .eq("estado", "pendiente")
     .order("created_at", { ascending: true });
@@ -343,19 +337,13 @@ export const rejectBusiness = async (businessId, adminUserId, razon = "") => {
  * Estadísticas del panel de administración
  * OPTIMIZADO: Queries en paralelo + caché de 30 segundos
  * @param {string} adminUserId - ID del admin
- * @param {boolean} skipPermissionCheck - Saltar verificación de permisos
  * @returns {Promise<Object>} Estadísticas
  */
-export const getAdminStats = async (
-  adminUserId,
-  skipPermissionCheck = false
-) => {
+export const getAdminStats = async (adminUserId) => {
   try {
-    if (!skipPermissionCheck) {
-      const canModerate = await isModerator(adminUserId);
-      if (!canModerate) {
-        throw new Error("No tienes permisos para ver estadísticas");
-      }
+    const canModerate = await isModerator(adminUserId);
+    if (!canModerate) {
+      throw new Error("No tienes permisos para ver estadísticas");
     }
 
     // Verificar caché
@@ -412,19 +400,13 @@ export const getAdminStats = async (
  * Obtiene publicaciones por día de los últimos 7 días
  * OPTIMIZADO: Solo trae las fechas necesarias
  * @param {string} adminUserId - ID del admin
- * @param {boolean} skipPermissionCheck - Saltar verificación
  * @returns {Promise<Array>} Datos por día
  */
-export const getEventsPerDay = async (
-  adminUserId,
-  skipPermissionCheck = false
-) => {
+export const getEventsPerDay = async (adminUserId) => {
   try {
-    if (!skipPermissionCheck) {
-      const canModerate = await isModerator(adminUserId);
-      if (!canModerate) {
-        throw new Error("No tienes permisos");
-      }
+    const canModerate = await isModerator(adminUserId);
+    if (!canModerate) {
+      throw new Error("No tienes permisos");
     }
 
     const today = new Date();
@@ -473,19 +455,13 @@ export const getEventsPerDay = async (
  * Obtiene usuarios registrados por día de los últimos 7 días
  * OPTIMIZADO: Solo trae las fechas necesarias
  * @param {string} adminUserId - ID del admin
- * @param {boolean} skipPermissionCheck - Saltar verificación
  * @returns {Promise<Array>} Datos por día
  */
-export const getUsersPerDay = async (
-  adminUserId,
-  skipPermissionCheck = false
-) => {
+export const getUsersPerDay = async (adminUserId) => {
   try {
-    if (!skipPermissionCheck) {
-      const canModerate = await isModerator(adminUserId);
-      if (!canModerate) {
-        throw new Error("No tienes permisos");
-      }
+    const canModerate = await isModerator(adminUserId);
+    if (!canModerate) {
+      throw new Error("No tienes permisos");
     }
 
     const today = new Date();
@@ -541,8 +517,14 @@ export const getUsersPerDay = async (
 export const getAllUsersWithBanStatus = async (
   adminId,
   page = 1,
-  limit = 50
+  limit = 50,
 ) => {
+  // SEGURIDAD: Verificar permisos antes de exponer datos de usuarios
+  const canModerate = await isModerator(adminId);
+  if (!canModerate) {
+    throw new Error("No tienes permisos para ver la lista de usuarios");
+  }
+
   const offset = (page - 1) * limit;
 
   const [usersResult, bansResult] = await Promise.all([

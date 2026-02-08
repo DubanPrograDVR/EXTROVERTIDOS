@@ -423,7 +423,11 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
 
   return (
     <div className="publication-modal-overlay" onClick={handleOverlayClick}>
-      <div className="publication-modal publication-modal--business-style">
+      <div
+        className="publication-modal publication-modal--business-style"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Detalle de publicación">
         {/* Categoría en la parte superior con logo */}
         {categories?.nombre && (
           <div className="publication-modal__category-header">

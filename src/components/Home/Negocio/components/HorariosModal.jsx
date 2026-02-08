@@ -7,12 +7,7 @@ import {
   faCopy,
   faClock,
 } from "@fortawesome/free-solid-svg-icons";
-import {
-  DIAS_SEMANA,
-  DEFAULT_TURNO,
-  HOURS,
-  MINUTES,
-} from "./constants";
+import { DIAS_SEMANA, DEFAULT_TURNO, HOURS, MINUTES } from "./constants";
 
 /**
  * Selector de hora/minuto individual
@@ -25,8 +20,7 @@ const TimeSelect = ({ value, onChange }) => {
       <select
         className="horarios-modal__time-select"
         value={hora}
-        onChange={(e) => onChange(`${e.target.value}:${minuto}`)}
-      >
+        onChange={(e) => onChange(`${e.target.value}:${minuto}`)}>
         {HOURS.map((h) => (
           <option key={h} value={h}>
             {h}
@@ -37,8 +31,7 @@ const TimeSelect = ({ value, onChange }) => {
       <select
         className="horarios-modal__time-select"
         value={minuto}
-        onChange={(e) => onChange(`${hora}:${e.target.value}`)}
-      >
+        onChange={(e) => onChange(`${hora}:${e.target.value}`)}>
         {MINUTES.map((m) => (
           <option key={m} value={m}>
             {m}
@@ -113,19 +106,16 @@ const HorariosModal = ({
   }, []);
 
   // Copiar horarios del primer día a todos los demás
-  const applyToAll = useCallback(
-    (sourceDia) => {
-      setLocalHorarios((prev) => {
-        const sourceSlots = prev[sourceDia];
-        const updated = {};
-        Object.keys(prev).forEach((dia) => {
-          updated[dia] = sourceSlots.map((s) => ({ ...s }));
-        });
-        return updated;
+  const applyToAll = useCallback((sourceDia) => {
+    setLocalHorarios((prev) => {
+      const sourceSlots = prev[sourceDia];
+      const updated = {};
+      Object.keys(prev).forEach((dia) => {
+        updated[dia] = sourceSlots.map((s) => ({ ...s }));
       });
-    },
-    [],
-  );
+      return updated;
+    });
+  }, []);
 
   // Guardar y cerrar
   const handleSave = useCallback(() => {
@@ -139,8 +129,10 @@ const HorariosModal = ({
     <div className="horarios-modal__overlay" onClick={onClose}>
       <div
         className="horarios-modal__container"
-        onClick={(e) => e.stopPropagation()}
-      >
+        role="dialog"
+        aria-modal="true"
+        aria-label="Horarios del negocio"
+        onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="horarios-modal__header">
           <h2 className="horarios-modal__title">
@@ -150,8 +142,7 @@ const HorariosModal = ({
           <button
             type="button"
             className="horarios-modal__close"
-            onClick={onClose}
-          >
+            onClick={onClose}>
             <FontAwesomeIcon icon={faTimes} />
           </button>
         </div>
@@ -205,8 +196,7 @@ const HorariosModal = ({
                         type="button"
                         className="horarios-modal__remove-turno"
                         onClick={() => removeSlot(dia, idx)}
-                        title="Eliminar turno"
-                      >
+                        title="Eliminar turno">
                         <FontAwesomeIcon icon={faTrash} />
                       </button>
                     )}
@@ -217,8 +207,7 @@ const HorariosModal = ({
                   <button
                     type="button"
                     className="horarios-modal__add-turno"
-                    onClick={() => addSlot(dia)}
-                  >
+                    onClick={() => addSlot(dia)}>
                     <FontAwesomeIcon icon={faPlus} />
                     Agregar horario
                   </button>
@@ -227,8 +216,7 @@ const HorariosModal = ({
                     <button
                       type="button"
                       className="horarios-modal__apply-all"
-                      onClick={() => applyToAll(dia)}
-                    >
+                      onClick={() => applyToAll(dia)}>
                       <FontAwesomeIcon icon={faCopy} />
                       Aplicar a todos los días
                     </button>
@@ -243,15 +231,13 @@ const HorariosModal = ({
           <button
             type="button"
             className="horarios-modal__cancel"
-            onClick={onClose}
-          >
+            onClick={onClose}>
             Cancelar
           </button>
           <button
             type="button"
             className="horarios-modal__save"
-            onClick={handleSave}
-          >
+            onClick={handleSave}>
             Guardar Cambios
           </button>
         </div>

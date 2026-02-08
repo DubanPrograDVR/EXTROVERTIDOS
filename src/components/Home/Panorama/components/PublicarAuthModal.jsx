@@ -17,8 +17,10 @@ const PublicarAuthModal = ({
     <div className="auth-modal-overlay" onClick={onClose}>
       <div
         className="auth-modal auth-modal--simple"
-        onClick={(e) => e.stopPropagation()}
-      >
+        role="dialog"
+        aria-modal="true"
+        aria-label="Iniciar sesión"
+        onClick={(e) => e.stopPropagation()}>
         <button className="auth-modal__close" onClick={onClose}>
           <FontAwesomeIcon icon={faTimes} />
         </button>
@@ -37,15 +39,13 @@ const PublicarAuthModal = ({
         <button
           className="auth-form__google-btn"
           onClick={onGoogleLogin}
-          disabled={isGoogleLoading}
-        >
+          disabled={isGoogleLoading}>
           <FontAwesomeIcon icon={faGoogle} />
           {isGoogleLoading ? "Conectando..." : "Continuar con Google"}
         </button>
 
         <p className="auth-modal__terms">
-          Al continuar, aceptas nuestros{" "}
-          <a href="#">Términos de Servicio</a> y{" "}
+          Al continuar, aceptas nuestros <a href="#">Términos de Servicio</a> y{" "}
           <a href="#">Política de Privacidad</a>
         </p>
       </div>

@@ -25,6 +25,12 @@ const NAV_LINKS = [
   { href: "/superguia", label: "Superguía Extrovertidos" },
   { href: "/publicar-panorama", label: "Publicar Panorama", userOnly: true },
   { href: "/publicar-negocio", label: "Publicar Negocio", userOnly: true },
+  {
+    href: "/activar-plan",
+    label: "Activar Plan",
+    userOnly: true,
+    highlight: true,
+  },
 ];
 
 export default function Navbar() {
@@ -145,13 +151,13 @@ export default function Navbar() {
         <nav className={`navbar-menu ${isMenuOpen ? "active" : ""}`}>
           {NAV_LINKS.filter((link) => !link.userOnly || !isModerator).map(
             (link, index) => (
-              <a
+              <Link
                 key={index}
-                href={link.href}
-                className="nav-link"
+                to={link.href}
+                className={`nav-link ${link.highlight ? "nav-link--highlight" : ""}`}
                 onClick={handleLinkClick}>
                 {link.label}
-              </a>
+              </Link>
             ),
           )}
 
@@ -165,6 +171,9 @@ export default function Navbar() {
                     alt={userName}
                     className="navbar-mobile-user-avatar"
                     referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                    }}
                   />
                   <span className="navbar-mobile-user-name">{userName}</span>
                 </div>
@@ -222,6 +231,9 @@ export default function Navbar() {
                   alt={userName}
                   className="navbar-user-avatar"
                   referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                  }}
                 />
               ) : (
                 <FontAwesomeIcon icon={faUser} className="navbar-user-icon" />
@@ -240,6 +252,9 @@ export default function Navbar() {
                           alt={userName}
                           className="navbar-dropdown-avatar"
                           referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                          }}
                         />
                       )}
                       <span className="navbar-dropdown-username">

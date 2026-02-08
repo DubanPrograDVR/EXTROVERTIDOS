@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCheckCircle,
@@ -12,6 +12,14 @@ import "./styles/toast.css";
 const Toast = ({ message, type = "success", duration = 4000, onClose }) => {
   const [isVisible, setIsVisible] = useState(true);
   const [isExiting, setIsExiting] = useState(false);
+  const closeTimerRef = useRef(null);
+
+  // Limpiar timer de cierre al desmontar
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -23,7 +31,7 @@ const Toast = ({ message, type = "success", duration = 4000, onClose }) => {
 
   const handleClose = () => {
     setIsExiting(true);
-    setTimeout(() => {
+    closeTimerRef.current = setTimeout(() => {
       setIsVisible(false);
       if (onClose) onClose();
     }, 300);

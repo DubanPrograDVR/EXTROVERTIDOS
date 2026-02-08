@@ -356,7 +356,7 @@ export const useAdminData = (user, isAdmin, isModerator) => {
   const handleUpdateEvent = async (eventId, eventData) => {
     setActionLoading(eventId);
     try {
-      await updateEvent(eventId, eventData);
+      await updateEvent(eventId, eventData, { adminOverride: true });
       // Actualizar ambas listas con los nuevos datos
       const updateEventInList = (list) =>
         list.map((e) => (e.id === eventId ? { ...e, ...eventData } : e));
@@ -405,7 +405,7 @@ export const useAdminData = (user, isAdmin, isModerator) => {
   const handleRejectBusiness = async (businessId, reason = "") => {
     setActionLoading(businessId);
     try {
-      await rejectBusiness(businessId, reason);
+      await rejectBusiness(businessId, user.id, reason);
       setPendingBusinesses((prev) => prev.filter((b) => b.id !== businessId));
       // Actualizar en allBusinesses
       setAllBusinesses((prev) =>
@@ -435,7 +435,7 @@ export const useAdminData = (user, isAdmin, isModerator) => {
   const handleDeleteBusiness = async (businessId) => {
     setActionLoading(businessId);
     try {
-      await deleteBusiness(businessId);
+      await deleteBusiness(businessId, user.id);
       setAllBusinesses((prev) => prev.filter((b) => b.id !== businessId));
       setPendingBusinesses((prev) => prev.filter((b) => b.id !== businessId));
       return { success: true };

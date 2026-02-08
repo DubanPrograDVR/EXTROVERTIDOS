@@ -4,6 +4,7 @@
  */
 
 import { supabase } from "../supabase";
+import { isModerator } from "./roles";
 
 /**
  * Crea un nuevo negocio
@@ -217,17 +218,24 @@ export const getAllBusinesses = async () => {
 
 /**
  * Aprueba un negocio (cambia estado a publicado)
+ * SEGURIDAD: Requiere permisos de moderador
  * @param {string} businessId - ID del negocio
  * @param {string} adminId - ID del administrador que aprueba
  * @returns {Promise<Object>} Negocio actualizado
  */
 export const approveBusiness = async (businessId, adminId) => {
+  const canModerate = await isModerator(adminId);
+  if (!canModerate) {
+    throw new Error("No tienes permisos para aprobar negocios");
+  }
+
   const { data, error } = await supabase
     .from("businesses")
     .update({
       estado: "publicado",
       approved_by: adminId,
       approved_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     })
     .eq("id", businessId)
     .select()
@@ -243,16 +251,25 @@ export const approveBusiness = async (businessId, adminId) => {
 
 /**
  * Rechaza un negocio
+ * SEGURIDAD: Requiere permisos de moderador
  * @param {string} businessId - ID del negocio
+ * @param {string} adminId - ID del admin que rechaza
  * @param {string} reason - Motivo del rechazo
  * @returns {Promise<Object>} Negocio actualizado
  */
-export const rejectBusiness = async (businessId, reason) => {
+export const rejectBusiness = async (businessId, adminId, reason = "") => {
+  const canModerate = await isModerator(adminId);
+  if (!canModerate) {
+    throw new Error("No tienes permisos para rechazar negocios");
+  }
+
   const { data, error } = await supabase
     .from("businesses")
     .update({
       estado: "rechazado",
       motivo_rechazo: reason,
+      rejected_by: adminId,
+      updated_at: new Date().toISOString(),
     })
     .eq("id", businessId)
     .select()
@@ -268,10 +285,17 @@ export const rejectBusiness = async (businessId, reason) => {
 
 /**
  * Elimina un negocio
+ * SEGURIDAD: Requiere permisos de moderador
  * @param {string} businessId - ID del negocio
+ * @param {string} adminId - ID del admin que elimina
  * @returns {Promise<boolean>} true si se eliminó correctamente
  */
-export const deleteBusiness = async (businessId) => {
+export const deleteBusiness = async (businessId, adminId) => {
+  const canModerate = await isModerator(adminId);
+  if (!canModerate) {
+    throw new Error("No tienes permisos para eliminar negocios");
+  }
+
   const { error } = await supabase
     .from("businesses")
     .delete()
@@ -286,18 +310,50 @@ export const deleteBusiness = async (businessId) => {
 };
 
 /**
+ * Campos permitidos para actualizar un negocio.
+ * SEGURIDAD: Evita mass-assignment de campos protegidos.
+ */
+const ALLOWED_BUSINESS_UPDATE_FIELDS = [
+  "nombre",
+  "descripcion",
+  "direccion",
+  "comuna",
+  "provincia",
+  "telefono",
+  "email",
+  "sitio_web",
+  "redes_sociales",
+  "horarios",
+  "imagenes",
+  "imagen_logo",
+  "category_id",
+  "subcategory_id",
+  "ubicacion_url",
+  "coordenadas",
+  "tags",
+];
+
+/**
  * Actualiza un negocio
+ * SEGURIDAD: Whitelist de campos + verificación de permisos
  * @param {string} businessId - ID del negocio
  * @param {Object} businessData - Datos a actualizar
+ * @param {string} userId - ID del usuario que actualiza
  * @returns {Promise<Object>} Negocio actualizado
  */
-export const updateBusiness = async (businessId, businessData) => {
+export const updateBusiness = async (businessId, businessData, userId) => {
+  // Sanitizar: solo permitir campos seguros
+  const sanitized = {};
+  for (const key of ALLOWED_BUSINESS_UPDATE_FIELDS) {
+    if (businessData[key] !== undefined) {
+      sanitized[key] = businessData[key];
+    }
+  }
+  sanitized.updated_at = new Date().toISOString();
+
   const { data, error } = await supabase
     .from("businesses")
-    .update({
-      ...businessData,
-      updated_at: new Date().toISOString(),
-    })
+    .update(sanitized)
     .eq("id", businessId)
     .select()
     .single();

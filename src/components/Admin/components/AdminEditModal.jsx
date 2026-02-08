@@ -222,7 +222,11 @@ export default function AdminEditModal({
 
   return (
     <div className="admin-edit-overlay" onClick={handleOverlayClick}>
-      <div className="admin-edit-modal">
+      <div
+        className="admin-edit-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Editar publicación">
         {/* Header */}
         <div className="admin-edit-modal__header">
           <h2>Editar Publicación</h2>
