@@ -38,6 +38,8 @@ import useEventSubmit from "./useEventSubmit";
  * @returns {Object} Estado y funciones del formulario
  */
 const usePublicarFormV2 = () => {
+  const LOCAL_DRAFT_KEY = "publicar_local_draft_v1";
+
   // === CONTEXTO Y NAVEGACIÓN ===
   const {
     user,
@@ -138,6 +140,37 @@ const usePublicarFormV2 = () => {
   const isEditingRef = useRef(isEditing);
   isEditingRef.current = isEditing;
 
+  const hasSessionDraftRef = useRef(false);
+  const localDraftLoadedRef = useRef(false);
+
+  const buildLocalDraftData = useCallback((data) => {
+    if (!data) return null;
+    const { imagenes, ...rest } = data;
+    return { ...rest, imagenes: [] };
+  }, []);
+
+  const clearLocalDraft = useCallback(() => {
+    try {
+      localStorage.removeItem(LOCAL_DRAFT_KEY);
+    } catch (error) {
+      console.warn("Error limpiando local draft:", error);
+    }
+  }, [LOCAL_DRAFT_KEY]);
+
+  const persistLocalDraft = useCallback(
+    (data) => {
+      try {
+        localStorage.setItem(
+          LOCAL_DRAFT_KEY,
+          JSON.stringify({ data, savedAt: Date.now() }),
+        );
+      } catch (error) {
+        console.warn("Error guardando local draft:", error);
+      }
+    },
+    [LOCAL_DRAFT_KEY],
+  );
+
   // Función de validación para el submit hook
   // Usa refs para evitar recrearse en cada cambio de formData
   const validateFormForSubmit = useCallback(() => {
@@ -221,6 +254,7 @@ const usePublicarFormV2 = () => {
   useEffect(() => {
     const draft = loadFromStorageRef.current();
     if (draft?.data) {
+      hasSessionDraftRef.current = true;
       setFormData((prev) => ({
         ...prev,
         ...draft.data,
@@ -237,6 +271,44 @@ const usePublicarFormV2 = () => {
     }
   }, []); // Solo ejecutar al montar
 
+  // === CARGAR AUTO-GUARDADO LOCAL ===
+  useEffect(() => {
+    if (localDraftLoadedRef.current) return;
+    if (isEditing) {
+      localDraftLoadedRef.current = true;
+      return;
+    }
+    if (hasSessionDraftRef.current) {
+      localDraftLoadedRef.current = true;
+      return;
+    }
+    if (draftManager.loadedDraft?.data) {
+      localDraftLoadedRef.current = true;
+      return;
+    }
+
+    try {
+      const localDraftJson = localStorage.getItem(LOCAL_DRAFT_KEY);
+      if (!localDraftJson) {
+        localDraftLoadedRef.current = true;
+        return;
+      }
+
+      const localDraft = JSON.parse(localDraftJson);
+      if (localDraft?.data) {
+        setFormData((prev) => ({
+          ...prev,
+          ...localDraft.data,
+          imagenes: [],
+        }));
+      }
+    } catch (error) {
+      console.warn("Error cargando local draft:", error);
+    } finally {
+      localDraftLoadedRef.current = true;
+    }
+  }, [isEditing, draftManager.loadedDraft, LOCAL_DRAFT_KEY]);
+
   // === SINCRONIZAR DATOS DE EVENTO EN EDICIÓN ===
   useEffect(() => {
     if (eventFormData) {
@@ -246,6 +318,70 @@ const usePublicarFormV2 = () => {
       });
     }
   }, [eventFormData]);
+
+  // === AUTO-GUARDADO LOCAL ===
+  useEffect(() => {
+    if (isEditing) return;
+
+    const hasMinData =
+      formData.titulo || formData.descripcion || formData.category_id;
+
+    if (!hasMinData) {
+      clearLocalDraft();
+      return;
+    }
+
+    const dataToSave = buildLocalDraftData(formData);
+    if (!dataToSave) return;
+
+    const saveTimer = setTimeout(() => {
+      persistLocalDraft(dataToSave);
+    }, 300);
+
+    return () => clearTimeout(saveTimer);
+  }, [
+    formData,
+    isEditing,
+    buildLocalDraftData,
+    clearLocalDraft,
+    persistLocalDraft,
+  ]);
+
+  // === GUARDAR SNAPSHOT ANTES DE SALIR ===
+  useEffect(() => {
+    const handleSnapshot = () => {
+      if (isEditingRef.current) return;
+
+      const currentData = buildLocalDraftData(formDataRef.current);
+      if (!currentData) return;
+
+      const hasMinData =
+        currentData.titulo ||
+        currentData.descripcion ||
+        currentData.category_id;
+
+      if (!hasMinData) {
+        clearLocalDraft();
+        return;
+      }
+
+      persistLocalDraft(currentData);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        handleSnapshot();
+      }
+    };
+
+    window.addEventListener("beforeunload", handleSnapshot);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleSnapshot);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [buildLocalDraftData, clearLocalDraft, persistLocalDraft]);
 
   // Sincronizar imágenes existentes desde editor
   useEffect(() => {
@@ -444,12 +580,21 @@ const usePublicarFormV2 = () => {
           // Limpiar después de éxito
           resetForm();
           draftCleanupRef.current?.();
+          clearLocalDraft();
         },
       });
 
       return submitResult;
     },
-    [formData, newImages, existingImages, editEventId, submitEvent, resetForm],
+    [
+      formData,
+      newImages,
+      existingImages,
+      editEventId,
+      submitEvent,
+      resetForm,
+      clearLocalDraft,
+    ],
   );
 
   /**

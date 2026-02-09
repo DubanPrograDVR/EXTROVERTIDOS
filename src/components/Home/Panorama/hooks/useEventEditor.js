@@ -3,6 +3,25 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { getEventById } from "../../../../lib/database";
 import { INITIAL_FORM_STATE } from "../constants";
 
+const withTimeout = (promise, timeoutMs, timeoutMessage) =>
+  new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      const error = new Error(timeoutMessage);
+      error.name = "TimeoutError";
+      reject(error);
+    }, timeoutMs);
+
+    promise
+      .then((result) => {
+        clearTimeout(timeoutId);
+        resolve(result);
+      })
+      .catch((error) => {
+        clearTimeout(timeoutId);
+        reject(error);
+      });
+  });
+
 /**
  * Hook especializado para manejar la carga y edición de eventos existentes
  *
@@ -79,9 +98,14 @@ const useEventEditor = ({ user, isAuthenticated, isAdmin, showToast }) => {
       abortControllerRef.current = new AbortController();
 
       setLoadingEvent(true);
+      console.info("[Publicar][Editor] START load event", eventId);
 
       try {
-        const event = await getEventById(eventId);
+        const event = await withTimeout(
+          getEventById(eventId),
+          12000,
+          "Timeout cargando publicacion",
+        );
 
         // Verificar si el componente sigue montado
         if (!isMountedRef.current) return;
@@ -166,6 +190,17 @@ const useEventEditor = ({ user, isAuthenticated, isAdmin, showToast }) => {
           return;
         }
 
+        if (error.name === "TimeoutError") {
+          console.warn("[Publicar][Editor] Timeout cargando evento", eventId);
+          if (isMountedRef.current) {
+            showToastRef.current?.(
+              "Tiempo de espera agotado al cargar la publicacion",
+              "error",
+            );
+          }
+          return;
+        }
+
         if (!isMountedRef.current) return;
 
         console.error("Error cargando evento para editar:", error);
@@ -174,6 +209,7 @@ const useEventEditor = ({ user, isAuthenticated, isAdmin, showToast }) => {
         if (isMountedRef.current) {
           setLoadingEvent(false);
         }
+        console.info("[Publicar][Editor] END load event", eventId);
       }
     },
     [isAdmin, user?.id, navigate],
@@ -194,6 +230,9 @@ const useEventEditor = ({ user, isAuthenticated, isAdmin, showToast }) => {
     }
 
     if (!isAuthenticated) {
+      if (isMountedRef.current) {
+        setLoadingEvent(false);
+      }
       return;
     }
 
