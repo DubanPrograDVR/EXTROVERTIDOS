@@ -40,6 +40,15 @@ const useEventEditor = ({ user, isAuthenticated, isAdmin, showToast }) => {
   const abortControllerRef = useRef(null);
   const lastLoadedEventId = useRef(null);
 
+  // Lifecycle management para isMountedRef
+  // Necesario para compatibilidad con React.StrictMode (doble montaje en dev)
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   // Derivar valores de URL params
   const editEventId = searchParams.get("editar");
   const isEditing = !!editEventId;
@@ -98,7 +107,9 @@ const useEventEditor = ({ user, isAuthenticated, isAdmin, showToast }) => {
 
         // Determinar si es multi-día
         const esMultidia =
-          event.fecha_fin && event.fecha_fin !== event.fecha_evento && !event.es_recurrente;
+          event.fecha_fin &&
+          event.fecha_fin !== event.fecha_evento &&
+          !event.es_recurrente;
 
         // Mapear datos del evento al formato del formulario
         const mappedFormData = {
@@ -146,8 +157,14 @@ const useEventEditor = ({ user, isAuthenticated, isAdmin, showToast }) => {
           setExistingImages(event.imagenes);
         }
       } catch (error) {
-        // Ignorar errores de abort
-        if (error.name === "AbortError") return;
+        // Ignorar errores de abort - pero SIEMPRE resetear loadingEvent
+        if (error.name === "AbortError") {
+          // Aún así resetear loadingEvent si el componente sigue montado
+          if (isMountedRef.current) {
+            setLoadingEvent(false);
+          }
+          return;
+        }
 
         if (!isMountedRef.current) return;
 
@@ -164,9 +181,6 @@ const useEventEditor = ({ user, isAuthenticated, isAdmin, showToast }) => {
 
   // Efecto para cargar evento cuando hay ID de edición
   useEffect(() => {
-    // Marcar como montado
-    isMountedRef.current = true;
-
     // Condiciones de salida temprana
     if (!editEventId) {
       // Reset si ya no estamos editando
@@ -174,6 +188,7 @@ const useEventEditor = ({ user, isAuthenticated, isAdmin, showToast }) => {
         lastLoadedEventId.current = null;
         setEventFormData(null);
         setExistingImages([]);
+        setLoadingEvent(false);
       }
       return;
     }
@@ -187,7 +202,10 @@ const useEventEditor = ({ user, isAuthenticated, isAdmin, showToast }) => {
 
     // Cleanup function
     return () => {
-      isMountedRef.current = false;
+      // Resetear lastLoadedEventId para permitir re-carga en StrictMode
+      // El dedup check (lastLoadedEventId === eventId) debe permitir
+      // que el segundo mount de StrictMode vuelva a cargar el evento
+      lastLoadedEventId.current = null;
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }

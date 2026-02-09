@@ -380,6 +380,10 @@ export const AuthProvider = ({ children }) => {
           });
           log.info("Sesión recuperada");
         } else {
+          // Sesión válida - NO despachar SET_AUTH innecesariamente
+          // (evita re-renders en cascada en todos los consumidores de useAuth)
+          // Solo despachar si el user ID cambió o si hay refresh necesario
+
           // Refrescar preventivamente si le quedan menos de 2 minutos
           const expiresAt = session.expires_at;
           const now = Math.floor(Date.now() / 1000);
@@ -393,6 +397,8 @@ export const AuthProvider = ({ children }) => {
               });
             }
           }
+          // Si la sesión es válida y no necesita refresh, no hacer nada
+          // El auth listener ya maneja TOKEN_REFRESHED
         }
       } catch (err) {
         log.error("Error revalidando sesión:", err);

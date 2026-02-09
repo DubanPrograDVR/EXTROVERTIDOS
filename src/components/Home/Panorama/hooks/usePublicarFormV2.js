@@ -125,22 +125,30 @@ const usePublicarFormV2 = () => {
     showToast,
   });
 
+  // Ref estable para formData (evita recrear validateFormForSubmit en cada keystroke)
+  const formDataRef = useRef(formData);
+  formDataRef.current = formData;
+
+  const existingImagesLenRef = useRef(existingImages.length);
+  existingImagesLenRef.current = existingImages.length;
+
+  const newImagesLenRef = useRef(newImages.length);
+  newImagesLenRef.current = newImages.length;
+
+  const isEditingRef = useRef(isEditing);
+  isEditingRef.current = isEditing;
+
   // Función de validación para el submit hook
+  // Usa refs para evitar recrearse en cada cambio de formData
   const validateFormForSubmit = useCallback(() => {
-    const result = validateForm(formData, {
+    const result = validateForm(formDataRef.current, {
       checkImages: true,
-      existingImagesCount: existingImages.length,
-      newImagesCount: newImages.length,
-      isEditing,
+      existingImagesCount: existingImagesLenRef.current,
+      newImagesCount: newImagesLenRef.current,
+      isEditing: isEditingRef.current,
     });
     return result.isValid;
-  }, [
-    validateForm,
-    formData,
-    existingImages.length,
-    newImages.length,
-    isEditing,
-  ]);
+  }, [validateForm]);
 
   // Hook de submit
   const {
@@ -163,9 +171,25 @@ const usePublicarFormV2 = () => {
   useEffect(() => {
     let isCancelled = false;
 
+    // Safety timeout: si getCategories() nunca resuelve (ej: conexión
+    // degradada tras cambio de pestaña), asegurar que loadingCategories
+    // se ponga en false para no bloquear el formulario indefinidamente.
+    const safetyTimer = setTimeout(() => {
+      if (!isCancelled && isMountedRef.current) {
+        setLoadingCategories(false);
+      }
+    }, 10000); // 10 s máximo
+
     const loadCategories = async () => {
       try {
-        const data = await getCategories();
+        // Añadir timeout a la query para evitar que quede colgada
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error("Timeout cargando categorías")),
+            8000,
+          ),
+        );
+        const data = await Promise.race([getCategories(), timeoutPromise]);
         if (!isCancelled && isMountedRef.current) {
           setCategories(data || []);
         }
@@ -175,6 +199,7 @@ const usePublicarFormV2 = () => {
           showToastRef.current?.("Error al cargar categorías", "error");
         }
       } finally {
+        clearTimeout(safetyTimer);
         if (!isCancelled && isMountedRef.current) {
           setLoadingCategories(false);
         }
@@ -184,12 +209,17 @@ const usePublicarFormV2 = () => {
     loadCategories();
     return () => {
       isCancelled = true;
+      clearTimeout(safetyTimer);
     };
   }, []);
 
+  // Ref estable para loadFromStorage (evitar dependencia inestable)
+  const loadFromStorageRef = useRef(draftManager.loadFromStorage);
+  loadFromStorageRef.current = draftManager.loadFromStorage;
+
   // === CARGAR BORRADOR DESDE STORAGE ===
   useEffect(() => {
-    const draft = draftManager.loadFromStorage();
+    const draft = loadFromStorageRef.current();
     if (draft?.data) {
       setFormData((prev) => ({
         ...prev,
@@ -205,7 +235,7 @@ const usePublicarFormV2 = () => {
 
       showToastRef.current?.("Borrador cargado exitosamente", "success");
     }
-  }, [draftManager.loadFromStorage]);
+  }, []); // Solo ejecutar al montar
 
   // === SINCRONIZAR DATOS DE EVENTO EN EDICIÓN ===
   useEffect(() => {
@@ -340,6 +370,16 @@ const usePublicarFormV2 = () => {
     [removeImageFromManager, clearFieldError],
   );
 
+  // Refs estables para propiedades de draftManager (evitar obj inestable en deps)
+  const draftCurrentIdRef = useRef(draftManager.currentDraftId);
+  const draftCleanupRef = useRef(draftManager.cleanupAfterPublish);
+  const draftResetRef = useRef(draftManager.reset);
+  const draftSaveRef = useRef(draftManager.saveDraftData);
+  draftCurrentIdRef.current = draftManager.currentDraftId;
+  draftCleanupRef.current = draftManager.cleanupAfterPublish;
+  draftResetRef.current = draftManager.reset;
+  draftSaveRef.current = draftManager.saveDraftData;
+
   /**
    * Guarda borrador manualmente
    */
@@ -359,7 +399,7 @@ const usePublicarFormV2 = () => {
       imagePreview = await imageToBase64(previewUrls[0]);
     }
 
-    return draftManager.saveDraftData(formData, {
+    return draftSaveRef.current?.(formData, {
       categoryName: selectedCategory?.nombre || "",
       imagePreview,
       imageCount: totalImages,
@@ -370,9 +410,19 @@ const usePublicarFormV2 = () => {
     formData,
     previewUrls,
     imageToBase64,
-    draftManager,
     totalImages,
   ]);
+
+  /**
+   * Resetea el formulario
+   */
+  const resetForm = useCallback(() => {
+    setFormData(INITIAL_FORM_STATE);
+    clearAllImages();
+    clearAllErrors();
+    draftResetRef.current?.();
+    resetEditState();
+  }, [clearAllImages, clearAllErrors, resetEditState]);
 
   /**
    * Envía el formulario
@@ -389,36 +439,18 @@ const usePublicarFormV2 = () => {
         },
         existingImages,
         editEventId,
-        currentDraftId: draftManager.currentDraftId,
+        currentDraftId: draftCurrentIdRef.current,
         onSuccess: () => {
           // Limpiar después de éxito
           resetForm();
-          draftManager.cleanupAfterPublish();
+          draftCleanupRef.current?.();
         },
       });
 
       return submitResult;
     },
-    [
-      formData,
-      newImages,
-      existingImages,
-      editEventId,
-      draftManager,
-      submitEvent,
-    ],
+    [formData, newImages, existingImages, editEventId, submitEvent, resetForm],
   );
-
-  /**
-   * Resetea el formulario
-   */
-  const resetForm = useCallback(() => {
-    setFormData(INITIAL_FORM_STATE);
-    clearAllImages();
-    clearAllErrors();
-    draftManager.reset();
-    resetEditState();
-  }, [clearAllImages, clearAllErrors, draftManager, resetEditState]);
 
   /**
    * Cierra modal de autenticación
@@ -444,10 +476,11 @@ const usePublicarFormV2 = () => {
   // === CLEANUP AL DESMONTAR ===
   useEffect(() => {
     return () => {
-      cleanupSubmit();
+      // Solo cancelar requests en vuelo, no llamar cleanupSubmit
+      // ya que useEventSubmit maneja su propio isMountedRef via useEffect
       cancelSubmit();
     };
-  }, [cleanupSubmit, cancelSubmit]);
+  }, [cancelSubmit]);
 
   // === RETORNO ===
   return {

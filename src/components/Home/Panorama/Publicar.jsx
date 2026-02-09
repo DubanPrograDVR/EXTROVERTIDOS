@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import usePublicarForm from "./hooks/usePublicarFormV2";
 import {
   PublicarHeader,
@@ -13,6 +14,24 @@ import "./styles/publicar.css";
  * Soporta creación y edición de eventos
  */
 const Publicar = () => {
+  // Auto-refresh al volver de otra pestaña para evitar estados obsoletos
+  const hasLeftTab = useRef(false);
+
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        hasLeftTab.current = true;
+      } else if (document.visibilityState === "visible" && hasLeftTab.current) {
+        hasLeftTab.current = false;
+        window.location.reload();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibility);
+  }, []);
+
   const {
     // Estados
     formData,

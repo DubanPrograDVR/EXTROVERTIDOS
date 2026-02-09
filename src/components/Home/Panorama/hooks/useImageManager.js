@@ -1,5 +1,8 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { IMAGE_CONFIG } from "../constants";
+
+// Array vacío estable para evitar re-renders innecesarios
+const EMPTY_ARRAY = [];
 
 /**
  * Hook especializado para manejo de imágenes en formularios
@@ -28,7 +31,7 @@ const useImageManager = (options = {}) => {
   const {
     maxFiles = IMAGE_CONFIG.maxFiles,
     maxSize = IMAGE_CONFIG.maxSize,
-    initialExistingImages = [],
+    initialExistingImages = EMPTY_ARRAY,
   } = options;
 
   // Estado

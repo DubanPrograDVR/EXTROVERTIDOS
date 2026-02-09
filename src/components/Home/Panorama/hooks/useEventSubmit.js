@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   createEvent,
@@ -57,6 +57,15 @@ const useEventSubmit = ({
   const isSubmittingRef = useRef(false); // Para proteger contra double-submit
   const abortControllerRef = useRef(null);
   const isMountedRef = useRef(true);
+
+  // Lifecycle management para isMountedRef
+  // Necesario para compatibilidad con React.StrictMode (doble montaje en dev)
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Mantener refs actualizadas
   const updateRefs = useCallback((newShowToast) => {
