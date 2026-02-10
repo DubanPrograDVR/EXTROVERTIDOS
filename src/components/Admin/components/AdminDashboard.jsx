@@ -6,6 +6,8 @@ import {
   faUsers,
   faExclamationTriangle,
   faChevronRight,
+  faCreditCard,
+  faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   PieChart,
@@ -32,7 +34,15 @@ const COLORS = {
 /**
  * Dashboard con estadísticas generales y gráficos
  */
-export default function AdminDashboard({ stats, chartData, onViewPending }) {
+export default function AdminDashboard({
+  stats,
+  chartData,
+  onViewPending,
+  planesEnabled,
+  planesToggleLoading,
+  onTogglePlanes,
+  isAdmin,
+}) {
   if (!stats) return null;
 
   // Datos para el gráfico de torta (publicaciones por estado)
@@ -212,6 +222,42 @@ export default function AdminDashboard({ stats, chartData, onViewPending }) {
             </span>
             <FontAwesomeIcon icon={faChevronRight} />
           </button>
+        </div>
+      )}
+
+      {/* Configuraciones del sitio (solo admin) */}
+      {isAdmin && (
+        <div className="admin-site-settings">
+          <h3>Configuraciones del Sitio</h3>
+          <div className="admin-setting-row">
+            <div className="admin-setting-row__info">
+              <FontAwesomeIcon
+                icon={faCreditCard}
+                className="admin-setting-row__icon"
+              />
+              <div>
+                <span className="admin-setting-row__label">Activar Plan</span>
+                <span className="admin-setting-row__description">
+                  Muestra u oculta la sección de planes para los usuarios
+                </span>
+              </div>
+            </div>
+            <button
+              className={`admin-toggle ${planesEnabled ? "admin-toggle--active" : ""}`}
+              onClick={onTogglePlanes}
+              disabled={planesToggleLoading}
+              title={
+                planesEnabled
+                  ? "Desactivar planes para usuarios"
+                  : "Activar planes para usuarios"
+              }>
+              {planesToggleLoading ? (
+                <FontAwesomeIcon icon={faSpinner} spin />
+              ) : (
+                <span className="admin-toggle__knob" />
+              )}
+            </button>
+          </div>
         </div>
       )}
     </div>

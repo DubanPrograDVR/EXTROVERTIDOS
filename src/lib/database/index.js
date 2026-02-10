@@ -150,3 +150,11 @@ export {
   getBusinessFavoriteIds,
   toggleBusinessFavorite,
 } from "./businessInteractions";
+
+// ============ CONFIGURACIONES DE LA APP ============
+export {
+  getAppSetting,
+  updateAppSetting,
+  isPlanesEnabled,
+  togglePlanesEnabled,
+} from "./settings";

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { isPlanesEnabled } from "../../lib/database";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCheck,
@@ -106,10 +107,33 @@ const formatPrecio = (precio) => {
 };
 
 export default function ActivarPlan() {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, loading, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [addSuperguia, setAddSuperguia] = useState(false);
+  const [checkingAccess, setCheckingAccess] = useState(true);
+
+  // Verificar si los planes están habilitados
+  useEffect(() => {
+    const checkAccess = async () => {
+      try {
+        const enabled = await isPlanesEnabled();
+        // Si no está habilitado y no es admin, redirigir
+        if (!enabled && !isAdmin) {
+          navigate("/", { replace: true });
+          return;
+        }
+      } catch (error) {
+        console.error("Error verificando acceso a planes:", error);
+      } finally {
+        setCheckingAccess(false);
+      }
+    };
+
+    if (!loading) {
+      checkAccess();
+    }
+  }, [loading, isAdmin, navigate]);
 
   // Calcular total
   const getTotal = () => {
@@ -128,7 +152,7 @@ export default function ActivarPlan() {
     console.log("Plan seleccionado:", selectedPlan, "Superguía:", addSuperguia);
   };
 
-  if (loading) {
+  if (loading || checkingAccess) {
     return (
       <div className="activar-plan__loading">
         <div className="activar-plan__spinner"></div>
@@ -142,14 +166,20 @@ export default function ActivarPlan() {
       {/* Progress bar */}
       <div className="activar-plan__progress">
         <div className="activar-plan__progress-bar">
-          <div className="activar-plan__progress-fill" style={{ width: "33%" }}></div>
+          <div
+            className="activar-plan__progress-fill"
+            style={{ width: "33%" }}></div>
         </div>
         <span className="activar-plan__progress-text">Paso 1 de 3</span>
       </div>
 
       {/* Header */}
       <header className="activar-plan__header">
-        <img src={logoExtro} alt="Extrovertidos" className="activar-plan__logo" />
+        <img
+          src={logoExtro}
+          alt="Extrovertidos"
+          className="activar-plan__logo"
+        />
         <h1 className="activar-plan__title">¡Elige tu mejor opción!</h1>
         <p className="activar-plan__subtitle">
           Selecciona una alternativa para Publicar tus Panoramas
@@ -159,7 +189,11 @@ export default function ActivarPlan() {
       {/* Planes de Panoramas */}
       <section className="activar-plan__section">
         <div className="activar-plan__section-header">
-          <img src={iconPanorama} alt="Panoramas" className="activar-plan__section-icon" />
+          <img
+            src={iconPanorama}
+            alt="Panoramas"
+            className="activar-plan__section-icon"
+          />
           <h2 className="activar-plan__section-title">Panoramas</h2>
         </div>
 
@@ -173,12 +207,18 @@ export default function ActivarPlan() {
               onClick={() => setSelectedPlan(plan.id)}>
               {/* Etiqueta destacada */}
               {plan.etiqueta && (
-                <span className="activar-plan__card-badge">{plan.etiqueta}</span>
+                <span className="activar-plan__card-badge">
+                  {plan.etiqueta}
+                </span>
               )}
 
               {/* Icono del plan */}
               <div className="activar-plan__card-icon">
-                <img src={iconPanorama} alt="" className="activar-plan__card-icon-img" />
+                <img
+                  src={iconPanorama}
+                  alt=""
+                  className="activar-plan__card-icon-img"
+                />
               </div>
 
               {/* Info del plan */}
@@ -199,7 +239,9 @@ export default function ActivarPlan() {
 
               {/* Duración */}
               {plan.duracion && (
-                <span className="activar-plan__card-duration">{plan.duracion}</span>
+                <span className="activar-plan__card-duration">
+                  {plan.duracion}
+                </span>
               )}
 
               {/* Features */}
@@ -216,7 +258,9 @@ export default function ActivarPlan() {
               <button
                 type="button"
                 className={`activar-plan__card-btn ${
-                  selectedPlan === plan.id ? "activar-plan__card-btn--active" : ""
+                  selectedPlan === plan.id
+                    ? "activar-plan__card-btn--active"
+                    : ""
                 }`}>
                 {selectedPlan === plan.id ? (
                   <>
@@ -234,8 +278,14 @@ export default function ActivarPlan() {
       {/* Plan Superguía */}
       <section className="activar-plan__section activar-plan__section--superguia">
         <div className="activar-plan__section-header">
-          <img src={iconExtro} alt="Extrovertidos" className="activar-plan__section-icon" />
-          <h2 className="activar-plan__section-title">Superguía Extrovertidos</h2>
+          <img
+            src={iconExtro}
+            alt="Extrovertidos"
+            className="activar-plan__section-icon"
+          />
+          <h2 className="activar-plan__section-title">
+            Superguía Extrovertidos
+          </h2>
         </div>
 
         <div
@@ -254,7 +304,8 @@ export default function ActivarPlan() {
                   {formatPrecio(PLAN_SUPERGUIA.precio)}
                 </span>
                 <span className="activar-plan__superguia-duration">
-                  <FontAwesomeIcon icon={faCalendarDays} /> ¡Por {PLAN_SUPERGUIA.duracion}!
+                  <FontAwesomeIcon icon={faCalendarDays} /> ¡Por{" "}
+                  {PLAN_SUPERGUIA.duracion}!
                 </span>
               </div>
               <ul className="activar-plan__superguia-features">

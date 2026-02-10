@@ -14,6 +14,7 @@ import {
   faExchangeAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import AuthModal from "../Auth/AuthModal";
+import { isPlanesEnabled } from "../../lib/database";
 
 // Imágenes servidas desde public/
 const logo = "/img/Logo_extrovertidos.png";
@@ -30,6 +31,7 @@ const NAV_LINKS = [
     label: "Activar Plan",
     userOnly: true,
     highlight: true,
+    planesLink: true,
   },
 ];
 
@@ -40,6 +42,7 @@ export default function Navbar() {
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState("login");
+  const [planesVisible, setPlanesVisible] = useState(true);
   const userDropdownRef = useRef(null);
 
   // Obtener datos del usuario
@@ -47,6 +50,19 @@ export default function Navbar() {
     user?.user_metadata?.avatar_url || user?.user_metadata?.picture || null;
   const userName =
     user?.user_metadata?.full_name || user?.user_metadata?.name || "Usuario";
+
+  // Cargar estado de planes
+  useEffect(() => {
+    const checkPlanes = async () => {
+      try {
+        const enabled = await isPlanesEnabled();
+        setPlanesVisible(enabled);
+      } catch (error) {
+        console.error("Error verificando planes:", error);
+      }
+    };
+    checkPlanes();
+  }, []);
 
   const handleLinkClick = () => {
     setIsMenuOpen(false);
@@ -149,17 +165,19 @@ export default function Navbar() {
         )}
 
         <nav className={`navbar-menu ${isMenuOpen ? "active" : ""}`}>
-          {NAV_LINKS.filter((link) => !link.userOnly || !isModerator).map(
-            (link, index) => (
-              <Link
-                key={index}
-                to={link.href}
-                className={`nav-link ${link.highlight ? "nav-link--highlight" : ""}`}
-                onClick={handleLinkClick}>
-                {link.label}
-              </Link>
-            ),
-          )}
+          {NAV_LINKS.filter(
+            (link) =>
+              (!link.userOnly || !isModerator) &&
+              (!link.planesLink || planesVisible),
+          ).map((link, index) => (
+            <Link
+              key={index}
+              to={link.href}
+              className={`nav-link ${link.highlight ? "nav-link--highlight" : ""}`}
+              onClick={handleLinkClick}>
+              {link.label}
+            </Link>
+          ))}
 
           {/* Botones de autenticación en menú móvil */}
           <div className="navbar-mobile-auth">

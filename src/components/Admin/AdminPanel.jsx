@@ -13,7 +13,11 @@ import {
   faPlus,
   faStore,
 } from "@fortawesome/free-solid-svg-icons";
-import { getCategories } from "../../lib/database";
+import {
+  getCategories,
+  isPlanesEnabled,
+  togglePlanesEnabled,
+} from "../../lib/database";
 
 // Componentes modulares
 import AdminDashboard from "./components/AdminDashboard";
@@ -71,6 +75,8 @@ export default function AdminPanel() {
     business: null,
   });
   const [categories, setCategories] = useState([]);
+  const [planesEnabled, setPlanesEnabled] = useState(true);
+  const [planesToggleLoading, setPlanesToggleLoading] = useState(false);
 
   // Hook personalizado para manejo de datos
   const {
@@ -116,6 +122,34 @@ export default function AdminPanel() {
     };
     loadCategories();
   }, []);
+
+  // Cargar estado de planes
+  useEffect(() => {
+    const loadPlanesStatus = async () => {
+      try {
+        const enabled = await isPlanesEnabled();
+        setPlanesEnabled(enabled);
+      } catch (error) {
+        console.error("Error cargando estado de planes:", error);
+      }
+    };
+    loadPlanesStatus();
+  }, []);
+
+  // Toggle de planes
+  const handleTogglePlanes = async () => {
+    if (planesToggleLoading) return;
+    setPlanesToggleLoading(true);
+    try {
+      const newValue = !planesEnabled;
+      await togglePlanesEnabled(newValue, user.id);
+      setPlanesEnabled(newValue);
+    } catch (error) {
+      console.error("Error al cambiar estado de planes:", error);
+    } finally {
+      setPlanesToggleLoading(false);
+    }
+  };
 
   // Manejar aprobación de evento
   const onApprove = async (eventId) => {
@@ -391,6 +425,10 @@ export default function AdminPanel() {
             stats={stats}
             chartData={chartData}
             onViewPending={() => setActiveTab("pending")}
+            planesEnabled={planesEnabled}
+            planesToggleLoading={planesToggleLoading}
+            onTogglePlanes={handleTogglePlanes}
+            isAdmin={isAdmin}
           />
         )}
 
