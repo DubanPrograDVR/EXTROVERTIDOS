@@ -43,6 +43,7 @@ const PublicarNegocio = () => {
     formData,
     errors,
     categories,
+    subcategorias,
     loadingCategories,
     isSubmitting,
     previewImages,
@@ -76,6 +77,7 @@ const PublicarNegocio = () => {
           formData={formData}
           errors={errors}
           categories={categories}
+          subcategorias={subcategorias}
           loadingCategories={loadingCategories}
           onChange={handleChange}
           onFieldFocus={handleFieldFocus}

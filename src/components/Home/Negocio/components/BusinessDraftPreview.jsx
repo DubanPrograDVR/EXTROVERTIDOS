@@ -19,6 +19,7 @@ import {
   faAlignLeft,
   faAddressCard,
   faImage,
+  faLayerGroup,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faWhatsapp,
@@ -234,8 +235,18 @@ const BusinessDraftPreview = ({
             <span
               className="publication-modal__category-badge"
               style={{ backgroundColor: selectedCategory.color || "#ff6600" }}>
-              {selectedCategory.icono && <span>{selectedCategory.icono}</span>}
+              {selectedCategory.icono && (
+                <FontAwesomeIcon
+                  icon={selectedCategory.icono}
+                  style={{ marginRight: 6 }}
+                />
+              )}
               {selectedCategory.nombre}
+              {formData.subcategoria && (
+                <span style={{ opacity: 0.85, marginLeft: 6 }}>
+                  · {formData.subcategoria}
+                </span>
+              )}
             </span>
           ) : (
             <span className="publication-modal__category-badge">
@@ -318,6 +329,20 @@ const BusinessDraftPreview = ({
                   <p>
                     {formData.descripcion || "Sin descripción agregada aún..."}
                   </p>
+                  {formData.subcategoria && (
+                    <p
+                      style={{
+                        marginTop: 10,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        color: "#ff6600",
+                        fontSize: "0.9rem",
+                      }}>
+                      <FontAwesomeIcon icon={faLayerGroup} />
+                      Subcategoría: <strong>{formData.subcategoria}</strong>
+                    </p>
+                  )}
                 </div>
               </AccordionSection>
 

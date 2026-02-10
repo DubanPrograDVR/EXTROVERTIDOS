@@ -79,6 +79,7 @@ export const INITIAL_FORM_STATE = {
   nombre: "",
   descripcion: "",
   category_id: "",
+  subcategoria: "",
   provincia: "",
   comuna: "",
   direccion: "",

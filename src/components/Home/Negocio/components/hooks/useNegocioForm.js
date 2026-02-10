@@ -1,12 +1,16 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../../../context/AuthContext";
 import {
-  getCategories,
   createBusiness,
   uploadBusinessImage,
+  saveDraft,
+  deleteDraft,
 } from "../../../../../lib/database";
 import { INITIAL_FORM_STATE, IMAGE_CONFIG } from "../constants";
+import { BUSINESS_CATEGORIES } from "../../../../Superguia/businessCategories";
+
+const LOCAL_DRAFT_KEY = "negocio_local_draft_v1";
 
 /**
  * Hook personalizado para manejar el formulario de publicar negocio
@@ -15,31 +19,122 @@ export const useNegocioForm = () => {
   const { user, isAuthenticated, isAdmin, showToast } = useAuth();
   const navigate = useNavigate();
 
-  // Estados
-  const [categories, setCategories] = useState([]);
-  const [loadingCategories, setLoadingCategories] = useState(true);
+  // Estados - Categorías cargadas desde archivo local
+  const [categories] = useState(BUSINESS_CATEGORIES);
+  const [loadingCategories] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previewImages, setPreviewImages] = useState([]);
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
 
-  // Cargar categorías al montar
+  // Borrador
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [currentDraftId, setCurrentDraftId] = useState(null);
+  const formDataRef = useRef(formData);
+  formDataRef.current = formData;
+
+  // Subcategorías derivadas de la categoría seleccionada
+  const subcategorias = formData.category_id
+    ? BUSINESS_CATEGORIES.find((c) => c.id === parseInt(formData.category_id))
+        ?.subcategorias || []
+    : [];
+
+  // === CARGAR AUTO-GUARDADO LOCAL al montar ===
   useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const data = await getCategories();
-        setCategories(data || []);
-      } catch (error) {
-        console.error("Error cargando categorías:", error);
-        if (showToast) showToast("Error al cargar categorías", "error");
-      } finally {
-        setLoadingCategories(false);
+    try {
+      const localDraftJson = localStorage.getItem(LOCAL_DRAFT_KEY);
+      if (!localDraftJson) return;
+
+      const localDraft = JSON.parse(localDraftJson);
+      if (localDraft?.data) {
+        setFormData((prev) => ({
+          ...prev,
+          ...localDraft.data,
+          imagenes: [], // Las imágenes no se persisten
+        }));
       }
+    } catch (error) {
+      console.warn("Error cargando local draft negocio:", error);
+    }
+  }, []);
+
+  // === AUTO-GUARDADO LOCAL cuando cambian los datos ===
+  useEffect(() => {
+    const hasMinData =
+      formData.nombre || formData.descripcion || formData.category_id;
+
+    if (!hasMinData) {
+      try {
+        localStorage.removeItem(LOCAL_DRAFT_KEY);
+      } catch {}
+      return;
+    }
+
+    const { imagenes, ...dataToSave } = formData;
+    const saveTimer = setTimeout(() => {
+      try {
+        localStorage.setItem(
+          LOCAL_DRAFT_KEY,
+          JSON.stringify({
+            data: { ...dataToSave, imagenes: [] },
+            savedAt: Date.now(),
+          }),
+        );
+      } catch (error) {
+        console.warn("Error guardando local draft negocio:", error);
+      }
+    }, 300);
+
+    return () => clearTimeout(saveTimer);
+  }, [formData]);
+
+  // === SNAPSHOT ANTES DE SALIR ===
+  useEffect(() => {
+    const handleSnapshot = () => {
+      const currentData = formDataRef.current;
+      const hasMinData =
+        currentData.nombre ||
+        currentData.descripcion ||
+        currentData.category_id;
+
+      if (!hasMinData) {
+        try {
+          localStorage.removeItem(LOCAL_DRAFT_KEY);
+        } catch {}
+        return;
+      }
+
+      const { imagenes, ...dataToSave } = currentData;
+      try {
+        localStorage.setItem(
+          LOCAL_DRAFT_KEY,
+          JSON.stringify({
+            data: { ...dataToSave, imagenes: [] },
+            savedAt: Date.now(),
+          }),
+        );
+      } catch {}
     };
 
-    loadCategories();
-  }, [showToast]);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") handleSnapshot();
+    };
+
+    window.addEventListener("beforeunload", handleSnapshot);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleSnapshot);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  const clearLocalDraft = useCallback(() => {
+    try {
+      localStorage.removeItem(LOCAL_DRAFT_KEY);
+    } catch {}
+  }, []);
 
   // Verificar autenticación al hacer foco en campos
   const handleFieldFocus = useCallback(() => {
@@ -63,10 +158,14 @@ export const useNegocioForm = () => {
         },
       }));
     } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
+      setFormData((prev) => {
+        const updates = { ...prev, [name]: value };
+        // Al cambiar categoría, resetear subcategoría
+        if (name === "category_id") {
+          updates.subcategoria = "";
+        }
+        return updates;
+      });
     }
 
     // Limpiar error del campo
@@ -164,6 +263,9 @@ export const useNegocioForm = () => {
     if (!formData.category_id) {
       newErrors.category_id = "Selecciona una categoría";
     }
+    if (!formData.subcategoria) {
+      newErrors.subcategoria = "Selecciona una subcategoría";
+    }
     if (!formData.provincia) {
       newErrors.provincia = "Selecciona una provincia";
     }
@@ -188,100 +290,181 @@ export const useNegocioForm = () => {
   const resetForm = useCallback(() => {
     setFormData(INITIAL_FORM_STATE);
     setPreviewImages([]);
+    setCurrentDraftId(null);
   }, []);
 
-  // Manejar envío del formulario
-  const handleSubmit = useCallback(async (e) => {
-    e.preventDefault();
-
+  // Guardar borrador en Supabase
+  const handleSaveDraft = useCallback(async () => {
     if (!isAuthenticated) {
       setShowAuthModal(true);
-      return;
+      return false;
     }
 
-    if (!validateForm()) {
-      if (showToast)
-        showToast("Por favor completa todos los campos obligatorios", "error");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      // 1. Subir imágenes
-      const imageUrls = [];
-      for (const file of formData.imagenes) {
-        const url = await uploadBusinessImage(file, user.id);
-        imageUrls.push(url);
-      }
-
-      // 2. Preparar datos del negocio
-      // Si es admin, se publica automáticamente sin revisión
-
-      // Construir JSONB de horarios para la BD
-      const horarios = {};
-      if (formData.abierto_24h) {
-        horarios.abierto_24h = true;
-      }
-      formData.dias_atencion.forEach((dia) => {
-        horarios[dia] = formData.horarios_detalle[dia] || [
-          { apertura: "09:00", cierre: "18:00" },
-        ];
-      });
-
-      const businessData = {
-        user_id: user.id,
-        nombre: formData.nombre.trim(),
-        descripcion: formData.descripcion.trim(),
-        category_id: parseInt(formData.category_id),
-        provincia: formData.provincia,
-        comuna: formData.comuna.trim(),
-        direccion: formData.direccion.trim(),
-        telefono: formData.telefono.trim(),
-        email: formData.email.trim() || null,
-        sitio_web: formData.sitio_web.trim() || null,
-        horarios: Object.keys(horarios).length > 0 ? horarios : {},
-        redes_sociales: formData.redes_sociales,
-        ubicacion_url: formData.ubicacion_url.trim() || null,
-        imagen_url: imageUrls[0] || null,
-        imagenes: imageUrls,
-        estado: isAdmin ? "publicado" : "pendiente",
-      };
-
-      // 3. Crear negocio en la BD
-      await createBusiness(businessData);
-
+    const hasMinData =
+      formData.nombre || formData.descripcion || formData.category_id;
+    if (!hasMinData) {
       if (showToast)
         showToast(
-          isAdmin
-            ? "¡Negocio publicado exitosamente!"
-            : "¡Negocio creado exitosamente! Será revisado pronto.",
-          "success"
+          "Agrega al menos un nombre o descripción para guardar",
+          "warning",
         );
-
-      // Resetear formulario
-      resetForm();
-
-      // Redirigir: admin siempre vuelve al panel, usuarios normales al perfil
-      navigate(isAdmin ? "/admin" : "/perfil");
-    } catch (error) {
-      console.error("Error al crear negocio:", error);
-      if (showToast) showToast("Error al crear el negocio", "error");
-    } finally {
-      setIsSubmitting(false);
+      return false;
     }
-  }, [isAuthenticated, isAdmin, formData, user, showToast, validateForm, resetForm, navigate]);
+
+    setIsSavingDraft(true);
+    try {
+      const selectedCategory = categories.find(
+        (c) => c.id === parseInt(formData.category_id),
+      );
+
+      const { imagenes, ...dataWithoutImages } = formData;
+
+      const savedDraft = await saveDraft({
+        userId: user.id,
+        tipo: "negocio",
+        data: {
+          ...dataWithoutImages,
+          categoria_nombre: selectedCategory?.nombre || "",
+        },
+        id: currentDraftId,
+      });
+
+      setCurrentDraftId(savedDraft.id);
+      if (showToast) showToast("Borrador guardado", "success");
+      return true;
+    } catch (error) {
+      console.error("Error guardando borrador:", error);
+      if (showToast) showToast("Error al guardar el borrador", "error");
+      return false;
+    } finally {
+      setIsSavingDraft(false);
+    }
+  }, [isAuthenticated, formData, categories, user, currentDraftId, showToast]);
+
+  // Manejar envío del formulario
+  const handleSubmit = useCallback(
+    async (e) => {
+      e.preventDefault();
+
+      if (!isAuthenticated) {
+        setShowAuthModal(true);
+        return;
+      }
+
+      if (!validateForm()) {
+        if (showToast)
+          showToast(
+            "Por favor completa todos los campos obligatorios",
+            "error",
+          );
+        return;
+      }
+
+      setIsSubmitting(true);
+
+      try {
+        // 1. Subir imágenes
+        const imageUrls = [];
+        for (const file of formData.imagenes) {
+          const url = await uploadBusinessImage(file, user.id);
+          imageUrls.push(url);
+        }
+
+        // 2. Preparar datos del negocio
+        // Si es admin, se publica automáticamente sin revisión
+
+        // Construir JSONB de horarios para la BD
+        const horarios = {};
+        if (formData.abierto_24h) {
+          horarios.abierto_24h = true;
+        }
+        formData.dias_atencion.forEach((dia) => {
+          horarios[dia] = formData.horarios_detalle[dia] || [
+            { apertura: "09:00", cierre: "18:00" },
+          ];
+        });
+
+        const businessData = {
+          user_id: user.id,
+          nombre: formData.nombre.trim(),
+          descripcion: formData.descripcion.trim(),
+          category_id: parseInt(formData.category_id),
+          subcategoria: formData.subcategoria || null,
+          provincia: formData.provincia,
+          comuna: formData.comuna.trim(),
+          direccion: formData.direccion.trim(),
+          telefono: formData.telefono.trim(),
+          email: formData.email.trim() || null,
+          sitio_web: formData.sitio_web.trim() || null,
+          horarios: Object.keys(horarios).length > 0 ? horarios : {},
+          redes_sociales: formData.redes_sociales,
+          ubicacion_url: formData.ubicacion_url.trim() || null,
+          imagen_url: imageUrls[0] || null,
+          imagenes: imageUrls,
+          estado: isAdmin ? "publicado" : "pendiente",
+        };
+
+        // 3. Crear negocio en la BD
+        await createBusiness(businessData);
+
+        if (showToast)
+          showToast(
+            isAdmin
+              ? "¡Negocio publicado exitosamente!"
+              : "¡Negocio creado exitosamente! Será revisado pronto.",
+            "success",
+          );
+
+        // Limpiar borrador de Supabase si existe
+        if (currentDraftId && user?.id) {
+          try {
+            await deleteDraft(currentDraftId, user.id);
+          } catch (draftError) {
+            console.warn("No se pudo eliminar el borrador:", draftError);
+          }
+        }
+
+        // Limpiar localStorage
+        clearLocalDraft();
+
+        // Resetear formulario
+        resetForm();
+
+        // Redirigir: admin siempre vuelve al panel, usuarios normales al perfil
+        navigate(isAdmin ? "/admin" : "/perfil");
+      } catch (error) {
+        console.error("Error al crear negocio:", error);
+        if (showToast) showToast("Error al crear el negocio", "error");
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [
+      isAuthenticated,
+      isAdmin,
+      formData,
+      user,
+      showToast,
+      validateForm,
+      resetForm,
+      navigate,
+      currentDraftId,
+      clearLocalDraft,
+    ],
+  );
 
   return {
     // Estados
     formData,
     errors,
     categories,
+    subcategorias,
     loadingCategories,
     isSubmitting,
     previewImages,
     showAuthModal,
-    
+    isSavingDraft,
+
     // Acciones
     handleChange,
     handleDiaChange,
@@ -290,6 +473,7 @@ export const useNegocioForm = () => {
     removeImage,
     handleFieldFocus,
     handleSubmit,
+    handleSaveDraft,
     setShowAuthModal,
   };
 };

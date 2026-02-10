@@ -1,5 +1,9 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBuilding, faTag } from "@fortawesome/free-solid-svg-icons";
+import {
+  faBuilding,
+  faTag,
+  faLayerGroup,
+} from "@fortawesome/free-solid-svg-icons";
 
 /**
  * Sección de información básica del negocio
@@ -8,6 +12,7 @@ const InformacionBasicaSection = ({
   formData,
   errors,
   categories,
+  subcategorias,
   loadingCategories,
   onChange,
   onFieldFocus,
@@ -59,34 +64,74 @@ const InformacionBasicaSection = ({
         )}
       </div>
 
-      <div className="publicar-negocio__field">
-        <label htmlFor="category_id">
-          <FontAwesomeIcon icon={faTag} />
-          Categoría
-          <span className="publicar-negocio__label-required">Obligatorio</span>
-        </label>
-        {loadingCategories ? (
-          <p>Cargando categorías...</p>
-        ) : (
+      {/* Categoría y Subcategoría en fila */}
+      <div className="publicar-negocio__row">
+        <div className="publicar-negocio__field">
+          <label htmlFor="category_id">
+            <FontAwesomeIcon icon={faTag} />
+            Categoría
+            <span className="publicar-negocio__label-required">
+              Obligatorio
+            </span>
+          </label>
+          {loadingCategories ? (
+            <p>Cargando categorías...</p>
+          ) : (
+            <select
+              id="category_id"
+              name="category_id"
+              value={formData.category_id}
+              onChange={onChange}
+              onFocus={onFieldFocus}
+              className={errors.category_id ? "error" : ""}>
+              <option value="">Selecciona una categoría</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.nombre}
+                </option>
+              ))}
+            </select>
+          )}
+          {errors.category_id && (
+            <span className="publicar-negocio__error">
+              {errors.category_id}
+            </span>
+          )}
+        </div>
+
+        <div className="publicar-negocio__field">
+          <label htmlFor="subcategoria">
+            <FontAwesomeIcon icon={faLayerGroup} />
+            Subcategoría
+            <span className="publicar-negocio__label-required">
+              Obligatorio
+            </span>
+          </label>
           <select
-            id="category_id"
-            name="category_id"
-            value={formData.category_id}
+            id="subcategoria"
+            name="subcategoria"
+            value={formData.subcategoria}
             onChange={onChange}
             onFocus={onFieldFocus}
-            className={errors.category_id ? "error" : ""}
-          >
-            <option value="">Selecciona una categoría</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.nombre}
+            disabled={!formData.category_id}
+            className={errors.subcategoria ? "error" : ""}>
+            <option value="">
+              {formData.category_id
+                ? "Selecciona una subcategoría"
+                : "Primero selecciona categoría"}
+            </option>
+            {subcategorias.map((sub) => (
+              <option key={sub} value={sub}>
+                {sub}
               </option>
             ))}
           </select>
-        )}
-        {errors.category_id && (
-          <span className="publicar-negocio__error">{errors.category_id}</span>
-        )}
+          {errors.subcategoria && (
+            <span className="publicar-negocio__error">
+              {errors.subcategoria}
+            </span>
+          )}
+        </div>
       </div>
     </section>
   );
