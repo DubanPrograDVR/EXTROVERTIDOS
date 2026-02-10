@@ -92,11 +92,19 @@ const saveCustomTagsToStorage = (tags) => {
 const TagsModal = ({ isOpen, onClose, selectedTags = [], onSave }) => {
   const [internalSelected, setInternalSelected] = useState([]);
   const [dbTags, setDbTags] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loadingDbTags, setLoadingDbTags] = useState(false);
   const [customTag, setCustomTag] = useState("");
   const [customTagError, setCustomTagError] = useState("");
   const [savedCustomTags, setSavedCustomTags] = useState([]);
   const customInputRef = useRef(null);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Sincronizar con tags externos cuando se abre
   useEffect(() => {
@@ -109,16 +117,19 @@ const TagsModal = ({ isOpen, onClose, selectedTags = [], onSave }) => {
     }
   }, [isOpen, selectedTags]);
 
-  // Cargar tags de la base de datos (opcional, por si hay más)
+  // Cargar tags de la base de datos (opcional, complementa las predefinidas)
   const loadDbTags = async () => {
     try {
-      setLoading(true);
-      const tags = await getTags();
-      setDbTags(tags || []);
+      setLoadingDbTags(true);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout cargando tags")), 6000),
+      );
+      const tags = await Promise.race([getTags(), timeoutPromise]);
+      if (isMountedRef.current) setDbTags(tags || []);
     } catch (error) {
-      console.error("Error cargando tags:", error);
+      console.warn("Error cargando tags de DB:", error);
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) setLoadingDbTags(false);
     }
   };
 
@@ -272,68 +283,18 @@ const TagsModal = ({ isOpen, onClose, selectedTags = [], onSave }) => {
 
         {/* Content */}
         <div className="tags-modal__content">
-          {loading ? (
-            <div className="tags-modal__loading">Cargando etiquetas...</div>
-          ) : (
-            <>
-              {/* Tags personalizados guardados */}
-              {savedCustomTags.length > 0 && (
-                <div className="tags-modal__section">
-                  <p className="tags-modal__section-title">
-                    Mis hashtags personalizados
-                  </p>
-                  <div className="tags-modal__grid">
-                    {savedCustomTags.map((tag) => (
-                      <div key={tag} className="tags-modal__tag-wrapper">
-                        <button
-                          type="button"
-                          className={`tags-modal__tag tags-modal__tag--custom ${
-                            internalSelected.includes(tag) ? "selected" : ""
-                          } ${
-                            internalSelected.length >= MAX_TAGS &&
-                            !internalSelected.includes(tag)
-                              ? "disabled"
-                              : ""
-                          }`}
-                          onClick={() => handleToggleTag(tag)}
-                          disabled={
-                            internalSelected.length >= MAX_TAGS &&
-                            !internalSelected.includes(tag)
-                          }>
-                          {tag}
-                          {internalSelected.includes(tag) && (
-                            <FontAwesomeIcon
-                              icon={faCheck}
-                              className="tags-modal__tag-check"
-                            />
-                          )}
-                        </button>
-                        <button
-                          type="button"
-                          className="tags-modal__tag-delete"
-                          onClick={() => handleDeleteSavedTag(tag)}
-                          title="Eliminar hashtag guardado">
-                          <FontAwesomeIcon icon={faTimes} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Etiquetas predefinidas */}
-              <div className="tags-modal__section">
-                {savedCustomTags.length > 0 && (
-                  <p className="tags-modal__section-title">
-                    Etiquetas predefinidas
-                  </p>
-                )}
-                <div className="tags-modal__grid">
-                  {ETIQUETAS_PREDEFINIDAS.map((tag) => (
+          {/* Tags personalizados guardados */}
+          {savedCustomTags.length > 0 && (
+            <div className="tags-modal__section">
+              <p className="tags-modal__section-title">
+                Mis hashtags personalizados
+              </p>
+              <div className="tags-modal__grid">
+                {savedCustomTags.map((tag) => (
+                  <div key={tag} className="tags-modal__tag-wrapper">
                     <button
-                      key={tag}
                       type="button"
-                      className={`tags-modal__tag ${
+                      className={`tags-modal__tag tags-modal__tag--custom ${
                         internalSelected.includes(tag) ? "selected" : ""
                       } ${
                         internalSelected.length >= MAX_TAGS &&
@@ -354,11 +315,55 @@ const TagsModal = ({ isOpen, onClose, selectedTags = [], onSave }) => {
                         />
                       )}
                     </button>
-                  ))}
-                </div>
+                    <button
+                      type="button"
+                      className="tags-modal__tag-delete"
+                      onClick={() => handleDeleteSavedTag(tag)}
+                      title="Eliminar hashtag guardado">
+                      <FontAwesomeIcon icon={faTimes} />
+                    </button>
+                  </div>
+                ))}
               </div>
-            </>
+            </div>
           )}
+
+          {/* Etiquetas predefinidas */}
+          <div className="tags-modal__section">
+            {savedCustomTags.length > 0 && (
+              <p className="tags-modal__section-title">
+                Etiquetas predefinidas
+              </p>
+            )}
+            <div className="tags-modal__grid">
+              {ETIQUETAS_PREDEFINIDAS.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  className={`tags-modal__tag ${
+                    internalSelected.includes(tag) ? "selected" : ""
+                  } ${
+                    internalSelected.length >= MAX_TAGS &&
+                    !internalSelected.includes(tag)
+                      ? "disabled"
+                      : ""
+                  }`}
+                  onClick={() => handleToggleTag(tag)}
+                  disabled={
+                    internalSelected.length >= MAX_TAGS &&
+                    !internalSelected.includes(tag)
+                  }>
+                  {tag}
+                  {internalSelected.includes(tag) && (
+                    <FontAwesomeIcon
+                      icon={faCheck}
+                      className="tags-modal__tag-check"
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Footer */}
