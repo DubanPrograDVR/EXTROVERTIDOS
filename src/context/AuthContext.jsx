@@ -286,14 +286,12 @@ export const AuthProvider = ({ children }) => {
           break;
 
         case "SIGNED_OUT":
-          // Solo limpiar si había un user (evitar toast duplicado)
+          // Limpiar estado si aún había user (caso: sesión cerrada externamente)
+          // El toast se muestra desde signOut() directamente, no aquí,
+          // porque CLEAR_AUTH se despacha antes del evento SIGNED_OUT
           if (userRef.current !== null) {
             roleCache.current = { userId: null, role: ROLES.USER };
             dispatch({ type: AUTH_ACTIONS.CLEAR_AUTH });
-            showToastRef.current?.(
-              "Has cerrado sesión correctamente",
-              "success",
-            );
           }
           break;
 
@@ -434,6 +432,9 @@ export const AuthProvider = ({ children }) => {
     roleCache.current = { userId: null, role: ROLES.USER };
     rolePendingPromise.current = null;
     dispatch({ type: AUTH_ACTIONS.CLEAR_AUTH });
+
+    // Mostrar toast AQUÍ porque el listener SIGNED_OUT ya no verá user
+    showToastRef.current?.("Has cerrado sesión correctamente", "success");
 
     try {
       const timeoutPromise = new Promise((_, reject) => {
