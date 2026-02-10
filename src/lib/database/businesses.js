@@ -34,17 +34,7 @@ export const getPublishedBusinesses = async () => {
   // Primero obtenemos los negocios
   const { data: businesses, error } = await supabase
     .from("businesses")
-    .select(
-      `
-      *,
-      categories (
-        id,
-        nombre,
-        icono,
-        color
-      )
-    `,
-    )
+    .select("*")
     .eq("estado", "publicado")
     .order("created_at", { ascending: false });
 
@@ -87,17 +77,7 @@ export const getPublishedBusinesses = async () => {
 export const getBusinessesByUser = async (userId) => {
   const { data, error } = await supabase
     .from("businesses")
-    .select(
-      `
-      *,
-      categories (
-        id,
-        nombre,
-        icono,
-        color
-      )
-    `,
-    )
+    .select("*")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
@@ -117,17 +97,7 @@ export const getPendingBusinesses = async () => {
   // Primero obtenemos los negocios
   const { data: businesses, error } = await supabase
     .from("businesses")
-    .select(
-      `
-      *,
-      categories (
-        id,
-        nombre,
-        icono,
-        color
-      )
-    `,
-    )
+    .select("*")
     .eq("estado", "pendiente")
     .order("created_at", { ascending: false });
 
@@ -171,17 +141,7 @@ export const getAllBusinesses = async () => {
   // Primero obtenemos los negocios
   const { data: businesses, error } = await supabase
     .from("businesses")
-    .select(
-      `
-      *,
-      categories (
-        id,
-        nombre,
-        icono,
-        color
-      )
-    `,
-    )
+    .select("*")
     .order("created_at", { ascending: false });
 
   if (error) {

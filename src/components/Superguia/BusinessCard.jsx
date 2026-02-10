@@ -55,8 +55,7 @@ export default function BusinessCard({
     comuna,
     provincia,
     direccion,
-    categories,
-    category_id,
+    categoria,
     subcategoria,
     telefono,
     whatsapp,
@@ -199,9 +198,11 @@ export default function BusinessCard({
   const resolvedInstagram = instagram || redes_sociales?.instagram || null;
   const resolvedFacebook = facebook || redes_sociales?.facebook || null;
 
-  // Obtener icono de categoría desde archivo local
-  const localCategory = category_id
-    ? BUSINESS_CATEGORIES.find((c) => c.id === parseInt(category_id))
+  // Obtener info de categoría desde archivo local (por nombre)
+  const localCategory = categoria
+    ? BUSINESS_CATEGORIES.find(
+        (c) => c.nombre.toLowerCase() === categoria.toLowerCase(),
+      )
     : null;
 
   // Manejar click en la card
@@ -320,18 +321,19 @@ export default function BusinessCard({
         {/* Overlay con badges (gradiente superior) */}
         <div className="business-card__overlay">
           {/* Badge de categoría con icono local */}
-          {categories?.nombre || localCategory ? (
+          {localCategory ? (
             <span
               className="business-card__category"
               style={{
-                backgroundColor:
-                  categories?.color || localCategory?.color || "#ff6600",
+                backgroundColor: localCategory.color || "#ff6600",
               }}>
-              {localCategory?.icono && (
+              {localCategory.icono && (
                 <FontAwesomeIcon icon={localCategory.icono} />
               )}
-              {categories?.nombre || localCategory?.nombre}
+              {localCategory.nombre}
             </span>
+          ) : categoria ? (
+            <span className="business-card__category">{categoria}</span>
           ) : (
             <span />
           )}

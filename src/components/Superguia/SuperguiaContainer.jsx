@@ -34,6 +34,7 @@ export default function SuperguiaContainer() {
 
   // Estados de filtros
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [selectedCity, setSelectedCity] = useState(null);
   const [selectedComuna, setSelectedComuna] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -64,6 +65,24 @@ export default function SuperguiaContainer() {
     loadData();
   }, []);
 
+  // Construir subcategorías planas para el FilterPanel
+  const flatSubcategories = useMemo(() => {
+    const result = [];
+    let idCounter = 1;
+    BUSINESS_CATEGORIES.forEach((cat) => {
+      if (cat.subcategorias) {
+        cat.subcategorias.forEach((sub) => {
+          result.push({
+            id: idCounter++,
+            nombre: sub,
+            category_id: cat.id,
+          });
+        });
+      }
+    });
+    return result;
+  }, []);
+
   // Handlers para filtros
   const handleCityChange = useCallback((city) => {
     setSelectedCity(city);
@@ -73,6 +92,12 @@ export default function SuperguiaContainer() {
 
   const handleCategoryChange = useCallback((category) => {
     setSelectedCategory(category);
+    setSelectedSubcategory(null);
+    setCurrentPage(1);
+  }, []);
+
+  const handleSubcategoryChange = useCallback((subcategory) => {
+    setSelectedSubcategory(subcategory);
     setCurrentPage(1);
   }, []);
 
@@ -88,6 +113,7 @@ export default function SuperguiaContainer() {
 
   const handleClearFilters = useCallback(() => {
     setSelectedCategory(null);
+    setSelectedSubcategory(null);
     setSelectedCity(null);
     setSelectedComuna(null);
     setSearchQuery("");
@@ -117,8 +143,10 @@ export default function SuperguiaContainer() {
           business.nombre?.toLowerCase().includes(query) ||
           business.comuna?.toLowerCase().includes(query) ||
           business.provincia?.toLowerCase().includes(query) ||
-          business.categories?.nombre?.toLowerCase().includes(query) ||
-          business.slogan?.toLowerCase().includes(query),
+          business.categoria?.toLowerCase().includes(query) ||
+          business.subcategoria?.toLowerCase().includes(query) ||
+          business.slogan?.toLowerCase().includes(query) ||
+          business.descripcion?.toLowerCase().includes(query),
       );
     }
 
@@ -128,8 +156,22 @@ export default function SuperguiaContainer() {
       if (selectedCat) {
         result = result.filter(
           (business) =>
-            business.categories?.nombre?.toLowerCase() ===
+            business.categoria?.toLowerCase() ===
             selectedCat.nombre.toLowerCase(),
+        );
+      }
+    }
+
+    // Filtro de subcategoría
+    if (selectedSubcategory) {
+      const subcat = flatSubcategories.find(
+        (s) => s.id === selectedSubcategory,
+      );
+      if (subcat) {
+        result = result.filter(
+          (business) =>
+            business.subcategoria?.toLowerCase() ===
+            subcat.nombre.toLowerCase(),
         );
       }
     }
@@ -158,9 +200,11 @@ export default function SuperguiaContainer() {
     businesses,
     searchQuery,
     selectedCategory,
+    selectedSubcategory,
     selectedCity,
     selectedComuna,
     categories,
+    flatSubcategories,
   ]);
 
   // Comunas disponibles según ciudad seleccionada
@@ -178,7 +222,11 @@ export default function SuperguiaContainer() {
 
   // Verificar si hay filtros activos
   const hasActiveFilters =
-    selectedCategory || selectedCity || selectedComuna || searchQuery.trim();
+    selectedCategory ||
+    selectedSubcategory ||
+    selectedCity ||
+    selectedComuna ||
+    searchQuery.trim();
 
   return (
     <>
@@ -226,9 +274,12 @@ export default function SuperguiaContainer() {
           {/* Panel de filtros */}
           <FilterPanel
             categories={categories}
+            subcategories={flatSubcategories}
             locations={LOCATIONS}
             selectedCategory={selectedCategory}
+            selectedSubcategory={selectedSubcategory}
             onCategoryChange={handleCategoryChange}
+            onSubcategoryChange={handleSubcategoryChange}
             selectedCity={selectedCity}
             onCityChange={handleCityChange}
             selectedComuna={selectedComuna}
@@ -240,7 +291,7 @@ export default function SuperguiaContainer() {
             totalResults={filteredBusinesses.length}
             showDateFilter={false}
             showPriceFilter={false}
-            showSubcategories={false}
+            showSubcategories={true}
           />
 
           {/* Estado de carga */}

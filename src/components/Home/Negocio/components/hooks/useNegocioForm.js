@@ -384,11 +384,16 @@ export const useNegocioForm = () => {
           ];
         });
 
+        // Resolver nombre de categoría desde el ID local
+        const selectedCat = BUSINESS_CATEGORIES.find(
+          (c) => c.id === parseInt(formData.category_id),
+        );
+
         const businessData = {
           user_id: user.id,
           nombre: formData.nombre.trim(),
           descripcion: formData.descripcion.trim(),
-          category_id: parseInt(formData.category_id),
+          categoria: selectedCat?.nombre || null,
           subcategoria: formData.subcategoria || null,
           provincia: formData.provincia,
           comuna: formData.comuna.trim(),

@@ -149,7 +149,8 @@ export default function BusinessModal({ business, isOpen, onClose }) {
     region,
     direccion,
     ubicacion_url,
-    categories,
+    categoria,
+    subcategoria,
     telefono,
     email,
     whatsapp,
@@ -370,7 +371,7 @@ export default function BusinessModal({ business, isOpen, onClose }) {
         aria-modal="true"
         aria-label="Detalle del negocio">
         {/* Categoría en la parte superior con logo */}
-        {categories?.nombre && (
+        {categoria && (
           <div className="publication-modal__category-header">
             <img
               src="/img/SG_Extro.png"
@@ -379,10 +380,14 @@ export default function BusinessModal({ business, isOpen, onClose }) {
             />
             <span
               className="publication-modal__category-badge"
-              style={{ backgroundColor: categories.color || "#ff6600" }}>
-              {categories.icono && <span>{categories.icono}</span>}
-              {categories.nombre}
+              style={{ backgroundColor: "#ff6600" }}>
+              {categoria}
             </span>
+            {subcategoria && (
+              <span className="publication-modal__subcategory-badge">
+                {subcategoria}
+              </span>
+            )}
             {verificado && (
               <span className="publication-modal__verified-badge">
                 <FontAwesomeIcon icon={faCheckCircle} />

@@ -10,9 +10,11 @@ import {
   faTimesCircle,
   faMapMarkerAlt,
   faPhone,
+  faEye,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "../../../context/AuthContext";
 import { getBusinessesByUser } from "../../../lib/database";
+import BusinessModal from "../../Superguia/BusinessModal";
 import "./styles/section.css";
 
 export default function PerfilNegocios() {
@@ -21,6 +23,7 @@ export default function PerfilNegocios() {
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [viewModal, setViewModal] = useState({ open: false, business: null });
 
   useEffect(() => {
     const loadBusinesses = async () => {
@@ -140,9 +143,9 @@ export default function PerfilNegocios() {
                   <h3>{business.nombre}</h3>
                   {renderStatusBadge(business.estado)}
                 </div>
-                {business.categories && (
+                {business.categoria && (
                   <span className="perfil-business-card__category">
-                    {business.categories.nombre}
+                    {business.categoria}
                   </span>
                 )}
                 {business.direccion && (
@@ -163,11 +166,26 @@ export default function PerfilNegocios() {
                     <p>{business.motivo_rechazo}</p>
                   </div>
                 )}
+                <div className="perfil-publication-card__actions">
+                  <button
+                    className="perfil-publication-card__btn"
+                    onClick={() => setViewModal({ open: true, business })}>
+                    <FontAwesomeIcon icon={faEye} />
+                    Ver
+                  </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      {/* Modal de vista previa de negocio */}
+      <BusinessModal
+        business={viewModal.business}
+        isOpen={viewModal.open}
+        onClose={() => setViewModal({ open: false, business: null })}
+      />
     </div>
   );
 }

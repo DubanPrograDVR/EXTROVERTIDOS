@@ -12,6 +12,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "../../../context/AuthContext";
 import { getDrafts, deleteDraft } from "../../../lib/database";
+import BusinessModal from "../../Superguia/BusinessModal";
+import PublicationModal from "../../Superguia/PublicationModal";
 import "./styles/section.css";
 import "./styles/borradores.css";
 
@@ -209,17 +211,37 @@ export default function PerfilBorradores() {
         </div>
       )}
 
-      {/* Modal de preview */}
-      {previewDraft && (
-        <DraftPreviewModal
-          draft={previewDraft}
-          onClose={() => setPreviewDraft(null)}
-          onContinue={() => {
-            setPreviewDraft(null);
-            handleContinueDraft(previewDraft);
+      {/* Modal de preview según tipo */}
+      {previewDraft && previewDraft.tipo === "negocio" ? (
+        <BusinessModal
+          business={{
+            ...previewDraft.data,
+            id: previewDraft.id,
+            imagen_url:
+              previewDraft.imagen_preview || previewDraft.data?.imagen_url,
+            imagenes:
+              previewDraft.data?.imagenes_preview ||
+              previewDraft.data?.imagenes,
           }}
+          isOpen={!!previewDraft}
+          onClose={() => setPreviewDraft(null)}
         />
-      )}
+      ) : previewDraft ? (
+        <PublicationModal
+          publication={{
+            ...previewDraft.data,
+            id: previewDraft.id,
+            imagenes:
+              previewDraft.data?.imagenes_preview ||
+              previewDraft.data?.imagenes ||
+              (previewDraft.imagen_preview
+                ? [previewDraft.imagen_preview]
+                : []),
+          }}
+          isOpen={!!previewDraft}
+          onClose={() => setPreviewDraft(null)}
+        />
+      ) : null}
     </div>
   );
 }

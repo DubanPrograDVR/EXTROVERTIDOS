@@ -172,7 +172,7 @@ export default function AdminBusinessList({
                           {business.nombre}
                         </span>
                         <span className="admin-table__business-category">
-                          {business.categories?.nombre || "Sin categoría"}
+                          {business.categoria || "Sin categoría"}
                         </span>
                       </div>
                     </div>

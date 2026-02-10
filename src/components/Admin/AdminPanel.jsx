@@ -27,6 +27,7 @@ import AdminLoading from "./components/AdminLoading";
 import AdminProfile from "./components/AdminProfile";
 import AdminEditModal from "./components/AdminEditModal";
 import PublicationModal from "../Superguia/PublicationModal";
+import BusinessModal from "../Superguia/BusinessModal";
 
 // Custom hook para manejo de datos
 import { useAdminData } from "./hooks/useAdminData";
@@ -64,6 +65,10 @@ export default function AdminPanel() {
   const [editModal, setEditModal] = useState({
     open: false,
     event: null,
+  });
+  const [viewBusinessModal, setViewBusinessModal] = useState({
+    open: false,
+    business: null,
   });
   const [categories, setCategories] = useState([]);
 
@@ -214,6 +219,21 @@ export default function AdminPanel() {
     setViewModal({ open: false, event: null });
   };
 
+  // Ver detalle de negocio
+  const onViewBusiness = (businessId) => {
+    const business =
+      allBusinesses.find((b) => b.id === businessId) ||
+      pendingBusinesses.find((b) => b.id === businessId);
+    if (business) {
+      setViewBusinessModal({ open: true, business });
+    }
+  };
+
+  // Cerrar modal de vista previa de negocio
+  const onViewBusinessClose = () => {
+    setViewBusinessModal({ open: false, business: null });
+  };
+
   // Desbanear usuario
   const onUnbanClick = async (userToUnban) => {
     if (!userToUnban.ban_info?.id) return;
@@ -255,7 +275,8 @@ export default function AdminPanel() {
       id: "pending",
       label: "Pendientes",
       icon: faClock,
-      badge: stats?.eventos?.pendientes || 0,
+      badge:
+        (stats?.eventos?.pendientes || 0) + (pendingBusinesses?.length || 0),
       show: true,
     },
     {
@@ -269,7 +290,7 @@ export default function AdminPanel() {
       id: "businesses",
       label: "Negocios",
       icon: faStore,
-      badge: pendingBusinesses?.length || 0,
+      badge: allBusinesses?.length || 0,
       show: isAdmin,
     },
     {
@@ -375,13 +396,32 @@ export default function AdminPanel() {
 
         {/* Lista de publicaciones pendientes */}
         {activeTab === "pending" && (
-          <AdminPendingList
-            events={pendingEvents}
-            actionLoading={actionLoading}
-            onApprove={onApprove}
-            onReject={onRejectClick}
-            onView={onViewEvent}
-          />
+          <>
+            <AdminPendingList
+              events={pendingEvents}
+              actionLoading={actionLoading}
+              onApprove={onApprove}
+              onReject={onRejectClick}
+              onView={onViewEvent}
+            />
+
+            {/* Negocios pendientes */}
+            {pendingBusinesses.length > 0 && (
+              <div style={{ marginTop: "2rem" }}>
+                <AdminBusinessList
+                  businesses={pendingBusinesses}
+                  loading={loading}
+                  actionLoading={actionLoading}
+                  onApprove={handleApproveBusiness}
+                  onReject={onRejectBusinessClick}
+                  onDelete={handleDeleteBusiness}
+                  onView={onViewBusiness}
+                  showActions={true}
+                  title="Negocios Pendientes de Aprobación"
+                />
+              </div>
+            )}
+          </>
         )}
 
         {/* Gestión de todas las publicaciones (solo admin) */}
@@ -405,6 +445,8 @@ export default function AdminPanel() {
             onApprove={handleApproveBusiness}
             onReject={onRejectBusinessClick}
             onDelete={handleDeleteBusiness}
+            onView={onViewBusiness}
+            title="Todos los Negocios"
           />
         )}
 
@@ -467,6 +509,13 @@ export default function AdminPanel() {
         onClose={onEditClose}
         onSave={onSaveEdit}
         loading={actionLoading === editModal.event?.id}
+      />
+
+      {/* Modal de vista previa de negocio */}
+      <BusinessModal
+        business={viewBusinessModal.business}
+        isOpen={viewBusinessModal.open}
+        onClose={onViewBusinessClose}
       />
     </div>
   );

@@ -139,3 +139,14 @@ export {
   addLike,
   removeLike,
 } from "./likes";
+
+// ============ LIKES Y FAVORITOS DE NEGOCIOS ============
+export {
+  getBusinessLikesCount,
+  hasUserLikedBusiness,
+  getBusinessLikesState,
+  toggleBusinessLike,
+  isBusinessFavorite,
+  getBusinessFavoriteIds,
+  toggleBusinessFavorite,
+} from "./businessInteractions";
