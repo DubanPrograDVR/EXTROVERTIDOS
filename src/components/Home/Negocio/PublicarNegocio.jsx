@@ -1,5 +1,6 @@
+import { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { faSpinner, faEye, faSave } from "@fortawesome/free-solid-svg-icons";
 
 // Componentes modulares
 import {
@@ -12,10 +13,31 @@ import {
   AuthModal,
   useNegocioForm,
 } from "./components";
+import BusinessDraftPreview from "./components/BusinessDraftPreview";
 
 import "./styles/publicar-negocio.css";
 
 const PublicarNegocio = () => {
+  const [isDraftPreviewOpen, setIsDraftPreviewOpen] = useState(false);
+
+  // Auto-refresh al volver de otra pestaña para evitar estados obsoletos
+  const hasLeftTab = useRef(false);
+
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        hasLeftTab.current = true;
+      } else if (document.visibilityState === "visible" && hasLeftTab.current) {
+        hasLeftTab.current = false;
+        window.location.reload();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibility);
+  }, []);
+
   // Hook personalizado que maneja toda la lógica del formulario
   const {
     formData,
@@ -25,6 +47,7 @@ const PublicarNegocio = () => {
     isSubmitting,
     previewImages,
     showAuthModal,
+    isSavingDraft,
     handleChange,
     handleDiaChange,
     handleSaveHorarios,
@@ -32,6 +55,7 @@ const PublicarNegocio = () => {
     removeImage,
     handleFieldFocus,
     handleSubmit,
+    handleSaveDraft,
     setShowAuthModal,
   } = useNegocioForm();
 
@@ -97,21 +121,61 @@ const PublicarNegocio = () => {
           onFieldFocus={handleFieldFocus}
         />
 
-        {/* Botón enviar */}
-        <button
-          type="submit"
-          className="publicar-negocio__submit"
-          disabled={isSubmitting}>
-          {isSubmitting ? (
-            <>
-              <FontAwesomeIcon icon={faSpinner} spin />
-              Publicando...
-            </>
-          ) : (
-            "Publicar Negocio"
-          )}
-        </button>
+        {/* Botones de acción */}
+        <div className="publicar-negocio__actions">
+          {/* Ver Borrador */}
+          <button
+            type="button"
+            className="publicar-negocio__draft-btn"
+            onClick={() => setIsDraftPreviewOpen(true)}>
+            <FontAwesomeIcon icon={faEye} />
+            Ver Borrador
+          </button>
+
+          {/* Guardar Borrador */}
+          <button
+            type="button"
+            className="publicar-negocio__save-draft-btn"
+            onClick={handleSaveDraft}
+            disabled={isSavingDraft || isSubmitting}>
+            {isSavingDraft ? (
+              <>
+                <FontAwesomeIcon icon={faSpinner} spin />
+                Guardando...
+              </>
+            ) : (
+              <>
+                <FontAwesomeIcon icon={faSave} />
+                Guardar Borrador
+              </>
+            )}
+          </button>
+
+          {/* Publicar */}
+          <button
+            type="submit"
+            className="publicar-negocio__submit"
+            disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <FontAwesomeIcon icon={faSpinner} spin />
+                Publicando...
+              </>
+            ) : (
+              "Publicar Negocio"
+            )}
+          </button>
+        </div>
       </form>
+
+      {/* Vista previa del borrador */}
+      <BusinessDraftPreview
+        isOpen={isDraftPreviewOpen}
+        onClose={() => setIsDraftPreviewOpen(false)}
+        formData={formData}
+        previewImages={previewImages}
+        categories={categories}
+      />
 
       {/* Modal de autenticación */}
       <AuthModal
