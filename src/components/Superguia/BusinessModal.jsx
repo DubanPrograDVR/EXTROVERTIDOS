@@ -207,122 +207,91 @@ export default function BusinessModal({ business, isOpen, onClose }) {
     );
   };
 
-  // Obtener resumen de horarios usando los campos de la BD
-  const getHorarioResumen = () => {
-    // Usar los nuevos campos: dias_atencion, horario_apertura, horario_cierre
-    const tieneDiasAtencion =
-      Array.isArray(dias_atencion) && dias_atencion.length > 0;
-    const tieneHorario = horario_apertura || horario_cierre;
-
-    if (!tieneDiasAtencion && !tieneHorario) {
-      // Fallback al campo horarios JSONB si existe
-      if (
-        horarios &&
-        typeof horarios === "object" &&
-        Object.keys(horarios).length > 0
-      ) {
-        return getHorarioFromJsonb();
-      }
-      return null;
-    }
-
-    // Formatear días de atención
-    const formatearDias = (dias) => {
-      if (!dias || dias.length === 0) return null;
-      if (dias.length === 7) return "Todos los días";
-
-      // Mapeo de días completos a abreviados
-      const diasAbrev = {
-        Lunes: "Lun",
-        Martes: "Mar",
-        Miércoles: "Mié",
-        Miercoles: "Mié",
-        Jueves: "Jue",
-        Viernes: "Vie",
-        Sábado: "Sáb",
-        Sabado: "Sáb",
-        Domingo: "Dom",
-      };
-
-      const diasNorm = dias.map((d) => diasAbrev[d] || d);
-
-      // Detectar si es Lunes a Viernes
-      const diasSemana = ["Lun", "Mar", "Mié", "Jue", "Vie"];
-      const tieneLunAVie = diasSemana.every((d) => diasNorm.includes(d));
-
-      if (tieneLunAVie) {
-        const tieneSab = diasNorm.includes("Sáb");
-        const tieneDom = diasNorm.includes("Dom");
-        if (!tieneSab && !tieneDom) return "Lunes a Viernes";
-        if (tieneSab && !tieneDom) return "Lunes a Sábado";
-        if (tieneSab && tieneDom) return "Todos los días";
-        if (!tieneSab && tieneDom) return "Lunes a Viernes y Domingo";
-      }
-
-      return dias.join(", ");
-    };
-
-    // Formatear horario
-    const formatearHorario = (apertura, cierre) => {
-      if (!apertura && !cierre) return "Consultar";
-
-      const formatHora = (hora) => {
-        if (!hora) return "";
-        // Remover segundos si existen (10:00:00 -> 10:00)
-        const partes = hora.split(":");
-        return `${partes[0]}:${partes[1]}`;
-      };
-
-      if (apertura && cierre) {
-        return `${formatHora(apertura)} - ${formatHora(cierre)}`;
-      }
-      return apertura
-        ? `Desde ${formatHora(apertura)}`
-        : `Hasta ${formatHora(cierre)}`;
-    };
-
-    return {
-      diasAbiertos: formatearDias(dias_atencion),
-      horarioAtencion: formatearHorario(horario_apertura, horario_cierre),
-      diasCerrados: null, // No tenemos esta info en el nuevo esquema
-      totalAbiertos: dias_atencion?.length || 0,
-    };
-  };
-
-  // Fallback para el campo horarios JSONB antiguo
-  const getHorarioFromJsonb = () => {
+  // Obtener detalle de horarios por día
+  const getHorarioDetalle = () => {
     const diasOrden = [
-      { key: "lunes", label: "Lun" },
-      { key: "martes", label: "Mar" },
-      { key: "miercoles", label: "Mié" },
-      { key: "jueves", label: "Jue" },
-      { key: "viernes", label: "Vie" },
-      { key: "sabado", label: "Sáb" },
-      { key: "domingo", label: "Dom" },
+      { keys: ["Lunes", "lunes"], label: "LUN" },
+      { keys: ["Martes", "martes"], label: "MAR" },
+      {
+        keys: ["Miércoles", "miércoles", "Miercoles", "miercoles"],
+        label: "MIE",
+      },
+      { keys: ["Jueves", "jueves"], label: "JUE" },
+      { keys: ["Viernes", "viernes"], label: "VIE" },
+      { keys: ["Sábado", "sábado", "Sabado", "sabado"], label: "SÁB" },
+      { keys: ["Domingo", "domingo"], label: "DOM" },
     ];
 
-    const diasAbiertos = [];
-    let horarioComun = null;
-
-    diasOrden.forEach(({ key, label }) => {
-      const horario = horarios[key];
-      if (horario && !horario.cerrado) {
-        diasAbiertos.push(label);
-        if (!horarioComun && horario.apertura && horario.cierre) {
-          horarioComun = `${horario.apertura} - ${horario.cierre}`;
-        }
-      }
-    });
-
-    return {
-      diasAbiertos: diasAbiertos.length > 0 ? diasAbiertos.join(", ") : null,
-      horarioAtencion: horarioComun || "Consultar",
-      diasCerrados: null,
-      totalAbiertos: diasAbiertos.length,
+    const formatHora = (hora) => {
+      if (!hora) return "";
+      const partes = hora.split(":");
+      return `${partes[0]}:${partes[1]}`;
     };
+
+    // Intentar usar horarios JSONB (fuente principal)
+    if (
+      horarios &&
+      typeof horarios === "object" &&
+      Object.keys(horarios).length > 0
+    ) {
+      if (horarios.abierto_24h) {
+        return [{ label: "TODOS", horario: "Abierto 24h", abierto: true }];
+      }
+
+      const detalle = [];
+      diasOrden.forEach(({ keys, label }) => {
+        const data = keys.reduce((found, k) => found || horarios[k], null);
+        if (data && !data.cerrado) {
+          let horarioTexto = "Consultar";
+          if (Array.isArray(data) && data.length > 0) {
+            const turno = data[0];
+            if (turno.apertura && turno.cierre) {
+              horarioTexto = `${formatHora(turno.apertura)} - ${formatHora(turno.cierre)}`;
+            }
+          } else if (data.apertura && data.cierre) {
+            horarioTexto = `${formatHora(data.apertura)} - ${formatHora(data.cierre)}`;
+          }
+          detalle.push({ label, horario: horarioTexto, abierto: true });
+        }
+      });
+
+      return detalle.length > 0 ? detalle : null;
+    }
+
+    // Fallback: dias_atencion + horario_apertura/horario_cierre
+    const tieneDias = Array.isArray(dias_atencion) && dias_atencion.length > 0;
+    const tieneHorario = horario_apertura || horario_cierre;
+    if (!tieneDias && !tieneHorario) return null;
+
+    const diasAbrev = {
+      Lunes: "LUN",
+      Martes: "MAR",
+      Miércoles: "MIE",
+      Miercoles: "MIE",
+      Jueves: "JUE",
+      Viernes: "VIE",
+      Sábado: "SÁB",
+      Sabado: "SÁB",
+      Domingo: "DOM",
+    };
+
+    let horarioTexto = "Consultar";
+    if (horario_apertura && horario_cierre) {
+      horarioTexto = `${formatHora(horario_apertura)} - ${formatHora(horario_cierre)}`;
+    }
+
+    if (tieneDias) {
+      return dias_atencion.map((dia) => ({
+        label: diasAbrev[dia] || dia.substring(0, 3).toUpperCase(),
+        horario: horarioTexto,
+        abierto: true,
+      }));
+    }
+
+    return [{ label: "TODOS", horario: horarioTexto, abierto: true }];
   };
 
-  const horarioResumen = getHorarioResumen();
+  const horarioDetalle = getHorarioDetalle();
 
   // Extraer coordenadas de URL de Google Maps
   const extractCoordinates = (url) => {
@@ -494,55 +463,24 @@ export default function BusinessModal({ business, isOpen, onClose }) {
 
               {/* Sección: Horarios */}
               <AccordionSection
-                title="Horarios"
+                title="Horario de atención (Resumen)"
                 icon={faClock}
                 isOpen={activeSection === ACCORDION_SECTIONS.SCHEDULE}
                 onToggle={() => toggleSection(ACCORDION_SECTIONS.SCHEDULE)}>
                 <div className="publication-modal__schedule-simple">
-                  {horarioResumen ? (
-                    <>
-                      <div className="publication-modal__schedule-item">
-                        <span className="publication-modal__schedule-icon">
-                          📅
+                  {horarioDetalle && horarioDetalle.length > 0 ? (
+                    horarioDetalle.map((dia, idx) => (
+                      <div
+                        key={idx}
+                        className="publication-modal__schedule-row">
+                        <span className="publication-modal__schedule-day">
+                          {dia.label}
                         </span>
-                        <div className="publication-modal__schedule-info">
-                          <span className="publication-modal__schedule-label">
-                            Días de atención
-                          </span>
-                          <span className="publication-modal__schedule-value">
-                            {horarioResumen.diasAbiertos || "No especificado"}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="publication-modal__schedule-item">
-                        <span className="publication-modal__schedule-icon">
-                          🕐
+                        <span className="publication-modal__schedule-time">
+                          {dia.horario}
                         </span>
-                        <div className="publication-modal__schedule-info">
-                          <span className="publication-modal__schedule-label">
-                            Horario
-                          </span>
-                          <span className="publication-modal__schedule-value">
-                            {horarioResumen.horarioAtencion}
-                          </span>
-                        </div>
                       </div>
-                      {horarioResumen.diasCerrados && (
-                        <div className="publication-modal__schedule-item publication-modal__schedule-item--closed">
-                          <span className="publication-modal__schedule-icon">
-                            🚫
-                          </span>
-                          <div className="publication-modal__schedule-info">
-                            <span className="publication-modal__schedule-label">
-                              Cerrado
-                            </span>
-                            <span className="publication-modal__schedule-value">
-                              {horarioResumen.diasCerrados}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </>
+                    ))
                   ) : (
                     <p className="publication-modal__no-data">
                       Horarios no disponibles

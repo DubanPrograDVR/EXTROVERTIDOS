@@ -121,80 +121,32 @@ export const getAllUsers = async (adminUserId) => {
 
 /**
  * Elimina un usuario del sistema (solo admin)
- * Elimina todos los datos relacionados antes del perfil.
+ * Llama a la función SQL admin_delete_user que tiene SECURITY DEFINER
+ * para poder eliminar de auth.users y todas las tablas relacionadas.
  * @param {string} targetUserId - ID del usuario a eliminar
  * @param {string} adminUserId - ID del admin que realiza la acción
  * @returns {Promise<boolean>} true si se eliminó correctamente
  */
 export const deleteUser = async (targetUserId, adminUserId) => {
-  // Verificar que quien hace el cambio es admin
-  const isAdminUser = await isAdmin(adminUserId);
-  if (!isAdminUser) {
-    throw new Error("No tienes permisos para eliminar usuarios");
+  if (!targetUserId || !adminUserId) {
+    throw new Error("IDs de usuario requeridos");
   }
 
-  // Verificar que no se elimine a sí mismo
   if (targetUserId === adminUserId) {
     throw new Error("No puedes eliminarte a ti mismo");
   }
 
-  // Verificar que el usuario a eliminar no sea admin
-  const targetRole = await getUserRole(targetUserId);
-  if (targetRole === ROLES.ADMIN) {
-    throw new Error("No puedes eliminar a otro administrador");
+  const { data, error } = await supabase.rpc("admin_delete_user", {
+    target_user_id: targetUserId,
+  });
+
+  if (error) {
+    console.error("Error al eliminar usuario:", error);
+    throw new Error(error.message || "Error al eliminar usuario");
   }
 
-  // Tablas a limpiar ANTES de eliminar el perfil (orden importa por FKs)
-  const tablesToClean = [
-    { table: "event_likes", column: "user_id" },
-    { table: "event_tags", column: "event_id", subquery: true },
-    { table: "events", column: "user_id" },
-    { table: "businesses", column: "user_id" },
-    { table: "drafts", column: "user_id" },
-    { table: "user_favorites", column: "user_id" },
-    { table: "user_bans", column: "user_id" },
-    { table: "notifications", column: "user_id" },
-  ];
-
-  const errors = [];
-
-  for (const { table, column, subquery } of tablesToClean) {
-    try {
-      if (subquery && table === "event_tags") {
-        // Eliminar tags de los eventos del usuario primero
-        const { data: userEvents } = await supabase
-          .from("events")
-          .select("id")
-          .eq("user_id", targetUserId);
-
-        if (userEvents?.length > 0) {
-          const eventIds = userEvents.map((e) => e.id);
-          await supabase.from("event_tags").delete().in("event_id", eventIds);
-        }
-      } else {
-        await supabase.from(table).delete().eq(column, targetUserId);
-      }
-    } catch (err) {
-      console.warn(`Error al limpiar ${table}:`, err);
-      errors.push({ table, error: err.message });
-    }
-  }
-
-  // Eliminar el perfil (esto es crítico - si falla, lanzar error)
-  const { error: profileError } = await supabase
-    .from("profiles")
-    .delete()
-    .eq("id", targetUserId);
-
-  if (profileError) {
-    console.error("Error al eliminar perfil del usuario:", profileError);
-    throw new Error(
-      `Error al eliminar perfil. ${errors.length > 0 ? `Además, fallaron: ${errors.map((e) => e.table).join(", ")}` : ""}`,
-    );
-  }
-
-  if (errors.length > 0) {
-    console.warn("Eliminación completada con advertencias:", errors);
+  if (data && !data.success) {
+    throw new Error(data.error || "Error desconocido al eliminar usuario");
   }
 
   return true;
