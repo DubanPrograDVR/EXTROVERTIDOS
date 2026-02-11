@@ -2190,12 +2190,169 @@
 }
 
 /* Responsive para tabla de negocios */
+/* Mobile list oculta por defecto */
+.admin-business__mobile-list {
+  display: none;
+}
+
 @media (max-width: 900px) {
   .admin-table-wrapper {
     display: none;
   }
 
-  /* Mostrar versión de tarjetas en móvil - se puede agregar después */
+  .admin-business__mobile-list {
+    display: block;
+  }
+}
+
+/* ===== BUSINESS MOBILE CARDS ===== */
+.admin-biz-mobile-card {
+  background: #111;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 102, 0, 0.2);
+  padding: 16px;
+  margin-bottom: 12px;
+  transition: all 0.3s ease;
+}
+
+.admin-biz-mobile-card:hover {
+  border-color: #ff6600;
+}
+
+.admin-biz-mobile-card__header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.admin-biz-mobile-card__image {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.admin-biz-mobile-card__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-biz-mobile-card__placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 102, 0, 0.1);
+  color: #ff6600;
+  font-size: 1.2rem;
+}
+
+.admin-biz-mobile-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.admin-biz-mobile-card__name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-biz-mobile-card__category {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.admin-biz-mobile-card__details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  margin-bottom: 14px;
+}
+
+.admin-biz-mobile-card__detail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-biz-mobile-card__detail-label {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.admin-biz-mobile-card__detail-value {
+  font-size: 0.85rem;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.admin-biz-mobile-card__detail-value svg {
+  color: #ff6600;
+  font-size: 0.75rem;
+}
+
+.admin-biz-mobile-card__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-biz-mobile-card__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-biz-mobile-card__btn--view {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.admin-biz-mobile-card__btn--approve {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.admin-biz-mobile-card__btn--reject {
+  background: rgba(249, 115, 22, 0.15);
+  color: #f97316;
+}
+
+.admin-biz-mobile-card__btn--delete {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.admin-biz-mobile-card__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 @media (max-width: 600px) {

@@ -137,146 +137,257 @@ export default function AdminBusinessList({
           <p>No se encontraron negocios con los filtros seleccionados.</p>
         </div>
       ) : (
-        <div className="admin-table-wrapper">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Negocio</th>
-                <th>Propietario</th>
-                <th>Ubicación</th>
-                <th>Estado</th>
-                <th>Creado</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredBusinesses.map((business) => (
-                <tr key={business.id}>
-                  {/* Negocio */}
-                  <td>
-                    <div className="admin-table__business">
-                      <div className="admin-table__business-image">
-                        {business.imagen_url || business.logo_url ? (
+        <>
+          <div className="admin-table-wrapper">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Negocio</th>
+                  <th>Propietario</th>
+                  <th>Ubicación</th>
+                  <th>Estado</th>
+                  <th>Creado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredBusinesses.map((business) => (
+                  <tr key={business.id}>
+                    {/* Negocio */}
+                    <td>
+                      <div className="admin-table__business">
+                        <div className="admin-table__business-image">
+                          {business.imagen_url || business.logo_url ? (
+                            <img
+                              src={business.imagen_url || business.logo_url}
+                              alt={business.nombre}
+                            />
+                          ) : (
+                            <div className="admin-table__business-placeholder">
+                              <FontAwesomeIcon icon={faStore} />
+                            </div>
+                          )}
+                        </div>
+                        <div className="admin-table__business-info">
+                          <span className="admin-table__business-name">
+                            {business.nombre}
+                          </span>
+                          <span className="admin-table__business-category">
+                            {business.categoria || "Sin categoría"}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Propietario */}
+                    <td>
+                      <div className="admin-table__user">
+                        {business.profiles?.avatar_url ? (
                           <img
-                            src={business.imagen_url || business.logo_url}
-                            alt={business.nombre}
+                            src={business.profiles.avatar_url}
+                            alt={business.profiles.nombre}
                           />
                         ) : (
-                          <div className="admin-table__business-placeholder">
-                            <FontAwesomeIcon icon={faStore} />
+                          <div className="admin-table__user-placeholder">
+                            {business.profiles?.nombre?.charAt(0) || "?"}
                           </div>
                         )}
-                      </div>
-                      <div className="admin-table__business-info">
-                        <span className="admin-table__business-name">
-                          {business.nombre}
-                        </span>
-                        <span className="admin-table__business-category">
-                          {business.categoria || "Sin categoría"}
+                        <span>
+                          {business.profiles?.nombre || "Desconocido"}
                         </span>
                       </div>
-                    </div>
-                  </td>
+                    </td>
 
-                  {/* Propietario */}
-                  <td>
-                    <div className="admin-table__user">
-                      {business.profiles?.avatar_url ? (
-                        <img
-                          src={business.profiles.avatar_url}
-                          alt={business.profiles.nombre}
-                        />
-                      ) : (
-                        <div className="admin-table__user-placeholder">
-                          {business.profiles?.nombre?.charAt(0) || "?"}
-                        </div>
-                      )}
-                      <span>{business.profiles?.nombre || "Desconocido"}</span>
-                    </div>
-                  </td>
+                    {/* Ubicación */}
+                    <td>
+                      <div className="admin-table__location">
+                        <FontAwesomeIcon icon={faMapMarkerAlt} />
+                        <span>
+                          {business.comuna}, {business.provincia}
+                        </span>
+                      </div>
+                    </td>
 
-                  {/* Ubicación */}
-                  <td>
-                    <div className="admin-table__location">
-                      <FontAwesomeIcon icon={faMapMarkerAlt} />
-                      <span>
-                        {business.comuna}, {business.provincia}
+                    {/* Estado */}
+                    <td>
+                      <span
+                        className={`admin-table__status ${getStatusClass(
+                          business.estado,
+                        )}`}>
+                        {getStatusText(business.estado)}
                       </span>
-                    </div>
-                  </td>
+                    </td>
 
-                  {/* Estado */}
-                  <td>
+                    {/* Fecha de creación */}
+                    <td>{formatDate(business.created_at)}</td>
+
+                    {/* Acciones */}
+                    <td>
+                      <div className="admin-table__actions">
+                        {/* Ver */}
+                        {onView && (
+                          <button
+                            className="admin-table__action admin-table__action--view"
+                            onClick={() => onView(business.id)}
+                            title="Ver negocio">
+                            <FontAwesomeIcon icon={faEye} />
+                          </button>
+                        )}
+
+                        {/* Aprobar (solo para pendientes) */}
+                        {showActions && business.estado === "pendiente" && (
+                          <>
+                            <button
+                              className="admin-table__action admin-table__action--approve"
+                              onClick={() => onApprove(business.id)}
+                              disabled={actionLoading === business.id}
+                              title="Aprobar negocio">
+                              <FontAwesomeIcon icon={faCheck} />
+                            </button>
+
+                            <button
+                              className="admin-table__action admin-table__action--reject"
+                              onClick={() => onReject(business.id)}
+                              disabled={actionLoading === business.id}
+                              title="Rechazar negocio">
+                              <FontAwesomeIcon icon={faTimes} />
+                            </button>
+                          </>
+                        )}
+
+                        {/* Eliminar */}
+                        {onDelete && (
+                          <button
+                            className="admin-table__action admin-table__action--delete"
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  `¿Eliminar el negocio "${business.nombre}"?`,
+                                )
+                              ) {
+                                onDelete(business.id);
+                              }
+                            }}
+                            disabled={actionLoading === business.id}
+                            title="Eliminar negocio">
+                            <FontAwesomeIcon icon={faTrash} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Vista móvil - Cards */}
+          <div className="admin-business__mobile-list">
+            {filteredBusinesses.map((business) => (
+              <div key={business.id} className="admin-biz-mobile-card">
+                <div className="admin-biz-mobile-card__header">
+                  <div className="admin-biz-mobile-card__image">
+                    {business.imagen_url || business.logo_url ? (
+                      <img
+                        src={business.imagen_url || business.logo_url}
+                        alt={business.nombre}
+                      />
+                    ) : (
+                      <div className="admin-biz-mobile-card__placeholder">
+                        <FontAwesomeIcon icon={faStore} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="admin-biz-mobile-card__info">
+                    <span className="admin-biz-mobile-card__name">
+                      {business.nombre}
+                    </span>
+                    <span className="admin-biz-mobile-card__category">
+                      {business.categoria || "Sin categoría"}
+                    </span>
                     <span
                       className={`admin-table__status ${getStatusClass(
                         business.estado,
                       )}`}>
                       {getStatusText(business.estado)}
                     </span>
-                  </td>
+                  </div>
+                </div>
 
-                  {/* Fecha de creación */}
-                  <td>{formatDate(business.created_at)}</td>
+                <div className="admin-biz-mobile-card__details">
+                  <div className="admin-biz-mobile-card__detail">
+                    <span className="admin-biz-mobile-card__detail-label">
+                      Propietario
+                    </span>
+                    <span className="admin-biz-mobile-card__detail-value">
+                      {business.profiles?.nombre || "Desconocido"}
+                    </span>
+                  </div>
+                  <div className="admin-biz-mobile-card__detail">
+                    <span className="admin-biz-mobile-card__detail-label">
+                      Ubicación
+                    </span>
+                    <span className="admin-biz-mobile-card__detail-value">
+                      <FontAwesomeIcon icon={faMapMarkerAlt} />{" "}
+                      {business.comuna}
+                      {business.provincia && `, ${business.provincia}`}
+                    </span>
+                  </div>
+                  <div className="admin-biz-mobile-card__detail">
+                    <span className="admin-biz-mobile-card__detail-label">
+                      Creado
+                    </span>
+                    <span className="admin-biz-mobile-card__detail-value">
+                      {formatDate(business.created_at)}
+                    </span>
+                  </div>
+                </div>
 
-                  {/* Acciones */}
-                  <td>
-                    <div className="admin-table__actions">
-                      {/* Ver */}
-                      {onView && (
-                        <button
-                          className="admin-table__action admin-table__action--view"
-                          onClick={() => onView(business.id)}
-                          title="Ver negocio">
-                          <FontAwesomeIcon icon={faEye} />
-                        </button>
-                      )}
-
-                      {/* Aprobar (solo para pendientes) */}
-                      {showActions && business.estado === "pendiente" && (
-                        <>
-                          <button
-                            className="admin-table__action admin-table__action--approve"
-                            onClick={() => onApprove(business.id)}
-                            disabled={actionLoading === business.id}
-                            title="Aprobar negocio">
-                            <FontAwesomeIcon icon={faCheck} />
-                          </button>
-
-                          <button
-                            className="admin-table__action admin-table__action--reject"
-                            onClick={() => onReject(business.id)}
-                            disabled={actionLoading === business.id}
-                            title="Rechazar negocio">
-                            <FontAwesomeIcon icon={faTimes} />
-                          </button>
-                        </>
-                      )}
-
-                      {/* Eliminar */}
-                      {onDelete && (
-                        <button
-                          className="admin-table__action admin-table__action--delete"
-                          onClick={() => {
-                            if (
-                              window.confirm(
-                                `¿Eliminar el negocio "${business.nombre}"?`,
-                              )
-                            ) {
-                              onDelete(business.id);
-                            }
-                          }}
-                          disabled={actionLoading === business.id}
-                          title="Eliminar negocio">
-                          <FontAwesomeIcon icon={faTrash} />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                <div className="admin-biz-mobile-card__actions">
+                  {onView && (
+                    <button
+                      className="admin-biz-mobile-card__btn admin-biz-mobile-card__btn--view"
+                      onClick={() => onView(business.id)}>
+                      <FontAwesomeIcon icon={faEye} /> Ver
+                    </button>
+                  )}
+                  {showActions && business.estado === "pendiente" && (
+                    <>
+                      <button
+                        className="admin-biz-mobile-card__btn admin-biz-mobile-card__btn--approve"
+                        onClick={() => onApprove(business.id)}
+                        disabled={actionLoading === business.id}>
+                        <FontAwesomeIcon icon={faCheck} /> Aprobar
+                      </button>
+                      <button
+                        className="admin-biz-mobile-card__btn admin-biz-mobile-card__btn--reject"
+                        onClick={() => onReject(business.id)}
+                        disabled={actionLoading === business.id}>
+                        <FontAwesomeIcon icon={faTimes} /> Rechazar
+                      </button>
+                    </>
+                  )}
+                  {onDelete && (
+                    <button
+                      className="admin-biz-mobile-card__btn admin-biz-mobile-card__btn--delete"
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            `¿Eliminar el negocio "${business.nombre}"?`,
+                          )
+                        ) {
+                          onDelete(business.id);
+                        }
+                      }}
+                      disabled={actionLoading === business.id}>
+                      <FontAwesomeIcon icon={faTrash} /> Eliminar
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
