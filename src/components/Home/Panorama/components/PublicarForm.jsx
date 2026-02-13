@@ -129,6 +129,15 @@ const PublicarForm = ({
           <label className="publicar-form__label" htmlFor="organizador">
             <FontAwesomeIcon icon={faBuilding} /> Organizador
             <span className="publicar-form__label-hint"> (Opcional)</span>
+            <span
+              style={{
+                color: "gray",
+                fontSize: "12px",
+                marginTop: "5px",
+                marginLeft: "10px",
+              }}>
+              Negocio, Persona, Entidad
+            </span>
           </label>
           <input
             type="text"
@@ -140,21 +149,14 @@ const PublicarForm = ({
             onChange={onChange}
             maxLength={100}
           />
-          <span
-            style={{
-              color: "gray",
-              fontSize: "12px",
-              marginTop: "5px",
-            }}>
-            Negocio, Persona, Entidad
-          </span>
         </div>
-        s{/* Descripción */}
+        {/* Descripción */}
         <div className="publicar-form__group">
           <label className="publicar-form__label" htmlFor="descripcion">
             Descripción
             <span className="publicar-form__label-hint"> (Opcional)</span>
           </label>
+
           <textarea
             id="descripcion"
             name="descripcion"
@@ -178,9 +180,15 @@ const PublicarForm = ({
         <div className="publicar-form__group publicar-form__group--marketing">
           <label className="publicar-form__label">
             <FontAwesomeIcon icon={faBullhorn} /> Mensaje de Marketing N° 1
-            <span className="publicar-form__label-hint">
-              {" "}
-              (Opcional - Engancha a tu público)
+            <span className="publicar-form__label-hint"> (Opcional)</span>
+            <span
+              style={{
+                color: "gray",
+                fontSize: "12px",
+                marginTop: "5px",
+                marginLeft: "10px",
+              }}>
+              Engancha a tu público
             </span>
           </label>
 
@@ -222,9 +230,15 @@ const PublicarForm = ({
         <div className="publicar-form__group publicar-form__group--marketing">
           <label className="publicar-form__label">
             <FontAwesomeIcon icon={faBullhorn} /> Mensaje de Marketing N° 2
-            <span className="publicar-form__label-hint">
-              {" "}
-              (Opcional - Mensaje adicional)
+            <span className="publicar-form__label-hint"> (Opcional)</span>
+            <span
+              style={{
+                color: "gray",
+                fontSize: "12px",
+                marginTop: "5px",
+                marginLeft: "10px",
+              }}>
+              Mensaje adicional
             </span>
           </label>
 
