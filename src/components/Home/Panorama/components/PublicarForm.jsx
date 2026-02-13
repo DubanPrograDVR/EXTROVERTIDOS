@@ -56,7 +56,7 @@ const PublicarForm = ({
   // Helper para mostrar el texto del tipo de entrada seleccionado
   const getTicketDisplayText = () => {
     const tipos = {
-      sin_entrada: "Sin entrada",
+      sin_entrada: "No informar",
       gratuito: "Entrada gratuita",
       pagado: formData.precio
         ? `Entrada General - $${formData.precio} CLP`
@@ -129,7 +129,10 @@ const PublicarForm = ({
         <div className="publicar-form__group">
           <label className="publicar-form__label" htmlFor="organizador">
             <FontAwesomeIcon icon={faBuilding} /> Organizador
-            <span className="publicar-form__label-hint"> (Opcional)</span>
+            <span className="publicar-form__label-hint">
+              {" "}
+              (Negocio, Persona, entidad)
+            </span>
           </label>
           <input
             type="text"
@@ -406,7 +409,7 @@ const PublicarForm = ({
         {/* Dirección */}
         <div className="publicar-form__group">
           <label className="publicar-form__label" htmlFor="direccion">
-            <FontAwesomeIcon icon={faLocationDot} /> Dirección
+            <FontAwesomeIcon icon={faLocationDot} /> Dirección/Lugar
             <span className="publicar-form__label-required">Obligatorio</span>
           </label>
           <input
@@ -518,6 +521,9 @@ const PublicarForm = ({
             <FontAwesomeIcon icon={faTags} /> Etiquetas Complementarias (10 Max)
             <span className="publicar-form__label-hint"> (Opcional)</span>
           </label>
+          <span className="publicar-form__hint">
+            Selecciona o crea tu etiqueta
+          </span>
           <button
             type="button"
             className="publicar-form__modal-trigger publicar-form__modal-trigger--tags"
