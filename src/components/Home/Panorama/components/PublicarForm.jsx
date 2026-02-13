@@ -155,6 +155,15 @@ const PublicarForm = ({
           <label className="publicar-form__label" htmlFor="descripcion">
             Descripción
             <span className="publicar-form__label-hint"> (Opcional)</span>
+            <span
+              style={{
+                color: "gray",
+                fontSize: "12px",
+                marginTop: "5px",
+                marginLeft: "10px",
+              }}>
+              Detalla tu evento
+            </span>
           </label>
 
           <textarea
@@ -328,6 +337,15 @@ const PublicarForm = ({
             <label className="publicar-form__label" htmlFor="hora_inicio">
               <FontAwesomeIcon icon={faClock} /> Hora Inicio
               <span className="publicar-form__label-hint"> (Opcional)</span>
+              <span
+                style={{
+                  color: "gray",
+                  fontSize: "12px",
+                  marginTop: "5px",
+                  marginLeft: "10px",
+                }}>
+                Inicio del evento
+              </span>
               {formData.es_multidia && formData.mismo_horario && (
                 <span className="publicar-form__label-hint">
                   {" "}
@@ -349,6 +367,15 @@ const PublicarForm = ({
             <label className="publicar-form__label" htmlFor="hora_fin">
               <FontAwesomeIcon icon={faClock} /> Hora Fin
               <span className="publicar-form__label-hint"> (Opcional)</span>
+              <span
+                style={{
+                  color: "gray",
+                  fontSize: "12px",
+                  marginTop: "5px",
+                  marginLeft: "10px",
+                }}>
+                Término del evento
+              </span>
             </label>
             <input
               type="time"
@@ -442,6 +469,15 @@ const PublicarForm = ({
           <label className="publicar-form__label">
             <span className="publicar-form__label-hint">(Opcional)</span>
             <FontAwesomeIcon icon={faMapMarkerAlt} /> Ubicación en Mapa
+            <span
+              style={{
+                color: "gray",
+                fontSize: "12px",
+                marginTop: "5px",
+                marginLeft: "10px",
+              }}>
+              Facilita que te encuentren
+            </span>
           </label>
 
           {/* Input para pegar link de Google Maps */}
@@ -530,6 +566,15 @@ const PublicarForm = ({
         <div className="publicar-form__group">
           <label className="publicar-form__label">
             <FontAwesomeIcon icon={faTags} /> Etiquetas Complementarias (10 Max)
+            <span
+              style={{
+                color: "gray",
+                fontSize: "12px",
+                marginTop: "5px",
+                marginLeft: "10px",
+              }}>
+              Mejora la visibilidad
+            </span>
             <span className="publicar-form__label-hint"> (Opcional)</span>
           </label>
           <button
