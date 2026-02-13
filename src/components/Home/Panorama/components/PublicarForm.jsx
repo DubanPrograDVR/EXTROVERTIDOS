@@ -129,10 +129,7 @@ const PublicarForm = ({
         <div className="publicar-form__group">
           <label className="publicar-form__label" htmlFor="organizador">
             <FontAwesomeIcon icon={faBuilding} /> Organizador
-            <span className="publicar-form__label-hint">
-              {" "}
-              (Obligatorio) Negocio, Persona, Entidad
-            </span>
+            <span className="publicar-form__label-hint"> (Opcional)</span>
           </label>
           <input
             type="text"
@@ -144,6 +141,14 @@ const PublicarForm = ({
             onChange={onChange}
             maxLength={100}
           />
+          <span
+            style={{
+              color: "gray",
+              fontSize: "12px",
+              marginTop: "5px",
+            }}>
+            Negocio, Persona, Entidad
+          </span>
         </div>
 
         {/* Descripción */}
@@ -521,9 +526,6 @@ const PublicarForm = ({
             <FontAwesomeIcon icon={faTags} /> Etiquetas Complementarias (10 Max)
             <span className="publicar-form__label-hint"> (Opcional)</span>
           </label>
-          <span className="publicar-form__hint">
-            Selecciona o crea tu etiqueta
-          </span>
           <button
             type="button"
             className="publicar-form__modal-trigger publicar-form__modal-trigger--tags"
@@ -531,6 +533,9 @@ const PublicarForm = ({
             <FontAwesomeIcon icon={faTags} />
             Ver Etiquetas
           </button>
+          <span className="publicar-form__hint">
+            Selecciona o crea tu etiqueta
+          </span>
           {/* Mostrar tags seleccionados */}
           {getSelectedTags().length > 0 && (
             <div className="publicar-form__selected-tags">
