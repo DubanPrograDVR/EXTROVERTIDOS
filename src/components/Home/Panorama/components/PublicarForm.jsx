@@ -124,7 +124,6 @@ const PublicarForm = ({
             <span className="publicar-form__error">{errors.titulo}</span>
           )}
         </div>
-
         {/* Organizador */}
         <div className="publicar-form__group">
           <label className="publicar-form__label" htmlFor="organizador">
@@ -150,8 +149,7 @@ const PublicarForm = ({
             Negocio, Persona, Entidad
           </span>
         </div>
-
-        {/* Descripción */}
+        s{/* Descripción */}
         <div className="publicar-form__group">
           <label className="publicar-form__label" htmlFor="descripcion">
             Descripción
@@ -176,7 +174,6 @@ const PublicarForm = ({
             <span className="publicar-form__error">{errors.descripcion}</span>
           )}
         </div>
-
         {/* Mensaje de Marketing 1 */}
         <div className="publicar-form__group publicar-form__group--marketing">
           <label className="publicar-form__label">
@@ -221,7 +218,6 @@ const PublicarForm = ({
             {formData.mensaje_marketing?.length || 0}/500
           </span>
         </div>
-
         {/* Mensaje de Marketing 2 */}
         <div className="publicar-form__group publicar-form__group--marketing">
           <label className="publicar-form__label">
@@ -266,7 +262,6 @@ const PublicarForm = ({
             {formData.mensaje_marketing_2?.length || 0}/500
           </span>
         </div>
-
         {/* Categoría */}
         <div className="publicar-form__group">
           <label className="publicar-form__label" htmlFor="category_id">
@@ -297,7 +292,6 @@ const PublicarForm = ({
             <span className="publicar-form__error">{errors.category_id}</span>
           )}
         </div>
-
         {/* Fecha y Horas */}
         <div className="publicar-form__group publicar-form__group--full">
           <DateRangePicker
@@ -314,7 +308,6 @@ const PublicarForm = ({
             errors={errors}
           />
         </div>
-
         {/* Horarios */}
         <div className="publicar-form__row">
           <div className="publicar-form__group">
@@ -353,7 +346,6 @@ const PublicarForm = ({
             />
           </div>
         </div>
-
         {/* Ubicación */}
         <div className="publicar-form__row">
           <div className="publicar-form__group">
@@ -410,7 +402,6 @@ const PublicarForm = ({
             )}
           </div>
         </div>
-
         {/* Dirección */}
         <div className="publicar-form__group">
           <label className="publicar-form__label" htmlFor="direccion">
@@ -432,7 +423,6 @@ const PublicarForm = ({
             <span className="publicar-form__error">{errors.direccion}</span>
           )}
         </div>
-
         {/* Ubicación en Mapa - Opcional */}
         <div className="publicar-form__group publicar-form__group--location">
           <label className="publicar-form__label">
@@ -473,7 +463,6 @@ const PublicarForm = ({
             </p>
           </div>
         </div>
-
         {/* Opciones de Entrada - Botón que abre modal */}
         <div className="publicar-form__group">
           <label className="publicar-form__label">
@@ -491,14 +480,12 @@ const PublicarForm = ({
             <span className="publicar-form__error">{errors.tipo_entrada}</span>
           )}
         </div>
-
         {/* Redes Sociales */}
         <SocialInputs
           redes_sociales={formData.redes_sociales}
           sitio_web={formData.sitio_web}
           onChange={onChange}
         />
-
         {/* Número de Contacto */}
         <div className="publicar-form__group">
           <label className="publicar-form__label" htmlFor="telefono_contacto">
@@ -519,7 +506,6 @@ const PublicarForm = ({
             maxLength={20}
           />
         </div>
-
         {/* Etiquetas Complementarias */}
         <div className="publicar-form__group">
           <label className="publicar-form__label">
@@ -547,7 +533,6 @@ const PublicarForm = ({
             </div>
           )}
         </div>
-
         {/* Etiqueta Directa */}
         <div className="publicar-form__group">
           <label className="publicar-form__label" htmlFor="etiqueta_directa">
@@ -573,7 +558,6 @@ const PublicarForm = ({
             </span>
           )}
         </div>
-
         {/* Imágenes */}
         <ImageUpload
           previewImages={previewImages}
@@ -581,7 +565,6 @@ const PublicarForm = ({
           onRemoveImage={onRemoveImage}
           error={errors.imagenes}
         />
-
         {/* Botones de acción */}
         <div className="publicar-form__actions">
           {/* Botón Ver Borrador */}
