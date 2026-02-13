@@ -4,6 +4,7 @@ export { default as UbicacionSection } from "./UbicacionSection";
 export { default as ContactoSection } from "./ContactoSection";
 export { default as HorariosSection } from "./HorariosSection";
 export { default as RedesSocialesSection } from "./RedesSocialesSection";
+export { default as MarketingSection } from "./MarketingSection";
 export { default as ImagenesSection } from "./ImagenesSection";
 export { default as AuthModal } from "./AuthModal";
 

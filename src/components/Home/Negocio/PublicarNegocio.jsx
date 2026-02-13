@@ -9,6 +9,7 @@ import {
   ContactoSection,
   HorariosSection,
   RedesSocialesSection,
+  MarketingSection,
   ImagenesSection,
   AuthModal,
   useNegocioForm,
@@ -79,6 +80,13 @@ const PublicarNegocio = () => {
           categories={categories}
           subcategorias={subcategorias}
           loadingCategories={loadingCategories}
+          onChange={handleChange}
+          onFieldFocus={handleFieldFocus}
+        />
+
+        {/* Mensajes de Marketing */}
+        <MarketingSection
+          formData={formData}
           onChange={handleChange}
           onFieldFocus={handleFieldFocus}
         />

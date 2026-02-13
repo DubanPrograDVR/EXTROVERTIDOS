@@ -96,6 +96,11 @@ export const INITIAL_FORM_STATE = {
   },
   ubicacion_url: "",
   imagenes: [],
+  // Marketing
+  titulo_marketing: "",
+  mensaje_marketing: "",
+  titulo_marketing_2: "",
+  mensaje_marketing_2: "",
 };
 
 // Configuración de imágenes

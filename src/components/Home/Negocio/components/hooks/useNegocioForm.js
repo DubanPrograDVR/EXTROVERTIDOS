@@ -407,6 +407,10 @@ export const useNegocioForm = () => {
           imagen_url: imageUrls[0] || null,
           imagenes: imageUrls,
           estado: isAdmin ? "publicado" : "pendiente",
+          titulo_marketing: formData.titulo_marketing?.trim() || null,
+          mensaje_marketing: formData.mensaje_marketing?.trim() || null,
+          titulo_marketing_2: formData.titulo_marketing_2?.trim() || null,
+          mensaje_marketing_2: formData.mensaje_marketing_2?.trim() || null,
         };
 
         // 3. Crear negocio en la BD

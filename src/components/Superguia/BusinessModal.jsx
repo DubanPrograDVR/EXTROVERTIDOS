@@ -23,6 +23,7 @@ import {
   faExternalLinkAlt,
   faShareAlt,
   faBookmark,
+  faBullhorn,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faWhatsapp,
@@ -60,6 +61,8 @@ const PLACEHOLDER_IMAGE = "/img/Home1.png";
 // Tipos de secciones del acordeón
 const ACCORDION_SECTIONS = {
   DESCRIPTION: "description",
+  MARKETING_1: "marketing_1",
+  MARKETING_2: "marketing_2",
   LOCATION: "location",
   SCHEDULE: "schedule",
   CONTACT: "contact",
@@ -164,6 +167,10 @@ export default function BusinessModal({ business, isOpen, onClose }) {
     horario_cierre,
     verificado,
     profiles,
+    titulo_marketing,
+    mensaje_marketing,
+    titulo_marketing_2,
+    mensaje_marketing_2,
   } = business;
 
   // Obtener array de imágenes válidas
@@ -433,6 +440,36 @@ export default function BusinessModal({ business, isOpen, onClose }) {
                   }>
                   <div className="publication-modal__description-content">
                     <p>{descripcion}</p>
+                  </div>
+                </AccordionSection>
+              )}
+
+              {/* Sección: Mensaje de Marketing 1 */}
+              {mensaje_marketing && (
+                <AccordionSection
+                  title={titulo_marketing || "¡Información Destacada!"}
+                  icon={faBullhorn}
+                  isOpen={activeSection === ACCORDION_SECTIONS.MARKETING_1}
+                  onToggle={() =>
+                    toggleSection(ACCORDION_SECTIONS.MARKETING_1)
+                  }>
+                  <div className="publication-modal__marketing-content">
+                    <p>{mensaje_marketing}</p>
+                  </div>
+                </AccordionSection>
+              )}
+
+              {/* Sección: Mensaje de Marketing 2 */}
+              {mensaje_marketing_2 && (
+                <AccordionSection
+                  title={titulo_marketing_2 || "¡No te lo pierdas!"}
+                  icon={faBullhorn}
+                  isOpen={activeSection === ACCORDION_SECTIONS.MARKETING_2}
+                  onToggle={() =>
+                    toggleSection(ACCORDION_SECTIONS.MARKETING_2)
+                  }>
+                  <div className="publication-modal__marketing-content">
+                    <p>{mensaje_marketing_2}</p>
                   </div>
                 </AccordionSection>
               )}
