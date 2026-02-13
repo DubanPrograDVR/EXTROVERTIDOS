@@ -487,6 +487,7 @@ const PublicarForm = ({
         {/* Redes Sociales */}
         <SocialInputs
           redes_sociales={formData.redes_sociales}
+          sitio_web={formData.sitio_web}
           onChange={onChange}
         />
 
@@ -508,27 +509,6 @@ const PublicarForm = ({
             value={formData.telefono_contacto || ""}
             onChange={onChange}
             maxLength={20}
-          />
-        </div>
-
-        {/* Sitio Web */}
-        <div className="publicar-form__group">
-          <label className="publicar-form__label" htmlFor="sitio_web">
-            <FontAwesomeIcon icon={faGlobe} /> Sitio Web
-            <span className="publicar-form__label-hint">
-              {" "}
-              (Opcional - Página web del evento)
-            </span>
-          </label>
-          <input
-            type="url"
-            id="sitio_web"
-            name="sitio_web"
-            className="publicar-form__input"
-            placeholder="Ej: https://www.mievento.cl"
-            value={formData.sitio_web || ""}
-            onChange={onChange}
-            maxLength={255}
           />
         </div>
 

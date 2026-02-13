@@ -38,6 +38,8 @@ import {
   faWhatsapp,
   faYoutube,
   faTiktok,
+  faXTwitter,
+  faLinkedin,
 } from "@fortawesome/free-brands-svg-icons";
 
 // Fix para el icono de Leaflet
@@ -190,6 +192,8 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
   const whatsapp = redes_sociales?.whatsapp || publication.whatsapp;
   const youtube = redes_sociales?.youtube || publication.youtube;
   const tiktok = redes_sociales?.tiktok || publication.tiktok;
+  const twitter = redes_sociales?.twitter;
+  const linkedin = redes_sociales?.linkedin;
 
   // Usar telefono_contacto si existe, sino usar telefono
   const contactPhone = telefono_contacto || telefono;
@@ -763,7 +767,13 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
             </div>
 
             {/* ===== SECCIÓN DE REDES SOCIALES (Debajo del mapa) ===== */}
-            {(instagram || facebook || whatsapp || youtube || tiktok) && (
+            {(instagram ||
+              facebook ||
+              whatsapp ||
+              youtube ||
+              tiktok ||
+              twitter ||
+              linkedin) && (
               <div className="publication-modal__social-section">
                 <h4 className="publication-modal__social-title">
                   <FontAwesomeIcon icon={faShareAlt} />
@@ -832,6 +842,34 @@ export default function PublicationModal({ publication, isOpen, onClose }) {
                       className="publication-modal__social-icon publication-modal__social-icon--tiktok"
                       title="TikTok">
                       <FontAwesomeIcon icon={faTiktok} />
+                    </a>
+                  )}
+                  {twitter && (
+                    <a
+                      href={
+                        twitter.startsWith("http")
+                          ? twitter
+                          : `https://x.com/${twitter.replace("@", "")}`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="publication-modal__social-icon publication-modal__social-icon--twitter"
+                      title="X (Twitter)">
+                      <FontAwesomeIcon icon={faXTwitter} />
+                    </a>
+                  )}
+                  {linkedin && (
+                    <a
+                      href={
+                        linkedin.startsWith("http")
+                          ? linkedin
+                          : `https://linkedin.com/company/${linkedin}`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="publication-modal__social-icon publication-modal__social-icon--linkedin"
+                      title="LinkedIn">
+                      <FontAwesomeIcon icon={faLinkedin} />
                     </a>
                   )}
                 </div>

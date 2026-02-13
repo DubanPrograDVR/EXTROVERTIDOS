@@ -1,16 +1,19 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faGlobe } from "@fortawesome/free-solid-svg-icons";
 import {
   faInstagram,
   faFacebook,
   faWhatsapp,
   faTiktok,
   faYoutube,
+  faXTwitter,
+  faLinkedin,
 } from "@fortawesome/free-brands-svg-icons";
 
 /**
  * Componente para inputs de redes sociales
  */
-const SocialInputs = ({ redes_sociales, onChange }) => {
+const SocialInputs = ({ redes_sociales, sitio_web, onChange }) => {
   const socialNetworks = [
     {
       name: "redes_instagram",
@@ -47,6 +50,20 @@ const SocialInputs = ({ redes_sociales, onChange }) => {
       value: redes_sociales.whatsapp,
       type: "text",
     },
+    {
+      name: "redes_twitter",
+      icon: faXTwitter,
+      placeholder: "https://x.com/tu_evento",
+      value: redes_sociales.twitter || "",
+      type: "url",
+    },
+    {
+      name: "redes_linkedin",
+      icon: faLinkedin,
+      placeholder: "https://linkedin.com/company/tu_evento",
+      value: redes_sociales.linkedin || "",
+      type: "url",
+    },
   ];
 
   return (
@@ -65,6 +82,18 @@ const SocialInputs = ({ redes_sociales, onChange }) => {
             />
           </div>
         ))}
+
+        {/* Sitio Web */}
+        <div className="publicar-form__social-input">
+          <FontAwesomeIcon icon={faGlobe} />
+          <input
+            type="url"
+            name="sitio_web"
+            placeholder="https://www.mievento.cl"
+            value={sitio_web || ""}
+            onChange={onChange}
+          />
+        </div>
       </div>
     </div>
   );

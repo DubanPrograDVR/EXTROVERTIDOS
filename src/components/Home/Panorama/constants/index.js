@@ -81,7 +81,9 @@ export const INITIAL_FORM_STATE = {
     facebook: "",
     whatsapp: "",
     tiktok: "",
-    youtube: "", // Nuevo: enlace de YouTube
+    youtube: "",
+    twitter: "",
+    linkedin: "",
   },
   // Marketing
   titulo_marketing: "", // Título del primer mensaje de marketing

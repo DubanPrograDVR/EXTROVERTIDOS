@@ -33,6 +33,10 @@ import {
   faInstagram,
   faFacebook,
   faWhatsapp,
+  faTiktok,
+  faYoutube,
+  faXTwitter,
+  faLinkedin,
 } from "@fortawesome/free-brands-svg-icons";
 import "../styles/draft-preview.css";
 
@@ -211,6 +215,10 @@ const DraftPreview = ({
       formData.redes_sociales?.instagram ||
       formData.redes_sociales?.facebook ||
       formData.redes_sociales?.whatsapp ||
+      formData.redes_sociales?.tiktok ||
+      formData.redes_sociales?.youtube ||
+      formData.redes_sociales?.twitter ||
+      formData.redes_sociales?.linkedin ||
       formData.telefono_contacto ||
       formData.sitio_web
     );
@@ -516,6 +524,29 @@ const DraftPreview = ({
                         <span className="publication-modal__social-btn publication-modal__social-btn--facebook">
                           <FontAwesomeIcon icon={faFacebook} />
                           Facebook
+                        </span>
+                      )}
+                      {formData.redes_sociales?.tiktok && (
+                        <span className="publication-modal__social-btn publication-modal__social-btn--tiktok">
+                          <FontAwesomeIcon icon={faTiktok} />
+                          TikTok
+                        </span>
+                      )}
+                      {formData.redes_sociales?.youtube && (
+                        <span className="publication-modal__social-btn publication-modal__social-btn--youtube">
+                          <FontAwesomeIcon icon={faYoutube} />
+                          YouTube
+                        </span>
+                      )}
+                      {formData.redes_sociales?.twitter && (
+                        <span className="publication-modal__social-btn publication-modal__social-btn--twitter">
+                          <FontAwesomeIcon icon={faXTwitter} />X
+                        </span>
+                      )}
+                      {formData.redes_sociales?.linkedin && (
+                        <span className="publication-modal__social-btn publication-modal__social-btn--linkedin">
+                          <FontAwesomeIcon icon={faLinkedin} />
+                          LinkedIn
                         </span>
                       )}
                     </div>

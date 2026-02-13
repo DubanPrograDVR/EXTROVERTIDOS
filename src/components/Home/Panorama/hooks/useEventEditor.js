@@ -170,6 +170,8 @@ const useEventEditor = ({ user, isAuthenticated, isAdmin, showToast }) => {
             whatsapp: "",
             tiktok: "",
             youtube: "",
+            twitter: "",
+            linkedin: "",
           },
           imagenes: [], // Las nuevas imágenes se agregan aquí
         };
