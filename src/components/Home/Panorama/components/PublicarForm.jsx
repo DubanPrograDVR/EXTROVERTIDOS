@@ -504,9 +504,15 @@ const PublicarForm = ({
         <div className="publicar-form__group">
           <label className="publicar-form__label" htmlFor="telefono_contacto">
             <FontAwesomeIcon icon={faPhone} /> Número de Contacto
-            <span className="publicar-form__label-hint">
-              {" "}
-              (Opcional - Contacto directo)
+            <span className="publicar-form__label-hint"> (Opcional)</span>
+            <span
+              style={{
+                color: "gray",
+                fontSize: "12px",
+                marginTop: "5px",
+                marginLeft: "10px",
+              }}>
+              Mensaje adicional
             </span>
           </label>
           <input
