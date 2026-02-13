@@ -131,7 +131,7 @@ const PublicarForm = ({
             <FontAwesomeIcon icon={faBuilding} /> Organizador
             <span className="publicar-form__label-hint">
               {" "}
-              (Negocio, Persona, entidad)
+              (Obligatorio) Negocio, Persona, Entidad
             </span>
           </label>
           <input
