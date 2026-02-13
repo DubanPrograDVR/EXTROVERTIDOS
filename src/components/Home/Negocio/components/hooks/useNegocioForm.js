@@ -281,6 +281,9 @@ export const useNegocioForm = () => {
     if (formData.imagenes.length === 0) {
       newErrors.imagenes = "Sube al menos una imagen";
     }
+    if (formData.dias_atencion.length === 0) {
+      newErrors.horarios = "Selecciona al menos un día de atención";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -403,6 +406,14 @@ export const useNegocioForm = () => {
           sitio_web: formData.sitio_web.trim() || null,
           horarios: Object.keys(horarios).length > 0 ? horarios : {},
           redes_sociales: formData.redes_sociales,
+          // Mapear redes sociales a columnas individuales de la BD
+          instagram: formData.redes_sociales.instagram?.trim() || null,
+          facebook: formData.redes_sociales.facebook?.trim() || null,
+          whatsapp: formData.redes_sociales.whatsapp?.trim() || null,
+          tiktok: formData.redes_sociales.tiktok?.trim() || null,
+          twitter: formData.redes_sociales.twitter?.trim() || null,
+          youtube: formData.redes_sociales.youtube?.trim() || null,
+          linkedin: formData.redes_sociales.linkedin?.trim() || null,
           ubicacion_url: formData.ubicacion_url.trim() || null,
           imagen_url: imageUrls[0] || null,
           imagenes: imageUrls,

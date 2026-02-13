@@ -30,6 +30,9 @@ import {
   faInstagram,
   faFacebook,
   faTiktok,
+  faXTwitter,
+  faYoutube,
+  faLinkedin,
 } from "@fortawesome/free-brands-svg-icons";
 import "./styles/BusinessModal.css";
 
@@ -161,6 +164,7 @@ export default function BusinessModal({ business, isOpen, onClose }) {
     facebook,
     tiktok,
     sitio_web,
+    redes_sociales,
     horarios,
     dias_atencion,
     horario_apertura,
@@ -533,7 +537,10 @@ export default function BusinessModal({ business, isOpen, onClose }) {
                 whatsapp ||
                 instagram ||
                 facebook ||
-                tiktok) && (
+                tiktok ||
+                redes_sociales?.twitter ||
+                redes_sociales?.youtube ||
+                redes_sociales?.linkedin) && (
                 <AccordionSection
                   title="Contacto"
                   icon={faAddressCard}
@@ -568,7 +575,13 @@ export default function BusinessModal({ business, isOpen, onClose }) {
                     )}
 
                     {/* Redes sociales */}
-                    {(whatsapp || instagram || facebook || tiktok) && (
+                    {(whatsapp ||
+                      instagram ||
+                      facebook ||
+                      tiktok ||
+                      redes_sociales?.twitter ||
+                      redes_sociales?.youtube ||
+                      redes_sociales?.linkedin) && (
                       <div className="publication-modal__social">
                         {whatsapp && (
                           <button
@@ -618,6 +631,47 @@ export default function BusinessModal({ business, isOpen, onClose }) {
                             className="publication-modal__social-btn publication-modal__social-btn--tiktok">
                             <FontAwesomeIcon icon={faTiktok} />
                             TikTok
+                          </a>
+                        )}
+                        {redes_sociales?.twitter && (
+                          <a
+                            href={
+                              redes_sociales.twitter.startsWith("http")
+                                ? redes_sociales.twitter
+                                : `https://x.com/${redes_sociales.twitter.replace("@", "")}`
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="publication-modal__social-btn publication-modal__social-btn--twitter">
+                            <FontAwesomeIcon icon={faXTwitter} />X
+                          </a>
+                        )}
+                        {redes_sociales?.youtube && (
+                          <a
+                            href={
+                              redes_sociales.youtube.startsWith("http")
+                                ? redes_sociales.youtube
+                                : `https://youtube.com/@${redes_sociales.youtube}`
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="publication-modal__social-btn publication-modal__social-btn--youtube">
+                            <FontAwesomeIcon icon={faYoutube} />
+                            YouTube
+                          </a>
+                        )}
+                        {redes_sociales?.linkedin && (
+                          <a
+                            href={
+                              redes_sociales.linkedin.startsWith("http")
+                                ? redes_sociales.linkedin
+                                : `https://linkedin.com/company/${redes_sociales.linkedin}`
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="publication-modal__social-btn publication-modal__social-btn--linkedin">
+                            <FontAwesomeIcon icon={faLinkedin} />
+                            LinkedIn
                           </a>
                         )}
                       </div>

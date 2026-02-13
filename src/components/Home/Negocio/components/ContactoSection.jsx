@@ -1,15 +1,10 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPhone, faGlobe } from "@fortawesome/free-solid-svg-icons";
+import { faPhone } from "@fortawesome/free-solid-svg-icons";
 
 /**
  * Sección de contacto del negocio
  */
-const ContactoSection = ({
-  formData,
-  errors,
-  onChange,
-  onFieldFocus,
-}) => {
+const ContactoSection = ({ formData, errors, onChange, onFieldFocus }) => {
   return (
     <section className="publicar-negocio__section">
       <h2 className="publicar-negocio__section-title">
@@ -21,7 +16,9 @@ const ContactoSection = ({
         <div className="publicar-negocio__field">
           <label htmlFor="telefono">
             Teléfono
-            <span className="publicar-negocio__label-required">Obligatorio</span>
+            <span className="publicar-negocio__label-required">
+              Obligatorio
+            </span>
           </label>
           <input
             type="tel"
@@ -53,23 +50,6 @@ const ContactoSection = ({
             placeholder="contacto@minegocio.cl"
           />
         </div>
-      </div>
-
-      <div className="publicar-negocio__field">
-        <label htmlFor="sitio_web">
-          <FontAwesomeIcon icon={faGlobe} />
-          Sitio Web
-          <span className="publicar-negocio__label-hint">(Opcional)</span>
-        </label>
-        <input
-          type="url"
-          id="sitio_web"
-          name="sitio_web"
-          value={formData.sitio_web}
-          onChange={onChange}
-          onFocus={onFieldFocus}
-          placeholder="https://www.minegocio.cl"
-        />
       </div>
     </section>
   );

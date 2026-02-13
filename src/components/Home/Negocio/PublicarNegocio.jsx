@@ -110,6 +110,7 @@ const PublicarNegocio = () => {
         {/* Horarios */}
         <HorariosSection
           formData={formData}
+          errors={errors}
           onDiaChange={handleDiaChange}
           onSaveHorarios={handleSaveHorarios}
           onFieldFocus={handleFieldFocus}

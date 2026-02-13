@@ -11,6 +11,7 @@ import HorariosModal from "./HorariosModal";
  */
 const HorariosSection = ({
   formData,
+  errors,
   onDiaChange,
   onSaveHorarios,
   onFieldFocus,
@@ -25,8 +26,13 @@ const HorariosSection = ({
       <h2 className="publicar-negocio__section-title">
         <FontAwesomeIcon icon={faClock} />
         Horario de Atención
-        <span className="publicar-negocio__label-hint">(Opcional)</span>
+        <span className="publicar-negocio__label-required">Obligatorio</span>
       </h2>
+
+      {/* Error de validación */}
+      {errors?.horarios && (
+        <span className="publicar-negocio__error">{errors.horarios}</span>
+      )}
 
       {/* Días de atención — pills circulares */}
       <div className="publicar-negocio__field">
@@ -47,8 +53,7 @@ const HorariosSection = ({
               onClick={() => {
                 onFieldFocus();
                 onDiaChange(dia);
-              }}
-            >
+              }}>
               {DIAS_SEMANA_SHORT[dia]}
             </button>
           ))}
@@ -61,8 +66,7 @@ const HorariosSection = ({
           <button
             type="button"
             className="publicar-negocio__configurar-btn"
-            onClick={() => setIsModalOpen(true)}
-          >
+            onClick={() => setIsModalOpen(true)}>
             <FontAwesomeIcon icon={faCog} />
             Configurar Horarios
           </button>
@@ -84,10 +88,7 @@ const HorariosSection = ({
           ) : (
             <div className="publicar-negocio__summary-list">
               {formData.dias_atencion
-                .sort(
-                  (a, b) =>
-                    DIAS_SEMANA.indexOf(a) - DIAS_SEMANA.indexOf(b),
-                )
+                .sort((a, b) => DIAS_SEMANA.indexOf(a) - DIAS_SEMANA.indexOf(b))
                 .map((dia) => (
                   <div key={dia} className="publicar-negocio__summary-row">
                     <span className="publicar-negocio__summary-dia">
