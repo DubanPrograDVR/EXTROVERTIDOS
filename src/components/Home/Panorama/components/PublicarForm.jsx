@@ -2,7 +2,6 @@ import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCalendarDays,
-  faClock,
   faLocationDot,
   faTag,
   faBuilding,
@@ -331,62 +330,7 @@ const PublicarForm = ({
             errors={errors}
           />
         </div>
-        {/* Horarios */}
-        <div className="publicar-form__row">
-          <div className="publicar-form__group">
-            <label className="publicar-form__label" htmlFor="hora_inicio">
-              <FontAwesomeIcon icon={faClock} /> Hora Inicio
-              <span className="publicar-form__label-hint"> (Opcional)</span>
-              <span
-                style={{
-                  color: "gray",
-                  fontSize: "12px",
-                  marginTop: "5px",
-                  marginLeft: "10px",
-                }}>
-                Inicio del evento
-              </span>
-              {formData.es_multidia && formData.mismo_horario && (
-                <span className="publicar-form__label-hint">
-                  {" "}
-                  - todos los días
-                </span>
-              )}
-            </label>
-            <input
-              type="time"
-              id="hora_inicio"
-              name="hora_inicio"
-              className="publicar-form__input"
-              value={formData.hora_inicio}
-              onChange={onChange}
-            />
-          </div>
-
-          <div className="publicar-form__group">
-            <label className="publicar-form__label" htmlFor="hora_fin">
-              <FontAwesomeIcon icon={faClock} /> Hora Fin
-              <span className="publicar-form__label-hint"> (Opcional)</span>
-              <span
-                style={{
-                  color: "gray",
-                  fontSize: "12px",
-                  marginTop: "5px",
-                  marginLeft: "10px",
-                }}>
-                Término del evento
-              </span>
-            </label>
-            <input
-              type="time"
-              id="hora_fin"
-              name="hora_fin"
-              className="publicar-form__input"
-              value={formData.hora_fin}
-              onChange={onChange}
-            />
-          </div>
-        </div>
+        {/* Horarios ahora integrados dentro del DateRangePicker */}
         {/* Ubicación */}
         <div className="publicar-form__row">
           <div className="publicar-form__group">

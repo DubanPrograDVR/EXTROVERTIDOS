@@ -139,16 +139,16 @@ const useEventSubmit = ({
           user?.user_metadata?.full_name ||
           "Organizador",
         category_id: parseInt(formData.category_id),
-        fecha_evento: formData.fecha_evento,
+        fecha_evento: formData.fecha_evento || null,
         fecha_fin: formData.es_multidia
-          ? formData.fecha_fin
-          : formData.fecha_evento,
+          ? formData.fecha_fin || null
+          : formData.fecha_evento || null,
         es_multidia: formData.es_multidia,
         mismo_horario: formData.mismo_horario,
         // Campos de recurrencia
         es_recurrente: formData.es_recurrente || false,
         dia_recurrencia: formData.es_recurrente
-          ? formData.dia_recurrencia
+          ? formData.dia_recurrencia || null
           : null,
         cantidad_repeticiones: formData.es_recurrente
           ? formData.cantidad_repeticiones
@@ -236,6 +236,16 @@ const useEventSubmit = ({
       abortControllerRef.current = new AbortController();
 
       try {
+        // NOTA: NO llamar getSession()/refreshSession() antes del submit.
+        // Supabase GoTrueClient usa navigator.locks internamente para coordinar
+        // operaciones de sesión entre tabs. Su handler de visibilitychange
+        // adquiere un lock exclusivo (con timeout=-1, espera infinita) para
+        // llamar _recoverAndRefresh(). Si nosotros también llamamos
+        // getSession()/refreshSession(), competimos por el mismo lock y el
+        // submit se queda en loading infinito.
+        // Supabase ya adjunta el token automáticamente a cada petición.
+        // Si el token expiró, el error se captura abajo y se muestra al usuario.
+
         // 1. SUBIR NUEVAS IMÁGENES
         let newImageUrls = [];
         if (formData.imagenes && formData.imagenes.length > 0) {

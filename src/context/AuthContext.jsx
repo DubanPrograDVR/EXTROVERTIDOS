@@ -247,10 +247,19 @@ export const AuthProvider = ({ children }) => {
   }, [initialized, loadUserRole]);
 
   // ── Listener de auth events ───────────────────────────────
+  // ⚠️ CRÍTICO: Este callback se ejecuta DENTRO del navigator.lock de Supabase
+  // (vía _notifyAllSubscribers, llamado desde _recoverAndRefresh dentro de _acquireLock).
+  // Si hacemos await de cualquier query Supabase aquí (como checkBanStatus o loadUserRole),
+  // esa query necesita getSession() → _acquireLock → pendingInLock → espera a que
+  // _recoverAndRefresh termine → pero _recoverAndRefresh espera a que ESTE callback termine.
+  // Resultado: DEADLOCK CIRCULAR → loading infinito tras cambio de pestaña.
+  //
+  // SOLUCIÓN: El callback NO debe ser async. Las operaciones que necesitan queries
+  // de Supabase se difieren con setTimeout para ejecutarse DESPUÉS de que el lock se libere.
   useEffect(() => {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (!initialized || event === "INITIAL_SESSION") return;
 
       log.info("Auth event:", event);
@@ -258,30 +267,54 @@ export const AuthProvider = ({ children }) => {
       switch (event) {
         case "SIGNED_IN":
           if (session?.user) {
-            const banStatus = await checkBanStatus(session.user.id);
+            // Detectar si es un login real (no había usuario antes)
+            // vs una re-notificación por visibilitychange / _recoverAndRefresh
+            const isNewLogin = userRef.current?.id !== session.user.id;
 
-            if (banStatus.isBanned) {
-              log.info("Usuario baneado detectado");
-              dispatch({ type: AUTH_ACTIONS.SET_BAN, payload: banStatus });
-              await supabase.auth.signOut();
-              return;
-            }
-
-            // Cargar rol (o usar cache) + set user en un dispatch
-            const role =
-              roleCache.current.userId !== session.user.id
-                ? await loadUserRole(session.user.id)
-                : roleCache.current.role;
+            // Dispatch inmediato con datos disponibles (sin DB queries)
+            const cachedRole =
+              roleCache.current.userId === session.user.id
+                ? roleCache.current.role
+                : ROLES.USER;
 
             dispatch({
               type: AUTH_ACTIONS.SET_AUTH,
-              payload: { user: session.user, role },
+              payload: { user: session.user, role: cachedRole },
             });
 
-            showToastRef.current?.(
-              "¡Has iniciado sesión correctamente!",
-              "success",
-            );
+            // Diferir ban check y role load para ejecutarse FUERA del lock
+            setTimeout(async () => {
+              try {
+                // Verificar ban
+                const banStatus = await checkBanStatus(session.user.id);
+                if (banStatus.isBanned) {
+                  log.info("Usuario baneado detectado");
+                  dispatch({ type: AUTH_ACTIONS.SET_BAN, payload: banStatus });
+                  await supabase.auth.signOut();
+                  return;
+                }
+
+                // Cargar rol real si no estaba en cache
+                if (roleCache.current.userId !== session.user.id) {
+                  const role = await loadUserRole(session.user.id);
+                  dispatch({
+                    type: AUTH_ACTIONS.SET_AUTH,
+                    payload: { user: session.user, role },
+                  });
+                }
+              } catch (err) {
+                log.error("Error en post-SIGNED_IN:", err);
+              }
+            }, 0);
+
+            // Solo mostrar toast en login real, no en re-validaciones
+            // por cambio de pestaña o visibilitychange
+            if (isNewLogin) {
+              showToastRef.current?.(
+                "¡Has iniciado sesión correctamente!",
+                "success",
+              );
+            }
           }
           break;
 
@@ -297,19 +330,34 @@ export const AuthProvider = ({ children }) => {
 
         case "TOKEN_REFRESHED":
           if (session?.user) {
-            // Siempre reconsultar rol si el cache no coincide
-            const refreshedRole =
+            // Dispatch inmediato con rol cacheado
+            const cachedRefreshRole =
               roleCache.current.userId === session.user.id
                 ? roleCache.current.role
-                : await loadUserRole(session.user.id);
+                : ROLES.USER;
 
             dispatch({
               type: AUTH_ACTIONS.SET_AUTH,
               payload: {
                 user: session.user,
-                role: refreshedRole,
+                role: cachedRefreshRole,
               },
             });
+
+            // Si el rol no estaba cacheado, cargarlo fuera del lock
+            if (roleCache.current.userId !== session.user.id) {
+              setTimeout(async () => {
+                try {
+                  const role = await loadUserRole(session.user.id);
+                  dispatch({
+                    type: AUTH_ACTIONS.SET_AUTH,
+                    payload: { user: session.user, role },
+                  });
+                } catch (err) {
+                  log.error("Error cargando rol post-TOKEN_REFRESHED:", err);
+                }
+              }, 0);
+            }
           } else {
             log.warn("TOKEN_REFRESHED sin sesión válida, forzando signOut");
             roleCache.current = { userId: null, role: ROLES.USER };
@@ -339,74 +387,23 @@ export const AuthProvider = ({ children }) => {
   }, [initialized, loadUserRole]);
 
   // ── Revalidar sesión al volver al tab ─────────────────────
-  // Usa userRef para no re-registrar el listener cada vez que cambia user
-  useEffect(() => {
-    if (!initialized) return;
-
-    const handleVisibilityChange = async () => {
-      if (document.visibilityState !== "visible") return;
-      if (!userRef.current) return;
-
-      try {
-        log.info("Tab visible, revalidando sesión...");
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.getSession();
-
-        if (error || !session) {
-          log.warn("Sesión inválida, intentando refresh...");
-          const { data: refreshData, error: refreshError } =
-            await supabase.auth.refreshSession();
-
-          if (refreshError || !refreshData?.session) {
-            log.error("No se pudo recuperar la sesión");
-            roleCache.current = { userId: null, role: ROLES.USER };
-            dispatch({ type: AUTH_ACTIONS.CLEAR_AUTH });
-            showToastRef.current?.(
-              "Tu sesión ha expirado. Por favor inicia sesión nuevamente.",
-              "error",
-            );
-            await supabase.auth.signOut().catch(() => {});
-            return;
-          }
-
-          // Refresh exitoso
-          dispatch({
-            type: AUTH_ACTIONS.SET_AUTH,
-            payload: { user: refreshData.session.user },
-          });
-          log.info("Sesión recuperada");
-        } else {
-          // Sesión válida - NO despachar SET_AUTH innecesariamente
-          // (evita re-renders en cascada en todos los consumidores de useAuth)
-          // Solo despachar si el user ID cambió o si hay refresh necesario
-
-          // Refrescar preventivamente si le quedan menos de 2 minutos
-          const expiresAt = session.expires_at;
-          const now = Math.floor(Date.now() / 1000);
-          if (expiresAt && expiresAt - now < 120) {
-            log.info("Token cerca de expirar, refrescando preventivamente...");
-            const { data: refreshData } = await supabase.auth.refreshSession();
-            if (refreshData?.session) {
-              dispatch({
-                type: AUTH_ACTIONS.SET_AUTH,
-                payload: { user: refreshData.session.user },
-              });
-            }
-          }
-          // Si la sesión es válida y no necesita refresh, no hacer nada
-          // El auth listener ya maneja TOKEN_REFRESHED
-        }
-      } catch (err) {
-        log.error("Error revalidando sesión:", err);
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () =>
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [initialized]); // ← SIN user → no se re-registra
+  // NOTA: Supabase GoTrueClient YA maneja internamente el visibilitychange:
+  //   - _onVisibilityChanged() adquiere un Navigator Lock exclusivo (acquireTimeout=-1, ESPERA INFINITA)
+  //   - llama _recoverAndRefresh() que lee la sesión de storage y refresca si está expirada
+  //   - reinicia el auto-refresh ticker
+  //
+  // Tener un handler DUPLICADO aquí causaba un deadlock:
+  //   1. Tab se hace visible → Supabase interno adquiere el lock y llama refreshSession()
+  //   2. ESTE handler también dispara getSession() + refreshSession()
+  //   3. El lock usa navigator.locks con timeout=-1 (espera infinita)
+  //   4. Si ambos intentan refreshSession(), el refresh token se rota en el primero
+  //      y el segundo falla con "Invalid Refresh Token: Already Used"
+  //   5. La sesión se destruye → o el segundo queda esperando el lock infinitamente
+  //   → Resultado: "Publicar" se queda en loading infinito
+  //
+  // El onAuthStateChange listener (arriba) ya maneja TOKEN_REFRESHED y SIGNED_OUT,
+  // por lo que no necesitamos hacer nada adicional aquí.
+  // Supabase se encarga de todo automáticamente.
 
   // ── Auth Actions (todas con useCallback para referencia estable) ──
 

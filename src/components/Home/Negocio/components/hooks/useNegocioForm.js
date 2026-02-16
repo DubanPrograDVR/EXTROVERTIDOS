@@ -366,6 +366,10 @@ export const useNegocioForm = () => {
       setIsSubmitting(true);
 
       try {
+        // NOTA: NO llamar getSession()/refreshSession() aquí.
+        // Ver comentario en useEventSubmit.js — compite por el navigator.locks
+        // de Supabase y causa loading infinito tras cambios de pestaña.
+
         // 1. Subir imágenes
         const imageUrls = [];
         for (const file of formData.imagenes) {

@@ -1,15 +1,27 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+﻿import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCalendarDays,
   faCalendarWeek,
   faArrowRight,
   faInfoCircle,
-  faRepeat,
   faCalendarCheck,
   faPen,
   faPlus,
   faTrash,
+  faChevronLeft,
+  faChevronRight,
+  faStar,
+  faBolt,
+  faClock,
+  faCalendarDay,
+  faXmark,
+  faChampagneGlasses,
+  faFlag,
+  faGift,
+  faAngleDown,
+  faLayerGroup,
+  faListCheck,
 } from "@fortawesome/free-solid-svg-icons";
 import "./styles/date-range-picker.css";
 
@@ -24,33 +36,107 @@ const DIAS_SEMANA = [
   "sábado",
 ];
 
-/**
- * Calcula las fechas de recurrencia a partir de una fecha inicio,
- * repitiendo el mismo día de la semana N veces.
- * @param {string} fechaInicio - Fecha ISO (YYYY-MM-DD)
- * @param {number} cantidad - Cantidad de repeticiones (incluye la primera)
- * @returns {string[]} Array de fechas ISO
- */
-const calcularFechasRecurrencia = (fechaInicio, cantidad) => {
-  if (!fechaInicio || !cantidad || cantidad < 1) return [];
-  const fechas = [];
-  const inicio = new Date(fechaInicio + "T00:00:00");
+const DIAS_SEMANA_CORTOS = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"];
 
-  for (let i = 0; i < cantidad; i++) {
-    const fecha = new Date(inicio);
-    fecha.setDate(inicio.getDate() + i * 7); // cada 7 días = mismo día de semana
-    fechas.push(fecha.toISOString().split("T")[0]);
+const MESES = [
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
+];
+
+const MESES_CORTOS = [
+  "Ene",
+  "Feb",
+  "Mar",
+  "Abr",
+  "May",
+  "Jun",
+  "Jul",
+  "Ago",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dic",
+];
+
+// ===== FERIADOS DE CHILE =====
+const getFeriadosChile = (year) => {
+  const fijos = [
+    { m: 1, d: 1, nombre: "Año Nuevo" },
+    { m: 5, d: 1, nombre: "Día del Trabajo" },
+    { m: 5, d: 21, nombre: "Día de las Glorias Navales" },
+    { m: 6, d: 20, nombre: "Día Nacional de los Pueblos Indígenas" },
+    { m: 6, d: 29, nombre: "San Pedro y San Pablo" },
+    { m: 7, d: 16, nombre: "Virgen del Carmen" },
+    { m: 8, d: 15, nombre: "Asunción de la Virgen" },
+    { m: 9, d: 18, nombre: "Fiestas Patrias" },
+    { m: 9, d: 19, nombre: "Día de las Glorias del Ejército" },
+    { m: 10, d: 12, nombre: "Encuentro de Dos Mundos" },
+    { m: 10, d: 31, nombre: "Día de las Iglesias Evangélicas" },
+    { m: 11, d: 1, nombre: "Día de Todos los Santos" },
+    { m: 12, d: 8, nombre: "Inmaculada Concepción" },
+    { m: 12, d: 25, nombre: "Navidad" },
+  ];
+  const map = {};
+  for (const f of fijos) {
+    const key = `${year}-${String(f.m).padStart(2, "0")}-${String(f.d).padStart(2, "0")}`;
+    map[key] = f.nombre;
   }
-
-  return fechas;
+  return map;
 };
 
-/**
- * Componente para selección de fechas con soporte para:
- * - Eventos de un solo día
- * - Eventos multi-día (festivales, ferias)
- * - Eventos recurrentes (talleres que se repiten N semanas)
- */
+// ===== HELPERS =====
+const toISO = (date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+};
+
+const getCalendarDays = (year, month) => {
+  const firstDay = new Date(year, month, 1);
+  let startDay = firstDay.getDay() - 1;
+  if (startDay < 0) startDay = 6;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInPrevMonth = new Date(year, month, 0).getDate();
+  const days = [];
+  for (let i = startDay - 1; i >= 0; i--) {
+    days.push({
+      date: toISO(new Date(year, month - 1, daysInPrevMonth - i)),
+      day: daysInPrevMonth - i,
+      isCurrentMonth: false,
+    });
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    days.push({
+      date: toISO(new Date(year, month, d)),
+      day: d,
+      isCurrentMonth: true,
+    });
+  }
+  const remaining = 42 - days.length;
+  for (let i = 1; i <= remaining; i++) {
+    days.push({
+      date: toISO(new Date(year, month + 1, i)),
+      day: i,
+      isCurrentMonth: false,
+    });
+  }
+  return days;
+};
+
+const isWeekendCol = (colIndex) => colIndex === 5 || colIndex === 6;
+
+// ===== COMPONENTE =====
 const DateRangePicker = ({
   fechaEvento,
   fechaFin,
@@ -64,207 +150,371 @@ const DateRangePicker = ({
   onChange,
   errors,
 }) => {
-  // Estado local para animación de paneles
-  const [isExpanded, setIsExpanded] = useState(esMultidia);
-  const [isRecurrentExpanded, setIsRecurrentExpanded] = useState(esRecurrente);
+  const today = new Date();
+  const todayISO = toISO(today);
+  const initialDate = fechaEvento ? new Date(fechaEvento + "T00:00:00") : today;
+
+  // === Selection mode: "single" | "range" | "specific" ===
+  const [selectionMode, setSelectionMode] = useState(() => {
+    if (esRecurrente && fechasRecurrencia?.length > 0) return "specific";
+    if (esMultidia && fechaFin) return "range";
+    return "single";
+  });
+
+  const [viewYear, setViewYear] = useState(initialDate.getFullYear());
+  const [viewMonth, setViewMonth] = useState(initialDate.getMonth());
+  const [showYearPicker, setShowYearPicker] = useState(false);
+  const [rangeStep, setRangeStep] = useState(
+    esMultidia && fechaEvento && fechaFin ? "complete" : "start",
+  );
+  const [hoverDate, setHoverDate] = useState(null);
   const [editingIndex, setEditingIndex] = useState(null);
   const dateInputRefs = useRef({});
 
-  // Sincronizar estados expandidos con props
+  // Feriados
+  const feriados = useMemo(
+    () => ({
+      ...getFeriadosChile(viewYear),
+      ...getFeriadosChile(viewYear + 1),
+      ...getFeriadosChile(viewYear - 1),
+    }),
+    [viewYear],
+  );
+
+  // Sync mode from props on mount/draft load
   useEffect(() => {
-    setIsExpanded(esMultidia);
-  }, [esMultidia]);
+    if (esRecurrente && fechasRecurrencia?.length > 0)
+      setSelectionMode("specific");
+    else if (esMultidia && fechaFin) setSelectionMode("range");
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    setIsRecurrentExpanded(esRecurrente);
-  }, [esRecurrente]);
+    if (selectionMode === "range") {
+      if (fechaEvento && fechaFin) setRangeStep("complete");
+      else if (fechaEvento) setRangeStep("end");
+      else setRangeStep("start");
+    }
+  }, [selectionMode, fechaEvento, fechaFin]);
 
-  // Obtener fecha mínima (hoy)
-  const today = new Date().toISOString().split("T")[0];
+  // Specific dates set for highlighting
+  const specificDatesSet = useMemo(
+    () => new Set(selectionMode === "specific" ? fechasRecurrencia || [] : []),
+    [selectionMode, fechasRecurrencia],
+  );
 
-  // Detectar día de la semana de la fecha seleccionada
-  const diaDetectado = useMemo(() => {
+  // Calendar days
+  const calendarDays = useMemo(
+    () => getCalendarDays(viewYear, viewMonth),
+    [viewYear, viewMonth],
+  );
+  const nextMonth = viewMonth === 11 ? 0 : viewMonth + 1;
+  const nextMonthYear = viewMonth === 11 ? viewYear + 1 : viewYear;
+  const calendarDays2 = useMemo(
+    () =>
+      selectionMode === "range"
+        ? getCalendarDays(nextMonthYear, nextMonth)
+        : [],
+    [selectionMode, nextMonthYear, nextMonth],
+  );
+
+  // Days countdown
+  const diasRestantes = useMemo(() => {
     if (!fechaEvento) return null;
-    const date = new Date(fechaEvento + "T00:00:00");
-    return DIAS_SEMANA[date.getDay()];
-  }, [fechaEvento]);
+    const evento = new Date(fechaEvento + "T00:00:00");
+    const hoy = new Date(todayISO + "T00:00:00");
+    return Math.ceil((evento - hoy) / (1000 * 60 * 60 * 24));
+  }, [fechaEvento, todayISO]);
 
-  // Calcular fechas de recurrencia automáticamente (base sugerida)
-  const fechasCalculadas = useMemo(() => {
-    if (!esRecurrente || !fechaEvento) return [];
-    return calcularFechasRecurrencia(fechaEvento, cantidadRepeticiones || 2);
-  }, [esRecurrente, fechaEvento, cantidadRepeticiones]);
-
-  // Las fechas finales son las personalizadas si existen, si no las calculadas
-  const fechasFinales = useMemo(() => {
-    if (fechasRecurrencia && fechasRecurrencia.length > 0) {
-      return fechasRecurrencia;
-    }
-    return fechasCalculadas;
-  }, [fechasRecurrencia, fechasCalculadas]);
-
-  // Propagar fechas calculadas al padre cuando cambien (solo si no hay ediciones manuales)
-  useEffect(() => {
-    if (esRecurrente && fechasCalculadas.length > 0) {
-      // Solo auto-propagar si no hay fechas personalizadas o si la cantidad cambió
-      const currentLen = fechasRecurrencia?.length || 0;
-      if (currentLen === 0 || currentLen !== fechasCalculadas.length) {
-        onChange({
-          target: {
-            name: "fechas_recurrencia",
-            value: fechasCalculadas,
-          },
-        });
-      }
-      // También actualizar el día de recurrencia
-      if (diaDetectado) {
-        onChange({
-          target: {
-            name: "dia_recurrencia",
-            value: diaDetectado,
-          },
-        });
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fechasCalculadas.length, esRecurrente, diaDetectado]);
-
-  // === Handlers para editar fechas individuales ===
-
-  // Editar una fecha específica por índice
-  const handleEditFecha = useCallback((index) => {
-    setEditingIndex(index);
-    // Abrir el date picker nativo después de un tick
-    setTimeout(() => {
-      const input = dateInputRefs.current[index];
-      if (input) {
-        input.showPicker?.();
-        input.focus();
-      }
-    }, 50);
-  }, []);
-
-  // Guardar fecha editada
-  const handleFechaChange = useCallback(
-    (index, newDate) => {
-      if (!newDate) return;
-      const updated = [...fechasFinales];
-      updated[index] = newDate;
-      // Ordenar cronológicamente
-      updated.sort();
-      onChange({
-        target: { name: "fechas_recurrencia", value: updated },
-      });
-      setEditingIndex(null);
-    },
-    [fechasFinales, onChange],
-  );
-
-  // Agregar una nueva fecha
-  const handleAddFecha = useCallback(() => {
-    // Sugerir la próxima semana después de la última fecha
-    const lastDate = fechasFinales[fechasFinales.length - 1];
-    let newDate = "";
-    if (lastDate) {
-      const d = new Date(lastDate + "T00:00:00");
-      d.setDate(d.getDate() + 7);
-      newDate = d.toISOString().split("T")[0];
-    }
-    const updated = [...fechasFinales, newDate];
-    updated.sort((a, b) => (a && b ? a.localeCompare(b) : 0));
+  // ===== MODE SWITCHING =====
+  const switchToSingle = () => {
+    setSelectionMode("single");
     onChange({
-      target: { name: "fechas_recurrencia", value: updated },
+      target: { name: "es_multidia", value: false, type: "checkbox" },
     });
-    // Abrir el editor en la nueva fecha
-    setTimeout(() => {
-      const newIndex = updated.indexOf(newDate);
-      handleEditFecha(newIndex >= 0 ? newIndex : updated.length - 1);
-    }, 100);
-  }, [fechasFinales, onChange, handleEditFecha]);
-
-  // Eliminar una fecha (mínimo 2)
-  const handleRemoveFecha = useCallback(
-    (index) => {
-      if (fechasFinales.length <= 2) return;
-      const updated = fechasFinales.filter((_, i) => i !== index);
-      onChange({
-        target: { name: "fechas_recurrencia", value: updated },
-      });
-      // Actualizar cantidad de repeticiones
-      onChange({
-        target: { name: "cantidad_repeticiones", value: updated.length },
-      });
-    },
-    [fechasFinales, onChange],
-  );
-
-  // Manejar cambio del checkbox multi-día
-  const handleMultidiaChange = (e) => {
-    const checked = e.target.checked;
-
-    // Si se activa multidía, desactivar recurrente
-    if (checked) {
-      onChange({
-        target: { name: "es_recurrente", value: false, type: "checkbox" },
-      });
-      onChange({
-        target: { name: "fechas_recurrencia", value: [] },
-      });
-      onChange({
-        target: { name: "dia_recurrencia", value: "" },
-      });
-      onChange({
-        target: { name: "cantidad_repeticiones", value: 2 },
-      });
-    }
-
     onChange({
-      target: { name: "es_multidia", value: checked, type: "checkbox" },
+      target: { name: "es_recurrente", value: false, type: "checkbox" },
     });
-
-    // Si se desmarca, limpiar fecha fin
-    if (!checked) {
-      onChange({ target: { name: "fecha_fin", value: "" } });
-    }
+    onChange({ target: { name: "fecha_fin", value: "" } });
+    onChange({ target: { name: "fechas_recurrencia", value: [] } });
+    onChange({ target: { name: "dia_recurrencia", value: "" } });
+    onChange({ target: { name: "cantidad_repeticiones", value: 2 } });
+    setRangeStep("start");
   };
 
-  // Manejar cambio del checkbox recurrente
-  const handleRecurrenteChange = (e) => {
-    const checked = e.target.checked;
-
-    // Si se activa recurrente, desactivar multidía
-    if (checked) {
-      onChange({
-        target: { name: "es_multidia", value: false, type: "checkbox" },
-      });
-      onChange({ target: { name: "fecha_fin", value: "" } });
+  const switchToRange = () => {
+    setSelectionMode("range");
+    onChange({
+      target: { name: "es_multidia", value: true, type: "checkbox" },
+    });
+    onChange({
+      target: { name: "es_recurrente", value: false, type: "checkbox" },
+    });
+    onChange({ target: { name: "fechas_recurrencia", value: [] } });
+    onChange({ target: { name: "dia_recurrencia", value: "" } });
+    onChange({ target: { name: "cantidad_repeticiones", value: 2 } });
+    if (fechaEvento) {
+      setRangeStep("end");
     } else {
-      // Limpiar campos de recurrencia
+      setRangeStep("start");
+    }
+  };
+
+  const switchToSpecific = () => {
+    setSelectionMode("specific");
+    onChange({
+      target: { name: "es_recurrente", value: true, type: "checkbox" },
+    });
+    onChange({
+      target: { name: "es_multidia", value: false, type: "checkbox" },
+    });
+    onChange({ target: { name: "fecha_fin", value: "" } });
+    const initial = fechaEvento ? [fechaEvento] : [];
+    onChange({ target: { name: "fechas_recurrencia", value: initial } });
+    setRangeStep("start");
+  };
+
+  // ===== NAVIGATION =====
+  const goToPrevMonth = () => {
+    setViewMonth((m) => {
+      if (m === 0) {
+        setViewYear((y) => y - 1);
+        return 11;
+      }
+      return m - 1;
+    });
+  };
+  const goToNextMonth = () => {
+    setViewMonth((m) => {
+      if (m === 11) {
+        setViewYear((y) => y + 1);
+        return 0;
+      }
+      return m + 1;
+    });
+  };
+  const jumpToMonth = (monthIdx) => {
+    setViewMonth(monthIdx);
+    setShowYearPicker(false);
+  };
+  const jumpToYear = (yr) => {
+    setViewYear(yr);
+  };
+
+  // ===== DAY CLICK HANDLER =====
+  const handleDayClick = (dateStr) => {
+    if (dateStr < todayISO) return;
+
+    if (selectionMode === "specific") {
+      const currentDates = [...(fechasRecurrencia || [])];
+      const idx = currentDates.indexOf(dateStr);
+      if (idx >= 0) {
+        if (currentDates.length <= 1) return;
+        currentDates.splice(idx, 1);
+      } else {
+        if (currentDates.length >= 12) return;
+        currentDates.push(dateStr);
+      }
+      currentDates.sort();
+      onChange({ target: { name: "fechas_recurrencia", value: currentDates } });
+      onChange({ target: { name: "fecha_evento", value: currentDates[0] } });
       onChange({
-        target: { name: "fechas_recurrencia", value: [] },
+        target: { name: "cantidad_repeticiones", value: currentDates.length },
       });
-      onChange({
-        target: { name: "dia_recurrencia", value: "" },
-      });
-      onChange({
-        target: { name: "cantidad_repeticiones", value: 2 },
-      });
+      return;
     }
 
-    onChange({
-      target: { name: "es_recurrente", value: checked, type: "checkbox" },
-    });
+    if (selectionMode === "range") {
+      if (rangeStep === "start" || rangeStep === "complete") {
+        onChange({ target: { name: "fecha_evento", value: dateStr } });
+        onChange({ target: { name: "fecha_fin", value: "" } });
+        setRangeStep("end");
+      } else if (rangeStep === "end") {
+        if (dateStr < fechaEvento) {
+          onChange({ target: { name: "fecha_fin", value: fechaEvento } });
+          onChange({ target: { name: "fecha_evento", value: dateStr } });
+        } else if (dateStr === fechaEvento) {
+          setRangeStep("end");
+          return;
+        } else {
+          onChange({ target: { name: "fecha_fin", value: dateStr } });
+        }
+        setRangeStep("complete");
+      }
+      return;
+    }
+
+    // Single mode
+    onChange({ target: { name: "fecha_evento", value: dateStr } });
+    const d = new Date(dateStr + "T00:00:00");
+    setViewYear(d.getFullYear());
+    setViewMonth(d.getMonth());
   };
 
-  // Manejar cambio de cantidad de repeticiones
-  const handleRepeticionesChange = (e) => {
-    const value = Math.min(12, Math.max(2, parseInt(e.target.value) || 2));
-    onChange({
-      target: { name: "cantidad_repeticiones", value },
-    });
+  const handleDayHover = (dateStr) => {
+    if (selectionMode === "range" && rangeStep === "end") setHoverDate(dateStr);
   };
 
-  // Manejar cambio de mismo horario
+  // ===== DAY CLASSES =====
+  const getDayClasses = (dayObj, colIndex) => {
+    const { date, isCurrentMonth } = dayObj;
+    const classes = ["drp-calendar__day"];
+    if (!isCurrentMonth) classes.push("drp-calendar__day--outside");
+    if (date < todayISO) classes.push("drp-calendar__day--past");
+    if (date === todayISO) classes.push("drp-calendar__day--today");
+    if (isWeekendCol(colIndex)) classes.push("drp-calendar__day--weekend");
+    if (feriados[date]) classes.push("drp-calendar__day--holiday");
+
+    if (selectionMode === "range" && fechaEvento && (fechaFin || hoverDate)) {
+      const endDate = rangeStep === "end" ? hoverDate : fechaFin;
+      if (endDate) {
+        const start = fechaEvento < endDate ? fechaEvento : endDate;
+        const end = fechaEvento < endDate ? endDate : fechaEvento;
+        if (date === start) classes.push("drp-calendar__day--range-start");
+        if (date === end) classes.push("drp-calendar__day--range-end");
+        if (date > start && date < end)
+          classes.push("drp-calendar__day--in-range");
+      }
+    }
+
+    if (selectionMode === "specific") {
+      if (specificDatesSet.has(date))
+        classes.push("drp-calendar__day--selected");
+    } else {
+      if (date === fechaEvento) classes.push("drp-calendar__day--selected");
+      if (selectionMode === "range" && date === fechaFin)
+        classes.push("drp-calendar__day--selected");
+    }
+    return classes.join(" ");
+  };
+
+  // ===== QUICK SELECTS =====
+  const handleQuickSelect = (type) => {
+    const now = new Date();
+    switch (type) {
+      case "today":
+        if (selectionMode !== "single") switchToSingle();
+        onChange({ target: { name: "fecha_evento", value: todayISO } });
+        setViewYear(now.getFullYear());
+        setViewMonth(now.getMonth());
+        break;
+      case "tomorrow": {
+        const tom = new Date(now);
+        tom.setDate(tom.getDate() + 1);
+        if (selectionMode !== "single") switchToSingle();
+        onChange({ target: { name: "fecha_evento", value: toISO(tom) } });
+        setViewYear(tom.getFullYear());
+        setViewMonth(tom.getMonth());
+        break;
+      }
+      case "weekend": {
+        const sat = new Date(now);
+        const dow = sat.getDay();
+        sat.setDate(sat.getDate() + (dow === 6 ? 0 : 6 - dow));
+        const sun = new Date(sat);
+        sun.setDate(sun.getDate() + 1);
+        if (selectionMode !== "range") {
+          setSelectionMode("range");
+          onChange({
+            target: { name: "es_multidia", value: true, type: "checkbox" },
+          });
+          onChange({
+            target: { name: "es_recurrente", value: false, type: "checkbox" },
+          });
+          onChange({ target: { name: "fechas_recurrencia", value: [] } });
+        }
+        onChange({ target: { name: "fecha_evento", value: toISO(sat) } });
+        onChange({ target: { name: "fecha_fin", value: toISO(sun) } });
+        setRangeStep("complete");
+        setViewYear(sat.getFullYear());
+        setViewMonth(sat.getMonth());
+        break;
+      }
+      case "nextweek": {
+        const mon = new Date(now);
+        const dw = mon.getDay();
+        mon.setDate(mon.getDate() + (dw === 0 ? 1 : dw === 1 ? 7 : 8 - dw));
+        const fri = new Date(mon);
+        fri.setDate(fri.getDate() + 4);
+        if (selectionMode !== "range") {
+          setSelectionMode("range");
+          onChange({
+            target: { name: "es_multidia", value: true, type: "checkbox" },
+          });
+          onChange({
+            target: { name: "es_recurrente", value: false, type: "checkbox" },
+          });
+          onChange({ target: { name: "fechas_recurrencia", value: [] } });
+        }
+        onChange({ target: { name: "fecha_evento", value: toISO(mon) } });
+        onChange({ target: { name: "fecha_fin", value: toISO(fri) } });
+        setRangeStep("complete");
+        setViewYear(mon.getFullYear());
+        setViewMonth(mon.getMonth());
+        break;
+      }
+      default:
+        break;
+    }
+  };
+
+  const handleSeasonSelect = (type) => {
+    const yr = today.getFullYear();
+    switch (type) {
+      case "newyear":
+        if (selectionMode !== "single") switchToSingle();
+        onChange({
+          target: { name: "fecha_evento", value: `${yr + 1}-01-01` },
+        });
+        setViewYear(yr + 1);
+        setViewMonth(0);
+        break;
+      case "patrias":
+        if (selectionMode !== "range") {
+          setSelectionMode("range");
+          onChange({
+            target: { name: "es_multidia", value: true, type: "checkbox" },
+          });
+          onChange({
+            target: { name: "es_recurrente", value: false, type: "checkbox" },
+          });
+          onChange({ target: { name: "fechas_recurrencia", value: [] } });
+        }
+        onChange({ target: { name: "fecha_evento", value: `${yr}-09-18` } });
+        onChange({ target: { name: "fecha_fin", value: `${yr}-09-19` } });
+        setRangeStep("complete");
+        setViewYear(yr);
+        setViewMonth(8);
+        break;
+      case "navidad":
+        if (selectionMode !== "single") switchToSingle();
+        onChange({ target: { name: "fecha_evento", value: `${yr}-12-25` } });
+        setViewYear(yr);
+        setViewMonth(11);
+        break;
+      default:
+        break;
+    }
+  };
+
+  // ===== CLEAR =====
+  const handleClearSelection = () => {
+    setSelectionMode("single");
+    onChange({ target: { name: "fecha_evento", value: "" } });
+    onChange({ target: { name: "fecha_fin", value: "" } });
+    onChange({ target: { name: "hora_inicio", value: "" } });
+    onChange({ target: { name: "hora_fin", value: "" } });
+    onChange({
+      target: { name: "es_multidia", value: false, type: "checkbox" },
+    });
+    onChange({
+      target: { name: "es_recurrente", value: false, type: "checkbox" },
+    });
+    onChange({ target: { name: "fechas_recurrencia", value: [] } });
+    onChange({ target: { name: "dia_recurrencia", value: "" } });
+    onChange({ target: { name: "cantidad_repeticiones", value: 2 } });
+    setRangeStep("start");
+  };
+
   const handleMismoHorarioChange = (e) => {
     onChange({
       target: {
@@ -275,21 +525,46 @@ const DateRangePicker = ({
     });
   };
 
-  // Calcular duración del evento
-  const calcularDuracion = () => {
-    if (!fechaEvento || !fechaFin) return null;
+  // ===== SPECIFIC DATES MANAGEMENT =====
+  const handleEditFecha = useCallback((index) => {
+    setEditingIndex(index);
+    setTimeout(() => {
+      const input = dateInputRefs.current[index];
+      if (input) {
+        input.showPicker?.();
+        input.focus();
+      }
+    }, 50);
+  }, []);
 
-    const inicio = new Date(fechaEvento);
-    const fin = new Date(fechaFin);
-    const diffTime = Math.abs(fin - inicio);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  const handleFechaChange = useCallback(
+    (index, newDate) => {
+      if (!newDate) return;
+      const updated = [...(fechasRecurrencia || [])];
+      updated[index] = newDate;
+      updated.sort();
+      onChange({ target: { name: "fechas_recurrencia", value: updated } });
+      onChange({ target: { name: "fecha_evento", value: updated[0] } });
+      setEditingIndex(null);
+    },
+    [fechasRecurrencia, onChange],
+  );
 
-    return diffDays;
-  };
+  const handleRemoveFecha = useCallback(
+    (index) => {
+      const current = fechasRecurrencia || [];
+      if (current.length <= 1) return;
+      const updated = current.filter((_, i) => i !== index);
+      onChange({ target: { name: "fechas_recurrencia", value: updated } });
+      onChange({ target: { name: "fecha_evento", value: updated[0] } });
+      onChange({
+        target: { name: "cantidad_repeticiones", value: updated.length },
+      });
+    },
+    [fechasRecurrencia, onChange],
+  );
 
-  const duracion = calcularDuracion();
-
-  // Formatear fecha para mostrar
+  // ===== FORMATTING =====
   const formatearFecha = (fecha) => {
     if (!fecha) return "";
     const date = new Date(fecha + "T00:00:00");
@@ -300,312 +575,502 @@ const DateRangePicker = ({
     });
   };
 
+  const formatearFechaLarga = (fecha) => {
+    if (!fecha) return "";
+    const date = new Date(fecha + "T00:00:00");
+    return date.toLocaleDateString("es-CL", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const calcularDuracion = () => {
+    if (!fechaEvento || !fechaFin) return null;
+    return (
+      Math.ceil(
+        Math.abs(new Date(fechaFin) - new Date(fechaEvento)) /
+          (1000 * 60 * 60 * 24),
+      ) + 1
+    );
+  };
+
+  const duracion = calcularDuracion();
+  const isPrevDisabled =
+    viewYear < today.getFullYear() ||
+    (viewYear === today.getFullYear() && viewMonth <= today.getMonth());
+
+  // ===== RENDER GRID =====
+  const renderCalendarGrid = (days, monthLabel) => (
+    <div className="drp-calendar__month-block">
+      {monthLabel && (
+        <div className="drp-calendar__month-label">{monthLabel}</div>
+      )}
+      <div className="drp-calendar__grid">
+        {DIAS_SEMANA_CORTOS.map((d, i) => (
+          <div
+            key={d}
+            className={`drp-calendar__day-header ${isWeekendCol(i) ? "drp-calendar__day-header--weekend" : ""}`}>
+            {d}
+          </div>
+        ))}
+        {days.map((dayObj, idx) => {
+          const colIndex = idx % 7;
+          const holidayName = feriados[dayObj.date];
+          return (
+            <button
+              key={dayObj.date}
+              type="button"
+              className={getDayClasses(dayObj, colIndex)}
+              onClick={() => handleDayClick(dayObj.date)}
+              onMouseEnter={() => handleDayHover(dayObj.date)}
+              onMouseLeave={() => setHoverDate(null)}
+              disabled={dayObj.date < todayISO}
+              title={
+                holidayName
+                  ? `${formatearFechaLarga(dayObj.date)}  ${holidayName}`
+                  : formatearFechaLarga(dayObj.date)
+              }>
+              <span className="drp-calendar__day-number">{dayObj.day}</span>
+              {dayObj.date === todayISO && (
+                <span className="drp-calendar__today-dot" />
+              )}
+              {specificDatesSet.has(dayObj.date) && (
+                <span className="drp-calendar__recurring-dot" />
+              )}
+              {holidayName && dayObj.isCurrentMonth && (
+                <span className="drp-calendar__holiday-dot" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const yearOptions = [];
+  for (let y = today.getFullYear(); y <= today.getFullYear() + 3; y++)
+    yearOptions.push(y);
+
+  const specificDates = fechasRecurrencia || [];
+
   return (
-    <div className="date-range-picker">
-      {/* Fila principal: Fecha inicio y checkboxes */}
-      <div className="date-range-picker__main-row">
-        {/* Fecha de inicio (siempre visible) */}
-        <div className="date-range-picker__date-group">
-          <label className="publicar-form__label" htmlFor="fecha_evento">
-            <FontAwesomeIcon icon={faCalendarDays} />
-            {esMultidia
-              ? " Fecha Inicio *"
-              : esRecurrente
-                ? " Primera Fecha *"
-                : " Fecha del Evento *"}
-          </label>
-          <input
-            type="date"
-            id="fecha_evento"
-            name="fecha_evento"
-            className={`publicar-form__input ${
-              errors?.fecha_evento ? "error" : ""
-            }`}
-            value={fechaEvento}
-            onChange={onChange}
-            min={today}
+    <div className="drp-calendar">
+      {/* HEADER */}
+      <div className="drp-calendar__header">
+        <div className="drp-calendar__header-left">
+          <FontAwesomeIcon
+            icon={faCalendarDays}
+            className="drp-calendar__header-icon"
           />
-          {errors?.fecha_evento && (
-            <span className="publicar-form__error">{errors.fecha_evento}</span>
-          )}
+          <span className="drp-calendar__header-title">Fecha del Evento</span>
+          <span className="drp-calendar__header-required">*</span>
         </div>
+        {fechaEvento && (
+          <button
+            type="button"
+            className="drp-calendar__clear-btn"
+            onClick={handleClearSelection}
+            title="Quitar fecha">
+            <FontAwesomeIcon icon={faXmark} /> Quitar
+          </button>
+        )}
+      </div>
 
-        {/* Checkboxes: multi-día y recurrente */}
-        <div className="date-range-picker__options-column">
-          {/* Checkbox multi-día */}
-          <div className="date-range-picker__checkbox-wrapper">
-            <label className="date-range-picker__checkbox-label">
-              <input
-                type="checkbox"
-                checked={esMultidia}
-                onChange={handleMultidiaChange}
-                className="date-range-picker__checkbox"
-              />
-              <span className="date-range-picker__checkbox-custom"></span>
-              <span className="date-range-picker__checkbox-text">
-                <FontAwesomeIcon icon={faCalendarWeek} />
-                ¿Dura más de un día?
-              </span>
-            </label>
-            <p className="date-range-picker__checkbox-hint">
-              Festivales, ferias, exposiciones
-            </p>
-          </div>
-
-          {/* Checkbox recurrente */}
-          <div className="date-range-picker__checkbox-wrapper">
-            <label className="date-range-picker__checkbox-label">
-              <input
-                type="checkbox"
-                checked={esRecurrente}
-                onChange={handleRecurrenteChange}
-                className="date-range-picker__checkbox"
-              />
-              <span className="date-range-picker__checkbox-custom"></span>
-              <span className="date-range-picker__checkbox-text">
-                <FontAwesomeIcon icon={faRepeat} />
-                ¿Se repite ciertos días?
-              </span>
-            </label>
-            <p className="date-range-picker__checkbox-hint">
-              Talleres, clases, eventos semanales
-            </p>
-          </div>
+      {/* MODE SELECTOR */}
+      <div className="drp-calendar__mode-bar">
+        <span className="drp-calendar__mode-label">¿Cómo dura tu evento?</span>
+        <div className="drp-calendar__mode-options">
+          <button
+            type="button"
+            className={`drp-calendar__mode-btn ${selectionMode === "single" ? "active" : ""}`}
+            onClick={switchToSingle}>
+            <FontAwesomeIcon icon={faCalendarDay} />
+            <span>Un día</span>
+          </button>
+          <button
+            type="button"
+            className={`drp-calendar__mode-btn ${selectionMode === "range" ? "active" : ""}`}
+            onClick={switchToRange}>
+            <FontAwesomeIcon icon={faLayerGroup} />
+            <span>Varios días seguidos</span>
+          </button>
+          <button
+            type="button"
+            className={`drp-calendar__mode-btn ${selectionMode === "specific" ? "active" : ""}`}
+            onClick={switchToSpecific}>
+            <FontAwesomeIcon icon={faListCheck} />
+            <span>Fechas específicas</span>
+          </button>
         </div>
       </div>
 
-      {/* Panel expandible para eventos multi-día */}
+      {/* CONTEXT HINT */}
+      <div className="drp-calendar__mode-hint">
+        {selectionMode === "single" && (
+          <p>
+            <FontAwesomeIcon icon={faInfoCircle} /> Haz clic en un día del
+            calendario para seleccionarlo
+          </p>
+        )}
+        {selectionMode === "range" && rangeStep === "start" && (
+          <p>
+            <FontAwesomeIcon icon={faInfoCircle} /> Haz clic en el día de{" "}
+            <strong>inicio</strong> de tu evento
+          </p>
+        )}
+        {selectionMode === "range" && rangeStep === "end" && (
+          <p>
+            <FontAwesomeIcon icon={faInfoCircle} /> Ahora haz clic en el día de{" "}
+            <strong>fin</strong> de tu evento
+          </p>
+        )}
+        {selectionMode === "range" && rangeStep === "complete" && !fechaFin && (
+          <p>
+            <FontAwesomeIcon icon={faInfoCircle} /> Haz clic en el día de{" "}
+            <strong>fin</strong> de tu evento
+          </p>
+        )}
+        {selectionMode === "specific" && (
+          <p>
+            <FontAwesomeIcon icon={faInfoCircle} /> Haz clic en los días del
+            calendario para <strong>agregar o quitar</strong> fechas
+          </p>
+        )}
+      </div>
+
+      {/* QUICK BAR */}
+      <div className="drp-calendar__quick-bar">
+        <button
+          type="button"
+          className={`drp-calendar__quick-btn ${fechaEvento === todayISO && selectionMode === "single" ? "active" : ""}`}
+          onClick={() => handleQuickSelect("today")}>
+          <FontAwesomeIcon icon={faBolt} /> Hoy
+        </button>
+        <button
+          type="button"
+          className="drp-calendar__quick-btn"
+          onClick={() => handleQuickSelect("tomorrow")}>
+          <FontAwesomeIcon icon={faCalendarDay} /> Mañana
+        </button>
+        <button
+          type="button"
+          className="drp-calendar__quick-btn"
+          onClick={() => handleQuickSelect("weekend")}>
+          <FontAwesomeIcon icon={faStar} /> Fin de semana
+        </button>
+        <button
+          type="button"
+          className="drp-calendar__quick-btn"
+          onClick={() => handleQuickSelect("nextweek")}>
+          <FontAwesomeIcon icon={faCalendarWeek} /> Próxima semana
+        </button>
+      </div>
+
+      {/* SEASON BAR */}
+      <div className="drp-calendar__season-bar">
+        <button
+          type="button"
+          className="drp-calendar__season-btn"
+          onClick={() => handleSeasonSelect("newyear")}>
+          <FontAwesomeIcon icon={faChampagneGlasses} /> Año Nuevo
+        </button>
+        <button
+          type="button"
+          className="drp-calendar__season-btn"
+          onClick={() => handleSeasonSelect("patrias")}>
+          <FontAwesomeIcon icon={faFlag} /> Fiestas Patrias
+        </button>
+        <button
+          type="button"
+          className="drp-calendar__season-btn"
+          onClick={() => handleSeasonSelect("navidad")}>
+          <FontAwesomeIcon icon={faGift} /> Navidad
+        </button>
+      </div>
+
+      {/* MONTH NAV */}
+      <div className="drp-calendar__nav">
+        <button
+          type="button"
+          className="drp-calendar__nav-btn"
+          onClick={goToPrevMonth}
+          disabled={isPrevDisabled}>
+          <FontAwesomeIcon icon={faChevronLeft} />
+        </button>
+        <div className="drp-calendar__nav-center">
+          <button
+            type="button"
+            className="drp-calendar__nav-current"
+            onClick={() => setShowYearPicker(!showYearPicker)}
+            title="Saltar a mes">
+            {MESES[viewMonth]} {viewYear}{" "}
+            <FontAwesomeIcon
+              icon={faAngleDown}
+              className={`drp-calendar__nav-arrow ${showYearPicker ? "open" : ""}`}
+            />
+          </button>
+        </div>
+        <button
+          type="button"
+          className="drp-calendar__nav-btn"
+          onClick={goToNextMonth}>
+          <FontAwesomeIcon icon={faChevronRight} />
+        </button>
+      </div>
+
+      {/* YEAR PICKER */}
+      {showYearPicker && (
+        <div className="drp-calendar__year-picker">
+          <div className="drp-calendar__year-tabs">
+            {yearOptions.map((yr) => (
+              <button
+                key={yr}
+                type="button"
+                className={`drp-calendar__year-tab ${yr === viewYear ? "active" : ""}`}
+                onClick={() => jumpToYear(yr)}>
+                {yr}
+              </button>
+            ))}
+          </div>
+          <div className="drp-calendar__month-grid">
+            {MESES_CORTOS.map((m, i) => {
+              const isPast =
+                viewYear === today.getFullYear() && i < today.getMonth();
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  className={`drp-calendar__month-cell ${i === viewMonth ? "active" : ""} ${isPast ? "past" : ""}`}
+                  onClick={() => jumpToMonth(i)}
+                  disabled={isPast}>
+                  {m}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* CALENDAR GRID(S) */}
       <div
-        className={`date-range-picker__expanded ${isExpanded ? "open" : ""}`}>
-        <div className="date-range-picker__expanded-content">
-          {/* Indicador visual del rango */}
-          <div className="date-range-picker__range-indicator">
-            <div className="date-range-picker__range-line">
-              <span className="date-range-picker__range-start">
-                {formatearFecha(fechaEvento) || "Inicio"}
+        className={`drp-calendar__grids-container ${selectionMode === "range" ? "drp-calendar__grids-container--dual" : ""}`}>
+        {renderCalendarGrid(
+          calendarDays,
+          selectionMode === "range" ? `${MESES[viewMonth]} ${viewYear}` : null,
+        )}
+        {selectionMode === "range" &&
+          renderCalendarGrid(
+            calendarDays2,
+            `${MESES[nextMonth]} ${nextMonthYear}`,
+          )}
+      </div>
+
+      {/* LEGEND */}
+      <div className="drp-calendar__legend">
+        <span className="drp-calendar__legend-item">
+          <span className="drp-calendar__legend-dot drp-calendar__legend-dot--today" />{" "}
+          Hoy
+        </span>
+        <span className="drp-calendar__legend-item">
+          <span className="drp-calendar__legend-dot drp-calendar__legend-dot--holiday" />{" "}
+          Feriado
+        </span>
+        <span className="drp-calendar__legend-item">
+          <span className="drp-calendar__legend-dot drp-calendar__legend-dot--weekend" />{" "}
+          Fin de semana
+        </span>
+        {selectionMode === "specific" && (
+          <span className="drp-calendar__legend-item">
+            <span className="drp-calendar__legend-dot drp-calendar__legend-dot--selected" />{" "}
+            Seleccionado
+          </span>
+        )}
+      </div>
+
+      {/* SELECTION SUMMARY */}
+      {selectionMode === "single" && fechaEvento && (
+        <div className="drp-calendar__selection-summary">
+          <div className="drp-calendar__single-summary">
+            <FontAwesomeIcon icon={faCalendarCheck} />
+            <span>{formatearFechaLarga(fechaEvento)}</span>
+            {diasRestantes !== null && diasRestantes >= 0 && (
+              <span className="drp-calendar__countdown">
+                {diasRestantes === 0
+                  ? "¡Es hoy!"
+                  : diasRestantes === 1
+                    ? "Mañana"
+                    : `Faltan ${diasRestantes} días`}
               </span>
-              <FontAwesomeIcon
-                icon={faArrowRight}
-                className="date-range-picker__range-arrow"
-              />
-              <span className="date-range-picker__range-end">
-                {formatearFecha(fechaFin) || "Fin"}
-              </span>
+            )}
+          </div>
+          {feriados[fechaEvento] && (
+            <div className="drp-calendar__holiday-badge">
+              <FontAwesomeIcon icon={faStar} /> {feriados[fechaEvento]}
             </div>
+          )}
+        </div>
+      )}
+
+      {selectionMode === "range" && fechaEvento && fechaFin && (
+        <div className="drp-calendar__selection-summary">
+          <div className="drp-calendar__range-summary">
+            <span className="drp-calendar__range-date">
+              {formatearFecha(fechaEvento)}
+            </span>
+            <FontAwesomeIcon
+              icon={faArrowRight}
+              className="drp-calendar__range-arrow"
+            />
+            <span className="drp-calendar__range-date">
+              {formatearFecha(fechaFin)}
+            </span>
             {duracion && (
-              <span className="date-range-picker__duration-badge">
+              <span className="drp-calendar__duration-badge">
                 {duracion} {duracion === 1 ? "día" : "días"}
               </span>
             )}
           </div>
-
-          {/* Fecha fin */}
-          <div className="date-range-picker__date-group date-range-picker__date-group--end">
-            <label className="publicar-form__label" htmlFor="fecha_fin">
-              <FontAwesomeIcon icon={faCalendarDays} /> Fecha Fin *
-            </label>
-            <input
-              type="date"
-              id="fecha_fin"
-              name="fecha_fin"
-              className={`publicar-form__input ${
-                errors?.fecha_fin ? "error" : ""
-              }`}
-              value={fechaFin}
-              onChange={onChange}
-              min={fechaEvento || today}
-            />
-            {errors?.fecha_fin && (
-              <span className="publicar-form__error">{errors.fecha_fin}</span>
-            )}
-          </div>
-
-          {/* Opción de mismo horario */}
-          <div className="date-range-picker__schedule-option">
-            <label className="date-range-picker__checkbox-label date-range-picker__checkbox-label--small">
+          <div className="drp-calendar__schedule-opt">
+            <label className="drp-calendar__mini-toggle">
               <input
                 type="checkbox"
                 checked={mismoHorario}
                 onChange={handleMismoHorarioChange}
-                className="date-range-picker__checkbox"
+                className="drp-calendar__toggle-input"
               />
-              <span className="date-range-picker__checkbox-custom"></span>
-              <span className="date-range-picker__checkbox-text">
-                El horario es el mismo todos los días
+              <span className="drp-calendar__toggle-switch drp-calendar__toggle-switch--sm" />
+              <span className="drp-calendar__schedule-text">
+                <FontAwesomeIcon icon={faClock} /> Mismo horario todos los días
               </span>
             </label>
-          </div>
-
-          {/* Info adicional */}
-          <div className="date-range-picker__info">
-            <FontAwesomeIcon icon={faInfoCircle} />
-            <p>
-              Tu evento aparecerá en la superguía durante todas las fechas
-              seleccionadas.
-              {!mismoHorario && (
-                <span className="date-range-picker__info-note">
-                  {" "}
-                  Puedes indicar horarios diferentes en la descripción.
-                </span>
-              )}
-            </p>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* ===== Panel expandible para eventos recurrentes ===== */}
-      <div
-        className={`date-range-picker__expanded ${isRecurrentExpanded ? "open" : ""}`}>
-        <div className="date-range-picker__expanded-content date-range-picker__expanded-content--recurrent">
-          {/* Día detectado automáticamente */}
-          {diaDetectado && (
-            <div className="date-range-picker__detected-day">
-              <FontAwesomeIcon icon={faCalendarCheck} />
-              <span>
-                Tu evento cae en día{" "}
-                <strong>
-                  {diaDetectado.charAt(0).toUpperCase() + diaDetectado.slice(1)}
-                </strong>
-              </span>
-            </div>
-          )}
-
-          {!fechaEvento && (
-            <div className="date-range-picker__detected-day date-range-picker__detected-day--warning">
-              <FontAwesomeIcon icon={faInfoCircle} />
-              <span>
-                Primero selecciona la fecha de inicio para detectar el día
-              </span>
-            </div>
-          )}
-
-          {/* Selector de cantidad de repeticiones */}
-          <div className="date-range-picker__repeticiones">
-            <label className="date-range-picker__repeticiones-label">
-              ¿Cuántas veces se repite?
-            </label>
-            <div className="date-range-picker__repeticiones-control">
-              <button
-                type="button"
-                className="date-range-picker__repeticiones-btn"
-                onClick={() =>
-                  handleRepeticionesChange({
-                    target: { value: (cantidadRepeticiones || 2) - 1 },
-                  })
-                }
-                disabled={cantidadRepeticiones <= 2}>
-                −
-              </button>
-              <span className="date-range-picker__repeticiones-value">
-                {cantidadRepeticiones || 2}
-              </span>
-              <button
-                type="button"
-                className="date-range-picker__repeticiones-btn"
-                onClick={() =>
-                  handleRepeticionesChange({
-                    target: { value: (cantidadRepeticiones || 2) + 1 },
-                  })
-                }
-                disabled={cantidadRepeticiones >= 12}>
-                +
-              </button>
-              <span className="date-range-picker__repeticiones-suffix">
-                {diaDetectado
-                  ? `${diaDetectado.charAt(0).toUpperCase() + diaDetectado.slice(1)}s seguidos`
-                  : "semanas seguidas"}
-              </span>
-            </div>
+      {selectionMode === "range" && fechaEvento && !fechaFin && (
+        <div className="drp-calendar__selection-summary">
+          <div className="drp-calendar__range-hint">
+            <FontAwesomeIcon icon={faInfoCircle} />
+            <span>
+              Inicio: <strong>{formatearFecha(fechaEvento)}</strong> Selecciona
+              la fecha de fin
+            </span>
           </div>
+        </div>
+      )}
 
-          {/* Vista previa de fechas — editables */}
-          {fechasFinales.length > 0 && (
-            <div className="date-range-picker__fechas-preview">
-              <p className="date-range-picker__fechas-title">
-                <FontAwesomeIcon icon={faCalendarDays} /> Tu evento aparecerá
-                estas fechas:
-              </p>
-              <p className="date-range-picker__fechas-hint">
-                Haz clic en una fecha para cambiarla
-              </p>
-              <div className="date-range-picker__fechas-list">
-                {fechasFinales.map((fecha, index) => (
-                  <div
-                    key={`${fecha}-${index}`}
-                    className={`date-range-picker__fecha-chip ${
-                      index === 0 ? "date-range-picker__fecha-chip--first" : ""
-                    } ${editingIndex === index ? "date-range-picker__fecha-chip--editing" : ""}`}>
-                    {editingIndex === index ? (
-                      <input
-                        ref={(el) => (dateInputRefs.current[index] = el)}
-                        type="date"
-                        className="date-range-picker__fecha-edit-input"
-                        value={fecha}
-                        min={today}
-                        onChange={(e) =>
-                          handleFechaChange(index, e.target.value)
-                        }
-                        onBlur={() => setEditingIndex(null)}
-                      />
-                    ) : (
-                      <>
-                        <span
-                          className="date-range-picker__fecha-text"
-                          onClick={() => handleEditFecha(index)}
-                          title="Clic para cambiar esta fecha">
-                          {formatearFecha(fecha)}
-                          {index === 0 && (
-                            <span className="date-range-picker__fecha-badge">
-                              Inicio
-                            </span>
-                          )}
-                        </span>
+      {selectionMode === "specific" && specificDates.length > 0 && (
+        <div className="drp-calendar__selection-summary">
+          <div className="drp-calendar__specific-summary">
+            <p className="drp-calendar__dates-title">
+              <FontAwesomeIcon icon={faCalendarDays} /> {specificDates.length}{" "}
+              {specificDates.length === 1
+                ? "fecha seleccionada"
+                : "fechas seleccionadas"}
+            </p>
+            <div className="drp-calendar__dates-list">
+              {specificDates.map((fecha, index) => (
+                <div
+                  key={`${fecha}-${index}`}
+                  className={`drp-calendar__date-chip ${editingIndex === index ? "drp-calendar__date-chip--editing" : ""}`}>
+                  {editingIndex === index ? (
+                    <input
+                      ref={(el) => (dateInputRefs.current[index] = el)}
+                      type="date"
+                      className="drp-calendar__date-edit-input"
+                      value={fecha}
+                      min={todayISO}
+                      onChange={(e) => handleFechaChange(index, e.target.value)}
+                      onBlur={() => setEditingIndex(null)}
+                    />
+                  ) : (
+                    <>
+                      <span
+                        className="drp-calendar__date-text"
+                        onClick={() => handleEditFecha(index)}
+                        title="Clic para cambiar">
+                        {formatearFecha(fecha)}
+                      </span>
+                      <button
+                        type="button"
+                        className="drp-calendar__date-edit-btn"
+                        onClick={() => handleEditFecha(index)}
+                        title="Editar">
+                        <FontAwesomeIcon icon={faPen} />
+                      </button>
+                      {specificDates.length > 1 && (
                         <button
                           type="button"
-                          className="date-range-picker__fecha-edit-btn"
-                          onClick={() => handleEditFecha(index)}
-                          title="Editar fecha">
-                          <FontAwesomeIcon icon={faPen} />
+                          className="drp-calendar__date-remove-btn"
+                          onClick={() => handleRemoveFecha(index)}
+                          title="Quitar">
+                          <FontAwesomeIcon icon={faTrash} />
                         </button>
-                        {fechasFinales.length > 2 && (
-                          <button
-                            type="button"
-                            className="date-range-picker__fecha-remove-btn"
-                            onClick={() => handleRemoveFecha(index)}
-                            title="Eliminar fecha">
-                            <FontAwesomeIcon icon={faTrash} />
-                          </button>
-                        )}
-                      </>
-                    )}
-                  </div>
-                ))}
-
-                {/* Botón para agregar más fechas */}
-                {fechasFinales.length < 12 && (
-                  <button
-                    type="button"
-                    className="date-range-picker__fecha-add"
-                    onClick={handleAddFecha}
-                    title="Agregar otra fecha">
-                    <FontAwesomeIcon icon={faPlus} />
-                  </button>
-                )}
-              </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              ))}
             </div>
-          )}
-
-          {/* Info adicional */}
-          <div className="date-range-picker__info">
-            <FontAwesomeIcon icon={faInfoCircle} />
-            <p>
-              Tu evento se mostrará en la superguía en cada una de las fechas
-              indicadas. Puedes editar cualquier fecha para ajustarla a tu
-              necesidad. El horario será el mismo para todas las fechas.
-            </p>
+            <div className="drp-calendar__tip">
+              <FontAwesomeIcon icon={faInfoCircle} />
+              <p>
+                Tu evento se mostrará en la superguía en cada una de estas
+                fechas. También puedes agregar fechas haciendo clic en el
+                calendario.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {errors?.fecha_evento && (
+        <span className="publicar-form__error">{errors.fecha_evento}</span>
+      )}
+
+      {/* TIME INPUTS */}
+      {fechaEvento && (
+        <div className="drp-calendar__time-section">
+          <div className="drp-calendar__time-row">
+            <div className="drp-calendar__time-field">
+              <label className="drp-calendar__time-label" htmlFor="hora_inicio">
+                <FontAwesomeIcon icon={faClock} /> Hora Inicio
+                <span className="drp-calendar__time-hint">(Opcional)</span>
+              </label>
+              <input
+                type="time"
+                id="hora_inicio"
+                name="hora_inicio"
+                className="drp-calendar__time-input"
+                value={horaInicio}
+                onChange={onChange}
+              />
+            </div>
+            <div className="drp-calendar__time-field">
+              <label className="drp-calendar__time-label" htmlFor="hora_fin">
+                <FontAwesomeIcon icon={faClock} /> Hora Fin
+                <span className="drp-calendar__time-hint">(Opcional)</span>
+              </label>
+              <input
+                type="time"
+                id="hora_fin"
+                name="hora_fin"
+                className="drp-calendar__time-input"
+                value={horaFin}
+                onChange={onChange}
+              />
+            </div>
+          </div>
+          {selectionMode === "range" && mismoHorario && horaInicio && (
+            <p className="drp-calendar__time-note">
+              <FontAwesomeIcon icon={faInfoCircle} /> Este horario aplica para
+              todos los días del evento
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 };

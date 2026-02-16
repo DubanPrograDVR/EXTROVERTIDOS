@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner, faEye, faSave } from "@fortawesome/free-solid-svg-icons";
 
@@ -20,24 +20,6 @@ import "./styles/publicar-negocio.css";
 
 const PublicarNegocio = () => {
   const [isDraftPreviewOpen, setIsDraftPreviewOpen] = useState(false);
-
-  // Auto-refresh al volver de otra pestaña para evitar estados obsoletos
-  const hasLeftTab = useRef(false);
-
-  useEffect(() => {
-    const handleVisibility = () => {
-      if (document.visibilityState === "hidden") {
-        hasLeftTab.current = true;
-      } else if (document.visibilityState === "visible" && hasLeftTab.current) {
-        hasLeftTab.current = false;
-        window.location.reload();
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibility);
-    return () =>
-      document.removeEventListener("visibilitychange", handleVisibility);
-  }, []);
 
   // Hook personalizado que maneja toda la lógica del formulario
   const {

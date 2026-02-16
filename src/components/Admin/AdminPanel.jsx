@@ -364,7 +364,7 @@ export default function AdminPanel() {
       <aside className={`admin-sidebar ${sidebarOpen ? "open" : ""}`}>
         {/* Logo */}
         <div className="admin-sidebar__logo">
-          <img src="/img/logo-extrovertidos.png" alt="Extrovertidos" />
+          <img src="/img/Logo_extrovertidos.png" alt="Extrovertidos" />
           <span>Admin</span>
         </div>
 

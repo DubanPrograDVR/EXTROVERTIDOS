@@ -162,65 +162,15 @@ const compressImage = async (file) => {
   }
 };
 
-/**
- * Verifica que la sesión de Supabase esté activa
- * @returns {Promise<{session: object, error: Error|null}>}
- */
-const verifySession = async () => {
-  try {
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
-
-    if (sessionError) {
-      console.error("❌ Error obteniendo sesión:", sessionError);
-      return { session: null, error: sessionError };
-    }
-
-    if (!session) {
-      console.warn("⚠️ No hay sesión activa, intentando refrescar...");
-
-      const { data: refreshData, error: refreshError } =
-        await supabase.auth.refreshSession();
-
-      if (refreshError || !refreshData.session) {
-        console.error("❌ No se pudo refrescar la sesión:", refreshError);
-        return {
-          session: null,
-          error: new Error(
-            "Tu sesión ha expirado. Por favor inicia sesión nuevamente.",
-          ),
-        };
-      }
-
-      console.log("✅ Sesión refrescada exitosamente");
-      return { session: refreshData.session, error: null };
-    }
-
-    // Verificar si el token está por expirar (menos de 5 minutos)
-    const expiresAt = session.expires_at;
-    const now = Math.floor(Date.now() / 1000);
-    const timeUntilExpiry = expiresAt - now;
-
-    if (timeUntilExpiry < 300) {
-      // Menos de 5 minutos
-      console.log("⚠️ Token por expirar, refrescando...");
-      const { data: refreshData, error: refreshError } =
-        await supabase.auth.refreshSession();
-
-      if (!refreshError && refreshData.session) {
-        console.log("✅ Token refrescado preventivamente");
-        return { session: refreshData.session, error: null };
-      }
-    }
-
-    return { session, error: null };
-  } catch (error) {
-    console.error("❌ Error verificando sesión:", error);
-    return { session: null, error };
-  }
-};
+// ⚠️ verifySession() fue ELIMINADA intencionalmente.
+// Causa: Supabase GoTrueClient usa navigator.locks (Web Lock API) con
+// acquireTimeout=-1 (espera infinita) para coordinar sesiones entre tabs.
+// Cuando el tab vuelve a ser visible, GoTrueClient adquiere un lock exclusivo
+// para ejecutar _recoverAndRefresh(). Si nuestro código también llama
+// getSession()/refreshSession(), compite por el mismo lock y se queda
+// esperando PARA SIEMPRE → loading infinito al publicar tras tab switch.
+// Supabase ya adjunta el Authorization header automáticamente a cada petición
+// de storage/PostgREST, por lo que la verificación previa era redundante.
 
 /**
  * Sube una imagen de evento al storage de Supabase
@@ -235,19 +185,14 @@ export const uploadEventImage = async (file, userId, compress = true) => {
   );
 
   try {
-    // 🔐 PASO 1: Verificar sesión antes de cualquier operación
-    console.log("🔐 Verificando sesión...");
-    const { session, error: sessionError } = await verifySession();
+    // NOTA: NO llamar verifySession() / getSession() / refreshSession() aquí.
+    // Supabase adjunta automáticamente el header Authorization a las peticiones
+    // de storage. Llamar getSession() compite por un navigator.locks exclusivo
+    // que Supabase usa internamente para coordinar sesiones entre tabs.
+    // Si el lock está ocupado (ej: tras un tab switch), getSession() se queda
+    // esperando INFINITAMENTE (acquireTimeout=-1), causando loading infinito.
 
-    if (!session || sessionError) {
-      throw (
-        sessionError ||
-        new Error("No hay sesión activa. Por favor inicia sesión nuevamente.")
-      );
-    }
-    console.log("✅ Sesión válida");
-
-    // 🔍 PASO 2: Validar formato de imagen
+    // 🔍 PASO 1: Validar formato de imagen
     console.log("🔍 Validando formato...");
     validateImageFormat(file);
     console.log("✅ Formato válido");
@@ -403,21 +348,15 @@ export const uploadMultipleImages = async (
 
 /**
  * Elimina una imagen del storage
- * SEGURIDAD: Verifica sesión activa antes de eliminar.
+ * SEGURIDAD: Verifica que el path pertenece al usuario.
+ * NOTA: NO llamar verifySession()/getSession() aquí — ver comentario en uploadEventImage().
+ * El userId se pasa como parámetro y Supabase adjunta el token automáticamente.
  * @param {string} imageUrl - URL de la imagen a eliminar
+ * @param {string} userId - ID del usuario actual (para verificación de permisos)
  * @returns {Promise<boolean>} true si se eliminó correctamente
  */
-export const deleteEventImage = async (imageUrl) => {
+export const deleteEventImage = async (imageUrl, userId) => {
   try {
-    // Verificar sesión antes de eliminar
-    const { session, error: sessionError } = await verifySession();
-    if (!session || sessionError) {
-      throw (
-        sessionError ||
-        new Error("Debes iniciar sesión para eliminar imágenes.")
-      );
-    }
-
     // Extraer el path de la URL
     const urlParts = imageUrl.split("/storage/v1/object/public/Imagenes/");
     if (urlParts.length < 2) {
@@ -428,7 +367,6 @@ export const deleteEventImage = async (imageUrl) => {
     const filePath = urlParts[1];
 
     // Verificar que el path pertenece al usuario actual
-    const userId = session.user?.id;
     if (
       userId &&
       !filePath.startsWith(`events/${userId}/`) &&
@@ -464,11 +402,10 @@ export const uploadBusinessImage = async (file, userId) => {
   console.log(`📤 Subiendo imagen de negocio: ${file.name}`);
 
   try {
-    // Verificar sesión
-    const { session, error: sessionError } = await verifySession();
-    if (!session || sessionError) {
-      throw sessionError || new Error("No hay sesión activa.");
-    }
+    // NOTA: NO llamar verifySession() aquí — ver comentario en uploadEventImage().
+    // Supabase adjunta el token automáticamente a las peticiones de storage.
+    // Llamar getSession()/refreshSession() compite por el navigator.locks y
+    // puede causar loading infinito tras cambios de pestaña.
 
     // Validar formato
     validateImageFormat(file);
