@@ -14,6 +14,7 @@ const cache = {
   // TTL en milisegundos
   TTL: {
     categories: 5 * 60 * 1000, // 5 minutos
+    business: 5 * 60 * 1000, // 5 minutos
     adminStats: 30 * 1000, // 30 segundos
     chartData: 60 * 1000, // 1 minuto
   },

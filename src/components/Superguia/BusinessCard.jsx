@@ -24,7 +24,6 @@ import {
   faInstagram,
   faFacebook,
 } from "@fortawesome/free-brands-svg-icons";
-import { BUSINESS_CATEGORIES } from "./businessCategories";
 import { useAuth } from "../../context/AuthContext";
 import {
   toggleBusinessLike,
@@ -41,6 +40,7 @@ export default function BusinessCard({
   onClick,
   isFavorite: initialIsFavorite = false,
   onFavoriteChange,
+  categories = [],
 }) {
   const {
     id,
@@ -198,11 +198,9 @@ export default function BusinessCard({
   const resolvedInstagram = instagram || redes_sociales?.instagram || null;
   const resolvedFacebook = facebook || redes_sociales?.facebook || null;
 
-  // Obtener info de categoría desde archivo local (por nombre)
+  // Obtener info de categoría desde BD (por nombre)
   const localCategory = categoria
-    ? BUSINESS_CATEGORIES.find(
-        (c) => c.nombre.toLowerCase() === categoria.toLowerCase(),
-      )
+    ? categories.find((c) => c.nombre.toLowerCase() === categoria.toLowerCase())
     : null;
 
   // Manejar click en la card

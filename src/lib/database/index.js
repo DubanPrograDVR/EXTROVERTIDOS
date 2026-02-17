@@ -29,6 +29,10 @@ export {
   getSubcategories,
   getSubcategoriesByCategoryId,
   getCategoriesWithSubcategories,
+  getAllCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
 } from "./categories";
 
 // ============ EVENTOS ============
@@ -150,6 +154,16 @@ export {
   getBusinessFavoriteIds,
   toggleBusinessFavorite,
 } from "./businessInteractions";
+
+// ============ CATEGORÍAS DE NEGOCIO ============
+export {
+  getBusinessCategories,
+  getBusinessCategoryById,
+  getAllBusinessCategories,
+  createBusinessCategory,
+  updateBusinessCategory,
+  deleteBusinessCategory,
+} from "./businessCategories";
 
 // ============ CONFIGURACIONES DE LA APP ============
 export {

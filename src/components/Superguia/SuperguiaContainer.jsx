@@ -13,9 +13,11 @@ import Pagination from "./Pagination";
 import FilterPanel from "./FilterPanel";
 import BusinessGrid from "./BusinessGrid";
 import BusinessModal from "./BusinessModal";
-import { getPublishedBusinesses } from "../../lib/database";
+import {
+  getPublishedBusinesses,
+  getBusinessCategories,
+} from "../../lib/database";
 import { LOCATIONS } from "./data";
-import { BUSINESS_CATEGORIES } from "./businessCategories";
 import "./styles/SuperguiaContainer.css";
 
 const ITEMS_PER_PAGE = 8;
@@ -50,10 +52,12 @@ export default function SuperguiaContainer() {
       setLoading(true);
       setError(null);
       try {
-        const businessesData = await getPublishedBusinesses();
+        const [businessesData, categoriesData] = await Promise.all([
+          getPublishedBusinesses(),
+          getBusinessCategories(),
+        ]);
         setBusinesses(businessesData || []);
-        // Usar categorías de negocios locales en lugar de las de la BD
-        setCategories(BUSINESS_CATEGORIES);
+        setCategories(categoriesData || []);
       } catch (err) {
         console.error("Error cargando datos:", err);
         setError("No se pudieron cargar los negocios");
@@ -69,7 +73,7 @@ export default function SuperguiaContainer() {
   const flatSubcategories = useMemo(() => {
     const result = [];
     let idCounter = 1;
-    BUSINESS_CATEGORIES.forEach((cat) => {
+    categories.forEach((cat) => {
       if (cat.subcategorias) {
         cat.subcategorias.forEach((sub) => {
           result.push({
@@ -81,7 +85,7 @@ export default function SuperguiaContainer() {
       }
     });
     return result;
-  }, []);
+  }, [categories]);
 
   // Handlers para filtros
   const handleCityChange = useCallback((city) => {
@@ -374,6 +378,7 @@ export default function SuperguiaContainer() {
                   <BusinessGrid
                     businesses={paginatedBusinesses}
                     onBusinessClick={handleBusinessClick}
+                    categories={categories}
                   />
 
                   {/* Paginación */}

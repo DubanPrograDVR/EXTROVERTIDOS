@@ -12,6 +12,7 @@ import {
   faUserCircle,
   faPlus,
   faStore,
+  faLayerGroup,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   getCategories,
@@ -29,6 +30,7 @@ import AdminRejectModal from "./components/AdminRejectModal";
 import AdminBanModal from "./components/AdminBanModal";
 import AdminLoading from "./components/AdminLoading";
 import AdminProfile from "./components/AdminProfile";
+import AdminCategoryManager from "./components/AdminCategoryManager";
 import AdminEditModal from "./components/AdminEditModal";
 import PublicationModal from "../Superguia/PublicationModal";
 import BusinessModal from "../Superguia/BusinessModal";
@@ -334,6 +336,12 @@ export default function AdminPanel() {
       show: isAdmin,
     },
     {
+      id: "categories",
+      label: "Categorías",
+      icon: faLayerGroup,
+      show: isAdmin,
+    },
+    {
       id: "profile",
       label: "Mi Perfil",
       icon: faUserCircle,
@@ -500,6 +508,9 @@ export default function AdminPanel() {
             onDeleteUser={handleDeleteUser}
           />
         )}
+
+        {/* Gestión de categorías (solo admin) */}
+        {activeTab === "categories" && isAdmin && <AdminCategoryManager />}
 
         {/* Perfil del administrador/moderador */}
         {activeTab === "profile" && <AdminProfile />}

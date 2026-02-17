@@ -1,7 +1,11 @@
 import BusinessCard from "./BusinessCard";
 import "./styles/BusinessGrid.css";
 
-export default function BusinessGrid({ businesses, onBusinessClick }) {
+export default function BusinessGrid({
+  businesses,
+  onBusinessClick,
+  categories,
+}) {
   if (!businesses || businesses.length === 0) {
     return null;
   }
@@ -13,6 +17,7 @@ export default function BusinessGrid({ businesses, onBusinessClick }) {
           key={business.id}
           business={business}
           onClick={onBusinessClick}
+          categories={categories}
         />
       ))}
     </div>

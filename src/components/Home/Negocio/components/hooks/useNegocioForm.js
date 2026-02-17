@@ -6,9 +6,9 @@ import {
   uploadBusinessImage,
   saveDraft,
   deleteDraft,
+  getBusinessCategories,
 } from "../../../../../lib/database";
 import { INITIAL_FORM_STATE, IMAGE_CONFIG } from "../constants";
-import { BUSINESS_CATEGORIES } from "../../../../Superguia/businessCategories";
 
 const LOCAL_DRAFT_KEY = "negocio_local_draft_v1";
 
@@ -19,9 +19,9 @@ export const useNegocioForm = () => {
   const { user, isAuthenticated, isAdmin, showToast } = useAuth();
   const navigate = useNavigate();
 
-  // Estados - Categorías cargadas desde archivo local
-  const [categories] = useState(BUSINESS_CATEGORIES);
-  const [loadingCategories] = useState(false);
+  // Estados - Categorías cargadas desde BD
+  const [categories, setCategories] = useState([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,9 +34,25 @@ export const useNegocioForm = () => {
   const formDataRef = useRef(formData);
   formDataRef.current = formData;
 
+  // Cargar categorías desde BD
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        setLoadingCategories(true);
+        const data = await getBusinessCategories();
+        setCategories(data || []);
+      } catch (error) {
+        console.error("Error cargando categorías de negocio:", error);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+    loadCategories();
+  }, []);
+
   // Subcategorías derivadas de la categoría seleccionada
   const subcategorias = formData.category_id
-    ? BUSINESS_CATEGORIES.find((c) => c.id === parseInt(formData.category_id))
+    ? categories.find((c) => c.id === parseInt(formData.category_id))
         ?.subcategorias || []
     : [];
 
@@ -391,8 +407,8 @@ export const useNegocioForm = () => {
           ];
         });
 
-        // Resolver nombre de categoría desde el ID local
-        const selectedCat = BUSINESS_CATEGORIES.find(
+        // Resolver nombre de categoría desde el ID
+        const selectedCat = categories.find(
           (c) => c.id === parseInt(formData.category_id),
         );
 
