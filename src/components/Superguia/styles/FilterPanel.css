@@ -264,6 +264,104 @@
   color: #ff8f5e;
 }
 
+/* Category icon (emoji/text) in dropdown */
+.filter-panel__cat-icon {
+  font-size: 1rem;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* Subcategory count badge in category dropdown */
+.filter-panel__cat-subcount {
+  margin-left: auto;
+  background: rgba(255, 255, 255, 0.08);
+  color: #888;
+  font-size: 0.7rem;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.filter-panel__dropdown-item.selected .filter-panel__cat-subcount {
+  background: rgba(255, 107, 53, 0.15);
+  color: #ff8f5e;
+}
+
+/* === Subcategory chips row === */
+.filter-panel__subcategories {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 1100px;
+  margin: 1rem auto 0;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 107, 53, 0.04);
+  border: 1px solid rgba(255, 107, 53, 0.12);
+  border-radius: 12px;
+  animation: dropdownFadeIn 0.15s ease;
+}
+
+.filter-panel__subcategories-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #888;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  padding-top: 4px;
+}
+
+.filter-panel__subcategories-label svg {
+  color: #ff6b35;
+  font-size: 0.72rem;
+}
+
+.filter-panel__subcategories-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-panel__subcat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  color: #ccc;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.filter-panel__subcat-chip:hover {
+  background: rgba(255, 107, 53, 0.1);
+  border-color: rgba(255, 107, 53, 0.3);
+  color: #fff;
+}
+
+.filter-panel__subcat-chip--active {
+  background: rgba(255, 107, 53, 0.15);
+  border-color: #ff6b35;
+  color: #ff6b35;
+  font-weight: 500;
+}
+
+.filter-panel__subcat-chip--active:hover {
+  background: rgba(255, 107, 53, 0.2);
+}
+
+.filter-panel__subcat-chip-x {
+  font-size: 0.65rem;
+  opacity: 0.7;
+}
+
 /* === Calendario siempre visible === */
 .filter-panel__calendar {
   flex-shrink: 0;
@@ -379,6 +477,16 @@
     flex-direction: column;
     gap: 0.75rem;
     text-align: center;
+  }
+
+  .filter-panel__subcategories {
+    flex-direction: column;
+    gap: 8px;
+    padding: 0.625rem 0.75rem;
+  }
+
+  .filter-panel__subcategories-label {
+    padding-top: 0;
   }
 }
 

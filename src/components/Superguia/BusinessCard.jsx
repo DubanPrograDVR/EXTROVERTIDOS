@@ -31,6 +31,7 @@ import {
   getBusinessLikesCount,
   toggleBusinessFavorite,
 } from "../../lib/database";
+import { resolveIcon } from "./iconMap";
 
 // Imagen placeholder por defecto
 const PLACEHOLDER_IMAGE = "/img/Home1.png";
@@ -325,8 +326,8 @@ export default function BusinessCard({
               style={{
                 backgroundColor: localCategory.color || "#ff6600",
               }}>
-              {localCategory.icono && (
-                <FontAwesomeIcon icon={localCategory.icono} />
+              {localCategory.icono && resolveIcon(localCategory.icono) && (
+                <FontAwesomeIcon icon={resolveIcon(localCategory.icono)} />
               )}
               {localCategory.nombre}
             </span>

@@ -11,6 +11,7 @@ import {
   faCheck,
 } from "@fortawesome/free-solid-svg-icons";
 import DateCalendar from "./DateCalendar";
+import { resolveIcon } from "./iconMap";
 import "./styles/FilterPanel.css";
 
 /**
@@ -176,7 +177,6 @@ export default function FilterPanel({
                   )}
                 </div>
                 <div className="filter-panel__dropdown-list">
-                  <p className="filter-panel__dropdown-label">Categorías</p>
                   {categories.map((cat) => (
                     <button
                       key={cat.id}
@@ -188,44 +188,25 @@ export default function FilterPanel({
                           selectedCategory === cat.id ? null : cat.id,
                         );
                         onSubcategoryChange && onSubcategoryChange(null);
+                        setActiveDropdown(null);
                       }}>
-                      {(cat.icon || cat.icono) && (
-                        <FontAwesomeIcon icon={cat.icon || cat.icono} />
+                      {cat.icono && resolveIcon(cat.icono) && (
+                        <FontAwesomeIcon
+                          icon={resolveIcon(cat.icono)}
+                          className="filter-panel__cat-icon"
+                        />
                       )}
                       <span>{cat.nombre}</span>
+                      {cat.subcategorias?.length > 0 && (
+                        <span className="filter-panel__cat-subcount">
+                          {cat.subcategorias.length}
+                        </span>
+                      )}
                       {selectedCategory === cat.id && (
                         <FontAwesomeIcon icon={faCheck} className="check" />
                       )}
                     </button>
                   ))}
-
-                  {showSubcategories && filteredSubcategories.length > 0 && (
-                    <>
-                      <p className="filter-panel__dropdown-label">
-                        Subcategorías
-                      </p>
-                      {filteredSubcategories.map((subcat) => (
-                        <button
-                          key={subcat.id}
-                          className={`filter-panel__dropdown-item filter-panel__dropdown-item--subcategory ${
-                            selectedSubcategory === subcat.id ? "selected" : ""
-                          }`}
-                          onClick={() => {
-                            onSubcategoryChange(
-                              selectedSubcategory === subcat.id
-                                ? null
-                                : subcat.id,
-                            );
-                            setActiveDropdown(null);
-                          }}>
-                          <span>{subcat.nombre}</span>
-                          {selectedSubcategory === subcat.id && (
-                            <FontAwesomeIcon icon={faCheck} className="check" />
-                          )}
-                        </button>
-                      ))}
-                    </>
-                  )}
                 </div>
               </div>
             )}
@@ -395,6 +376,42 @@ export default function FilterPanel({
           )}
         </div>
       </div>
+
+      {/* Subcategorías como chips visibles */}
+      {showSubcategories &&
+        selectedCategory &&
+        filteredSubcategories.length > 0 && (
+          <div className="filter-panel__subcategories">
+            <span className="filter-panel__subcategories-label">
+              <FontAwesomeIcon icon={faTag} />
+              Subcategorías:
+            </span>
+            <div className="filter-panel__subcategories-list">
+              {filteredSubcategories.map((subcat) => (
+                <button
+                  key={subcat.id}
+                  className={`filter-panel__subcat-chip ${
+                    selectedSubcategory === subcat.id
+                      ? "filter-panel__subcat-chip--active"
+                      : ""
+                  }`}
+                  onClick={() =>
+                    onSubcategoryChange(
+                      selectedSubcategory === subcat.id ? null : subcat.id,
+                    )
+                  }>
+                  <span>{subcat.nombre}</span>
+                  {selectedSubcategory === subcat.id && (
+                    <FontAwesomeIcon
+                      icon={faTimes}
+                      className="filter-panel__subcat-chip-x"
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
       {/* Barra inferior con resultados y limpiar */}
       <div className="filter-panel__footer">
