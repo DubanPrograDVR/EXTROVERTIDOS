@@ -22,6 +22,7 @@ const Perfil = lazy(() => import("./components/Perfil/Perfil"));
 const AdminPanel = lazy(() => import("./components/Admin/AdminPanel"));
 const FAQ = lazy(() => import("./components/FAQ/FAQ"));
 const ActivarPlan = lazy(() => import("./components/Planes/ActivarPlan"));
+const PaymentResult = lazy(() => import("./components/Planes/PaymentResult"));
 
 // Componente de loading para Suspense
 const PageLoader = () => (
@@ -93,6 +94,9 @@ function App() {
                         </UserOnlyRoute>
                       }
                     />
+                    {/* Resultado de pago - accesible sin auth obligatoria
+                        porque Transbank redirige aquí después del pago */}
+                    <Route path="/payment/result" element={<PaymentResult />} />
 
                     {/* Rutas que requieren autenticación - solo usuarios regulares */}
                     <Route

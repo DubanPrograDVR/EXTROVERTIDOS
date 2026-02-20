@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
 import { isPlanesEnabled } from "../../lib/database";
+import { initiatePayment, PaymentError } from "../../lib/payment";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCheck,
@@ -109,9 +111,11 @@ const formatPrecio = (precio) => {
 export default function ActivarPlan() {
   const { user, isAuthenticated, loading, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [addSuperguia, setAddSuperguia] = useState(false);
   const [checkingAccess, setCheckingAccess] = useState(true);
+  const [processingPayment, setProcessingPayment] = useState(false);
 
   // Verificar si los planes están habilitados
   useEffect(() => {
@@ -146,10 +150,44 @@ export default function ActivarPlan() {
     return total;
   };
 
-  const handleSiguiente = () => {
+  const handleSiguiente = async () => {
     if (!selectedPlan && !addSuperguia) return;
-    // Futuro: navegar al paso 2 (checkout/pago)
-    console.log("Plan seleccionado:", selectedPlan, "Superguía:", addSuperguia);
+    if (processingPayment) return;
+
+    setProcessingPayment(true);
+
+    try {
+      // Iniciar el pago con Transbank a través de la Edge Function
+      // La función valida los montos server-side y redirige a Transbank
+      await initiatePayment({
+        panoramaPlan: selectedPlan,
+        addSuperguia,
+        resourceId: null, // TODO: pasar business UUID cuando se implemente selección de negocio
+      });
+      // Si llegamos aquí, el usuario será redirigido a Transbank
+      // (la función initiatePayment hace un form.submit() que redirige)
+    } catch (error) {
+      console.error("Error al iniciar pago:", error);
+      setProcessingPayment(false);
+
+      if (error instanceof PaymentError) {
+        switch (error.code) {
+          case "AUTH_REQUIRED":
+            showToast("Debes iniciar sesión para realizar un pago", "error");
+            break;
+          case "CREATE_FAILED":
+            showToast(
+              error.message || "Error al iniciar el pago. Intenta nuevamente.",
+              "error",
+            );
+            break;
+          default:
+            showToast(error.message || "Error al procesar el pago", "error");
+        }
+      } else {
+        showToast("Error inesperado. Por favor intenta nuevamente.", "error");
+      }
+    }
   };
 
   if (loading || checkingAccess) {
@@ -353,10 +391,16 @@ export default function ActivarPlan() {
         <button
           type="button"
           className="activar-plan__next-btn"
-          disabled={!selectedPlan && !addSuperguia}
+          disabled={(!selectedPlan && !addSuperguia) || processingPayment}
           onClick={handleSiguiente}>
-          Siguiente
-          <FontAwesomeIcon icon={faChevronRight} />
+          {processingPayment ? (
+            <>Procesando pago...</>
+          ) : (
+            <>
+              Pagar con Webpay
+              <FontAwesomeIcon icon={faChevronRight} />
+            </>
+          )}
         </button>
       </footer>
     </div>
