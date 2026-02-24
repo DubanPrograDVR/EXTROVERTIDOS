@@ -51,3 +51,24 @@ export async function getUserSubscriptions(userId) {
 
   return data || [];
 }
+
+/**
+ * Cancelar una suscripción activa del usuario
+ * Usa una función RPC con SECURITY DEFINER para bypass de RLS
+ * @param {string} subscriptionId - ID de la suscripción a cancelar
+ * @returns {Promise<boolean>} true si se canceló correctamente
+ */
+export async function cancelSubscription(subscriptionId) {
+  if (!subscriptionId) throw new Error("ID de suscripción requerido");
+
+  const { data, error } = await supabase.rpc("cancel_subscription", {
+    p_subscription_id: subscriptionId,
+  });
+
+  if (error) {
+    console.error("Error al cancelar suscripción:", error);
+    throw error;
+  }
+
+  return data === true;
+}

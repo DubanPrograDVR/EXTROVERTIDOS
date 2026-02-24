@@ -166,7 +166,11 @@ export {
 } from "./businessCategories";
 
 // ============ SUSCRIPCIONES ============
-export { getActiveSubscription, getUserSubscriptions } from "./subscriptions";
+export {
+  getActiveSubscription,
+  getUserSubscriptions,
+  cancelSubscription,
+} from "./subscriptions";
 
 // ============ CONFIGURACIONES DE LA APP ============
 export {
