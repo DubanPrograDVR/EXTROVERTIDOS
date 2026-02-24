@@ -1,8 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
-import { isPlanesEnabled } from "../../lib/database";
+import {
+  getPlanPrices,
+  isPlanesEnabled,
+  getUserSubscriptions,
+} from "../../lib/database";
 import { initiatePayment, PaymentError } from "../../lib/payment";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -16,6 +20,7 @@ import {
   faInfinity,
   faPlus,
   faChevronRight,
+  faBan,
 } from "@fortawesome/free-solid-svg-icons";
 import "./styles/activar-plan.css";
 
@@ -28,12 +33,11 @@ const iconSuperguia = "/img/SG_Extro.png";
 /**
  * Planes de Panoramas disponibles
  */
-const PLANES_PANORAMAS = [
+const BASE_PLANES_PANORAMAS = [
   {
     id: "unica",
     nombre: "Publicación Única",
     descripcion: "Publica un panorama individual",
-    precio: 25000,
     icon: faStar,
     features: [
       "1 publicación de panorama",
@@ -47,7 +51,6 @@ const PLANES_PANORAMAS = [
     id: "pack4",
     nombre: "Pack 4 Publicaciones",
     descripcion: "¡Publica Tus 4 Panoramas!",
-    precio: 39990,
     precioOriginal: 100000,
     icon: faRocket,
     duracion: "Plan 30 días",
@@ -65,7 +68,6 @@ const PLANES_PANORAMAS = [
     id: "ilimitado",
     nombre: "Publica Sin Límite",
     descripcion: "¡Publica Todos Tus Panoramas!",
-    precio: 70000,
     icon: faCrown,
     duracion: "Plan 30 días",
     features: [
@@ -83,11 +85,10 @@ const PLANES_PANORAMAS = [
 /**
  * Plan de Superguía (negocios)
  */
-const PLAN_SUPERGUIA = {
+const BASE_PLAN_SUPERGUIA = {
   id: "superguia",
   nombre: "Superguía Extrovertidos",
   descripcion: "¡Publica Tu Negocio!",
-  precio: 15000,
   duracion: "365 días",
   features: [
     "Tu negocio visible todo el año",
@@ -95,6 +96,28 @@ const PLAN_SUPERGUIA = {
     "Horarios y contacto",
     "Ubicación en mapa",
   ],
+};
+
+const DEFAULT_PLAN_PRICES = {
+  unica: 25000,
+  pack4: 39990,
+  ilimitado: 70000,
+  superguia: 15000,
+};
+
+const PLAN_TYPE_TO_ID = {
+  panorama_unica: "unica",
+  panorama_pack4: "pack4",
+  panorama_ilimitado: "ilimitado",
+  superguia: "superguia",
+};
+
+// Mapeo inverso: ID de frontend → plan_type en BD
+const ID_TO_PLAN_TYPE = {
+  unica: "panorama_unica",
+  pack4: "panorama_pack4",
+  ilimitado: "panorama_ilimitado",
+  superguia: "superguia",
 };
 
 /**
@@ -116,6 +139,8 @@ export default function ActivarPlan() {
   const [addSuperguia, setAddSuperguia] = useState(false);
   const [checkingAccess, setCheckingAccess] = useState(true);
   const [processingPayment, setProcessingPayment] = useState(false);
+  const [planPrices, setPlanPrices] = useState(DEFAULT_PLAN_PRICES);
+  const [activePlans, setActivePlans] = useState(new Set());
 
   // Verificar si los planes están habilitados
   useEffect(() => {
@@ -139,14 +164,80 @@ export default function ActivarPlan() {
     }
   }, [loading, isAdmin, navigate]);
 
+  // Cargar suscripciones activas del usuario
+  useEffect(() => {
+    const loadActiveSubscriptions = async () => {
+      if (!isAuthenticated || !user?.id) return;
+
+      try {
+        const subs = await getUserSubscriptions(user.id);
+        const activeSet = new Set();
+        (subs || []).forEach((s) => {
+          if (s.estado === "activa") {
+            const frontendId = PLAN_TYPE_TO_ID[s.plan];
+            if (frontendId) activeSet.add(frontendId);
+          }
+        });
+        setActivePlans(activeSet);
+      } catch (error) {
+        console.error("Error cargando suscripciones activas:", error);
+      }
+    };
+
+    loadActiveSubscriptions();
+  }, [isAuthenticated, user?.id]);
+
+  // Cargar precios configurados en admin
+  useEffect(() => {
+    const loadPrices = async () => {
+      try {
+        const pricesByType = await getPlanPrices();
+        const mapped = { ...DEFAULT_PLAN_PRICES };
+
+        Object.entries(pricesByType || {}).forEach(([key, value]) => {
+          const planId = PLAN_TYPE_TO_ID[key];
+          if (planId) {
+            const parsed = Number(value);
+            if (Number.isFinite(parsed) && parsed > 0) {
+              mapped[planId] = parsed;
+            }
+          }
+        });
+
+        setPlanPrices(mapped);
+      } catch (error) {
+        console.error("Error cargando precios de planes:", error);
+      }
+    };
+
+    loadPrices();
+  }, []);
+
+  const planesPanoramas = useMemo(
+    () =>
+      BASE_PLANES_PANORAMAS.map((plan) => ({
+        ...plan,
+        precio: planPrices[plan.id] ?? DEFAULT_PLAN_PRICES[plan.id],
+      })),
+    [planPrices],
+  );
+
+  const planSuperguia = useMemo(
+    () => ({
+      ...BASE_PLAN_SUPERGUIA,
+      precio: planPrices.superguia ?? DEFAULT_PLAN_PRICES.superguia,
+    }),
+    [planPrices],
+  );
+
   // Calcular total
   const getTotal = () => {
     let total = 0;
     if (selectedPlan) {
-      const plan = PLANES_PANORAMAS.find((p) => p.id === selectedPlan);
+      const plan = planesPanoramas.find((p) => p.id === selectedPlan);
       if (plan) total += plan.precio;
     }
-    if (addSuperguia) total += PLAN_SUPERGUIA.precio;
+    if (addSuperguia) total += planSuperguia.precio;
     return total;
   };
 
@@ -236,13 +327,15 @@ export default function ActivarPlan() {
         </div>
 
         <div className="activar-plan__cards">
-          {PLANES_PANORAMAS.map((plan) => (
+          {planesPanoramas.map((plan) => (
             <div
               key={plan.id}
               className={`activar-plan__card ${
                 plan.destacado ? "activar-plan__card--featured" : ""
-              } ${selectedPlan === plan.id ? "activar-plan__card--selected" : ""}`}
-              onClick={() => setSelectedPlan(plan.id)}>
+              } ${selectedPlan === plan.id ? "activar-plan__card--selected" : ""} ${activePlans.has(plan.id) ? "activar-plan__card--disabled" : ""}`}
+              onClick={() =>
+                !activePlans.has(plan.id) && setSelectedPlan(plan.id)
+              }>
               {/* Etiqueta destacada */}
               {plan.etiqueta && (
                 <span className="activar-plan__card-badge">
@@ -292,22 +385,29 @@ export default function ActivarPlan() {
                 ))}
               </ul>
 
-              {/* Botón seleccionar */}
-              <button
-                type="button"
-                className={`activar-plan__card-btn ${
-                  selectedPlan === plan.id
-                    ? "activar-plan__card-btn--active"
-                    : ""
-                }`}>
-                {selectedPlan === plan.id ? (
-                  <>
-                    <FontAwesomeIcon icon={faCheck} /> Seleccionado
-                  </>
-                ) : (
-                  "Seleccionar"
-                )}
-              </button>
+              {/* Botón seleccionar o mensaje de plan activo */}
+              {activePlans.has(plan.id) ? (
+                <div className="activar-plan__card-active-msg">
+                  <FontAwesomeIcon icon={faBan} />
+                  <span>Ya tienes esta suscripción activa</span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className={`activar-plan__card-btn ${
+                    selectedPlan === plan.id
+                      ? "activar-plan__card-btn--active"
+                      : ""
+                  }`}>
+                  {selectedPlan === plan.id ? (
+                    <>
+                      <FontAwesomeIcon icon={faCheck} /> Seleccionado
+                    </>
+                  ) : (
+                    "Seleccionar"
+                  )}
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -329,25 +429,27 @@ export default function ActivarPlan() {
         <div
           className={`activar-plan__superguia ${
             addSuperguia ? "activar-plan__superguia--selected" : ""
-          }`}
-          onClick={() => setAddSuperguia(!addSuperguia)}>
+          } ${activePlans.has("superguia") ? "activar-plan__superguia--disabled" : ""}`}
+          onClick={() =>
+            !activePlans.has("superguia") && setAddSuperguia(!addSuperguia)
+          }>
           <div className="activar-plan__superguia-content">
             <div className="activar-plan__superguia-icon">
               <FontAwesomeIcon icon={faStore} />
             </div>
             <div className="activar-plan__superguia-info">
-              <h3>{PLAN_SUPERGUIA.descripcion}</h3>
+              <h3>{planSuperguia.descripcion}</h3>
               <div className="activar-plan__superguia-price">
                 <span className="activar-plan__superguia-amount">
-                  {formatPrecio(PLAN_SUPERGUIA.precio)}
+                  {formatPrecio(planSuperguia.precio)}
                 </span>
                 <span className="activar-plan__superguia-duration">
                   <FontAwesomeIcon icon={faCalendarDays} /> ¡Por{" "}
-                  {PLAN_SUPERGUIA.duracion}!
+                  {planSuperguia.duracion}!
                 </span>
               </div>
               <ul className="activar-plan__superguia-features">
-                {PLAN_SUPERGUIA.features.map((feat, i) => (
+                {planSuperguia.features.map((feat, i) => (
                   <li key={i}>
                     <FontAwesomeIcon icon={faCheck} /> {feat}
                   </li>
@@ -358,21 +460,28 @@ export default function ActivarPlan() {
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            className={`activar-plan__superguia-btn ${
-              addSuperguia ? "activar-plan__superguia-btn--active" : ""
-            }`}>
-            {addSuperguia ? (
-              <>
-                <FontAwesomeIcon icon={faCheck} /> Agregado
-              </>
-            ) : (
-              <>
-                <FontAwesomeIcon icon={faPlus} /> Agregar
-              </>
-            )}
-          </button>
+          {activePlans.has("superguia") ? (
+            <div className="activar-plan__card-active-msg activar-plan__superguia-active-msg">
+              <FontAwesomeIcon icon={faBan} />
+              <span>Ya tienes esta suscripción activa</span>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className={`activar-plan__superguia-btn ${
+                addSuperguia ? "activar-plan__superguia-btn--active" : ""
+              }`}>
+              {addSuperguia ? (
+                <>
+                  <FontAwesomeIcon icon={faCheck} /> Agregado
+                </>
+              ) : (
+                <>
+                  <FontAwesomeIcon icon={faPlus} /> Agregar
+                </>
+              )}
+            </button>
+          )}
         </div>
       </section>
 

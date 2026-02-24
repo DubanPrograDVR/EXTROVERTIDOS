@@ -165,10 +165,15 @@ export {
   deleteBusinessCategory,
 } from "./businessCategories";
 
+// ============ SUSCRIPCIONES ============
+export { getActiveSubscription, getUserSubscriptions } from "./subscriptions";
+
 // ============ CONFIGURACIONES DE LA APP ============
 export {
   getAppSetting,
   updateAppSetting,
+  getPlanPrices,
+  updatePlanPrices,
   isPlanesEnabled,
   togglePlanesEnabled,
 } from "./settings";

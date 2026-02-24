@@ -1,0 +1,114 @@
+.admin-pricing {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.admin-pricing__header h2 {
+  margin: 0 0 0.3rem;
+  color: #fff;
+}
+
+.admin-pricing__header p {
+  margin: 0;
+  color: #b3b3b3;
+}
+
+.admin-pricing__card {
+  background: #111;
+  border: 1px solid #222;
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-pricing__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #1e1e1e;
+}
+
+.admin-pricing__row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.admin-pricing__label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  color: #fff;
+}
+
+.admin-pricing__label small {
+  color: #ff6600;
+  font-weight: 600;
+}
+
+.admin-pricing__input {
+  width: 160px;
+  background: #0c0c0c;
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  color: #fff;
+  font-size: 1rem;
+}
+
+.admin-pricing__input:focus {
+  outline: none;
+  border-color: #ff6600;
+  box-shadow: 0 0 0 2px rgba(255, 102, 0, 0.2);
+}
+
+.admin-pricing__save {
+  align-self: flex-start;
+  background: #ff6600;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 0.6rem 1.4rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-pricing__save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.admin-pricing__error {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ff9c9c;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+}
+
+.admin-pricing__success {
+  background: rgba(34, 197, 94, 0.15);
+  color: #a8f0c5;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+}
+
+.admin-pricing__loading {
+  color: #b3b3b3;
+}
+
+@media (max-width: 640px) {
+  .admin-pricing__row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .admin-pricing__input {
+    width: 100%;
+  }
+}

@@ -19,6 +19,7 @@ import {
   PerfilNegocios,
   PerfilConfiguracion,
   PerfilBorradores,
+  PerfilPlan,
 } from "./components";
 import "./styles/perfil.css";
 
@@ -267,6 +268,8 @@ export default function Perfil() {
           )}
 
           {activeSection === "favoritos" && <PerfilFavoritos />}
+
+          {activeSection === "plan" && <PerfilPlan />}
 
           {activeSection === "negocios" && <PerfilNegocios />}
 

@@ -13,6 +13,7 @@ import {
   faPlus,
   faStore,
   faLayerGroup,
+  faMoneyBillWave,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   getCategories,
@@ -32,6 +33,7 @@ import AdminLoading from "./components/AdminLoading";
 import AdminProfile from "./components/AdminProfile";
 import AdminCategoryManager from "./components/AdminCategoryManager";
 import AdminEditModal from "./components/AdminEditModal";
+import AdminPriceManager from "./components/AdminPriceManager";
 import PublicationModal from "../Superguia/PublicationModal";
 import BusinessModal from "../Superguia/BusinessModal";
 
@@ -342,6 +344,12 @@ export default function AdminPanel() {
       show: isAdmin,
     },
     {
+      id: "pricing",
+      label: "Gestionar Precios",
+      icon: faMoneyBillWave,
+      show: isAdmin,
+    },
+    {
       id: "profile",
       label: "Mi Perfil",
       icon: faUserCircle,
@@ -511,6 +519,9 @@ export default function AdminPanel() {
 
         {/* Gestión de categorías (solo admin) */}
         {activeTab === "categories" && isAdmin && <AdminCategoryManager />}
+
+        {/* Gestión de precios (solo admin) */}
+        {activeTab === "pricing" && isAdmin && <AdminPriceManager />}
 
         {/* Perfil del administrador/moderador */}
         {activeTab === "profile" && <AdminProfile />}

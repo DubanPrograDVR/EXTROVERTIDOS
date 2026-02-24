@@ -96,6 +96,33 @@ function getTransbankConfig() {
   return { commerceCode, apiKeySecret, baseUrl };
 }
 
+async function getPlanPrices(supabaseAdmin) {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("app_settings")
+      .select("value")
+      .eq("key", "plan_prices")
+      .maybeSingle();
+
+    if (error) {
+      console.warn("[create-payment] Error leyendo plan_prices:", error);
+      return { ...PLAN_PRICES };
+    }
+
+    if (!data?.value || typeof data.value !== "object") {
+      return { ...PLAN_PRICES };
+    }
+
+    return {
+      ...PLAN_PRICES,
+      ...data.value,
+    };
+  } catch (error) {
+    console.warn("[create-payment] Error inesperado en plan_prices:", error);
+    return { ...PLAN_PRICES };
+  }
+}
+
 /**
  * Respuesta JSON con CORS headers
  */
@@ -148,23 +175,22 @@ Deno.serve(async (req) => {
     // Cliente con service_role (para operaciones de DB sin RLS)
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
+    const planPrices = await getPlanPrices(supabaseAdmin);
+
     // ── 2. Parsear y validar el body ──
     const body = await req.json();
     const { panorama_plan, add_superguia, resource_id } = body;
 
     // Al menos un plan debe estar seleccionado
     if (!panorama_plan && !add_superguia) {
-      return jsonResponse(
-        { error: "Debes seleccionar al menos un plan" },
-        400
-      );
+      return jsonResponse({ error: "Debes seleccionar al menos un plan" }, 400);
     }
 
     // Validar plan de panorama (si existe)
     let panoramaPlanType = null;
     if (panorama_plan) {
       panoramaPlanType = PLAN_ID_MAP[panorama_plan] || panorama_plan;
-      if (!PLAN_PRICES[panoramaPlanType]) {
+      if (!planPrices[panoramaPlanType]) {
         return jsonResponse({ error: "Plan de panorama inválido" }, 400);
       }
     }
@@ -184,35 +210,39 @@ Deno.serve(async (req) => {
       if (business.user_id !== user.id) {
         return jsonResponse(
           { error: "No puedes pagar por un negocio que no te pertenece" },
-          403
+          403,
         );
       }
     }
 
     // ── 3. Verificar que no exista suscripción activa duplicada ──
     if (panoramaPlanType) {
-      const { data: existingSub } = await supabaseAdmin
-        .rpc("check_active_subscription", {
+      const { data: existingSub } = await supabaseAdmin.rpc(
+        "check_active_subscription",
+        {
           p_user_id: user.id,
           p_plan: panoramaPlanType,
-        });
+        },
+      );
 
       if (existingSub && existingSub.length > 0) {
         return jsonResponse(
           {
             error: `Ya tienes un plan ${panorama_plan} activo. Espera a que expire antes de comprar otro.`,
           },
-          409
+          409,
         );
       }
     }
 
     if (add_superguia) {
-      const { data: existingSuperguia } = await supabaseAdmin
-        .rpc("check_active_subscription", {
+      const { data: existingSuperguia } = await supabaseAdmin.rpc(
+        "check_active_subscription",
+        {
           p_user_id: user.id,
           p_plan: "superguia",
-        });
+        },
+      );
 
       if (existingSuperguia && existingSuperguia.length > 0) {
         return jsonResponse(
@@ -220,7 +250,7 @@ Deno.serve(async (req) => {
             error:
               "Ya tienes un plan Superguía activo. Espera a que expire antes de comprar otro.",
           },
-          409
+          409,
         );
       }
     }
@@ -232,18 +262,18 @@ Deno.serve(async (req) => {
     if (panoramaPlanType) {
       items.push({
         plan: panoramaPlanType,
-        amount: PLAN_PRICES[panoramaPlanType],
+        amount: planPrices[panoramaPlanType],
       });
-      totalAmount += PLAN_PRICES[panoramaPlanType];
+      totalAmount += planPrices[panoramaPlanType];
     }
 
     if (add_superguia) {
       items.push({
         plan: "superguia",
-        amount: PLAN_PRICES.superguia,
+        amount: planPrices.superguia,
         ...(resource_id ? { resource_id } : {}),
       });
-      totalAmount += PLAN_PRICES.superguia;
+      totalAmount += planPrices.superguia;
     }
 
     // ── 5. Crear suscripciones en estado 'pendiente' ──
@@ -272,10 +302,7 @@ Deno.serve(async (req) => {
             .delete()
             .in("id", subscriptionIds);
         }
-        return jsonResponse(
-          { error: "Error al crear la suscripción" },
-          500
-        );
+        return jsonResponse({ error: "Error al crear la suscripción" }, 500);
       }
 
       item.subscription_id = sub.id;
@@ -307,10 +334,7 @@ Deno.serve(async (req) => {
         .from("subscriptions")
         .delete()
         .in("id", subscriptionIds);
-      return jsonResponse(
-        { error: "Error al registrar la transacción" },
-        500
-      );
+      return jsonResponse({ error: "Error al registrar la transacción" }, 500);
     }
 
     // ── 7. Llamar a Transbank para crear la transacción ──
@@ -320,7 +344,7 @@ Deno.serve(async (req) => {
     const tbkCreateUrl = `${tbkConfig.baseUrl}${TRANSBANK_API.transactionPath}`;
 
     console.log(
-      `[create-payment] Creando transacción Transbank: buy_order=${buyOrder}, amount=${totalAmount}, user=${user.id}`
+      `[create-payment] Creando transacción Transbank: buy_order=${buyOrder}, amount=${totalAmount}, user=${user.id}`,
     );
 
     const tbkResponse = await fetch(tbkCreateUrl, {
@@ -342,7 +366,7 @@ Deno.serve(async (req) => {
       const errorText = await tbkResponse.text();
       console.error(
         `[create-payment] Error Transbank (${tbkResponse.status}):`,
-        errorText
+        errorText,
       );
 
       // Marcar transacción como fallida
@@ -365,7 +389,7 @@ Deno.serve(async (req) => {
 
       return jsonResponse(
         { error: "Error al conectar con el procesador de pago" },
-        502
+        502,
       );
     }
 
@@ -381,7 +405,7 @@ Deno.serve(async (req) => {
       .eq("id", transaction.id);
 
     console.log(
-      `[create-payment] Transacción creada exitosamente: buy_order=${buyOrder}, token=***${tbkData.token?.substring(tbkData.token.length - 8)}`
+      `[create-payment] Transacción creada exitosamente: buy_order=${buyOrder}, token=***${tbkData.token?.substring(tbkData.token.length - 8)}`,
     );
 
     // ── 9. Retornar datos al frontend para redirigir ──

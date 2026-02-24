@@ -173,6 +173,51 @@
     0 0 40px rgba(255, 102, 0, 0.1);
 }
 
+/* Card deshabilitada (plan ya activo) */
+.activar-plan__card--disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: not-allowed;
+  filter: grayscale(0.3);
+}
+
+.activar-plan__card--disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.activar-plan__card-active-msg {
+  width: 100%;
+  margin-top: auto;
+  padding: 10px 16px;
+  background: rgba(255, 68, 68, 0.1);
+  border: 1px solid rgba(255, 68, 68, 0.25);
+  border-radius: 12px;
+  color: #ff6666;
+  font-size: 0.82rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+}
+
+/* Superguía deshabilitada */
+.activar-plan__superguia--disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: not-allowed;
+  filter: grayscale(0.3);
+}
+
+.activar-plan__superguia-active-msg {
+  flex-shrink: 0;
+  width: auto;
+  margin-top: 0;
+  white-space: nowrap;
+}
+
 /* Badge */
 .activar-plan__card-badge {
   position: absolute;
@@ -369,7 +414,11 @@
 .activar-plan__superguia-icon {
   width: 56px;
   height: 56px;
-  background: linear-gradient(135deg, rgba(255, 102, 0, 0.15), rgba(255, 170, 0, 0.1));
+  background: linear-gradient(
+    135deg,
+    rgba(255, 102, 0, 0.15),
+    rgba(255, 170, 0, 0.1)
+  );
   border: 2px solid rgba(255, 102, 0, 0.3);
   border-radius: 14px;
   display: flex;

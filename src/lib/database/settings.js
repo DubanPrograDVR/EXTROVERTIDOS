@@ -72,3 +72,45 @@ export async function isPlanesEnabled() {
 export async function togglePlanesEnabled(enabled, userId) {
   return updateAppSetting("planes_enabled", enabled, userId);
 }
+
+// =============================
+// PRECIOS DE SUSCRIPCIONES
+// =============================
+
+const DEFAULT_PLAN_PRICES = {
+  panorama_unica: 25000,
+  panorama_pack4: 39990,
+  panorama_ilimitado: 70000,
+  superguia: 15000,
+};
+
+/**
+ * Obtener precios de planes (plan_type -> monto)
+ * @returns {Promise<Object>} Precios de planes
+ */
+export async function getPlanPrices() {
+  const value = await getAppSetting("plan_prices");
+  if (!value || typeof value !== "object") {
+    return { ...DEFAULT_PLAN_PRICES };
+  }
+
+  return {
+    ...DEFAULT_PLAN_PRICES,
+    ...value,
+  };
+}
+
+/**
+ * Actualizar precios de planes (solo admins)
+ * @param {Object} prices - Precios por plan_type
+ * @param {string} userId - ID del admin
+ * @returns {Promise<boolean>}
+ */
+export async function updatePlanPrices(prices, userId) {
+  const normalized = {
+    ...DEFAULT_PLAN_PRICES,
+    ...prices,
+  };
+
+  return updateAppSetting("plan_prices", normalized, userId);
+}

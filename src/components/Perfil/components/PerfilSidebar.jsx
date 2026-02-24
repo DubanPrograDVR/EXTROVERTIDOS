@@ -9,6 +9,7 @@ import {
   faCog,
   faFileAlt,
   faShieldAlt,
+  faCrown,
 } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
 import "./styles/sidebar.css";
@@ -42,6 +43,7 @@ export default function PerfilSidebar({
       badge: unreadCount,
     },
     { id: "favoritos", label: "Favoritos", icon: faHeart },
+    { id: "plan", label: "Mi Plan", icon: faCrown },
     { id: "negocios", label: "Mis Negocios", icon: faStore },
     { id: "configuracion", label: "Configuración", icon: faCog },
   ];
