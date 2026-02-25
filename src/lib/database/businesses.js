@@ -295,6 +295,8 @@ const ALLOWED_BUSINESS_UPDATE_FIELDS = [
   "imagen_logo",
   "category_id",
   "subcategory_id",
+  "categoria",
+  "subcategoria",
   "ubicacion_url",
   "coordenadas",
   "tags",

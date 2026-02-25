@@ -32,7 +32,6 @@ import AdminBanModal from "./components/AdminBanModal";
 import AdminLoading from "./components/AdminLoading";
 import AdminProfile from "./components/AdminProfile";
 import AdminCategoryManager from "./components/AdminCategoryManager";
-import AdminEditModal from "./components/AdminEditModal";
 import AdminPriceManager from "./components/AdminPriceManager";
 import PublicationModal from "../Superguia/PublicationModal";
 import BusinessModal from "../Superguia/BusinessModal";
@@ -69,14 +68,12 @@ export default function AdminPanel() {
   const [viewModal, setViewModal] = useState({
     open: false,
     event: null,
-  });
-  const [editModal, setEditModal] = useState({
-    open: false,
-    event: null,
+    editMode: false,
   });
   const [viewBusinessModal, setViewBusinessModal] = useState({
     open: false,
     business: null,
+    editMode: false,
   });
   const [categories, setCategories] = useState([]);
   const [planesEnabled, setPlanesEnabled] = useState(true);
@@ -230,31 +227,17 @@ export default function AdminPanel() {
     }
   };
 
-  // Editar publicación (abrir modal de edición)
+  // Editar publicación (abrir PublicationModal en modo edición)
   const onEditEvent = (eventId) => {
     const event = allEvents.find((e) => e.id === eventId);
     if (event) {
-      setEditModal({ open: true, event });
+      setViewModal({ open: true, event, editMode: true });
     }
-  };
-
-  // Guardar cambios de publicación
-  const onSaveEdit = async (eventId, eventData) => {
-    const result = await handleUpdateEvent(eventId, eventData);
-    if (result.success) {
-      setEditModal({ open: false, event: null });
-    }
-    return result;
-  };
-
-  // Cerrar modal de edición
-  const onEditClose = () => {
-    setEditModal({ open: false, event: null });
   };
 
   // Cerrar modal de vista previa
   const onViewClose = () => {
-    setViewModal({ open: false, event: null });
+    setViewModal({ open: false, event: null, editMode: false });
   };
 
   // Ver detalle de negocio
@@ -263,13 +246,23 @@ export default function AdminPanel() {
       allBusinesses.find((b) => b.id === businessId) ||
       pendingBusinesses.find((b) => b.id === businessId);
     if (business) {
-      setViewBusinessModal({ open: true, business });
+      setViewBusinessModal({ open: true, business, editMode: false });
+    }
+  };
+
+  // Editar negocio (abrir modal en modo edición)
+  const onEditBusiness = (businessId) => {
+    const business =
+      allBusinesses.find((b) => b.id === businessId) ||
+      pendingBusinesses.find((b) => b.id === businessId);
+    if (business) {
+      setViewBusinessModal({ open: true, business, editMode: true });
     }
   };
 
   // Cerrar modal de vista previa de negocio
   const onViewBusinessClose = () => {
-    setViewBusinessModal({ open: false, business: null });
+    setViewBusinessModal({ open: false, business: null, editMode: false });
   };
 
   // Desbanear usuario
@@ -500,6 +493,7 @@ export default function AdminPanel() {
             onReject={onRejectBusinessClick}
             onDelete={handleDeleteBusiness}
             onView={onViewBusiness}
+            onEdit={onEditBusiness}
             title="Todos los Negocios"
           />
         )}
@@ -554,21 +548,15 @@ export default function AdminPanel() {
         loading={actionLoading === banModal.user?.id}
       />
 
-      {/* Modal de vista previa de publicación */}
+      {/* Modal de vista previa / edición de publicación */}
       <PublicationModal
         publication={viewModal.event}
         isOpen={viewModal.open}
         onClose={onViewClose}
-      />
-
-      {/* Modal de edición de publicación */}
-      <AdminEditModal
-        isOpen={editModal.open}
-        event={editModal.event}
-        categories={categories}
-        onClose={onEditClose}
-        onSave={onSaveEdit}
-        loading={actionLoading === editModal.event?.id}
+        startInEditMode={viewModal.editMode}
+        onUpdate={() => {
+          loadData();
+        }}
       />
 
       {/* Modal de vista previa de negocio */}
@@ -576,6 +564,10 @@ export default function AdminPanel() {
         business={viewBusinessModal.business}
         isOpen={viewBusinessModal.open}
         onClose={onViewBusinessClose}
+        startInEditMode={viewBusinessModal.editMode}
+        onUpdate={(updatedBusiness) => {
+          loadData();
+        }}
       />
     </div>
   );

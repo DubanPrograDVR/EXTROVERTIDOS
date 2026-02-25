@@ -2136,6 +2136,15 @@
   background: rgba(59, 130, 246, 0.3);
 }
 
+.admin-table__action--edit {
+  background: rgba(255, 102, 0, 0.15);
+  color: #ff6600;
+}
+
+.admin-table__action--edit:hover:not(:disabled) {
+  background: rgba(255, 102, 0, 0.3);
+}
+
 .admin-table__action--approve {
   background: rgba(34, 197, 94, 0.15);
   color: #22c55e;
@@ -2333,6 +2342,11 @@
 .admin-biz-mobile-card__btn--view {
   background: rgba(59, 130, 246, 0.15);
   color: #3b82f6;
+}
+
+.admin-biz-mobile-card__btn--edit {
+  background: rgba(255, 102, 0, 0.15);
+  color: #ff6600;
 }
 
 .admin-biz-mobile-card__btn--approve {

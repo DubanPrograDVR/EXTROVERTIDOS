@@ -53,8 +53,6 @@ function getTransbankConfig() {
  */
 function sanitizeTransbankResponse(response) {
   const sanitized = { ...response };
-  // card_detail.card_number ya viene enmascarado por Transbank (ej: "XXXX6623")
-  // pero nos aseguramos de no guardar nada extra
   if (sanitized.card_detail && typeof sanitized.card_detail === "object") {
     sanitized.card_detail = {
       card_number: sanitized.card_detail.card_number || "****",
@@ -77,6 +75,22 @@ function redirectToFrontend(params) {
       Location: redirectUrl,
     },
   });
+}
+
+/**
+ * Marca suscripciones como rechazadas de forma segura
+ */
+async function rejectSubscriptions(supabaseAdmin, subscriptionIds, reason) {
+  if (!Array.isArray(subscriptionIds) || subscriptionIds.length === 0) {
+    return;
+  }
+  await supabaseAdmin
+    .from("subscriptions")
+    .update({
+      estado: "rechazada",
+      notas: reason,
+    })
+    .in("id", subscriptionIds);
 }
 
 // ──────────────────────────────────────────────
@@ -112,40 +126,32 @@ Deno.serve(async (req) => {
 
   try {
     // ── 1. Leer parámetros de Transbank ──
-    // Transbank puede enviar POST (form-urlencoded) o GET (query params)
     let tokenWs = null;
     let tbkToken = null;
     let tbkOrdenCompra = null;
     let tbkIdSesion = null;
 
     if (req.method === "GET") {
-      // Leer de query string
       const url = new URL(req.url);
       tokenWs = url.searchParams.get("token_ws");
       tbkToken = url.searchParams.get("TBK_TOKEN");
       tbkOrdenCompra = url.searchParams.get("TBK_ORDEN_COMPRA");
       tbkIdSesion = url.searchParams.get("TBK_ID_SESION");
     } else {
-      // POST: leer del body
+      // POST: leer del body según content-type
       const contentType = req.headers.get("content-type") || "";
+      let params;
 
-      if (contentType.includes("application/x-www-form-urlencoded")) {
-        const formBody = await req.text();
-        const params = new URLSearchParams(formBody);
-        tokenWs = params.get("token_ws");
-        tbkToken = params.get("TBK_TOKEN");
-        tbkOrdenCompra = params.get("TBK_ORDEN_COMPRA");
-        tbkIdSesion = params.get("TBK_ID_SESION");
-      } else if (contentType.includes("application/json")) {
+      if (contentType.includes("application/json")) {
         const body = await req.json();
         tokenWs = body.token_ws || null;
         tbkToken = body.TBK_TOKEN || null;
         tbkOrdenCompra = body.TBK_ORDEN_COMPRA || null;
         tbkIdSesion = body.TBK_ID_SESION || null;
       } else {
-        // Intentar leer como form data
+        // form-urlencoded o cualquier otro formato
         const formBody = await req.text();
-        const params = new URLSearchParams(formBody);
+        params = new URLSearchParams(formBody);
         tokenWs = params.get("token_ws");
         tbkToken = params.get("TBK_TOKEN");
         tbkOrdenCompra = params.get("TBK_ORDEN_COMPRA");
@@ -162,7 +168,6 @@ Deno.serve(async (req) => {
       );
 
       if (tbkOrdenCompra) {
-        // Buscar la transacción por buy_order
         const { data: tx } = await supabaseAdmin
           .from("transactions")
           .select("id, subscription_ids, status")
@@ -170,7 +175,6 @@ Deno.serve(async (req) => {
           .single();
 
         if (tx && tx.status !== "completed") {
-          // Marcar transacción como fallida
           await supabaseAdmin
             .from("transactions")
             .update({
@@ -179,16 +183,11 @@ Deno.serve(async (req) => {
             })
             .eq("id", tx.id);
 
-          // Marcar suscripciones como rechazadas
-          if (tx.subscription_ids && tx.subscription_ids.length > 0) {
-            await supabaseAdmin
-              .from("subscriptions")
-              .update({
-                estado: "rechazada",
-                notas: "Pago cancelado por el usuario en Transbank",
-              })
-              .in("id", tx.subscription_ids);
-          }
+          await rejectSubscriptions(
+            supabaseAdmin,
+            tx.subscription_ids,
+            "Pago cancelado por el usuario en Transbank",
+          );
         }
       }
 
@@ -271,7 +270,6 @@ Deno.serve(async (req) => {
         errorText,
       );
 
-      // Marcar como fallida
       await supabaseAdmin
         .from("transactions")
         .update({
@@ -280,19 +278,11 @@ Deno.serve(async (req) => {
         })
         .eq("id", transaction.id);
 
-      // Marcar suscripciones como rechazadas
-      if (
-        transaction.subscription_ids &&
-        transaction.subscription_ids.length > 0
-      ) {
-        await supabaseAdmin
-          .from("subscriptions")
-          .update({
-            estado: "rechazada",
-            notas: `Error al confirmar pago con Transbank: ${tbkCommitResponse.status}`,
-          })
-          .in("id", transaction.subscription_ids);
-      }
+      await rejectSubscriptions(
+        supabaseAdmin,
+        transaction.subscription_ids,
+        `Error al confirmar pago con Transbank: ${tbkCommitResponse.status}`,
+      );
 
       return redirectToFrontend({
         status: "error",
@@ -307,13 +297,12 @@ Deno.serve(async (req) => {
     // response_code === 0 significa APROBADO
     const isApproved = tbkResult.response_code === 0;
 
-    // Validar que el monto y buy_order coincidan con lo esperado
     if (isApproved) {
+      // Validar que el monto coincida
       if (tbkResult.amount !== transaction.amount) {
         console.error(
           `[confirm-payment] ALERTA: Monto no coincide. Esperado: ${transaction.amount}, Recibido: ${tbkResult.amount}`,
         );
-        // Monto no coincide - posible manipulación
         await supabaseAdmin
           .from("transactions")
           .update({
@@ -330,6 +319,7 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Validar que el buy_order coincida
       if (tbkResult.buy_order !== transaction.buy_order) {
         console.error(
           `[confirm-payment] ALERTA: buy_order no coincide. Esperado: ${transaction.buy_order}, Recibido: ${tbkResult.buy_order}`,
@@ -338,7 +328,7 @@ Deno.serve(async (req) => {
           .from("transactions")
           .update({
             status: "failed",
-            error_message: `buy_order no coincide`,
+            error_message: "buy_order no coincide",
             transbank_response: sanitizeTransbankResponse(tbkResult),
           })
           .eq("id", transaction.id);
@@ -375,29 +365,36 @@ Deno.serve(async (req) => {
         `[confirm-payment] Pago APROBADO: buy_order=${transaction.buy_order}, auth_code=${tbkResult.authorization_code}`,
       );
 
-      // Activar cada suscripción vinculada
-      for (const subId of transaction.subscription_ids) {
-        try {
-          await supabaseAdmin.rpc("activate_subscription", {
-            p_subscription_id: subId,
-            p_metodo: "webpay",
-            p_transaccion_id: transaction.buy_order,
-            p_detalles: {
-              authorization_code: tbkResult.authorization_code,
-              payment_type_code: tbkResult.payment_type_code,
-              installments_number: tbkResult.installments_number,
-              transaction_date: tbkResult.transaction_date,
-              card_last_four: cardLastFour,
-            },
-          });
-        } catch (activationError) {
-          console.error(
-            `[confirm-payment] Error activando suscripción ${subId}:`,
-            activationError,
-          );
-          // No falla el flujo completo, el pago ya está registrado
-          // Se puede activar manualmente desde el admin
+      const subscriptionIds = transaction.subscription_ids;
+
+      if (Array.isArray(subscriptionIds) && subscriptionIds.length > 0) {
+        for (const subId of subscriptionIds) {
+          try {
+            await supabaseAdmin.rpc("activate_subscription", {
+              p_subscription_id: subId,
+              p_metodo: "webpay",
+              p_transaccion_id: transaction.buy_order,
+              p_detalles: {
+                authorization_code: tbkResult.authorization_code,
+                payment_type_code: tbkResult.payment_type_code,
+                installments_number: tbkResult.installments_number,
+                transaction_date: tbkResult.transaction_date,
+                card_last_four: cardLastFour,
+              },
+            });
+          } catch (activationError) {
+            console.error(
+              `[confirm-payment] Error activando suscripción ${subId}:`,
+              activationError,
+            );
+            // No falla el flujo completo, el pago ya está registrado
+            // Se puede activar manualmente desde el admin
+          }
         }
+      } else {
+        console.warn(
+          `[confirm-payment] Pago aprobado pero sin subscription_ids: buy_order=${transaction.buy_order}`,
+        );
       }
 
       return redirectToFrontend({
@@ -413,19 +410,11 @@ Deno.serve(async (req) => {
       `[confirm-payment] Pago RECHAZADO: buy_order=${transaction.buy_order}, response_code=${tbkResult.response_code}`,
     );
 
-    // Marcar suscripciones como rechazadas
-    if (
-      transaction.subscription_ids &&
-      transaction.subscription_ids.length > 0
-    ) {
-      await supabaseAdmin
-        .from("subscriptions")
-        .update({
-          estado: "rechazada",
-          notas: `Pago rechazado por Transbank (código: ${tbkResult.response_code})`,
-        })
-        .in("id", transaction.subscription_ids);
-    }
+    await rejectSubscriptions(
+      supabaseAdmin,
+      transaction.subscription_ids,
+      `Pago rechazado por Transbank (código: ${tbkResult.response_code})`,
+    );
 
     return redirectToFrontend({
       status: "failed",

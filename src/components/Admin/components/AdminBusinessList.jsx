@@ -10,6 +10,7 @@ import {
   faMapMarkerAlt,
   faClock,
   faPhone,
+  faPencil,
 } from "@fortawesome/free-solid-svg-icons";
 
 /**
@@ -23,6 +24,7 @@ export default function AdminBusinessList({
   onReject,
   onDelete,
   onView,
+  onEdit,
   showActions = true, // Para diferenciar entre pendientes y todos
   title = "Negocios",
 }) {
@@ -234,6 +236,16 @@ export default function AdminBusinessList({
                           </button>
                         )}
 
+                        {/* Editar */}
+                        {onEdit && (
+                          <button
+                            className="admin-table__action admin-table__action--edit"
+                            onClick={() => onEdit(business.id)}
+                            title="Editar negocio">
+                            <FontAwesomeIcon icon={faPencil} />
+                          </button>
+                        )}
+
                         {/* Aprobar (solo para pendientes) */}
                         {showActions && business.estado === "pendiente" && (
                           <>
@@ -349,6 +361,13 @@ export default function AdminBusinessList({
                       className="admin-biz-mobile-card__btn admin-biz-mobile-card__btn--view"
                       onClick={() => onView(business.id)}>
                       <FontAwesomeIcon icon={faEye} /> Ver
+                    </button>
+                  )}
+                  {onEdit && (
+                    <button
+                      className="admin-biz-mobile-card__btn admin-biz-mobile-card__btn--edit"
+                      onClick={() => onEdit(business.id)}>
+                      <FontAwesomeIcon icon={faPencil} /> Editar
                     </button>
                   )}
                   {showActions && business.estado === "pendiente" && (

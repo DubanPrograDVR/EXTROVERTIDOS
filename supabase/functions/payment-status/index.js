@@ -99,10 +99,7 @@ Deno.serve(async (req) => {
     const buyOrder = url.searchParams.get("buy_order");
 
     if (!buyOrder) {
-      return jsonResponse(
-        { error: "Parámetro buy_order requerido" },
-        400
-      );
+      return jsonResponse({ error: "Parámetro buy_order requerido" }, 400);
     }
 
     // ── 3. Buscar transacción en la DB ──
@@ -124,7 +121,7 @@ Deno.serve(async (req) => {
         created_at,
         updated_at,
         user_id
-      `
+      `,
       )
       .eq("buy_order", buyOrder)
       .single();
@@ -140,7 +137,6 @@ Deno.serve(async (req) => {
 
     // ── 5. Si la transacción está en processing, verificar con Transbank ──
     if (transaction.status === "processing") {
-      // Intentar consultar el estado en Transbank
       try {
         const tokenWsResult = await supabaseAdmin
           .from("transactions")
@@ -163,20 +159,19 @@ Deno.serve(async (req) => {
 
           if (tbkResponse.ok) {
             const tbkStatus = await tbkResponse.json();
-            // Actualizar con info de Transbank si disponible
             transaction.transbank_status = tbkStatus.status;
           }
         }
-      } catch {
+      } catch (tbkError) {
         // Si falla la consulta a Transbank, seguir con lo que tenemos en DB
         console.warn(
-          "[payment-status] No se pudo consultar estado en Transbank"
+          "[payment-status] No se pudo consultar estado en Transbank:",
+          tbkError.message,
         );
       }
     }
 
     // ── 6. Retornar estado (sin datos sensibles) ──
-    // Eliminar user_id de la respuesta
     const { user_id: _uid, ...safeTransaction } = transaction;
 
     return jsonResponse({

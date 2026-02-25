@@ -37,7 +37,7 @@ export const PAYMENT_STATUS = {
 };
 
 // ──────────────────────────────────────────────
-// FUNCIONES PRINCIPALES
+// WEBPAY PLUS - FUNCIONES
 // ──────────────────────────────────────────────
 
 /**
@@ -100,6 +100,10 @@ export async function initiatePayment({
   redirectToTransbank(data.url, data.token);
 }
 
+// ──────────────────────────────────────────────
+// CONSULTAS
+// ──────────────────────────────────────────────
+
 /**
  * Consulta el estado de una transacción.
  *
@@ -107,17 +111,6 @@ export async function initiatePayment({
  * @returns {Promise<Object>} - Estado de la transacción
  */
 export async function getPaymentStatus(buyOrder) {
-  const { data, error } = await supabase.functions.invoke("payment-status", {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: null,
-    // Supabase functions.invoke no soporta query params directamente,
-    // así que los pasamos en la URL personalizada
-  });
-
-  // Fallback: usar fetch directo con query params
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -178,8 +171,7 @@ export async function getPaymentHistory() {
 // ──────────────────────────────────────────────
 
 /**
- * Redirige al usuario a Transbank Webpay mediante un form POST oculto.
- * Transbank requiere que el token_ws se envíe como POST form data.
+ * Redirige al usuario a Transbank mediante un form POST oculto.
  *
  * @param {string} url - URL de Transbank para el pago
  * @param {string} token - Token de la transacción

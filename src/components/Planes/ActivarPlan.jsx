@@ -21,6 +21,7 @@ import {
   faPlus,
   faChevronRight,
   faBan,
+  faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
 import "./styles/activar-plan.css";
 
@@ -248,15 +249,12 @@ export default function ActivarPlan() {
     setProcessingPayment(true);
 
     try {
-      // Iniciar el pago con Transbank a través de la Edge Function
-      // La función valida los montos server-side y redirige a Transbank
+      // Pago con Webpay Plus - redirección a Transbank
       await initiatePayment({
         panoramaPlan: selectedPlan,
         addSuperguia,
-        resourceId: null, // TODO: pasar business UUID cuando se implemente selección de negocio
+        resourceId: null,
       });
-      // Si llegamos aquí, el usuario será redirigido a Transbank
-      // (la función initiatePayment hace un form.submit() que redirige)
     } catch (error) {
       console.error("Error al iniciar pago:", error);
       setProcessingPayment(false);
@@ -485,7 +483,7 @@ export default function ActivarPlan() {
         </div>
       </section>
 
-      {/* Footer con resumen y botón siguiente */}
+      {/* Footer con resumen y botón de pagar */}
       <footer className="activar-plan__footer">
         <div className="activar-plan__footer-summary">
           {(selectedPlan || addSuperguia) && (
@@ -503,7 +501,9 @@ export default function ActivarPlan() {
           disabled={(!selectedPlan && !addSuperguia) || processingPayment}
           onClick={handleSiguiente}>
           {processingPayment ? (
-            <>Procesando pago...</>
+            <>
+              <FontAwesomeIcon icon={faSpinner} spin /> Procesando pago...
+            </>
           ) : (
             <>
               Pagar con Webpay

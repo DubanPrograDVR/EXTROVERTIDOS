@@ -166,3 +166,246 @@
     font-size: 0.85rem;
   }
 }
+
+/* ===== SELECTORES DE CATEGORÍA EN EDICIÓN ===== */
+.publication-modal__category-edit {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+}
+
+.publication-modal__category-select {
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 102, 0, 0.4);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+  min-width: 140px;
+  appearance: auto;
+}
+
+.publication-modal__category-select:focus {
+  outline: none;
+  border-color: #ff6600;
+  box-shadow: 0 0 0 2px rgba(255, 102, 0, 0.15);
+}
+
+.publication-modal__category-select option {
+  background: #222;
+  color: #fff;
+}
+
+.publication-modal__category-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===== ESTILOS PARA MODO EDICIÓN ===== */
+.publication-modal__edit-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 10px 0;
+}
+
+.publication-modal__edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.publication-modal__edit-field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ff6600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.publication-modal__edit-field input,
+.publication-modal__edit-field textarea {
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 102, 0, 0.3);
+  border-radius: 8px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.publication-modal__edit-field input::placeholder,
+.publication-modal__edit-field textarea::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.publication-modal__edit-field input:focus,
+.publication-modal__edit-field textarea:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: #ff6600;
+  box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.1);
+}
+
+.publication-modal__edit-field textarea {
+  resize: vertical;
+  min-height: 100px;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.publication-modal__edit-hint {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 2px;
+  font-style: italic;
+}
+
+/* Botones de edición */
+.publication-modal__actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 10;
+}
+
+.publication-modal__edit-btn,
+.publication-modal__save-btn,
+.publication-modal__cancel-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.publication-modal__edit-btn {
+  background: rgba(255, 102, 0, 0.2);
+  color: #ff6600;
+  border: 1px solid #ff6600;
+}
+
+.publication-modal__edit-btn:hover {
+  background: rgba(255, 102, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(255, 102, 0, 0.2);
+}
+
+/* Botón editar dentro de CTA */
+.publication-modal__cta-btn--edit {
+  background: rgba(255, 102, 0, 0.15);
+  color: #ff6600;
+  border: 1px solid #ff6600;
+}
+
+.publication-modal__cta-btn--edit:hover {
+  background: rgba(255, 102, 0, 0.3);
+  box-shadow: 0 4px 15px rgba(255, 102, 0, 0.3);
+}
+
+.publication-modal__save-btn {
+  background: linear-gradient(135deg, #28a745, #3abe56);
+  color: #fff;
+  padding: 8px 24px;
+}
+
+.publication-modal__save-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.publication-modal__save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.publication-modal__cancel-btn {
+  background: rgba(255, 102, 0, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 102, 0, 0.3);
+}
+
+.publication-modal__cancel-btn:hover:not(:disabled) {
+  background: rgba(255, 102, 0, 0.25);
+}
+
+.publication-modal__cancel-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ===== ESTILOS ADICIONALES PARA EDICIÓN INLINE ===== */
+.publication-modal__edit-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ff6600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.publication-modal__edit-input,
+.publication-modal__edit-textarea,
+.publication-modal__edit-select {
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 102, 0, 0.3);
+  border-radius: 8px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.publication-modal__edit-input::placeholder,
+.publication-modal__edit-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.publication-modal__edit-input:focus,
+.publication-modal__edit-textarea:focus,
+.publication-modal__edit-select:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: #ff6600;
+  box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.1);
+}
+
+.publication-modal__edit-textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.publication-modal__edit-input--title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  padding: 12px 14px;
+}
+
+.publication-modal__edit-select {
+  appearance: auto;
+  cursor: pointer;
+}
+
+.publication-modal__edit-row {
+  display: flex;
+  gap: 12px;
+}
+
+.publication-modal__edit-row .publication-modal__edit-field {
+  flex: 1;
+}

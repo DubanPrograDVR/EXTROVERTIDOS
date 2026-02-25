@@ -699,15 +699,3 @@
 }
 
 @media (max-width: 400px) {
-  .activar-plan__card-name {
-    font-size: 0.95rem;
-  }
-
-  .activar-plan__section-title {
-    font-size: 1.15rem;
-  }
-
-  .activar-plan__progress-text {
-    font-size: 0.75rem;
-  }
-}

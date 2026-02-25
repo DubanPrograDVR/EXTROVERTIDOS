@@ -26,7 +26,6 @@ const CORS_HEADERS = {
 const TRANSBANK_API = {
   integration: "https://webpay3gint.transbank.cl",
   production: "https://webpay3g.transbank.cl",
-  // Endpoint para Webpay Plus (no confundir con OneClick que usa /api/oneclick/)
   transactionPath: "/rswebpaytransaction/api/webpay/v1.2/transactions",
 };
 
@@ -96,6 +95,9 @@ function getTransbankConfig() {
   return { commerceCode, apiKeySecret, baseUrl };
 }
 
+/**
+ * Obtiene precios de planes desde la DB (con fallback a constantes)
+ */
 async function getPlanPrices(supabaseAdmin) {
   try {
     const { data, error } = await supabaseAdmin
@@ -117,8 +119,8 @@ async function getPlanPrices(supabaseAdmin) {
       ...PLAN_PRICES,
       ...data.value,
     };
-  } catch (error) {
-    console.warn("[create-payment] Error inesperado en plan_prices:", error);
+  } catch (err) {
+    console.warn("[create-payment] Error inesperado en plan_prices:", err);
     return { ...PLAN_PRICES };
   }
 }
@@ -217,13 +219,24 @@ Deno.serve(async (req) => {
 
     // ── 3. Verificar que no exista suscripción activa duplicada ──
     if (panoramaPlanType) {
-      const { data: existingSub } = await supabaseAdmin.rpc(
+      const { data: existingSub, error: rpcError } = await supabaseAdmin.rpc(
         "check_active_subscription",
         {
           p_user_id: user.id,
           p_plan: panoramaPlanType,
         },
       );
+
+      if (rpcError) {
+        console.error(
+          "[create-payment] Error verificando suscripción activa:",
+          rpcError,
+        );
+        return jsonResponse(
+          { error: "Error al verificar suscripciones activas" },
+          500,
+        );
+      }
 
       if (existingSub && existingSub.length > 0) {
         return jsonResponse(
@@ -236,13 +249,22 @@ Deno.serve(async (req) => {
     }
 
     if (add_superguia) {
-      const { data: existingSuperguia } = await supabaseAdmin.rpc(
-        "check_active_subscription",
-        {
+      const { data: existingSuperguia, error: rpcSuperguiaError } =
+        await supabaseAdmin.rpc("check_active_subscription", {
           p_user_id: user.id,
           p_plan: "superguia",
-        },
-      );
+        });
+
+      if (rpcSuperguiaError) {
+        console.error(
+          "[create-payment] Error verificando suscripción superguía:",
+          rpcSuperguiaError,
+        );
+        return jsonResponse(
+          { error: "Error al verificar suscripciones activas" },
+          500,
+        );
+      }
 
       if (existingSuperguia && existingSuperguia.length > 0) {
         return jsonResponse(
@@ -294,7 +316,7 @@ Deno.serve(async (req) => {
         .single();
 
       if (subError) {
-        console.error("Error creando suscripción:", subError);
+        console.error("[create-payment] Error creando suscripción:", subError);
         // Rollback: eliminar suscripciones ya creadas
         if (subscriptionIds.length > 0) {
           await supabaseAdmin
@@ -328,7 +350,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (txError) {
-      console.error("Error creando transacción:", txError);
+      console.error("[create-payment] Error creando transacción:", txError);
       // Rollback: eliminar suscripciones
       await supabaseAdmin
         .from("subscriptions")

@@ -27,20 +27,28 @@ export async function getAppSetting(key) {
 
 /**
  * Actualizar el valor de una configuración (solo admins)
+ * Usa upsert para crear la fila si no existe.
  * @param {string} key - Clave de la configuración
  * @param {any} value - Nuevo valor
  * @param {string} userId - ID del admin que actualiza
+ * @param {string} [description] - Descripción opcional (usada al insertar)
  * @returns {Promise<boolean>} true si se actualizó correctamente
  */
-export async function updateAppSetting(key, value, userId) {
+export async function updateAppSetting(key, value, userId, description) {
+  const row = {
+    key,
+    value,
+    updated_by: userId,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (description) {
+    row.description = description;
+  }
+
   const { error } = await supabase
     .from("app_settings")
-    .update({
-      value,
-      updated_by: userId,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("key", key);
+    .upsert(row, { onConflict: "key" });
 
   if (error) {
     console.error(`Error al actualizar configuración "${key}":`, error);
@@ -102,6 +110,7 @@ export async function getPlanPrices() {
 
 /**
  * Actualizar precios de planes (solo admins)
+ * Usa upsert para garantizar que la fila se cree si no existe.
  * @param {Object} prices - Precios por plan_type
  * @param {string} userId - ID del admin
  * @returns {Promise<boolean>}
@@ -112,5 +121,10 @@ export async function updatePlanPrices(prices, userId) {
     ...prices,
   };
 
-  return updateAppSetting("plan_prices", normalized, userId);
+  return updateAppSetting(
+    "plan_prices",
+    normalized,
+    userId,
+    "Precios de planes en CLP por plan_type",
+  );
 }

@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
+import { updateBusiness, getBusinessCategories } from "../../lib/database";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faTimes,
@@ -24,6 +27,9 @@ import {
   faShareAlt,
   faBookmark,
   faBullhorn,
+  faPencil,
+  faSave,
+  faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faWhatsapp,
@@ -104,12 +110,42 @@ const AccordionSection = ({ title, icon, isOpen, onToggle, children }) => {
   );
 };
 
-export default function BusinessModal({ business, isOpen, onClose }) {
+export default function BusinessModal({
+  business,
+  isOpen,
+  onClose,
+  onUpdate,
+  startInEditMode = false,
+}) {
+  const { isAdmin, isModerator } = useAuth();
+  const { showToast } = useToast();
+
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageError, setImageError] = useState(false);
   const [activeSection, setActiveSection] = useState(
     ACCORDION_SECTIONS.DESCRIPTION,
   );
+  const [isEditMode, setIsEditMode] = useState(startInEditMode);
+  const [editData, setEditData] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [categoriesList, setCategoriesList] = useState([]);
+
+  const canEdit = isAdmin || isModerator;
+
+  // Cargar categorías para el selector de edición
+  useEffect(() => {
+    if (canEdit) {
+      getBusinessCategories()
+        .then((cats) => setCategoriesList(cats || []))
+        .catch((err) => console.error("Error cargando categorías:", err));
+    }
+  }, [canEdit]);
+
+  // Subcategorías filtradas según categoría seleccionada
+  const availableSubcategories =
+    categoriesList.find(
+      (c) => c.nombre === (isEditMode ? editData.categoria : ""),
+    )?.subcategorias || [];
 
   // Función para alternar secciones del acordeón
   const toggleSection = useCallback((section) => {
@@ -137,7 +173,30 @@ export default function BusinessModal({ business, isOpen, onClose }) {
   useEffect(() => {
     setCurrentImageIndex(0);
     setImageError(false);
-  }, [business?.id]);
+    setIsEditMode(startInEditMode);
+    // Inicializar datos de edición
+    if (business) {
+      setEditData({
+        nombre: business.nombre || "",
+        slogan: business.slogan || "",
+        descripcion: business.descripcion || "",
+        categoria: business.categoria || "",
+        subcategoria: business.subcategoria || "",
+        telefono: business.telefono || "",
+        email: business.email || "",
+        whatsapp: business.whatsapp || "",
+        instagram: business.instagram || "",
+        facebook: business.facebook || "",
+        tiktok: business.tiktok || "",
+        sitio_web: business.sitio_web || "",
+        ubicacion_url: business.ubicacion_url || "",
+        titulo_marketing: business.titulo_marketing || "",
+        mensaje_marketing: business.mensaje_marketing || "",
+        titulo_marketing_2: business.titulo_marketing_2 || "",
+        mensaje_marketing_2: business.mensaje_marketing_2 || "",
+      });
+    }
+  }, [business?.id, isOpen]);
 
   if (!isOpen || !business) return null;
 
@@ -343,6 +402,48 @@ export default function BusinessModal({ business, isOpen, onClose }) {
     if (e.target === e.currentTarget) onClose();
   };
 
+  // Guardar cambios de edición
+  const handleSaveChanges = async () => {
+    setIsSaving(true);
+    try {
+      await updateBusiness(business.id, editData);
+      showToast("Cambios guardados exitosamente", "success");
+      setIsEditMode(false);
+      if (onUpdate) {
+        onUpdate({ ...business, ...editData });
+      }
+    } catch (error) {
+      console.error("Error al guardar cambios:", error);
+      showToast("Error al guardar cambios: " + error.message, "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Cancelar edición
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+    setEditData({
+      nombre: business.nombre || "",
+      slogan: business.slogan || "",
+      descripcion: business.descripcion || "",
+      categoria: business.categoria || "",
+      subcategoria: business.subcategoria || "",
+      telefono: business.telefono || "",
+      email: business.email || "",
+      whatsapp: business.whatsapp || "",
+      instagram: business.instagram || "",
+      facebook: business.facebook || "",
+      tiktok: business.tiktok || "",
+      sitio_web: business.sitio_web || "",
+      ubicacion_url: business.ubicacion_url || "",
+      titulo_marketing: business.titulo_marketing || "",
+      mensaje_marketing: business.mensaje_marketing || "",
+      titulo_marketing_2: business.titulo_marketing_2 || "",
+      mensaje_marketing_2: business.mensaje_marketing_2 || "",
+    });
+  };
+
   return (
     <div className="publication-modal-overlay" onClick={handleOverlayClick}>
       <div
@@ -351,22 +452,64 @@ export default function BusinessModal({ business, isOpen, onClose }) {
         aria-modal="true"
         aria-label="Detalle del negocio">
         {/* Categoría en la parte superior con logo */}
-        {categoria && (
+        {(categoria || isEditMode) && (
           <div className="publication-modal__category-header">
             <img
               src="/img/SG_Extro.png"
               alt="Superguía"
               className="publication-modal__brand-logo"
             />
-            <span
-              className="publication-modal__category-badge"
-              style={{ backgroundColor: "#ff6600" }}>
-              {categoria}
-            </span>
-            {subcategoria && (
-              <span className="publication-modal__subcategory-badge">
-                {subcategoria}
-              </span>
+            {!isEditMode && (
+              <>
+                <span
+                  className="publication-modal__category-badge"
+                  style={{ backgroundColor: "#ff6600" }}>
+                  {categoria}
+                </span>
+                {subcategoria && (
+                  <span className="publication-modal__subcategory-badge">
+                    {subcategoria}
+                  </span>
+                )}
+              </>
+            )}
+            {isEditMode && (
+              <div className="publication-modal__category-edit">
+                <select
+                  className="publication-modal__category-select"
+                  value={editData.categoria}
+                  onChange={(e) => {
+                    const newCat = e.target.value;
+                    setEditData({
+                      ...editData,
+                      categoria: newCat,
+                      subcategoria: "",
+                    });
+                  }}>
+                  <option value="">Seleccionar categoría</option>
+                  {categoriesList.map((cat) => (
+                    <option key={cat.id} value={cat.nombre}>
+                      {cat.nombre}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  className="publication-modal__category-select"
+                  value={editData.subcategoria}
+                  onChange={(e) =>
+                    setEditData({ ...editData, subcategoria: e.target.value })
+                  }
+                  disabled={
+                    !editData.categoria || availableSubcategories.length === 0
+                  }>
+                  <option value="">Seleccionar subcategoría</option>
+                  {availableSubcategories.map((sub, idx) => (
+                    <option key={idx} value={sub}>
+                      {sub}
+                    </option>
+                  ))}
+                </select>
+              </div>
             )}
             {verificado && (
               <span className="publication-modal__verified-badge">
@@ -374,6 +517,28 @@ export default function BusinessModal({ business, isOpen, onClose }) {
                 Verificado
               </span>
             )}
+          </div>
+        )}
+
+        {/* Barra de edición (solo visible en modo edición) */}
+        {isEditMode && (
+          <div className="publication-modal__actions">
+            <button
+              className="publication-modal__save-btn"
+              onClick={handleSaveChanges}
+              disabled={isSaving}>
+              <FontAwesomeIcon
+                icon={isSaving ? faSpinner : faSave}
+                spin={isSaving}
+              />
+              {isSaving ? "Guardando..." : "Guardar"}
+            </button>
+            <button
+              className="publication-modal__cancel-btn"
+              onClick={handleCancelEdit}
+              disabled={isSaving}>
+              Cancelar
+            </button>
           </div>
         )}
 
@@ -425,16 +590,48 @@ export default function BusinessModal({ business, isOpen, onClose }) {
 
           {/* SECCIÓN DERECHA: CONTENIDO */}
           <div className="publication-modal__right">
-            {/* Título */}
-            <div className="publication-modal__title-section">
-              <h2>{nombre}</h2>
-              {slogan && <p className="publication-modal__slogan">{slogan}</p>}
-            </div>
+            {/* Título - Modo Lectura */}
+            {!isEditMode && (
+              <div className="publication-modal__title-section">
+                <h2>{nombre}</h2>
+                {slogan && (
+                  <p className="publication-modal__slogan">{slogan}</p>
+                )}
+              </div>
+            )}
+
+            {/* Título - Modo Edición */}
+            {isEditMode && (
+              <div className="publication-modal__edit-section">
+                <div className="publication-modal__edit-field">
+                  <label>Nombre del negocio</label>
+                  <input
+                    type="text"
+                    value={editData.nombre}
+                    onChange={(e) =>
+                      setEditData({ ...editData, nombre: e.target.value })
+                    }
+                    placeholder="Nombre del negocio"
+                  />
+                </div>
+                <div className="publication-modal__edit-field">
+                  <label>Slogan</label>
+                  <input
+                    type="text"
+                    value={editData.slogan}
+                    onChange={(e) =>
+                      setEditData({ ...editData, slogan: e.target.value })
+                    }
+                    placeholder="Slogan del negocio"
+                  />
+                </div>
+              </div>
+            )}
 
             {/* ACORDEÓN DE INFORMACIÓN */}
             <div className="publication-modal__accordion-container">
               {/* Sección: Descripción */}
-              {descripcion && (
+              {(descripcion || isEditMode) && (
                 <AccordionSection
                   title="Descripción"
                   icon={faAlignLeft}
@@ -442,14 +639,31 @@ export default function BusinessModal({ business, isOpen, onClose }) {
                   onToggle={() =>
                     toggleSection(ACCORDION_SECTIONS.DESCRIPTION)
                   }>
-                  <div className="publication-modal__description-content">
-                    <p>{descripcion}</p>
-                  </div>
+                  {!isEditMode && (
+                    <div className="publication-modal__description-content">
+                      <p>{descripcion}</p>
+                    </div>
+                  )}
+                  {isEditMode && (
+                    <div className="publication-modal__edit-field">
+                      <textarea
+                        value={editData.descripcion}
+                        onChange={(e) =>
+                          setEditData({
+                            ...editData,
+                            descripcion: e.target.value,
+                          })
+                        }
+                        placeholder="Descripción del negocio"
+                        rows="6"
+                      />
+                    </div>
+                  )}
                 </AccordionSection>
               )}
 
               {/* Sección: Mensaje de Marketing 1 */}
-              {mensaje_marketing && (
+              {(mensaje_marketing || isEditMode) && (
                 <AccordionSection
                   title={titulo_marketing || "¡Información Destacada!"}
                   icon={faBullhorn}
@@ -457,14 +671,48 @@ export default function BusinessModal({ business, isOpen, onClose }) {
                   onToggle={() =>
                     toggleSection(ACCORDION_SECTIONS.MARKETING_1)
                   }>
-                  <div className="publication-modal__marketing-content">
-                    <p>{mensaje_marketing}</p>
-                  </div>
+                  {!isEditMode && (
+                    <div className="publication-modal__marketing-content">
+                      <p>{mensaje_marketing}</p>
+                    </div>
+                  )}
+                  {isEditMode && (
+                    <div className="publication-modal__edit-section">
+                      <div className="publication-modal__edit-field">
+                        <label>Título Marketing 1</label>
+                        <input
+                          type="text"
+                          value={editData.titulo_marketing}
+                          onChange={(e) =>
+                            setEditData({
+                              ...editData,
+                              titulo_marketing: e.target.value,
+                            })
+                          }
+                          placeholder="Título destacado"
+                        />
+                      </div>
+                      <div className="publication-modal__edit-field">
+                        <label>Mensaje Marketing 1</label>
+                        <textarea
+                          value={editData.mensaje_marketing}
+                          onChange={(e) =>
+                            setEditData({
+                              ...editData,
+                              mensaje_marketing: e.target.value,
+                            })
+                          }
+                          placeholder="Mensaje destacado"
+                          rows="4"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </AccordionSection>
               )}
 
               {/* Sección: Mensaje de Marketing 2 */}
-              {mensaje_marketing_2 && (
+              {(mensaje_marketing_2 || isEditMode) && (
                 <AccordionSection
                   title={titulo_marketing_2 || "¡No te lo pierdas!"}
                   icon={faBullhorn}
@@ -472,9 +720,43 @@ export default function BusinessModal({ business, isOpen, onClose }) {
                   onToggle={() =>
                     toggleSection(ACCORDION_SECTIONS.MARKETING_2)
                   }>
-                  <div className="publication-modal__marketing-content">
-                    <p>{mensaje_marketing_2}</p>
-                  </div>
+                  {!isEditMode && (
+                    <div className="publication-modal__marketing-content">
+                      <p>{mensaje_marketing_2}</p>
+                    </div>
+                  )}
+                  {isEditMode && (
+                    <div className="publication-modal__edit-section">
+                      <div className="publication-modal__edit-field">
+                        <label>Título Marketing 2</label>
+                        <input
+                          type="text"
+                          value={editData.titulo_marketing_2}
+                          onChange={(e) =>
+                            setEditData({
+                              ...editData,
+                              titulo_marketing_2: e.target.value,
+                            })
+                          }
+                          placeholder="Segundo título destacado"
+                        />
+                      </div>
+                      <div className="publication-modal__edit-field">
+                        <label>Mensaje Marketing 2</label>
+                        <textarea
+                          value={editData.mensaje_marketing_2}
+                          onChange={(e) =>
+                            setEditData({
+                              ...editData,
+                              mensaje_marketing_2: e.target.value,
+                            })
+                          }
+                          placeholder="Segundo mensaje destacado"
+                          rows="4"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </AccordionSection>
               )}
 
@@ -484,22 +766,48 @@ export default function BusinessModal({ business, isOpen, onClose }) {
                 icon={faMapMarkerAlt}
                 isOpen={activeSection === ACCORDION_SECTIONS.LOCATION}
                 onToggle={() => toggleSection(ACCORDION_SECTIONS.LOCATION)}>
-                <div className="publication-modal__location-content">
-                  <p className="publication-modal__location-address">
-                    {direccion && `${direccion}, `}
-                    {comuna}
-                    {provincia && `, ${provincia}`}
-                    {region && ` - ${region}`}
-                  </p>
-                  {(ubicacion_url || direccion) && (
-                    <button
-                      className="publication-modal__directions-btn"
-                      onClick={() => window.open(getDirectionsUrl(), "_blank")}>
-                      <FontAwesomeIcon icon={faRoute} />
-                      Cómo llegar
-                    </button>
-                  )}
-                </div>
+                {!isEditMode && (
+                  <div className="publication-modal__location-content">
+                    <p className="publication-modal__location-address">
+                      {direccion && `${direccion}, `}
+                      {comuna}
+                      {provincia && `, ${provincia}`}
+                      {region && ` - ${region}`}
+                    </p>
+                    {(ubicacion_url || direccion) && (
+                      <button
+                        className="publication-modal__directions-btn"
+                        onClick={() =>
+                          window.open(getDirectionsUrl(), "_blank")
+                        }>
+                        <FontAwesomeIcon icon={faRoute} />
+                        Cómo llegar
+                      </button>
+                    )}
+                  </div>
+                )}
+                {isEditMode && (
+                  <div className="publication-modal__edit-section">
+                    <div className="publication-modal__edit-field">
+                      <label>URL de Ubicación (Google Maps)</label>
+                      <input
+                        type="url"
+                        value={editData.ubicacion_url}
+                        onChange={(e) =>
+                          setEditData({
+                            ...editData,
+                            ubicacion_url: e.target.value,
+                          })
+                        }
+                        placeholder="https://maps.google.com/maps?q=..."
+                      />
+                      <small className="publication-modal__edit-hint">
+                        Copia la URL de Google Maps para compartir la ubicación
+                        exacta
+                      </small>
+                    </div>
+                  </div>
+                )}
               </AccordionSection>
 
               {/* Sección: Horarios */}
@@ -540,143 +848,242 @@ export default function BusinessModal({ business, isOpen, onClose }) {
                 tiktok ||
                 redes_sociales?.twitter ||
                 redes_sociales?.youtube ||
-                redes_sociales?.linkedin) && (
+                redes_sociales?.linkedin ||
+                isEditMode) && (
                 <AccordionSection
                   title="Contacto"
                   icon={faAddressCard}
                   isOpen={activeSection === ACCORDION_SECTIONS.CONTACT}
                   onToggle={() => toggleSection(ACCORDION_SECTIONS.CONTACT)}>
-                  <div className="publication-modal__contact-content">
-                    {telefono && (
-                      <a
-                        href={`tel:${telefono}`}
-                        className="publication-modal__contact-item">
-                        <FontAwesomeIcon icon={faPhone} />
-                        <span>{telefono}</span>
-                      </a>
-                    )}
-                    {email && (
-                      <a
-                        href={`mailto:${email}`}
-                        className="publication-modal__contact-item">
-                        <FontAwesomeIcon icon={faEnvelope} />
-                        <span>{email}</span>
-                      </a>
-                    )}
-                    {sitio_web && (
-                      <a
-                        href={sitio_web}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="publication-modal__contact-item">
-                        <FontAwesomeIcon icon={faGlobe} />
-                        <span>Sitio web</span>
-                      </a>
-                    )}
+                  {!isEditMode && (
+                    <div className="publication-modal__contact-content">
+                      {telefono && (
+                        <a
+                          href={`tel:${telefono}`}
+                          className="publication-modal__contact-item">
+                          <FontAwesomeIcon icon={faPhone} />
+                          <span>{telefono}</span>
+                        </a>
+                      )}
+                      {email && (
+                        <a
+                          href={`mailto:${email}`}
+                          className="publication-modal__contact-item">
+                          <FontAwesomeIcon icon={faEnvelope} />
+                          <span>{email}</span>
+                        </a>
+                      )}
+                      {sitio_web && (
+                        <a
+                          href={sitio_web}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="publication-modal__contact-item">
+                          <FontAwesomeIcon icon={faGlobe} />
+                          <span>Sitio web</span>
+                        </a>
+                      )}
 
-                    {/* Redes sociales */}
-                    {(whatsapp ||
-                      instagram ||
-                      facebook ||
-                      tiktok ||
-                      redes_sociales?.twitter ||
-                      redes_sociales?.youtube ||
-                      redes_sociales?.linkedin) && (
-                      <div className="publication-modal__social">
-                        {whatsapp && (
-                          <button
-                            className="publication-modal__social-btn publication-modal__social-btn--whatsapp"
-                            onClick={handleWhatsApp}>
-                            <FontAwesomeIcon icon={faWhatsapp} />
-                            WhatsApp
-                          </button>
-                        )}
-                        {instagram && (
-                          <a
-                            href={
-                              instagram.startsWith("http")
-                                ? instagram
-                                : `https://instagram.com/${instagram.replace("@", "")}`
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="publication-modal__social-btn publication-modal__social-btn--instagram">
-                            <FontAwesomeIcon icon={faInstagram} />
-                            Instagram
-                          </a>
-                        )}
-                        {facebook && (
-                          <a
-                            href={
-                              facebook.startsWith("http")
-                                ? facebook
-                                : `https://facebook.com/${facebook}`
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="publication-modal__social-btn publication-modal__social-btn--facebook">
-                            <FontAwesomeIcon icon={faFacebook} />
-                            Facebook
-                          </a>
-                        )}
-                        {tiktok && (
-                          <a
-                            href={
-                              tiktok.startsWith("http")
-                                ? tiktok
-                                : `https://tiktok.com/@${tiktok.replace("@", "")}`
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="publication-modal__social-btn publication-modal__social-btn--tiktok">
-                            <FontAwesomeIcon icon={faTiktok} />
-                            TikTok
-                          </a>
-                        )}
-                        {redes_sociales?.twitter && (
-                          <a
-                            href={
-                              redes_sociales.twitter.startsWith("http")
-                                ? redes_sociales.twitter
-                                : `https://x.com/${redes_sociales.twitter.replace("@", "")}`
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="publication-modal__social-btn publication-modal__social-btn--twitter">
-                            <FontAwesomeIcon icon={faXTwitter} />X
-                          </a>
-                        )}
-                        {redes_sociales?.youtube && (
-                          <a
-                            href={
-                              redes_sociales.youtube.startsWith("http")
-                                ? redes_sociales.youtube
-                                : `https://youtube.com/@${redes_sociales.youtube}`
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="publication-modal__social-btn publication-modal__social-btn--youtube">
-                            <FontAwesomeIcon icon={faYoutube} />
-                            YouTube
-                          </a>
-                        )}
-                        {redes_sociales?.linkedin && (
-                          <a
-                            href={
-                              redes_sociales.linkedin.startsWith("http")
-                                ? redes_sociales.linkedin
-                                : `https://linkedin.com/company/${redes_sociales.linkedin}`
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="publication-modal__social-btn publication-modal__social-btn--linkedin">
-                            <FontAwesomeIcon icon={faLinkedin} />
-                            LinkedIn
-                          </a>
-                        )}
+                      {/* Redes sociales */}
+                      {(whatsapp ||
+                        instagram ||
+                        facebook ||
+                        tiktok ||
+                        redes_sociales?.twitter ||
+                        redes_sociales?.youtube ||
+                        redes_sociales?.linkedin) && (
+                        <div className="publication-modal__social">
+                          {whatsapp && (
+                            <button
+                              className="publication-modal__social-btn publication-modal__social-btn--whatsapp"
+                              onClick={handleWhatsApp}>
+                              <FontAwesomeIcon icon={faWhatsapp} />
+                              WhatsApp
+                            </button>
+                          )}
+                          {instagram && (
+                            <a
+                              href={
+                                instagram.startsWith("http")
+                                  ? instagram
+                                  : `https://instagram.com/${instagram.replace("@", "")}`
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="publication-modal__social-btn publication-modal__social-btn--instagram">
+                              <FontAwesomeIcon icon={faInstagram} />
+                              Instagram
+                            </a>
+                          )}
+                          {facebook && (
+                            <a
+                              href={
+                                facebook.startsWith("http")
+                                  ? facebook
+                                  : `https://facebook.com/${facebook}`
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="publication-modal__social-btn publication-modal__social-btn--facebook">
+                              <FontAwesomeIcon icon={faFacebook} />
+                              Facebook
+                            </a>
+                          )}
+                          {tiktok && (
+                            <a
+                              href={
+                                tiktok.startsWith("http")
+                                  ? tiktok
+                                  : `https://tiktok.com/@${tiktok.replace("@", "")}`
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="publication-modal__social-btn publication-modal__social-btn--tiktok">
+                              <FontAwesomeIcon icon={faTiktok} />
+                              TikTok
+                            </a>
+                          )}
+                          {redes_sociales?.twitter && (
+                            <a
+                              href={
+                                redes_sociales.twitter.startsWith("http")
+                                  ? redes_sociales.twitter
+                                  : `https://x.com/${redes_sociales.twitter.replace("@", "")}`
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="publication-modal__social-btn publication-modal__social-btn--twitter">
+                              <FontAwesomeIcon icon={faXTwitter} />X
+                            </a>
+                          )}
+                          {redes_sociales?.youtube && (
+                            <a
+                              href={
+                                redes_sociales.youtube.startsWith("http")
+                                  ? redes_sociales.youtube
+                                  : `https://youtube.com/@${redes_sociales.youtube}`
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="publication-modal__social-btn publication-modal__social-btn--youtube">
+                              <FontAwesomeIcon icon={faYoutube} />
+                              YouTube
+                            </a>
+                          )}
+                          {redes_sociales?.linkedin && (
+                            <a
+                              href={
+                                redes_sociales.linkedin.startsWith("http")
+                                  ? redes_sociales.linkedin
+                                  : `https://linkedin.com/company/${redes_sociales.linkedin}`
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="publication-modal__social-btn publication-modal__social-btn--linkedin">
+                              <FontAwesomeIcon icon={faLinkedin} />
+                              LinkedIn
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {isEditMode && (
+                    <div className="publication-modal__edit-section">
+                      <div className="publication-modal__edit-field">
+                        <label>Teléfono</label>
+                        <input
+                          type="tel"
+                          value={editData.telefono}
+                          onChange={(e) =>
+                            setEditData({
+                              ...editData,
+                              telefono: e.target.value,
+                            })
+                          }
+                          placeholder="Número de teléfono"
+                        />
                       </div>
-                    )}
-                  </div>
+                      <div className="publication-modal__edit-field">
+                        <label>Email</label>
+                        <input
+                          type="email"
+                          value={editData.email}
+                          onChange={(e) =>
+                            setEditData({ ...editData, email: e.target.value })
+                          }
+                          placeholder="Correo electrónico"
+                        />
+                      </div>
+                      <div className="publication-modal__edit-field">
+                        <label>WhatsApp</label>
+                        <input
+                          type="tel"
+                          value={editData.whatsapp}
+                          onChange={(e) =>
+                            setEditData({
+                              ...editData,
+                              whatsapp: e.target.value,
+                            })
+                          }
+                          placeholder="Número de WhatsApp"
+                        />
+                      </div>
+                      <div className="publication-modal__edit-field">
+                        <label>Sitio Web</label>
+                        <input
+                          type="url"
+                          value={editData.sitio_web}
+                          onChange={(e) =>
+                            setEditData({
+                              ...editData,
+                              sitio_web: e.target.value,
+                            })
+                          }
+                          placeholder="https://ejemplo.com"
+                        />
+                      </div>
+                      <div className="publication-modal__edit-field">
+                        <label>Instagram</label>
+                        <input
+                          type="text"
+                          value={editData.instagram}
+                          onChange={(e) =>
+                            setEditData({
+                              ...editData,
+                              instagram: e.target.value,
+                            })
+                          }
+                          placeholder="@usuario o URL"
+                        />
+                      </div>
+                      <div className="publication-modal__edit-field">
+                        <label>Facebook</label>
+                        <input
+                          type="text"
+                          value={editData.facebook}
+                          onChange={(e) =>
+                            setEditData({
+                              ...editData,
+                              facebook: e.target.value,
+                            })
+                          }
+                          placeholder="URL de Facebook"
+                        />
+                      </div>
+                      <div className="publication-modal__edit-field">
+                        <label>TikTok</label>
+                        <input
+                          type="text"
+                          value={editData.tiktok}
+                          onChange={(e) =>
+                            setEditData({ ...editData, tiktok: e.target.value })
+                          }
+                          placeholder="@usuario"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </AccordionSection>
               )}
 
@@ -770,6 +1177,15 @@ export default function BusinessModal({ business, isOpen, onClose }) {
                 <FontAwesomeIcon icon={faBookmark} />
                 Guardar
               </button>
+              {canEdit && !isEditMode && (
+                <button
+                  className="publication-modal__cta-btn publication-modal__cta-btn--edit"
+                  onClick={() => setIsEditMode(true)}
+                  title="Editar negocio">
+                  <FontAwesomeIcon icon={faPencil} />
+                  Editar
+                </button>
+              )}
             </div>
           </div>
         </div>
