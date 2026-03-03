@@ -8,7 +8,7 @@ import {
   useMemo,
 } from "react";
 import { supabase } from "../lib/supabase";
-import { ROLES, checkBanStatus } from "../lib/database";
+import { ROLES, checkBanStatus, ensureProfileExists } from "../lib/database";
 import { useToast } from "./ToastContext";
 import BannedUserCard from "../components/UI/BannedUserCard";
 
@@ -222,6 +222,9 @@ export const AuthProvider = ({ children }) => {
             return;
           }
 
+          // Asegurar que el perfil exista antes de cargar el rol
+          await ensureProfileExists(session.user.id);
+
           // Cargar user + role en un solo dispatch
           const role = await loadUserRole(session.user.id);
           if (isMountedRef.current) {
@@ -285,6 +288,9 @@ export const AuthProvider = ({ children }) => {
             // Diferir ban check y role load para ejecutarse FUERA del lock
             setTimeout(async () => {
               try {
+                // Asegurar que el perfil exista (especialmente para nuevos usuarios OAuth)
+                await ensureProfileExists(session.user.id);
+
                 // Verificar ban
                 const banStatus = await checkBanStatus(session.user.id);
                 if (banStatus.isBanned) {

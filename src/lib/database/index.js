@@ -59,7 +59,7 @@ export {
 export { getTags, addTagsToEvent } from "./tags";
 
 // ============ PERFILES ============
-export { getProfile, upsertProfile } from "./profiles";
+export { getProfile, upsertProfile, ensureProfileExists } from "./profiles";
 
 // ============ NEGOCIOS ============
 export {

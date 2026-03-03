@@ -110,10 +110,12 @@ export async function getPlanPrices() {
 
 /**
  * Actualizar precios de planes (solo admins)
- * Usa upsert para garantizar que la fila se cree si no existe.
+ * Intenta UPDATE primero; si la fila no existe, hace INSERT.
+ * Verifica que los datos se hayan guardado correctamente.
  * @param {Object} prices - Precios por plan_type
  * @param {string} userId - ID del admin
  * @returns {Promise<boolean>}
+ * @throws {Error} Si falla la actualización
  */
 export async function updatePlanPrices(prices, userId) {
   const normalized = {
@@ -121,10 +123,63 @@ export async function updatePlanPrices(prices, userId) {
     ...prices,
   };
 
-  return updateAppSetting(
-    "plan_prices",
-    normalized,
-    userId,
-    "Precios de planes en CLP por plan_type",
+  // 1. Intentar UPDATE (funciona si la fila ya existe)
+  const { data: updated, error: updateError } = await supabase
+    .from("app_settings")
+    .update({
+      value: normalized,
+      updated_by: userId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("key", "plan_prices")
+    .select("key");
+
+  if (updateError) {
+    console.error("[updatePlanPrices] Error en UPDATE:", updateError);
+    throw new Error(
+      "No se pudieron actualizar los precios: " + updateError.message,
+    );
+  }
+
+  // 2. Si UPDATE no afectó filas, la fila no existe → INSERT
+  if (!updated || updated.length === 0) {
+    console.log("[updatePlanPrices] Fila no existe, insertando...");
+    const { error: insertError } = await supabase.from("app_settings").insert({
+      key: "plan_prices",
+      value: normalized,
+      description: "Precios de planes en CLP por plan_type",
+      updated_by: userId,
+      updated_at: new Date().toISOString(),
+    });
+
+    if (insertError) {
+      console.error("[updatePlanPrices] Error en INSERT:", insertError);
+      throw new Error(
+        "No se pudieron guardar los precios: " + insertError.message,
+      );
+    }
+  }
+
+  // 3. Verificar que se guardó correctamente
+  const saved = await getAppSetting("plan_prices");
+  if (!saved || typeof saved !== "object") {
+    throw new Error(
+      "Los precios no se guardaron correctamente en la base de datos",
+    );
+  }
+
+  // Validar que los valores coincidan
+  const mismatch = Object.keys(normalized).find(
+    (key) => saved[key] !== normalized[key],
   );
+  if (mismatch) {
+    console.error("[updatePlanPrices] Precios no coinciden tras guardar:", {
+      normalized,
+      saved,
+    });
+    throw new Error("Los precios guardados no coinciden con los enviados");
+  }
+
+  console.log("[updatePlanPrices] Precios guardados exitosamente:", saved);
+  return true;
 }

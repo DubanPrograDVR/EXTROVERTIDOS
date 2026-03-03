@@ -29,7 +29,8 @@ const TRANSBANK_API = {
   transactionPath: "/rswebpaytransaction/api/webpay/v1.2/transactions",
 };
 
-// Precios validados server-side (NUNCA confiar en el frontend)
+// Precios por defecto (fallback si la BD no responde)
+// Los precios reales se leen de app_settings.plan_prices via getPlanPrices()
 const PLAN_PRICES = {
   panorama_unica: 25000,
   panorama_pack4: 39990,
@@ -107,20 +108,36 @@ async function getPlanPrices(supabaseAdmin) {
       .maybeSingle();
 
     if (error) {
-      console.warn("[create-payment] Error leyendo plan_prices:", error);
+      console.warn(
+        "[create-payment] Error leyendo plan_prices, usando defaults:",
+        error,
+      );
       return { ...PLAN_PRICES };
     }
 
     if (!data?.value || typeof data.value !== "object") {
+      console.warn(
+        "[create-payment] plan_prices no encontrado o inválido en DB, usando defaults",
+      );
       return { ...PLAN_PRICES };
     }
 
-    return {
+    // Los precios de la BD sobreescriben los defaults
+    const finalPrices = {
       ...PLAN_PRICES,
       ...data.value,
     };
+
+    console.log(
+      "[create-payment] Precios cargados desde DB:",
+      JSON.stringify(finalPrices),
+    );
+    return finalPrices;
   } catch (err) {
-    console.warn("[create-payment] Error inesperado en plan_prices:", err);
+    console.warn(
+      "[create-payment] Error inesperado en plan_prices, usando defaults:",
+      err,
+    );
     return { ...PLAN_PRICES };
   }
 }
@@ -176,6 +193,48 @@ Deno.serve(async (req) => {
 
     // Cliente con service_role (para operaciones de DB sin RLS)
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+    // ── 1b. Asegurar que el perfil del usuario exista ──
+    // CRÍTICO: La tabla subscriptions tiene FK a profiles(id).
+    // Si el perfil no existe (ej: usuario nuevo con OAuth/Google),
+    // el INSERT en subscriptions falla con violación de FK.
+    {
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (!profile) {
+        console.log(
+          `[create-payment] Perfil no encontrado para ${user.id}, creándolo...`,
+        );
+        const { error: profileError } = await supabaseAdmin
+          .from("profiles")
+          .insert({
+            id: user.id,
+            email: user.email,
+            nombre:
+              user.user_metadata?.full_name ||
+              user.user_metadata?.name ||
+              user.user_metadata?.nombre ||
+              user.email?.split("@")[0] ||
+              "Usuario",
+            avatar_url: user.user_metadata?.avatar_url || null,
+          });
+
+        if (profileError && profileError.code !== "23505") {
+          console.error("[create-payment] Error creando perfil:", profileError);
+          return jsonResponse(
+            { error: "Error al crear el perfil de usuario" },
+            500,
+          );
+        }
+        console.log(
+          `[create-payment] Perfil creado exitosamente para ${user.id}`,
+        );
+      }
+    }
 
     const planPrices = await getPlanPrices(supabaseAdmin);
 
