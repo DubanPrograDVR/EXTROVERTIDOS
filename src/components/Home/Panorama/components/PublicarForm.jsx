@@ -46,6 +46,7 @@ const PublicarForm = ({
   onImageChange,
   onRemoveImage,
   onSaveDraft,
+  enabledCalendarModes,
 }) => {
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
   const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
@@ -328,6 +329,7 @@ const PublicarForm = ({
             horaFin={formData.hora_fin}
             onChange={onChange}
             errors={errors}
+            enabledModes={enabledCalendarModes}
           />
         </div>
         {/* Horarios ahora integrados dentro del DateRangePicker */}

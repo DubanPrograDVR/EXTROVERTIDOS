@@ -1,9 +1,18 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../../../context/AuthContext";
-import { getCategories } from "../../../../lib/database";
+import {
+  getCategories,
+  getActivePublishSubscription,
+} from "../../../../lib/database";
+import { isPlanesEnabled } from "../../../../lib/database/settings";
 import { supabase } from "../../../../lib/supabase";
 import { INITIAL_FORM_STATE } from "../constants";
+import {
+  getCalendarModes,
+  canUserPublish,
+  getPlanInfo,
+} from "../../../../lib/planRules";
 
 // Hooks especializados
 import useFormValidation from "./useFormValidation";
@@ -75,6 +84,11 @@ const usePublicarFormV2 = () => {
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  // === ESTADO DE PLAN/SUSCRIPCIÓN ===
+  const [activeSubscription, setActiveSubscription] = useState(null);
+  const [planesEnabled, setPlanesEnabled] = useState(true);
+  const [loadingPlan, setLoadingPlan] = useState(true);
 
   // === HOOKS ESPECIALIZADOS ===
 
@@ -198,7 +212,57 @@ const usePublicarFormV2 = () => {
     showToast,
     validateForm: validateFormForSubmit,
     setShowAuthModal,
+    activeSubscription,
+    planesEnabled,
   });
+
+  // === CARGAR PLAN ACTIVO DEL USUARIO ===
+  useEffect(() => {
+    let isCancelled = false;
+
+    const loadPlanData = async () => {
+      try {
+        const [enabled, sub] = await Promise.all([
+          isPlanesEnabled(),
+          user?.id
+            ? getActivePublishSubscription(user.id)
+            : Promise.resolve(null),
+        ]);
+
+        if (!isCancelled && isMountedRef.current) {
+          setPlanesEnabled(enabled);
+          setActiveSubscription(sub);
+        }
+      } catch (error) {
+        console.error("Error cargando datos de plan:", error);
+      } finally {
+        if (!isCancelled && isMountedRef.current) {
+          setLoadingPlan(false);
+        }
+      }
+    };
+
+    loadPlanData();
+    return () => {
+      isCancelled = true;
+    };
+  }, [user?.id]);
+
+  // === MODOS DE CALENDARIO SEGÚN PLAN ===
+  const enabledCalendarModes = useMemo(() => {
+    if (isAdmin || isModerator) return null; // null = sin restricciones
+    const { enabledModes } = getCalendarModes(
+      activeSubscription?.plan || null,
+      planesEnabled,
+    );
+    return enabledModes;
+  }, [activeSubscription?.plan, planesEnabled, isAdmin, isModerator]);
+
+  // === INFO DEL PLAN PARA UI ===
+  const planInfo = useMemo(
+    () => getPlanInfo(activeSubscription, planesEnabled),
+    [activeSubscription, planesEnabled],
+  );
 
   // === CARGA INICIAL DE CATEGORÍAS ===
   useEffect(() => {
@@ -616,7 +680,7 @@ const usePublicarFormV2 = () => {
   );
 
   // Estado de carga combinado
-  const isLoading = loadingCategories || loadingEvent;
+  const isLoading = loadingCategories || loadingEvent || loadingPlan;
 
   // === CLEANUP AL DESMONTAR ===
   useEffect(() => {
@@ -655,6 +719,12 @@ const usePublicarFormV2 = () => {
 
     // Estado de UI
     showAuthModal,
+
+    // Estado de plan
+    activeSubscription,
+    planesEnabled,
+    enabledCalendarModes,
+    planInfo,
 
     // Estado de borradores
     currentDraftId: draftManager.currentDraftId,

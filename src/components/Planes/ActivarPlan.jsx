@@ -22,6 +22,8 @@ import {
   faChevronRight,
   faBan,
   faSpinner,
+  faCircleCheck,
+  faLock,
 } from "@fortawesome/free-solid-svg-icons";
 import "./styles/activar-plan.css";
 
@@ -142,6 +144,8 @@ export default function ActivarPlan() {
   const [processingPayment, setProcessingPayment] = useState(false);
   const [planPrices, setPlanPrices] = useState(DEFAULT_PLAN_PRICES);
   const [activePlans, setActivePlans] = useState(new Set());
+  const [hasActivePanorama, setHasActivePanorama] = useState(false);
+  const [hasActiveSuperguia, setHasActiveSuperguia] = useState(false);
 
   // Verificar si los planes están habilitados
   useEffect(() => {
@@ -173,13 +177,33 @@ export default function ActivarPlan() {
       try {
         const subs = await getUserSubscriptions(user.id);
         const activeSet = new Set();
+        let panoramaActivo = false;
+        let superguiaActiva = false;
+
         (subs || []).forEach((s) => {
           if (s.estado === "activa") {
             const frontendId = PLAN_TYPE_TO_ID[s.plan];
             if (frontendId) activeSet.add(frontendId);
+
+            // Detectar si tiene algún panorama activo (unica, pack4, ilimitado)
+            if (
+              [
+                "panorama_unica",
+                "panorama_pack4",
+                "panorama_ilimitado",
+              ].includes(s.plan)
+            ) {
+              panoramaActivo = true;
+            }
+            if (s.plan === "superguia") {
+              superguiaActiva = true;
+            }
           }
         });
+
         setActivePlans(activeSet);
+        setHasActivePanorama(panoramaActivo);
+        setHasActiveSuperguia(superguiaActiva);
       } catch (error) {
         console.error("Error cargando suscripciones activas:", error);
       }
@@ -325,89 +349,105 @@ export default function ActivarPlan() {
         </div>
 
         <div className="activar-plan__cards">
-          {planesPanoramas.map((plan) => (
-            <div
-              key={plan.id}
-              className={`activar-plan__card ${
-                plan.destacado ? "activar-plan__card--featured" : ""
-              } ${selectedPlan === plan.id ? "activar-plan__card--selected" : ""} ${activePlans.has(plan.id) ? "activar-plan__card--disabled" : ""}`}
-              onClick={() =>
-                !activePlans.has(plan.id) && setSelectedPlan(plan.id)
-              }>
-              {/* Etiqueta destacada */}
-              {plan.etiqueta && (
-                <span className="activar-plan__card-badge">
-                  {plan.etiqueta}
-                </span>
-              )}
-
-              {/* Icono del plan */}
-              <div className="activar-plan__card-icon">
-                <img
-                  src={iconPanorama}
-                  alt=""
-                  className="activar-plan__card-icon-img"
-                />
-              </div>
-
-              {/* Info del plan */}
-              <h3 className="activar-plan__card-name">{plan.nombre}</h3>
-              <p className="activar-plan__card-desc">{plan.descripcion}</p>
-
-              {/* Precio */}
-              <div className="activar-plan__card-pricing">
-                {plan.precioOriginal && (
-                  <span className="activar-plan__card-original">
-                    {formatPrecio(plan.precioOriginal)}
+          {planesPanoramas.map((plan) => {
+            const isOwnActive = activePlans.has(plan.id);
+            const isOtherActive = hasActivePanorama && !isOwnActive;
+            const isPlanDisabled = isOwnActive || isOtherActive;
+            return (
+              <div
+                key={plan.id}
+                className={`activar-plan__card ${
+                  plan.destacado ? "activar-plan__card--featured" : ""
+                } ${selectedPlan === plan.id ? "activar-plan__card--selected" : ""} ${isPlanDisabled ? "activar-plan__card--disabled" : ""} ${isOwnActive ? "activar-plan__card--own-active" : ""} ${isOtherActive ? "activar-plan__card--other-active" : ""}`}
+                onClick={() => !isPlanDisabled && setSelectedPlan(plan.id)}>
+                {/* Badge de plan activo */}
+                {isOwnActive && (
+                  <span className="activar-plan__card-active-badge">
+                    <FontAwesomeIcon icon={faCircleCheck} />
+                    Plan Activo
                   </span>
                 )}
-                <span className="activar-plan__card-price">
-                  {formatPrecio(plan.precio)}
-                </span>
-              </div>
 
-              {/* Duración */}
-              {plan.duracion && (
-                <span className="activar-plan__card-duration">
-                  {plan.duracion}
-                </span>
-              )}
+                {/* Etiqueta destacada */}
+                {plan.etiqueta && !isOwnActive && (
+                  <span className="activar-plan__card-badge">
+                    {plan.etiqueta}
+                  </span>
+                )}
 
-              {/* Features */}
-              <ul className="activar-plan__card-features">
-                {plan.features.map((feat, i) => (
-                  <li key={i}>
-                    <FontAwesomeIcon icon={faCheck} />
-                    {feat}
-                  </li>
-                ))}
-              </ul>
-
-              {/* Botón seleccionar o mensaje de plan activo */}
-              {activePlans.has(plan.id) ? (
-                <div className="activar-plan__card-active-msg">
-                  <FontAwesomeIcon icon={faBan} />
-                  <span>Ya tienes esta suscripción activa</span>
+                {/* Icono del plan */}
+                <div className="activar-plan__card-icon">
+                  <img
+                    src={iconPanorama}
+                    alt=""
+                    className="activar-plan__card-icon-img"
+                  />
                 </div>
-              ) : (
-                <button
-                  type="button"
-                  className={`activar-plan__card-btn ${
-                    selectedPlan === plan.id
-                      ? "activar-plan__card-btn--active"
-                      : ""
-                  }`}>
-                  {selectedPlan === plan.id ? (
-                    <>
-                      <FontAwesomeIcon icon={faCheck} /> Seleccionado
-                    </>
-                  ) : (
-                    "Seleccionar"
+
+                {/* Info del plan */}
+                <h3 className="activar-plan__card-name">{plan.nombre}</h3>
+                <p className="activar-plan__card-desc">{plan.descripcion}</p>
+
+                {/* Precio */}
+                <div className="activar-plan__card-pricing">
+                  {plan.precioOriginal && (
+                    <span className="activar-plan__card-original">
+                      {formatPrecio(plan.precioOriginal)}
+                    </span>
                   )}
-                </button>
-              )}
-            </div>
-          ))}
+                  <span className="activar-plan__card-price">
+                    {formatPrecio(plan.precio)}
+                  </span>
+                </div>
+
+                {/* Duración */}
+                {plan.duracion && (
+                  <span className="activar-plan__card-duration">
+                    {plan.duracion}
+                  </span>
+                )}
+
+                {/* Features */}
+                <ul className="activar-plan__card-features">
+                  {plan.features.map((feat, i) => (
+                    <li key={i}>
+                      <FontAwesomeIcon icon={faCheck} />
+                      {feat}
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Botón seleccionar o mensaje de plan activo */}
+                {isOwnActive ? (
+                  <div className="activar-plan__card-active-msg activar-plan__card-active-msg--own">
+                    <FontAwesomeIcon icon={faCircleCheck} />
+                    <span>Suscripción activa</span>
+                  </div>
+                ) : isOtherActive ? (
+                  <div className="activar-plan__card-active-msg activar-plan__card-active-msg--other">
+                    <FontAwesomeIcon icon={faLock} />
+                    <span>Ya tienes otro plan de panorama activo</span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className={`activar-plan__card-btn ${
+                      selectedPlan === plan.id
+                        ? "activar-plan__card-btn--active"
+                        : ""
+                    }`}>
+                    {selectedPlan === plan.id ? (
+                      <>
+                        <FontAwesomeIcon icon={faCheck} /> Seleccionado
+                      </>
+                    ) : (
+                      "Seleccionar"
+                    )}
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -427,10 +467,8 @@ export default function ActivarPlan() {
         <div
           className={`activar-plan__superguia ${
             addSuperguia ? "activar-plan__superguia--selected" : ""
-          } ${activePlans.has("superguia") ? "activar-plan__superguia--disabled" : ""}`}
-          onClick={() =>
-            !activePlans.has("superguia") && setAddSuperguia(!addSuperguia)
-          }>
+          } ${hasActiveSuperguia ? "activar-plan__superguia--disabled activar-plan__superguia--own-active" : ""}`}
+          onClick={() => !hasActiveSuperguia && setAddSuperguia(!addSuperguia)}>
           <div className="activar-plan__superguia-content">
             <div className="activar-plan__superguia-icon">
               <FontAwesomeIcon icon={faStore} />
@@ -458,10 +496,10 @@ export default function ActivarPlan() {
               </p>
             </div>
           </div>
-          {activePlans.has("superguia") ? (
-            <div className="activar-plan__card-active-msg activar-plan__superguia-active-msg">
-              <FontAwesomeIcon icon={faBan} />
-              <span>Ya tienes esta suscripción activa</span>
+          {hasActiveSuperguia ? (
+            <div className="activar-plan__card-active-msg activar-plan__card-active-msg--own activar-plan__superguia-active-msg">
+              <FontAwesomeIcon icon={faCircleCheck} />
+              <span>Superguía activa</span>
             </div>
           ) : (
             <button

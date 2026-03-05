@@ -114,6 +114,37 @@
   background: rgba(239, 68, 68, 0.1);
 }
 
+/* Contenedor de acciones (ojo + basurero) */
+.perfil-notification__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Botón ver publicación */
+.perfil-notification__view {
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.perfil-notification__view:hover {
+  border-color: #ff6600;
+  color: #ff6600;
+  background: rgba(255, 102, 0, 0.1);
+}
+
+.perfil-notification__view:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .perfil-notification {
@@ -125,6 +156,11 @@
     width: 40px;
     height: 40px;
     font-size: 1rem;
+  }
+
+  .perfil-notification__actions {
+    flex-direction: row;
+    align-self: flex-end;
   }
 
   .perfil-notification__delete {

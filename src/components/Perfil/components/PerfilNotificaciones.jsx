@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBell,
@@ -7,7 +8,10 @@ import {
   faInfoCircle,
   faTrash,
   faSpinner,
+  faEye,
 } from "@fortawesome/free-solid-svg-icons";
+import { getEventById } from "../../../lib/database";
+import PublicationModal from "../../Superguia/PublicationModal";
 import "./styles/section.css";
 import "./styles/notificaciones.css";
 
@@ -19,6 +23,32 @@ export default function PerfilNotificaciones({
   onMarkAllAsRead,
   onDelete,
 }) {
+  // Estado para el modal de vista previa
+  const [viewModal, setViewModal] = useState({ open: false, publication: null });
+  const [loadingEvent, setLoadingEvent] = useState(null); // ID del evento cargándose
+
+  // Ver publicación asociada a la notificación
+  const handleViewPublication = async (e, notification) => {
+    e.stopPropagation(); // No marcar como leída al hacer clic en el botón
+
+    if (!notification.eventId) return;
+
+    setLoadingEvent(notification.id);
+    try {
+      const event = await getEventById(notification.eventId);
+      if (event) {
+        setViewModal({ open: true, publication: event });
+      }
+    } catch (error) {
+      console.error("Error al cargar publicación:", error);
+    } finally {
+      setLoadingEvent(null);
+    }
+  };
+
+  const handleCloseView = () => {
+    setViewModal({ open: false, publication: null });
+  };
   // Formatear fecha relativa
   const formatRelativeDate = (dateString) => {
     const date = new Date(dateString);
@@ -112,18 +142,39 @@ export default function PerfilNotificaciones({
                   {formatRelativeDate(notification.date)}
                 </span>
               </div>
-              <button
-                className="perfil-notification__delete"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(notification.id);
-                }}>
-                <FontAwesomeIcon icon={faTrash} />
-              </button>
+              <div className="perfil-notification__actions">
+                {notification.eventId && (
+                  <button
+                    className="perfil-notification__view"
+                    onClick={(e) => handleViewPublication(e, notification)}
+                    disabled={loadingEvent === notification.id}
+                    title="Ver publicación">
+                    <FontAwesomeIcon
+                      icon={loadingEvent === notification.id ? faSpinner : faEye}
+                      spin={loadingEvent === notification.id}
+                    />
+                  </button>
+                )}
+                <button
+                  className="perfil-notification__delete"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(notification.id);
+                  }}>
+                  <FontAwesomeIcon icon={faTrash} />
+                </button>
+              </div>
             </div>
           ))}
         </div>
       )}
+
+      {/* Modal de vista previa de publicación */}
+      <PublicationModal
+        publication={viewModal.publication}
+        isOpen={viewModal.open}
+        onClose={handleCloseView}
+      />
     </div>
   );
 }

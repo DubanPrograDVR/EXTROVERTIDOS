@@ -168,8 +168,11 @@ export {
 // ============ SUSCRIPCIONES ============
 export {
   getActiveSubscription,
+  getActivePublishSubscription,
   getUserSubscriptions,
   cancelSubscription,
+  consumePublication,
+  validateAndConsumePublication,
 } from "./subscriptions";
 
 // ============ CONFIGURACIONES DE LA APP ============

@@ -5,7 +5,12 @@ import {
   updateEvent,
   uploadEventImage,
   deleteDraft,
+  validateAndConsumePublication,
 } from "../../../../lib/database";
+import {
+  canUserPublish,
+  interpretPublishResult,
+} from "../../../../lib/planRules";
 
 /**
  * Hook especializado para manejar el proceso de envío de eventos
@@ -42,6 +47,8 @@ const useEventSubmit = ({
   showToast,
   validateForm,
   setShowAuthModal,
+  activeSubscription,
+  planesEnabled,
 }) => {
   const navigate = useNavigate();
 
@@ -227,6 +234,56 @@ const useEventSubmit = ({
         return false;
       }
 
+      // === VERIFICACIÓN DE PLAN/SUSCRIPCIÓN ===
+      // Solo para creación de eventos nuevos (no edición)
+      const isEditing = !!editEventId;
+      let publishResult = null;
+
+      if (!isEditing) {
+        // Pre-validación rápida en frontend (UX inmediata)
+        // Usa datos en cache para bloquear antes de llamar al servidor
+        const quickCheck = canUserPublish({
+          subscription: activeSubscription,
+          planesEnabled,
+          fechaEvento: formData.fecha_evento,
+          isAdmin: currentIsAdmin,
+          isModerator: currentIsModerator,
+        });
+
+        if (!quickCheck.canPublish) {
+          showToastRef.current?.(quickCheck.error, "error");
+          return false;
+        }
+
+        if (quickCheck.warning) {
+          showToastRef.current?.(quickCheck.warning, "warning");
+        }
+
+        // Validación REAL + consumo atómico en backend (anti-bypass)
+        // Esta es la validación definitiva que no se puede saltar
+        try {
+          const rpcData = await validateAndConsumePublication(
+            currentUser.id,
+            currentIsAdmin,
+            currentIsModerator,
+          );
+          publishResult = interpretPublishResult(rpcData);
+
+          if (!publishResult.allowed) {
+            showToastRef.current?.(publishResult.error, "error");
+            return false;
+          }
+        } catch (rpcError) {
+          console.error("Error en validación de publicación:", rpcError);
+          showToastRef.current?.(
+            rpcError.message ||
+              "Error al validar permisos de publicación. Intenta nuevamente.",
+            "error",
+          );
+          return false;
+        }
+      }
+
       // === INICIO DEL SUBMIT ===
       isSubmittingRef.current = true;
       setIsSubmitting(true);
@@ -264,8 +321,6 @@ const useEventSubmit = ({
         const eventData = prepareEventData(formData, allImageUrls);
 
         // 4. CREAR O ACTUALIZAR EVENTO
-        const isEditing = !!editEventId;
-
         if (isEditing) {
           // === ACTUALIZAR EVENTO EXISTENTE ===
           await updateEvent(editEventId, eventData);
@@ -284,7 +339,22 @@ const useEventSubmit = ({
           const canPublishDirectly = currentIsAdmin || currentIsModerator;
           eventData.estado = canPublishDirectly ? "publicado" : "pendiente";
 
+          // Asignar fecha de expiración de la publicación (del RPC o 30 días por defecto)
+          if (publishResult?.publicationExpiresAt) {
+            eventData.publication_expires_at =
+              publishResult.publicationExpiresAt;
+          } else {
+            // Para admins/mods o cuando restricciones están desactivadas
+            const expiresAt = new Date();
+            expiresAt.setDate(expiresAt.getDate() + 30);
+            eventData.publication_expires_at = expiresAt.toISOString();
+          }
+
           await createEvent(eventData);
+
+          // NOTA: El consumo de la publicación ya fue realizado atómicamente
+          // por validateAndConsumePublication() antes de llegar aquí.
+          // No necesitamos llamar a consumePublication() por separado.
 
           if (isMountedRef.current) {
             showToastRef.current?.(
@@ -359,6 +429,8 @@ const useEventSubmit = ({
       uploadImages,
       prepareEventData,
       navigate,
+      activeSubscription,
+      planesEnabled,
     ],
   );
 

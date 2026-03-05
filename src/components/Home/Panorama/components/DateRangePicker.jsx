@@ -149,6 +149,7 @@ const DateRangePicker = ({
   horaFin,
   onChange,
   errors,
+  enabledModes,
 }) => {
   const today = new Date();
   const todayISO = toISO(today);
@@ -187,6 +188,13 @@ const DateRangePicker = ({
       setSelectionMode("specific");
     else if (esMultidia && fechaFin) setSelectionMode("range");
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Force single mode if current mode is not allowed by plan
+  useEffect(() => {
+    if (enabledModes && !enabledModes.includes(selectionMode)) {
+      switchToSingle();
+    }
+  }, [enabledModes]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (selectionMode === "range") {
@@ -682,27 +690,33 @@ const DateRangePicker = ({
       <div className="drp-calendar__mode-bar">
         <span className="drp-calendar__mode-label">¿Cómo dura tu evento?</span>
         <div className="drp-calendar__mode-options">
-          <button
-            type="button"
-            className={`drp-calendar__mode-btn ${selectionMode === "single" ? "active" : ""}`}
-            onClick={switchToSingle}>
-            <FontAwesomeIcon icon={faCalendarDay} />
-            <span>Un día</span>
-          </button>
-          <button
-            type="button"
-            className={`drp-calendar__mode-btn ${selectionMode === "range" ? "active" : ""}`}
-            onClick={switchToRange}>
-            <FontAwesomeIcon icon={faLayerGroup} />
-            <span>Varios días seguidos</span>
-          </button>
-          <button
-            type="button"
-            className={`drp-calendar__mode-btn ${selectionMode === "specific" ? "active" : ""}`}
-            onClick={switchToSpecific}>
-            <FontAwesomeIcon icon={faListCheck} />
-            <span>Fechas específicas</span>
-          </button>
+          {(!enabledModes || enabledModes.includes("single")) && (
+            <button
+              type="button"
+              className={`drp-calendar__mode-btn ${selectionMode === "single" ? "active" : ""}`}
+              onClick={switchToSingle}>
+              <FontAwesomeIcon icon={faCalendarDay} />
+              <span>Un día</span>
+            </button>
+          )}
+          {(!enabledModes || enabledModes.includes("range")) && (
+            <button
+              type="button"
+              className={`drp-calendar__mode-btn ${selectionMode === "range" ? "active" : ""}`}
+              onClick={switchToRange}>
+              <FontAwesomeIcon icon={faLayerGroup} />
+              <span>Varios días seguidos</span>
+            </button>
+          )}
+          {(!enabledModes || enabledModes.includes("specific")) && (
+            <button
+              type="button"
+              className={`drp-calendar__mode-btn ${selectionMode === "specific" ? "active" : ""}`}
+              onClick={switchToSpecific}>
+              <FontAwesomeIcon icon={faListCheck} />
+              <span>Fechas específicas</span>
+            </button>
+          )}
         </div>
       </div>
 

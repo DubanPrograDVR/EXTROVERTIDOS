@@ -277,19 +277,26 @@ Deno.serve(async (req) => {
     }
 
     // ── 3. Verificar que no exista suscripción activa duplicada ──
+    // Bloquear si ya tiene CUALQUIER plan de panorama activo
     if (panoramaPlanType) {
-      const { data: existingSub, error: rpcError } = await supabaseAdmin.rpc(
-        "check_active_subscription",
-        {
-          p_user_id: user.id,
-          p_plan: panoramaPlanType,
-        },
-      );
+      const { data: anyActivePanorama, error: anyPanoramaError } =
+        await supabaseAdmin
+          .from("subscriptions")
+          .select("id, plan")
+          .eq("user_id", user.id)
+          .eq("estado", "activa")
+          .in("plan", [
+            "panorama_unica",
+            "panorama_pack4",
+            "panorama_ilimitado",
+          ])
+          .limit(1)
+          .maybeSingle();
 
-      if (rpcError) {
+      if (anyPanoramaError) {
         console.error(
-          "[create-payment] Error verificando suscripción activa:",
-          rpcError,
+          "[create-payment] Error verificando suscripción panorama activa:",
+          anyPanoramaError,
         );
         return jsonResponse(
           { error: "Error al verificar suscripciones activas" },
@@ -297,10 +304,11 @@ Deno.serve(async (req) => {
         );
       }
 
-      if (existingSub && existingSub.length > 0) {
+      if (anyActivePanorama) {
         return jsonResponse(
           {
-            error: `Ya tienes un plan ${panorama_plan} activo. Espera a que expire antes de comprar otro.`,
+            error:
+              "Ya tienes un plan de panorama activo. Espera a que expire antes de comprar otro.",
           },
           409,
         );
