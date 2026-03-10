@@ -3,7 +3,7 @@
 /* Publications Grid */
 .perfil-publications__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
   gap: 25px;
 }
 
@@ -97,11 +97,13 @@
 
 .perfil-publication-card__actions {
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .perfil-publication-card__btn {
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 80px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -151,8 +153,126 @@
 }
 
 /* Responsive */
+@media (max-width: 900px) {
+  .perfil-publications__grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}
+
 @media (max-width: 768px) {
   .perfil-publications__grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ===== MODAL DE CONFIRMACIÓN DE ELIMINACIÓN ===== */
+.perfil-delete-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.perfil-delete-modal {
+  background: #1a1a1a;
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 420px;
+  width: 100%;
+  border: 1px solid #333;
+  text-align: center;
+}
+
+.perfil-delete-modal__icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(220, 38, 38, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.perfil-delete-modal__icon svg {
+  font-size: 28px;
+  color: #dc2626;
+}
+
+.perfil-delete-modal h3 {
+  color: #fff;
+  font-size: 1.4rem;
+  margin: 0 0 12px;
+}
+
+.perfil-delete-modal p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.95rem;
+  margin: 0 0 8px;
+  line-height: 1.5;
+}
+
+.perfil-delete-modal p strong {
+  color: #ff6600;
+}
+
+.perfil-delete-modal__warning {
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 0.85rem !important;
+  color: #ef4444 !important;
+  margin-top: 16px !important;
+}
+
+.perfil-delete-modal__actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.perfil-delete-modal__btn {
+  flex: 1;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.perfil-delete-modal__btn--cancel {
+  background: #333;
+  color: #fff;
+}
+
+.perfil-delete-modal__btn--cancel:hover {
+  background: #444;
+}
+
+.perfil-delete-modal__btn--confirm {
+  background: #ef4444;
+  color: #fff;
+}
+
+.perfil-delete-modal__btn--confirm:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.perfil-delete-modal__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }

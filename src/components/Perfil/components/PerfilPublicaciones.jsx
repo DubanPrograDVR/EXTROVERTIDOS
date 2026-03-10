@@ -11,6 +11,7 @@ import {
   faTrash,
   faPause,
   faPlay,
+  faExclamationTriangle,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   getCategories,
@@ -45,6 +46,7 @@ export default function PerfilPublicaciones({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(null);
   const [pausing, setPausing] = useState(null); // ID del evento en pausa/reactivación
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   // Cargar categorías para el modal de edición
   useEffect(() => {
@@ -79,19 +81,26 @@ export default function PerfilPublicaciones({
     setEditModal({ open: false, publication: null });
   };
 
-  // Eliminar publicación
-  const handleDelete = async (publication) => {
-    const confirmed = window.confirm(
-      `¿Estás seguro de eliminar "${publication.titulo}"? Esta acción no se puede deshacer.`,
-    );
-    if (!confirmed) return;
+  // Abrir modal de confirmación de eliminación
+  const handleDeleteClick = (publication) => {
+    setDeleteConfirm(publication);
+  };
 
-    setDeleting(publication.id);
+  // Cancelar eliminación
+  const handleDeleteCancel = () => {
+    setDeleteConfirm(null);
+  };
+
+  // Confirmar eliminación
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirm) return;
+    setDeleting(deleteConfirm.id);
     try {
-      await deleteEvent(publication.id);
+      await deleteEvent(deleteConfirm.id);
       if (showToast) {
         showToast("Publicación eliminada correctamente", "success");
       }
+      setDeleteConfirm(null);
       if (onPublicationUpdate) {
         onPublicationUpdate();
       }
@@ -267,7 +276,7 @@ export default function PerfilPublicaciones({
                     )}
                     <button
                       className="perfil-publication-card__btn perfil-publication-card__btn--delete"
-                      onClick={() => handleDelete(pub)}
+                      onClick={() => handleDeleteClick(pub)}
                       disabled={deleting === pub.id}>
                       <FontAwesomeIcon
                         icon={deleting === pub.id ? faSpinner : faTrash}
@@ -299,6 +308,50 @@ export default function PerfilPublicaciones({
         onSave={handleSaveEdit}
         loading={saving}
       />
+
+      {/* Modal de confirmación de eliminación */}
+      {deleteConfirm && (
+        <div
+          className="perfil-delete-modal-overlay"
+          onClick={handleDeleteCancel}>
+          <div
+            className="perfil-delete-modal"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="perfil-delete-modal__icon">
+              <FontAwesomeIcon icon={faExclamationTriangle} />
+            </div>
+            <h3>¿Eliminar publicación?</h3>
+            <p>
+              Estás a punto de eliminar permanentemente{" "}
+              <strong>"{deleteConfirm.titulo}"</strong>.
+            </p>
+            <p className="perfil-delete-modal__warning">
+              Esta acción no se puede deshacer.
+            </p>
+            <div className="perfil-delete-modal__actions">
+              <button
+                className="perfil-delete-modal__btn perfil-delete-modal__btn--cancel"
+                onClick={handleDeleteCancel}>
+                Cancelar
+              </button>
+              <button
+                className="perfil-delete-modal__btn perfil-delete-modal__btn--confirm"
+                onClick={handleDeleteConfirm}
+                disabled={deleting === deleteConfirm.id}>
+                {deleting === deleteConfirm.id ? (
+                  <>
+                    <FontAwesomeIcon icon={faSpinner} spin /> Eliminando...
+                  </>
+                ) : (
+                  <>
+                    <FontAwesomeIcon icon={faTrash} /> Eliminar
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
