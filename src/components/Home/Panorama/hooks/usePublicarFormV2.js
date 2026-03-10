@@ -599,16 +599,20 @@ const usePublicarFormV2 = () => {
       (c) => c.id === parseInt(formData.category_id),
     );
 
-    // Obtener preview de imagen
+    // Obtener preview de imagen (primera) y todas las previews
     let imagePreview = null;
+    let allPreviews = [];
     if (previewUrls.length > 0) {
-      imagePreview = await imageToBase64(previewUrls[0]);
+      const previewPromises = previewUrls.map((url) => imageToBase64(url));
+      allPreviews = (await Promise.all(previewPromises)).filter(Boolean);
+      imagePreview = allPreviews[0] || null;
     }
 
     return draftSaveRef.current?.(formData, {
       categoryName: selectedCategory?.nombre || "",
       imagePreview,
       imageCount: totalImages,
+      imagenesPreviews: allPreviews,
     });
   }, [
     isAuthenticated,

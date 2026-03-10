@@ -1,43 +1,36 @@
 /* ===== BORRADORES GRID ===== */
 .perfil-borradores__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 25px;
 }
 
 /* ===== BORRADOR CARD ===== */
 .perfil-borrador-card {
-  background: #1a1a1a;
-  border-radius: 16px;
+  background: #111;
+  border-radius: 15px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
   border: 1px solid rgba(255, 102, 0, 0.2);
+  transition: all 0.3s ease;
 }
 
 .perfil-borrador-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
-  border-color: rgba(255, 102, 0, 0.4);
+  border-color: #ff6600;
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(255, 102, 0, 0.2);
 }
 
 /* Imagen */
 .perfil-borrador-card__image {
   position: relative;
-  height: 200px;
+  aspect-ratio: 16/9;
   overflow: hidden;
-  background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
 }
 
 .perfil-borrador-card__image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.perfil-borrador-card:hover .perfil-borrador-card__image img {
-  transform: scale(1.05);
 }
 
 .perfil-borrador-card__placeholder {
@@ -54,21 +47,17 @@
 /* Badge de tipo */
 .perfil-borrador-card__type {
   position: absolute;
-  top: 12px;
-  left: 12px;
-  padding: 8px 14px;
+  top: 10px;
+  right: 10px;
+  padding: 5px 12px;
   border-radius: 20px;
   font-size: 0.75rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 .perfil-borrador-card__type.evento {
-  background: #ff6600;
+  background: #f59e0b;
   color: #000;
 }
 
@@ -79,24 +68,25 @@
 
 /* Contenido */
 .perfil-borrador-card__content {
-  padding: 1.25rem;
-  background: #1a1a1a;
+  padding: 20px;
 }
 
 .perfil-borrador-card__category {
+  display: inline-block;
+  padding: 4px 12px;
+  background: rgba(255, 102, 0, 0.2);
+  border-radius: 15px;
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 600;
   color: #ff6600;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  margin-bottom: 10px;
 }
 
 .perfil-borrador-card__title {
-  margin: 0.5rem 0;
   font-size: 1.1rem;
   font-weight: 700;
   color: #fff;
-  line-height: 1.3;
+  margin: 0 0 10px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -104,82 +94,57 @@
   overflow: hidden;
 }
 
-.perfil-borrador-card__description {
-  font-size: 0.875rem;
+.perfil-borrador-card__info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.6);
-  line-height: 1.5;
-  margin: 0.5rem 0;
+  margin: 0 0 15px;
 }
 
-.perfil-borrador-card__date {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.4);
-  margin: 0.75rem 0;
+.perfil-borrador-card__info svg {
+  color: #ff6600;
 }
 
 /* Acciones */
 .perfil-borrador-card__actions {
   display: flex;
-  gap: 0.5rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .perfil-borrador-card__btn {
-  flex: 1;
-  padding: 0.75rem;
-  border: none;
-  border-radius: 10px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
+  flex: 1 1 auto;
+  min-width: 80px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: all 0.2s ease;
-}
-
-.perfil-borrador-card__btn--preview {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.perfil-borrador-card__btn--preview:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.perfil-borrador-card__btn--continue {
-  background: #ff6600;
-  color: #000;
-}
-
-.perfil-borrador-card__btn--continue:hover {
-  background: #ff8533;
-  transform: translateY(-2px);
-}
-
-.perfil-borrador-card__btn--delete {
-  flex: 0 0 auto;
-  width: 42px;
+  padding: 10px;
   background: transparent;
-  color: #e53935;
-  border: 1px solid rgba(229, 57, 53, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.perfil-borrador-card__btn:hover {
+  border-color: #ff6600;
+  color: #ff6600;
 }
 
 .perfil-borrador-card__btn--delete:hover {
-  background: #e53935;
-  color: white;
-  border-color: #e53935;
+  border-color: #ef4444;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
 }
 
 .perfil-borrador-card__btn:disabled {
-  opacity: 0.6;
   cursor: not-allowed;
+  opacity: 0.5;
 }
 
 /* ===== DRAFT PREVIEW MODAL ===== */
@@ -371,6 +336,12 @@
 }
 
 /* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+  .perfil-borradores__grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}
+
 @media (max-width: 768px) {
   .perfil-borradores__grid {
     grid-template-columns: 1fr;

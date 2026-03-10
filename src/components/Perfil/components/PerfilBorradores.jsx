@@ -137,7 +137,6 @@ export default function PerfilBorradores() {
 
             return (
               <article key={draft.id} className="perfil-borrador-card">
-                {/* Imagen preview */}
                 <div className="perfil-borrador-card__image">
                   {imagenPreview ? (
                     <img
@@ -153,55 +152,40 @@ export default function PerfilBorradores() {
                     </div>
                   )}
                   <span className={`perfil-borrador-card__type ${draft.tipo}`}>
-                    <FontAwesomeIcon icon={getTypeIcon(draft.tipo)} />
                     {getTypeLabel(draft.tipo)}
                   </span>
                 </div>
-
-                {/* Contenido */}
                 <div className="perfil-borrador-card__content">
                   <span className="perfil-borrador-card__category">
                     {categoria}
                   </span>
                   <h3 className="perfil-borrador-card__title">{titulo}</h3>
-
-                  {descripcion && (
-                    <p className="perfil-borrador-card__description">
-                      {descripcion.slice(0, 100)}
-                      {descripcion.length > 100 ? "..." : ""}
-                    </p>
-                  )}
-
-                  <p className="perfil-borrador-card__date">
+                  <p className="perfil-borrador-card__info">
+                    <FontAwesomeIcon icon={faCalendarAlt} />
                     Guardado: {formatDate(draft.updated_at)}
                   </p>
-
-                  {/* Acciones */}
                   <div className="perfil-borrador-card__actions">
                     <button
-                      className="perfil-borrador-card__btn perfil-borrador-card__btn--preview"
-                      onClick={() => setPreviewDraft(draft)}
-                      title="Ver borrador">
+                      className="perfil-borrador-card__btn"
+                      onClick={() => setPreviewDraft(draft)}>
                       <FontAwesomeIcon icon={faEye} />
                       Ver
                     </button>
                     <button
-                      className="perfil-borrador-card__btn perfil-borrador-card__btn--continue"
-                      onClick={() => handleContinueDraft(draft)}
-                      title="Continuar editando">
+                      className="perfil-borrador-card__btn"
+                      onClick={() => handleContinueDraft(draft)}>
                       <FontAwesomeIcon icon={faPencilAlt} />
                       Terminar
                     </button>
                     <button
                       className="perfil-borrador-card__btn perfil-borrador-card__btn--delete"
                       onClick={() => handleDeleteDraft(draft.id)}
-                      disabled={deleting === draft.id}
-                      title="Eliminar borrador">
-                      {deleting === draft.id ? (
-                        <FontAwesomeIcon icon={faSpinner} spin />
-                      ) : (
-                        <FontAwesomeIcon icon={faTrash} />
-                      )}
+                      disabled={deleting === draft.id}>
+                      <FontAwesomeIcon
+                        icon={deleting === draft.id ? faSpinner : faTrash}
+                        spin={deleting === draft.id}
+                      />
+                      {deleting === draft.id ? "..." : "Eliminar"}
                     </button>
                   </div>
                 </div>
@@ -220,8 +204,13 @@ export default function PerfilBorradores() {
             imagen_url:
               previewDraft.imagen_preview || previewDraft.data?.imagen_url,
             imagenes:
-              previewDraft.data?.imagenes_preview ||
-              previewDraft.data?.imagenes,
+              (previewDraft.data?.imagenes_preview?.length > 0 &&
+                previewDraft.data.imagenes_preview) ||
+              (previewDraft.data?.imagenes?.length > 0 &&
+                previewDraft.data.imagenes) ||
+              (previewDraft.imagen_preview
+                ? [previewDraft.imagen_preview]
+                : []),
           }}
           isOpen={!!previewDraft}
           onClose={() => setPreviewDraft(null)}
@@ -232,8 +221,10 @@ export default function PerfilBorradores() {
             ...previewDraft.data,
             id: previewDraft.id,
             imagenes:
-              previewDraft.data?.imagenes_preview ||
-              previewDraft.data?.imagenes ||
+              (previewDraft.data?.imagenes_preview?.length > 0 &&
+                previewDraft.data.imagenes_preview) ||
+              (previewDraft.data?.imagenes?.length > 0 &&
+                previewDraft.data.imagenes) ||
               (previewDraft.imagen_preview
                 ? [previewDraft.imagen_preview]
                 : []),

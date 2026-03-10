@@ -271,6 +271,28 @@ export const deleteBusiness = async (businessId, adminId) => {
 };
 
 /**
+ * Elimina un negocio del usuario autenticado.
+ * Supabase RLS garantiza que solo el owner pueda eliminar.
+ * @param {string} businessId - ID del negocio
+ * @param {string} userId - ID del usuario dueño
+ * @returns {Promise<boolean>} true si se eliminó correctamente
+ */
+export const deleteOwnBusiness = async (businessId, userId) => {
+  const { error } = await supabase
+    .from("businesses")
+    .delete()
+    .eq("id", businessId)
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("Error al eliminar negocio:", error);
+    throw error;
+  }
+
+  return true;
+};
+
+/**
  * Pausa o reactiva un negocio.
  * Un negocio pausado NO aparece en Superguía.
  * @param {string} businessId - ID del negocio
@@ -315,8 +337,6 @@ const ALLOWED_BUSINESS_UPDATE_FIELDS = [
   "horarios",
   "imagenes",
   "imagen_logo",
-  "category_id",
-  "subcategory_id",
   "categoria",
   "subcategoria",
   "ubicacion_url",

@@ -72,6 +72,7 @@ export {
   approveBusiness,
   rejectBusiness,
   deleteBusiness,
+  deleteOwnBusiness,
   pauseBusiness,
   updateBusiness,
 } from "./businesses";

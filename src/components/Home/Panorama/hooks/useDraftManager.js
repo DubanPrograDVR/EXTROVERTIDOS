@@ -96,12 +96,18 @@ const useDraftManager = (options = {}) => {
    * @param {string} options.categoryName - Nombre de la categoría
    * @param {string} options.imagePreview - Imagen de preview en base64
    * @param {number} options.imageCount - Cantidad de imágenes
+   * @param {Array} options.imagenesPreviews - Todas las previews de imágenes en base64
    * @returns {Promise<boolean>} true si se guardó correctamente
    */
   const saveDraftData = useCallback(
     async (
       formData,
-      { categoryName = "", imagePreview = null, imageCount = 0 } = {},
+      {
+        categoryName = "",
+        imagePreview = null,
+        imageCount = 0,
+        imagenesPreviews = [],
+      } = {},
     ) => {
       if (!isAuthenticated || !userId) {
         showToastRef.current?.(
@@ -133,6 +139,8 @@ const useDraftManager = (options = {}) => {
             ...formData,
             categoria_nombre: categoryName,
             cantidad_imagenes: imageCount,
+            imagenes_preview:
+              imagenesPreviews.length > 0 ? imagenesPreviews : undefined,
           },
           id: currentDraftId, // null si es nuevo
           imagenPreview: imagePreview,
@@ -170,6 +178,7 @@ const useDraftManager = (options = {}) => {
               categoryName,
               imagePreview,
               imageCount,
+              imagenesPreviews,
             });
           }
         }
