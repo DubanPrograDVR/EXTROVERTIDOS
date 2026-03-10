@@ -145,10 +145,7 @@ export default function PerfilPublicaciones({
       await updateEvent(eventId, eventData);
 
       if (showToast) {
-        showToast(
-          "Publicación actualizada. Pasará a revisión nuevamente.",
-          "success",
-        );
+        showToast("¡Publicación actualizada exitosamente!", "success");
       }
 
       handleCloseEdit();

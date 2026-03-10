@@ -127,8 +127,6 @@ export const useEditForm = (event, isOpen) => {
       fechas_recurrencia: formData.es_recurrente
         ? formData.fechas_recurrencia
         : [],
-      // Cuando el usuario edita, el estado vuelve a pendiente para revisión
-      estado: "pendiente",
     };
   }, [formData]);
 

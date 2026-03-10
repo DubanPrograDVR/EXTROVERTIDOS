@@ -92,10 +92,7 @@ export default function PerfilNegocios() {
     try {
       await updateBusiness(businessId, businessData, user.id);
       if (showToast) {
-        showToast(
-          "Negocio actualizado. Pasará a revisión nuevamente.",
-          "success",
-        );
+        showToast("¡Negocio actualizado exitosamente!", "success");
       }
       setEditModal({ open: false, business: null });
       await reloadBusinesses();

@@ -104,7 +104,6 @@ export const useBusinessEditForm = (business, isOpen) => {
       titulo_marketing: formData.titulo_marketing,
       mensaje_marketing: formData.mensaje_marketing,
       imagenes: formData.imagenes,
-      estado: "pendiente",
     };
   }, [formData]);
 

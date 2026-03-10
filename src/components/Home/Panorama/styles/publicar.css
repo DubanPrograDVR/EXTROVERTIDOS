@@ -3,7 +3,7 @@
 .publicar-page {
   min-height: 100vh;
   background: #000;
-  padding-top: 80px;
+  padding-top: 70px;
 }
 
 /* ===== HEADER ===== */
@@ -12,6 +12,8 @@
   padding: 60px 20px 40px;
   background: linear-gradient(180deg, #111 0%, #000 100%);
   border-bottom: 2px solid #ff6600;
+  margin-top: -70px;
+  padding-top: calc(70px + 60px);
 }
 
 .publicar-header__logo {
