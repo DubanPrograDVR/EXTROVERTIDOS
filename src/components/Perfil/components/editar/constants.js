@@ -41,6 +41,8 @@ export const INITIAL_EDIT_STATE = {
   },
   imagenes: [],
   ubicacion_url: "",
+  subtitulo: "",
+  titulo_marketing: "",
   mensaje_marketing: "",
 };
 

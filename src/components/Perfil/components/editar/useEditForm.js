@@ -39,6 +39,8 @@ export const useEditForm = (event, isOpen) => {
         },
         imagenes: event.imagenes || [],
         ubicacion_url: event.ubicacion_url || "",
+        subtitulo: event.subtitulo || "",
+        titulo_marketing: event.titulo_marketing || "",
         mensaje_marketing: event.mensaje_marketing || "",
       });
       setErrors({});
@@ -118,9 +120,7 @@ export const useEditForm = (event, isOpen) => {
         : formData.fecha_evento,
       // Campos de recurrencia
       es_recurrente: formData.es_recurrente || false,
-      dia_recurrencia: formData.es_recurrente
-        ? formData.dia_recurrencia
-        : null,
+      dia_recurrencia: formData.es_recurrente ? formData.dia_recurrencia : null,
       cantidad_repeticiones: formData.es_recurrente
         ? formData.cantidad_repeticiones
         : 1,
