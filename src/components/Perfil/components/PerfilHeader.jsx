@@ -73,10 +73,6 @@ export default function PerfilHeader({
           </p>
         </div>
         <div className="perfil-header__actions">
-          <button className="perfil-header__btn perfil-header__btn--edit">
-            <FontAwesomeIcon icon={faEdit} />
-            Editar Perfil
-          </button>
           <button
             className="perfil-header__btn perfil-header__btn--logout"
             onClick={onSignOut}>
