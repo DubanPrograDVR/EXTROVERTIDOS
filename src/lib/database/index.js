@@ -45,6 +45,7 @@ export {
   getFilteredEvents,
   updateEvent,
   deleteEvent,
+  pauseEvent,
 } from "./events";
 
 // ============ IMÁGENES ============
@@ -71,6 +72,7 @@ export {
   approveBusiness,
   rejectBusiness,
   deleteBusiness,
+  pauseBusiness,
   updateBusiness,
 } from "./businesses";
 
@@ -169,6 +171,8 @@ export {
 export {
   getActiveSubscription,
   getActivePublishSubscription,
+  getAnyActivePanoramaSubscription,
+  getActiveSuperguiaSubscription,
   getUserSubscriptions,
   cancelSubscription,
   consumePublication,

@@ -5,6 +5,27 @@
 
 import { supabase } from "../supabase";
 
+const PANORAMA_PLANS = [
+  "panorama_unica",
+  "panorama_pack4",
+  "panorama_ilimitado",
+];
+
+function isSubscriptionExpired(subscription) {
+  if (!subscription?.fecha_fin) return false;
+  return new Date(subscription.fecha_fin) <= new Date();
+}
+
+function hasRemainingQuota(subscription) {
+  if (!subscription) return false;
+  if (!PANORAMA_PLANS.includes(subscription.plan)) return true;
+  if (subscription.plan === "panorama_ilimitado") return true;
+
+  const total = Number(subscription.publicaciones_total ?? 0);
+  const used = Number(subscription.publicaciones_usadas ?? 0);
+  return used < total;
+}
+
 /**
  * Obtener la suscripción activa del usuario
  * @param {string} userId - ID del usuario
@@ -66,13 +87,71 @@ export async function getActivePublishSubscription(userId) {
     .select("*")
     .eq("user_id", userId)
     .eq("estado", "activa")
-    .in("plan", ["panorama_unica", "panorama_pack4", "panorama_ilimitado"])
-    .order("fecha_inicio", { ascending: false })
+    .in("plan", PANORAMA_PLANS)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("Error al obtener suscripción de publicación:", error);
+    return null;
+  }
+
+  return (
+    (data || []).find(
+      (subscription) =>
+        subscription.estado === "activa" &&
+        !isSubscriptionExpired(subscription) &&
+        hasRemainingQuota(subscription),
+    ) || null
+  );
+}
+
+/**
+ * Obtener la suscripción activa de superguía del usuario
+ * @param {string} userId - ID del usuario
+ * @returns {Promise<Object|null>} Suscripción superguía activa o null
+ */
+export async function getActiveSuperguiaSubscription(userId) {
+  if (!userId) return null;
+
+  const { data, error } = await supabase
+    .from("subscriptions")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("estado", "activa")
+    .eq("plan", "superguia")
+    .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
   if (error) {
-    console.error("Error al obtener suscripción de publicación:", error);
+    console.error("Error al obtener suscripción superguía:", error);
+    return null;
+  }
+
+  return data;
+}
+
+/**
+ * Obtener cualquier suscripción activa de panorama (incluso agotada/vencida)
+ * Útil para detectar escenario "quota_exceeded" vs "no_plan" en el modal.
+ * @param {string} userId - ID del usuario
+ * @returns {Promise<Object|null>} Suscripción más reciente o null
+ */
+export async function getAnyActivePanoramaSubscription(userId) {
+  if (!userId) return null;
+
+  const { data, error } = await supabase
+    .from("subscriptions")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("estado", "activa")
+    .in("plan", PANORAMA_PLANS)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Error al obtener suscripción panorama:", error);
     return null;
   }
 

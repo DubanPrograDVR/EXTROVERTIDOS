@@ -47,17 +47,10 @@ const BLOCK_SCENARIOS = {
     icon: faLock,
     iconColor: "#f39c12",
     title: "Has usado todos tus cupos",
-    getMessage: ({ publicationsUsed, publicationsTotal, planExpiresAt }) => {
-      const fecha = planExpiresAt
-        ? new Date(planExpiresAt).toLocaleDateString("es-CL", {
-            day: "2-digit",
-            month: "long",
-            year: "numeric",
-          })
-        : "N/A";
-      return `Has utilizado ${publicationsUsed || 0} de ${publicationsTotal || 0} publicaciones de tu plan. Para publicar nuevamente debes esperar a que tu plan venza o adquirir uno nuevo.\n\n📅 Fecha de vencimiento: ${fecha}`;
+    getMessage: ({ publicationsUsed, publicationsTotal }) => {
+      return `Has utilizado ${publicationsUsed || 0} de ${publicationsTotal || 0} publicaciones de tu plan.\n\n¡Pero no te preocupes! Puedes volver a suscribirte para seguir publicando tus panoramas.`;
     },
-    primaryLabel: "Renovar plan",
+    primaryLabel: "Volver a suscribirme",
   },
 
   // Error de servidor

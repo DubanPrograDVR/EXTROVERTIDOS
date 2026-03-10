@@ -33,6 +33,7 @@ const Publicar = () => {
     isSavingDraft,
     // Plan
     activeSubscription,
+    anyPanoramaSubscription,
     planesEnabled,
     enabledCalendarModes,
     planInfo,
@@ -53,7 +54,7 @@ const Publicar = () => {
   const blockScenario = useMemo(() => {
     if (isEditing) return null; // Editar siempre permitido
     return detectBlockScenario({
-      subscription: activeSubscription,
+      subscription: activeSubscription || anyPanoramaSubscription,
       planesEnabled,
       planInfo,
       isAdmin,
@@ -62,6 +63,7 @@ const Publicar = () => {
   }, [
     isEditing,
     activeSubscription,
+    anyPanoramaSubscription,
     planesEnabled,
     planInfo,
     isAdmin,
@@ -88,7 +90,7 @@ const Publicar = () => {
         <PublicarHeader />
         <PlanBlockModal
           scenario={blockScenario}
-          subscription={activeSubscription}
+          subscription={activeSubscription || anyPanoramaSubscription}
         />
       </div>
     );

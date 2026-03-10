@@ -14,6 +14,7 @@ import {
   faStore,
   faLayerGroup,
   faMoneyBillWave,
+  faChevronDown,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   getCategories,
@@ -78,6 +79,7 @@ export default function AdminPanel() {
   const [categories, setCategories] = useState([]);
   const [planesEnabled, setPlanesEnabled] = useState(true);
   const [planesToggleLoading, setPlanesToggleLoading] = useState(false);
+  const [pubsMenuOpen, setPubsMenuOpen] = useState(false);
 
   // Hook personalizado para manejo de datos
   const {
@@ -99,9 +101,11 @@ export default function AdminPanel() {
     handleDeleteEvent,
     handleDeleteUser,
     handleUpdateEvent,
+    handlePauseEvent,
     handleApproveBusiness,
     handleRejectBusiness,
     handleDeleteBusiness,
+    handlePauseBusiness,
   } = useAdminData(user, isAdmin, isModerator);
 
   // Verificar acceso - redirigir si no es moderador/admin
@@ -311,18 +315,26 @@ export default function AdminPanel() {
       show: true,
     },
     {
-      id: "publications",
+      id: "publications-group",
       label: "Publicaciones",
       icon: faNewspaper,
-      badge: allEvents?.length || 0,
       show: isAdmin,
-    },
-    {
-      id: "businesses",
-      label: "Negocios",
-      icon: faStore,
-      badge: allBusinesses?.length || 0,
-      show: isAdmin,
+      isGroup: true,
+      badge: (allEvents?.length || 0) + (allBusinesses?.length || 0),
+      children: [
+        {
+          id: "publications",
+          label: "Panoramas",
+          icon: faNewspaper,
+          badge: allEvents?.length || 0,
+        },
+        {
+          id: "businesses",
+          label: "Negocios",
+          icon: faStore,
+          badge: allBusinesses?.length || 0,
+        },
+      ],
     },
     {
       id: "users",
@@ -381,20 +393,69 @@ export default function AdminPanel() {
         <nav className="admin-sidebar__nav">
           {menuItems
             .filter((item) => item.show)
-            .map((item) => (
-              <button
-                key={item.id}
-                className={`admin-sidebar__item ${
-                  activeTab === item.id ? "active" : ""
-                }`}
-                onClick={() => handleTabChange(item.id)}>
-                <FontAwesomeIcon icon={item.icon} />
-                <span>{item.label}</span>
-                {item.badge > 0 && (
-                  <span className="admin-sidebar__badge">{item.badge}</span>
-                )}
-              </button>
-            ))}
+            .map((item) =>
+              item.isGroup ? (
+                <div key={item.id} className="admin-sidebar__group">
+                  <button
+                    className={`admin-sidebar__item admin-sidebar__group-toggle ${
+                      pubsMenuOpen ? "open" : ""
+                    } ${
+                      ["publications", "businesses"].includes(activeTab)
+                        ? "active"
+                        : ""
+                    }`}
+                    onClick={() => setPubsMenuOpen(!pubsMenuOpen)}>
+                    <FontAwesomeIcon icon={item.icon} />
+                    <span>{item.label}</span>
+                    {item.badge > 0 && !pubsMenuOpen && (
+                      <span className="admin-sidebar__badge">
+                        {item.badge}
+                      </span>
+                    )}
+                    <FontAwesomeIcon
+                      icon={faChevronDown}
+                      className={`admin-sidebar__chevron ${
+                        pubsMenuOpen ? "open" : ""
+                      }`}
+                    />
+                  </button>
+                  <div
+                    className={`admin-sidebar__subitems ${
+                      pubsMenuOpen ? "open" : ""
+                    }`}>
+                    {item.children.map((child) => (
+                      <button
+                        key={child.id}
+                        className={`admin-sidebar__item admin-sidebar__subitem ${
+                          activeTab === child.id ? "active" : ""
+                        }`}
+                        onClick={() => handleTabChange(child.id)}>
+                        <FontAwesomeIcon icon={child.icon} />
+                        <span>{child.label}</span>
+                        {child.badge > 0 && (
+                          <span className="admin-sidebar__badge">
+                            {child.badge}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <button
+                  key={item.id}
+                  className={`admin-sidebar__item ${
+                    activeTab === item.id ? "active" : ""
+                  }`}
+                  onClick={() => handleTabChange(item.id)}>
+                  <FontAwesomeIcon icon={item.icon} />
+                  <span>{item.label}</span>
+                  {item.badge > 0 && (
+                    <span className="admin-sidebar__badge">{item.badge}</span>
+                  )}
+                </button>
+              ),
+            )}
         </nav>
 
         {/* Botones de acción - Siempre visibles */}
@@ -480,6 +541,7 @@ export default function AdminPanel() {
             onView={onViewAllEvent}
             onEdit={onEditEvent}
             onDelete={handleDeleteEvent}
+            onPause={handlePauseEvent}
           />
         )}
 
@@ -492,6 +554,7 @@ export default function AdminPanel() {
             onApprove={handleApproveBusiness}
             onReject={onRejectBusinessClick}
             onDelete={handleDeleteBusiness}
+            onPause={handlePauseBusiness}
             onView={onViewBusiness}
             onEdit={onEditBusiness}
             title="Todos los Negocios"

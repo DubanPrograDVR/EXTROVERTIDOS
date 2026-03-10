@@ -15,11 +15,13 @@ import {
   deleteEvent,
   deleteUser,
   updateEvent,
+  pauseEvent,
   getPendingBusinesses,
   getAllBusinesses,
   approveBusiness,
   rejectBusiness,
   deleteBusiness,
+  pauseBusiness,
 } from "../../../lib/database";
 
 /**
@@ -325,6 +327,24 @@ export const useAdminData = (user, isAdmin, isModerator) => {
     }
   };
 
+  // Pausar/reactivar publicación (admin)
+  const handlePauseEvent = async (eventId, paused) => {
+    setActionLoading(eventId);
+    try {
+      await pauseEvent(eventId, paused);
+      const updateList = (list) =>
+        list.map((e) => (e.id === eventId ? { ...e, is_paused: paused } : e));
+      setAllEvents(updateList);
+      setPendingEvents(updateList);
+      return { success: true };
+    } catch (err) {
+      console.error("Error al pausar publicación:", err);
+      return { success: false, error: err.message };
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   // Eliminar usuario (admin)
   const handleDeleteUser = async (targetUserId) => {
     setActionLoading(targetUserId);
@@ -447,6 +467,26 @@ export const useAdminData = (user, isAdmin, isModerator) => {
     }
   };
 
+  // Pausar/reactivar negocio (admin)
+  const handlePauseBusiness = async (businessId, paused) => {
+    setActionLoading(businessId);
+    try {
+      await pauseBusiness(businessId, paused);
+      const updateList = (list) =>
+        list.map((b) =>
+          b.id === businessId ? { ...b, is_paused: paused } : b,
+        );
+      setAllBusinesses(updateList);
+      setPendingBusinesses(updateList);
+      return { success: true };
+    } catch (err) {
+      console.error("Error al pausar negocio:", err);
+      return { success: false, error: err.message };
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   return {
     // Estado
     pendingEvents,
@@ -465,10 +505,12 @@ export const useAdminData = (user, isAdmin, isModerator) => {
     handleRejectEvent,
     handleDeleteEvent,
     handleUpdateEvent,
+    handlePauseEvent,
     // Acciones de negocios
     handleApproveBusiness,
     handleRejectBusiness,
     handleDeleteBusiness,
+    handlePauseBusiness,
     // Acciones de usuarios
     handleRoleChange,
     handleBanUser,

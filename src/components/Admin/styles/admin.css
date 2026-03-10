@@ -102,6 +102,59 @@
   color: #fff;
 }
 
+/* Grupo colapsable (Publicaciones) */
+.admin-sidebar__group {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-sidebar__group-toggle {
+  position: relative;
+}
+
+.admin-sidebar__chevron {
+  margin-left: auto;
+  font-size: 0.7rem;
+  transition: transform 0.25s ease;
+}
+
+.admin-sidebar__chevron.open {
+  transform: rotate(180deg);
+}
+
+/* Cuando el grupo padre muestra badge, el chevron va después */
+.admin-sidebar__group-toggle .admin-sidebar__badge + .admin-sidebar__chevron {
+  margin-left: 8px;
+}
+
+.admin-sidebar__subitems {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.25s ease;
+  opacity: 0;
+  padding-left: 12px;
+}
+
+.admin-sidebar__subitems.open {
+  max-height: 200px;
+  opacity: 1;
+}
+
+.admin-sidebar__subitem {
+  padding: 10px 16px !important;
+  font-size: 0.88rem !important;
+  border-left: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0 10px 10px 0 !important;
+}
+
+.admin-sidebar__subitem:hover {
+  border-left-color: #ff6600;
+}
+
+.admin-sidebar__subitem.active {
+  border-left-color: #ff6600;
+}
+
 /* Botón Nueva Publicación en Sidebar */
 .admin-sidebar__actions {
   padding: 16px 12px;

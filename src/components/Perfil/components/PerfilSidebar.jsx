@@ -24,11 +24,12 @@ export default function PerfilSidebar({
   userAvatar,
   userName,
   isStaff = false,
+  planesEnabled = false,
 }) {
   const navigate = useNavigate();
 
   // Opciones del menú lateral
-  const menuItems = [
+  const allMenuItems = [
     { id: "publicaciones", label: "Mis Publicaciones", icon: faNewspaper },
     {
       id: "borradores",
@@ -47,6 +48,11 @@ export default function PerfilSidebar({
     { id: "negocios", label: "Mis Negocios", icon: faStore },
     { id: "configuracion", label: "Configuración", icon: faCog },
   ];
+
+  // Filtrar "Mi Plan" si los planes no están habilitados
+  const menuItems = planesEnabled
+    ? allMenuItems
+    : allMenuItems.filter((item) => item.id !== "plan");
 
   // Cambiar sección y cerrar sidebar en móvil
   const handleSectionChange = (sectionId) => {

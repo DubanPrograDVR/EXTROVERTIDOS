@@ -123,6 +123,38 @@ const ID_TO_PLAN_TYPE = {
   superguia: "superguia",
 };
 
+const PANORAMA_PLAN_TYPES = [
+  "panorama_unica",
+  "panorama_pack4",
+  "panorama_ilimitado",
+];
+
+const isSubscriptionExpired = (subscription) => {
+  if (!subscription?.fecha_fin) return false;
+  return new Date(subscription.fecha_fin) <= new Date();
+};
+
+const hasRemainingQuota = (subscription) => {
+  if (!subscription) return false;
+  if (subscription.plan === "panorama_ilimitado") return true;
+
+  const total = Number(subscription.publicaciones_total ?? 0);
+  const used = Number(subscription.publicaciones_usadas ?? 0);
+  return used < total;
+};
+
+const isRenewablePanoramaSubscription = (subscription) =>
+  PANORAMA_PLAN_TYPES.includes(subscription?.plan) &&
+  subscription.estado === "activa" &&
+  !isSubscriptionExpired(subscription) &&
+  !hasRemainingQuota(subscription);
+
+const isBlockingPanoramaSubscription = (subscription) =>
+  PANORAMA_PLAN_TYPES.includes(subscription?.plan) &&
+  subscription.estado === "activa" &&
+  !isSubscriptionExpired(subscription) &&
+  hasRemainingQuota(subscription);
+
 /**
  * Formateador de precios CLP
  */
@@ -144,6 +176,7 @@ export default function ActivarPlan() {
   const [processingPayment, setProcessingPayment] = useState(false);
   const [planPrices, setPlanPrices] = useState(DEFAULT_PLAN_PRICES);
   const [activePlans, setActivePlans] = useState(new Set());
+  const [renewablePlans, setRenewablePlans] = useState(new Set());
   const [hasActivePanorama, setHasActivePanorama] = useState(false);
   const [hasActiveSuperguia, setHasActiveSuperguia] = useState(false);
 
@@ -177,31 +210,33 @@ export default function ActivarPlan() {
       try {
         const subs = await getUserSubscriptions(user.id);
         const activeSet = new Set();
+        const renewableSet = new Set();
         let panoramaActivo = false;
         let superguiaActiva = false;
 
         (subs || []).forEach((s) => {
-          if (s.estado === "activa") {
-            const frontendId = PLAN_TYPE_TO_ID[s.plan];
-            if (frontendId) activeSet.add(frontendId);
+          if (s.estado !== "activa" || isSubscriptionExpired(s)) {
+            return;
+          }
 
-            // Detectar si tiene algún panorama activo (unica, pack4, ilimitado)
-            if (
-              [
-                "panorama_unica",
-                "panorama_pack4",
-                "panorama_ilimitado",
-              ].includes(s.plan)
-            ) {
+          const frontendId = PLAN_TYPE_TO_ID[s.plan];
+
+          if (isBlockingPanoramaSubscription(s)) {
+            if (frontendId) activeSet.add(frontendId);
+            if (PANORAMA_PLAN_TYPES.includes(s.plan)) {
               panoramaActivo = true;
             }
-            if (s.plan === "superguia") {
-              superguiaActiva = true;
-            }
+          } else if (isRenewablePanoramaSubscription(s) && frontendId) {
+            renewableSet.add(frontendId);
+          }
+
+          if (s.plan === "superguia") {
+            superguiaActiva = true;
           }
         });
 
         setActivePlans(activeSet);
+        setRenewablePlans(renewableSet);
         setHasActivePanorama(panoramaActivo);
         setHasActiveSuperguia(superguiaActiva);
       } catch (error) {
@@ -351,6 +386,7 @@ export default function ActivarPlan() {
         <div className="activar-plan__cards">
           {planesPanoramas.map((plan) => {
             const isOwnActive = activePlans.has(plan.id);
+            const isRenewable = renewablePlans.has(plan.id);
             const isOtherActive = hasActivePanorama && !isOwnActive;
             const isPlanDisabled = isOwnActive || isOtherActive;
             return (
@@ -368,8 +404,15 @@ export default function ActivarPlan() {
                   </span>
                 )}
 
+                {isRenewable && (
+                  <span className="activar-plan__card-active-badge activar-plan__card-active-badge--renewable">
+                    <FontAwesomeIcon icon={faCircleCheck} />
+                    Puedes volver a suscribirte
+                  </span>
+                )}
+
                 {/* Etiqueta destacada */}
-                {plan.etiqueta && !isOwnActive && (
+                {plan.etiqueta && !isOwnActive && !isRenewable && (
                   <span className="activar-plan__card-badge">
                     {plan.etiqueta}
                   </span>
@@ -422,6 +465,11 @@ export default function ActivarPlan() {
                   <div className="activar-plan__card-active-msg activar-plan__card-active-msg--own">
                     <FontAwesomeIcon icon={faCircleCheck} />
                     <span>Suscripción activa</span>
+                  </div>
+                ) : isRenewable ? (
+                  <div className="activar-plan__card-active-msg activar-plan__card-active-msg--renewable">
+                    <FontAwesomeIcon icon={faCircleCheck} />
+                    <span>Puedes volver a suscribirte o cambiar de plan</span>
                   </div>
                 ) : isOtherActive ? (
                   <div className="activar-plan__card-active-msg activar-plan__card-active-msg--other">

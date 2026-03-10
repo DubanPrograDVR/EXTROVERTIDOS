@@ -235,6 +235,12 @@
   font-size: 0.68rem;
 }
 
+.activar-plan__card-active-badge--renewable {
+  background: rgba(251, 191, 36, 0.14);
+  border-color: rgba(251, 191, 36, 0.4);
+  color: #fbbf24;
+}
+
 /* ── Mensaje en la parte inferior de la card ── */
 .activar-plan__card-active-msg {
   width: 100%;
@@ -262,6 +268,12 @@
   background: rgba(251, 191, 36, 0.08);
   border: 1px solid rgba(251, 191, 36, 0.25);
   color: #fbbf24;
+}
+
+.activar-plan__card-active-msg--renewable {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: #f59e0b;
 }
 
 /* ═══ Superguía deshabilitada ═══ */

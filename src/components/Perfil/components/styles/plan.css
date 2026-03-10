@@ -122,6 +122,47 @@
   letter-spacing: 0.3px;
 }
 
+.perfil-plan__card-badge--renewable {
+  background: #f59e0b;
+  color: #000;
+}
+
+.perfil-plan__card-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.perfil-plan__card-status--renewable {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: #fbbf24;
+}
+
+.perfil-plan__renew-btn {
+  margin-top: 8px;
+  padding: 10px 18px;
+  background: rgba(255, 102, 0, 0.12);
+  border: 1px solid rgba(255, 102, 0, 0.35);
+  border-radius: 18px;
+  color: #ff6600;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.perfil-plan__renew-btn:hover {
+  background: rgba(255, 102, 0, 0.18);
+  border-color: #ff6600;
+}
+
 /* Estado no contratado */
 .perfil-plan__card-inactive-msg {
   margin-top: 4px;

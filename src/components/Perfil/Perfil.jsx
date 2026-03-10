@@ -8,6 +8,7 @@ import {
   markAllNotificationsAsRead,
   deleteNotification as deleteNotificationDB,
   countDrafts,
+  isPlanesEnabled,
 } from "../../lib/database";
 import {
   PerfilSidebar,
@@ -42,6 +43,9 @@ export default function Perfil() {
   // Estado de borradores
   const [draftsCount, setDraftsCount] = useState(0);
 
+  // Estado de planes habilitados
+  const [planesEnabled, setPlanesEnabled] = useState(false);
+
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       navigate("/");
@@ -67,6 +71,20 @@ export default function Perfil() {
   useEffect(() => {
     loadUserPublications();
   }, [isAuthenticated, user?.id]);
+
+  // Consultar si los planes están habilitados
+  useEffect(() => {
+    const checkPlanes = async () => {
+      try {
+        const enabled = await isPlanesEnabled();
+        setPlanesEnabled(enabled);
+      } catch (error) {
+        console.error("Error verificando planes:", error);
+        setPlanesEnabled(false);
+      }
+    };
+    checkPlanes();
+  }, []);
 
   // Cargar cantidad de borradores
   useEffect(() => {
@@ -228,6 +246,7 @@ export default function Perfil() {
         userAvatar={userAvatar}
         userName={userName}
         isStaff={isModerator}
+        planesEnabled={planesEnabled}
       />
 
       <main className="perfil-main">
@@ -269,7 +288,7 @@ export default function Perfil() {
 
           {activeSection === "favoritos" && <PerfilFavoritos />}
 
-          {activeSection === "plan" && <PerfilPlan />}
+          {activeSection === "plan" && planesEnabled && <PerfilPlan />}
 
           {activeSection === "negocios" && <PerfilNegocios />}
 

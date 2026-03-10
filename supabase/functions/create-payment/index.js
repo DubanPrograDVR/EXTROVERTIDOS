@@ -152,6 +152,28 @@ function jsonResponse(data, status = 200) {
   });
 }
 
+function isSubscriptionExpired(subscription) {
+  if (!subscription?.fecha_fin) return false;
+  return new Date(subscription.fecha_fin) <= new Date();
+}
+
+function hasRemainingQuota(subscription) {
+  if (!subscription) return false;
+  if (subscription.plan === "panorama_ilimitado") return true;
+
+  const total = Number(subscription.publicaciones_total ?? 0);
+  const used = Number(subscription.publicaciones_usadas ?? 0);
+  return used < total;
+}
+
+function blocksNewPanoramaPurchase(subscription) {
+  return (
+    subscription?.estado === "activa" &&
+    !isSubscriptionExpired(subscription) &&
+    hasRemainingQuota(subscription)
+  );
+}
+
 // ──────────────────────────────────────────────
 // HANDLER PRINCIPAL
 // ──────────────────────────────────────────────
@@ -277,21 +299,22 @@ Deno.serve(async (req) => {
     }
 
     // ── 3. Verificar que no exista suscripción activa duplicada ──
-    // Bloquear si ya tiene CUALQUIER plan de panorama activo
+    // Bloquear solo si ya tiene un plan de panorama realmente utilizable.
+    // Si el plan está agotado o vencido, puede volver a suscribirse.
     if (panoramaPlanType) {
-      const { data: anyActivePanorama, error: anyPanoramaError } =
+      const { data: activePanoramaSubs, error: anyPanoramaError } =
         await supabaseAdmin
           .from("subscriptions")
-          .select("id, plan")
+          .select(
+            "id, plan, estado, fecha_fin, publicaciones_total, publicaciones_usadas",
+          )
           .eq("user_id", user.id)
           .eq("estado", "activa")
           .in("plan", [
             "panorama_unica",
             "panorama_pack4",
             "panorama_ilimitado",
-          ])
-          .limit(1)
-          .maybeSingle();
+          ]);
 
       if (anyPanoramaError) {
         console.error(
@@ -304,11 +327,15 @@ Deno.serve(async (req) => {
         );
       }
 
-      if (anyActivePanorama) {
+      const hasBlockingPanorama = (activePanoramaSubs || []).some(
+        blocksNewPanoramaPurchase,
+      );
+
+      if (hasBlockingPanorama) {
         return jsonResponse(
           {
             error:
-              "Ya tienes un plan de panorama activo. Espera a que expire antes de comprar otro.",
+              "Ya tienes un plan de panorama activo con cupos disponibles. Usa ese plan o espera a que se agote/vensa antes de comprar otro.",
           },
           409,
         );

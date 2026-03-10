@@ -7,9 +7,9 @@ import {
   faRocket,
   faStore,
   faSpinner,
-  faArrowRight,
   faTimes,
   faExclamationTriangle,
+  faCircleCheck,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "../../../context/AuthContext";
 import {
@@ -67,6 +67,34 @@ function formatDateShort(dateString) {
   });
 }
 
+function isExpired(subscription) {
+  if (!subscription?.fecha_fin) return false;
+  return new Date(subscription.fecha_fin) <= new Date();
+}
+
+function hasRemainingQuota(subscription) {
+  if (!subscription) return false;
+  if (
+    subscription.plan === "panorama_ilimitado" ||
+    subscription.plan === "superguia"
+  ) {
+    return true;
+  }
+
+  const total = Number(subscription.publicaciones_total ?? 0);
+  const used = Number(subscription.publicaciones_usadas ?? 0);
+  return used < total;
+}
+
+function isRenewablePanorama(subscription) {
+  return (
+    ["panorama_unica", "panorama_pack4"].includes(subscription?.plan) &&
+    subscription.estado === "activa" &&
+    !isExpired(subscription) &&
+    !hasRemainingQuota(subscription)
+  );
+}
+
 export default function PerfilPlan() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -99,13 +127,28 @@ export default function PerfilPlan() {
   /**
    * Buscar suscripción activa de un plan específico
    */
-  const getActiveSub = (planKey) => {
-    return subscriptions.find(
-      (s) => s.plan === planKey && s.estado === "activa",
+  const getPlanStatus = (planKey) => {
+    const planSubs = subscriptions.filter((s) => s.plan === planKey);
+    const activeUsable = planSubs.find(
+      (s) => s.estado === "activa" && !isExpired(s) && hasRemainingQuota(s),
     );
+
+    if (activeUsable) {
+      return { type: "active", subscription: activeUsable };
+    }
+
+    const renewable = planSubs.find((s) => isRenewablePanorama(s));
+    if (renewable) {
+      return { type: "renewable", subscription: renewable };
+    }
+
+    return { type: "inactive", subscription: null };
   };
 
-  const hasAnyActive = subscriptions.some((s) => s.estado === "activa");
+  const hasAnyActive = subscriptions.some(
+    (s) => s.estado === "activa" && !isExpired(s),
+  );
+  const hasRenewablePlan = subscriptions.some((s) => isRenewablePanorama(s));
 
   /**
    * Abrir modal de confirmación de cancelación
@@ -169,14 +212,16 @@ export default function PerfilPlan() {
       {/* Grilla 2x2 de todos los planes */}
       <div className="perfil-plan__grid">
         {ALL_PLANS.map((plan) => {
-          const activeSub = getActiveSub(plan.key);
-          const isContracted = !!activeSub;
+          const planStatus = getPlanStatus(plan.key);
+          const activeSub = planStatus.subscription;
+          const isContracted = planStatus.type === "active";
+          const isRenewable = planStatus.type === "renewable";
 
           return (
             <div
               key={plan.key}
               className={`perfil-plan__card ${
-                isContracted
+                isContracted || isRenewable
                   ? "perfil-plan__card--active"
                   : "perfil-plan__card--inactive"
               }`}>
@@ -185,7 +230,7 @@ export default function PerfilPlan() {
               </div>
               <h3 className="perfil-plan__card-name">{plan.nombre}</h3>
 
-              {isContracted ? (
+              {isContracted || isRenewable ? (
                 <>
                   <div className="perfil-plan__card-dates">
                     <p>
@@ -197,12 +242,36 @@ export default function PerfilPlan() {
                       {formatDateShort(activeSub.fecha_fin)}
                     </p>
                   </div>
-                  <span className="perfil-plan__card-badge">Contratado</span>
-                  <button
-                    className="perfil-plan__cancel-btn"
-                    onClick={() => handleCancelClick(activeSub, plan.nombre)}>
-                    Cancelar Plan
-                  </button>
+
+                  {isRenewable ? (
+                    <>
+                      <span className="perfil-plan__card-badge perfil-plan__card-badge--renewable">
+                        Cupo usado
+                      </span>
+                      <div className="perfil-plan__card-status perfil-plan__card-status--renewable">
+                        <FontAwesomeIcon icon={faCircleCheck} />
+                        <span>Puedes volver a suscribirte</span>
+                      </div>
+                      <button
+                        className="perfil-plan__renew-btn"
+                        onClick={() => navigate("/activar-plan")}>
+                        Volver a suscribirme
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="perfil-plan__card-badge">
+                        Contratado
+                      </span>
+                      <button
+                        className="perfil-plan__cancel-btn"
+                        onClick={() =>
+                          handleCancelClick(activeSub, plan.nombre)
+                        }>
+                        Cancelar Plan
+                      </button>
+                    </>
+                  )}
                 </>
               ) : (
                 <div className="perfil-plan__card-inactive-msg">
@@ -215,17 +284,25 @@ export default function PerfilPlan() {
       </div>
 
       {/* CTA inferior */}
-      {!hasAnyActive && (
+      {(!hasAnyActive || hasRenewablePlan) && (
         <div className="perfil-plan__cta">
           <div className="perfil-plan__cta-icon">
             <img src={iconExtro} alt="Extrovertidos" />
           </div>
-          <h3>¡Publica en Extrovertidos!</h3>
-          <p>¡Elige un Plan para poder activar todas tus Publicaciones!</p>
+          <h3>
+            {hasRenewablePlan
+              ? "¡Ya puedes volver a suscribirte!"
+              : "¡Publica en Extrovertidos!"}
+          </h3>
+          <p>
+            {hasRenewablePlan
+              ? "Tu cupo ya fue utilizado. Puedes activar nuevamente el mismo plan o elegir una opción distinta."
+              : "¡Elige un Plan para poder activar todas tus Publicaciones!"}
+          </p>
           <button
             className="perfil-plan__cta-btn"
             onClick={() => navigate("/activar-plan")}>
-            Ver Planes
+            {hasRenewablePlan ? "Volver a suscribirme" : "Ver Planes"}
           </button>
         </div>
       )}

@@ -4,6 +4,7 @@ import { useAuth } from "../../../../context/AuthContext";
 import {
   getCategories,
   getActivePublishSubscription,
+  getAnyActivePanoramaSubscription,
 } from "../../../../lib/database";
 import { isPlanesEnabled } from "../../../../lib/database/settings";
 import { supabase } from "../../../../lib/supabase";
@@ -87,6 +88,7 @@ const usePublicarFormV2 = () => {
 
   // === ESTADO DE PLAN/SUSCRIPCIÓN ===
   const [activeSubscription, setActiveSubscription] = useState(null);
+  const [anyPanoramaSubscription, setAnyPanoramaSubscription] = useState(null);
   const [planesEnabled, setPlanesEnabled] = useState(true);
   const [loadingPlan, setLoadingPlan] = useState(true);
 
@@ -222,16 +224,20 @@ const usePublicarFormV2 = () => {
 
     const loadPlanData = async () => {
       try {
-        const [enabled, sub] = await Promise.all([
+        const [enabled, sub, anySub] = await Promise.all([
           isPlanesEnabled(),
           user?.id
             ? getActivePublishSubscription(user.id)
+            : Promise.resolve(null),
+          user?.id
+            ? getAnyActivePanoramaSubscription(user.id)
             : Promise.resolve(null),
         ]);
 
         if (!isCancelled && isMountedRef.current) {
           setPlanesEnabled(enabled);
           setActiveSubscription(sub);
+          setAnyPanoramaSubscription(anySub);
         }
       } catch (error) {
         console.error("Error cargando datos de plan:", error);
@@ -722,6 +728,7 @@ const usePublicarFormV2 = () => {
 
     // Estado de plan
     activeSubscription,
+    anyPanoramaSubscription,
     planesEnabled,
     enabledCalendarModes,
     planInfo,

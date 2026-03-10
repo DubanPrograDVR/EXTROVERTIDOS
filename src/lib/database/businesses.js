@@ -36,6 +36,7 @@ export const getPublishedBusinesses = async () => {
     .from("businesses")
     .select("*")
     .eq("estado", "publicado")
+    .eq("is_paused", false)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -263,6 +264,27 @@ export const deleteBusiness = async (businessId, adminId) => {
 
   if (error) {
     console.error("Error al eliminar negocio:", error);
+    throw error;
+  }
+
+  return true;
+};
+
+/**
+ * Pausa o reactiva un negocio.
+ * Un negocio pausado NO aparece en Superguía.
+ * @param {string} businessId - ID del negocio
+ * @param {boolean} paused - true para pausar, false para reactivar
+ * @returns {Promise<boolean>}
+ */
+export const pauseBusiness = async (businessId, paused) => {
+  const { error } = await supabase
+    .from("businesses")
+    .update({ is_paused: paused })
+    .eq("id", businessId);
+
+  if (error) {
+    console.error("Error al pausar/reactivar negocio:", error);
     throw error;
   }
 

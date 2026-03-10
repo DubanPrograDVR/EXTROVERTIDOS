@@ -1,10 +1,12 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faEye,
   faArrowLeft,
   faArrowRight,
   faCheck,
+  faExclamationTriangle,
+  faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 
 import {
@@ -47,21 +49,83 @@ const PublicarForm = ({
 }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isDraftPreviewOpen, setIsDraftPreviewOpen] = useState(false);
+  const [stepError, setStepError] = useState("");
+  const [errorKey, setErrorKey] = useState(0);
+
+  // Campos obligatorios por paso
+  const validateCurrentStep = useCallback(() => {
+    switch (currentStep) {
+      case 1:
+        return formData.titulo?.trim().length >= 3 && !!formData.category_id;
+      case 2: {
+        const base =
+          !!formData.fecha_evento &&
+          !!formData.provincia &&
+          formData.comuna?.trim() &&
+          formData.direccion?.trim();
+        if (!base) return false;
+        if (formData.es_multidia && !formData.fecha_fin) return false;
+        if (formData.es_recurrente) {
+          if (!formData.fecha_evento_recurrente) return false;
+          const rep = Number(formData.cantidad_repeticiones);
+          if (!rep || rep < 2 || rep > 12) return false;
+        }
+        return true;
+      }
+      case 3: {
+        if (formData.tipo_entrada === "pagado") {
+          const precio = Number(formData.precio);
+          if (!precio || precio <= 0) return false;
+        }
+        if (
+          formData.tipo_entrada === "venta_externa" &&
+          !formData.url_venta?.trim()
+        )
+          return false;
+        return true;
+      }
+      case 4:
+        return formData.etiqueta_directa?.trim().length >= 2;
+      case 5:
+        return true; // Se valida al publicar
+      default:
+        return true;
+    }
+  }, [currentStep, formData]);
+
+  useEffect(() => {
+    if (!stepError) return undefined;
+
+    const timeoutId = window.setTimeout(() => {
+      setStepError("");
+    }, 3000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [errorKey]);
 
   const goToStep = useCallback((step) => {
+    setStepError("");
     setCurrentStep(step);
-    // Scroll al inicio del formulario
     window.scrollTo({ top: 300, behavior: "smooth" });
   }, []);
 
   const goNext = useCallback(() => {
     if (currentStep < WIZARD_STEPS.length) {
+      if (!validateCurrentStep()) {
+        setStepError(
+          "Debes completar todos los campos obligatorios para seguir avanzando",
+        );
+        setErrorKey((k) => k + 1);
+        return;
+      }
+      setStepError("");
       goToStep(currentStep + 1);
     }
-  }, [currentStep, goToStep]);
+  }, [currentStep, goToStep, validateCurrentStep]);
 
   const goPrev = useCallback(() => {
     if (currentStep > 1) {
+      setStepError("");
       goToStep(currentStep - 1);
     }
   }, [currentStep, goToStep]);
@@ -160,6 +224,23 @@ const PublicarForm = ({
         onFocus={onFieldFocus}>
         {/* Contenido del paso actual */}
         <div className="wizard-step-container">{renderStep()}</div>
+
+        {/* Mensaje de validación */}
+        {stepError && (
+          <div className="wizard-step-error">
+            <div className="wizard-step-error__content">
+              <FontAwesomeIcon icon={faExclamationTriangle} />
+              <span>{stepError}</span>
+            </div>
+            <button
+              type="button"
+              className="wizard-step-error__close"
+              onClick={() => setStepError("")}
+              aria-label="Cerrar alerta">
+              <FontAwesomeIcon icon={faXmark} />
+            </button>
+          </div>
+        )}
 
         {/* Navegación del Wizard */}
         <div className="wizard-nav">

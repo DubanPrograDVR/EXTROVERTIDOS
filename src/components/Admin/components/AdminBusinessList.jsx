@@ -11,6 +11,8 @@ import {
   faClock,
   faPhone,
   faPencil,
+  faPause,
+  faPlay,
 } from "@fortawesome/free-solid-svg-icons";
 
 /**
@@ -23,9 +25,10 @@ export default function AdminBusinessList({
   onApprove,
   onReject,
   onDelete,
+  onPause,
   onView,
   onEdit,
-  showActions = true, // Para diferenciar entre pendientes y todos
+  showActions = true,
   title = "Negocios",
 }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -285,6 +288,29 @@ export default function AdminBusinessList({
                             <FontAwesomeIcon icon={faTrash} />
                           </button>
                         )}
+
+                        {/* Pausar/Reactivar */}
+                        {onPause && (
+                          <button
+                            className={`admin-table__action ${
+                              business.is_paused
+                                ? "admin-table__action--approve"
+                                : "admin-table__action--pause"
+                            }`}
+                            onClick={() =>
+                              onPause(business.id, !business.is_paused)
+                            }
+                            disabled={actionLoading === business.id}
+                            title={
+                              business.is_paused
+                                ? "Reactivar negocio"
+                                : "Pausar negocio"
+                            }>
+                            <FontAwesomeIcon
+                              icon={business.is_paused ? faPlay : faPause}
+                            />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -400,6 +426,21 @@ export default function AdminBusinessList({
                       }}
                       disabled={actionLoading === business.id}>
                       <FontAwesomeIcon icon={faTrash} /> Eliminar
+                    </button>
+                  )}
+                  {onPause && (
+                    <button
+                      className={`admin-biz-mobile-card__btn ${
+                        business.is_paused
+                          ? "admin-biz-mobile-card__btn--approve"
+                          : "admin-biz-mobile-card__btn--pause"
+                      }`}
+                      onClick={() => onPause(business.id, !business.is_paused)}
+                      disabled={actionLoading === business.id}>
+                      <FontAwesomeIcon
+                        icon={business.is_paused ? faPlay : faPause}
+                      />{" "}
+                      {business.is_paused ? "Reactivar" : "Pausar"}
                     </button>
                   )}
                 </div>

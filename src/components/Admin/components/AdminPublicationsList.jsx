@@ -13,6 +13,8 @@ import {
   faMapMarkerAlt,
   faCalendarAlt,
   faUser,
+  faPause,
+  faPlay,
 } from "@fortawesome/free-solid-svg-icons";
 import { formatDate } from "../utils/formatters";
 
@@ -26,6 +28,7 @@ export default function AdminPublicationsList({
   onView,
   onEdit,
   onDelete,
+  onPause,
   onRefresh,
 }) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -230,6 +233,25 @@ export default function AdminPublicationsList({
                             <FontAwesomeIcon icon={faTrash} />
                           )}
                         </button>
+                        {onPause && (
+                          <button
+                            className={`admin-pub-btn ${
+                              event.is_paused
+                                ? "admin-pub-btn--unpause"
+                                : "admin-pub-btn--pause"
+                            }`}
+                            onClick={() => onPause(event.id, !event.is_paused)}
+                            disabled={actionLoading === event.id}
+                            title={
+                              event.is_paused
+                                ? "Reactivar publicación"
+                                : "Pausar publicación"
+                            }>
+                            <FontAwesomeIcon
+                              icon={event.is_paused ? faPlay : faPause}
+                            />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -319,6 +341,21 @@ export default function AdminPublicationsList({
                           <FontAwesomeIcon icon={faTrash} />
                         )}
                       </button>
+                      {onPause && (
+                        <button
+                          className={`admin-pub-btn ${
+                            event.is_paused
+                              ? "admin-pub-btn--unpause"
+                              : "admin-pub-btn--pause"
+                          }`}
+                          onClick={() => onPause(event.id, !event.is_paused)}
+                          disabled={actionLoading === event.id}
+                          title={event.is_paused ? "Reactivar" : "Pausar"}>
+                          <FontAwesomeIcon
+                            icon={event.is_paused ? faPlay : faPause}
+                          />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

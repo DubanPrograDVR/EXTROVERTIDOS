@@ -121,6 +121,35 @@
   color: #ff6600;
 }
 
+.perfil-publication-card__btn--delete:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.perfil-publication-card__btn--delete:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.perfil-publication-card__btn--pause:hover {
+  border-color: #f59e0b;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.perfil-publication-card__btn--unpause:hover {
+  border-color: #10b981;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.perfil-publication-card__btn--pause:disabled,
+.perfil-publication-card__btn--unpause:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .perfil-publications__grid {

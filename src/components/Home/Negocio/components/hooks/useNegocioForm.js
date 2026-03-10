@@ -7,7 +7,9 @@ import {
   saveDraft,
   deleteDraft,
   getBusinessCategories,
+  getActiveSuperguiaSubscription,
 } from "../../../../../lib/database";
+import { isPlanesEnabled } from "../../../../../lib/database/settings";
 import { INITIAL_FORM_STATE, IMAGE_CONFIG } from "../constants";
 
 const LOCAL_DRAFT_KEY = "negocio_local_draft_v1";
@@ -28,11 +30,43 @@ export const useNegocioForm = () => {
   const [previewImages, setPreviewImages] = useState([]);
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
 
+  // Plan/suscripción
+  const [superguiaSubscription, setSuperguiaSubscription] = useState(null);
+  const [planesEnabled, setPlanesEnabled] = useState(true);
+  const [loadingPlan, setLoadingPlan] = useState(true);
+
   // Borrador
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [currentDraftId, setCurrentDraftId] = useState(null);
   const formDataRef = useRef(formData);
   formDataRef.current = formData;
+
+  // Cargar plan superguía del usuario
+  useEffect(() => {
+    let isCancelled = false;
+    const loadPlanData = async () => {
+      try {
+        const [enabled, sub] = await Promise.all([
+          isPlanesEnabled(),
+          user?.id
+            ? getActiveSuperguiaSubscription(user.id)
+            : Promise.resolve(null),
+        ]);
+        if (!isCancelled) {
+          setPlanesEnabled(enabled);
+          setSuperguiaSubscription(sub);
+        }
+      } catch (error) {
+        console.error("Error cargando datos de plan superguía:", error);
+      } finally {
+        if (!isCancelled) setLoadingPlan(false);
+      }
+    };
+    loadPlanData();
+    return () => {
+      isCancelled = true;
+    };
+  }, [user?.id]);
 
   // Cargar categorías desde BD
   useEffect(() => {
@@ -504,6 +538,11 @@ export const useNegocioForm = () => {
     previewImages,
     showAuthModal,
     isSavingDraft,
+
+    // Plan
+    superguiaSubscription,
+    planesEnabled,
+    loadingPlan,
 
     // Acciones
     handleChange,

@@ -12,9 +12,9 @@ import { supabase } from "../supabase";
  * @returns {string} Valor seguro
  */
 const sanitizeFilterValue = (value) => {
-  if (!value || typeof value !== 'string') return '';
+  if (!value || typeof value !== "string") return "";
   // Remover operadores PostgREST (.,()) y wildcards ILIKE (%_) y backslash
-  return value.replace(/[.,()\\%_]/g, '').trim();
+  return value.replace(/[.,()\\%_]/g, "").trim();
 };
 
 /**
@@ -48,7 +48,9 @@ const isSupabaseAuthError = (error) => {
  */
 const wrapSupabaseError = (error, defaultMsg) => {
   if (isSupabaseAuthError(error)) {
-    const authError = new Error("Tu sesión ha expirado. Por favor inicia sesión nuevamente.");
+    const authError = new Error(
+      "Tu sesión ha expirado. Por favor inicia sesión nuevamente.",
+    );
     authError.code = "AUTH_EXPIRED";
     authError.status = 401;
     return authError;
@@ -80,13 +82,17 @@ const ensureProfileExists = async (userId) => {
     // Si no existe el perfil, crearlo
     if (checkError?.code === "PGRST116" || !profile) {
       // Obtener datos del usuario desde auth
-      const { data: authData, error: authError } = await supabase.auth.getUser();
-      
+      const { data: authData, error: authError } =
+        await supabase.auth.getUser();
+
       if (authError) {
-        console.warn("No se pudo obtener datos del usuario para crear perfil:", authError);
+        console.warn(
+          "No se pudo obtener datos del usuario para crear perfil:",
+          authError,
+        );
         return; // No bloquear si no podemos crear perfil
       }
-      
+
       const user = authData?.user;
 
       if (user) {
@@ -219,6 +225,7 @@ export const getPublishedEvents = async () => {
     `,
     )
     .eq("estado", "publicado")
+    .eq("is_paused", false)
     .gte("fecha_fin", today) // Solo eventos que no han terminado
     .order("fecha_evento", { ascending: true });
 
@@ -266,13 +273,16 @@ export const getEventsByCity = async (ciudad, provincia = null) => {
     `,
     )
     .eq("estado", "publicado")
+    .eq("is_paused", false)
     .gte("fecha_fin", today); // Solo eventos que no han terminado
 
   // Filtrar por comuna o provincia
   if (ciudad) {
     const safeCiudad = sanitizeFilterValue(ciudad);
     if (safeCiudad) {
-      query = query.or(`comuna.ilike.%${safeCiudad}%,provincia.ilike.%${safeCiudad}%`);
+      query = query.or(
+        `comuna.ilike.%${safeCiudad}%,provincia.ilike.%${safeCiudad}%`,
+      );
     }
   }
 
@@ -404,6 +414,7 @@ export const getFilteredEvents = async (filters = {}) => {
     `,
     )
     .eq("estado", "publicado")
+    .eq("is_paused", false)
     .gte("fecha_fin", today); // Solo eventos que no han terminado
 
   // Filtro por categoría
@@ -449,21 +460,40 @@ export const getFilteredEvents = async (filters = {}) => {
  * SEGURIDAD: Evita mass-assignment de 'estado', 'user_id', 'published_at'.
  */
 const ALLOWED_EVENT_UPDATE_FIELDS = [
-  'titulo', 'descripcion', 'organizador', 'category_id',
-  'fecha_evento', 'fecha_fin', 'hora_inicio', 'hora_fin',
-  'provincia', 'comuna', 'direccion', 'coordenadas',
-  'imagenes', 'tipo_entrada', 'precio', 'url_venta',
-  'redes_sociales', 'motivo_rechazo', 'sitio_web',
-  'ubicacion_url', 'es_recurrente', 'tipo_recurrencia',
-  'dias_recurrencia', 'fechas_recurrentes',
-  'etiqueta_destacada', 'hashtags', 'mensaje_marketing',
-  'titulo_marketing',
+  "titulo",
+  "descripcion",
+  "organizador",
+  "category_id",
+  "fecha_evento",
+  "fecha_fin",
+  "hora_inicio",
+  "hora_fin",
+  "provincia",
+  "comuna",
+  "direccion",
+  "coordenadas",
+  "imagenes",
+  "tipo_entrada",
+  "precio",
+  "url_venta",
+  "redes_sociales",
+  "motivo_rechazo",
+  "sitio_web",
+  "ubicacion_url",
+  "es_recurrente",
+  "tipo_recurrencia",
+  "dias_recurrencia",
+  "fechas_recurrentes",
+  "etiqueta_destacada",
+  "hashtags",
+  "mensaje_marketing",
+  "titulo_marketing",
 ];
 
 /**
  * Campos adicionales que solo un admin/moderador puede modificar.
  */
-const ADMIN_ONLY_EVENT_FIELDS = ['estado', 'published_at'];
+const ADMIN_ONLY_EVENT_FIELDS = ["estado", "published_at"];
 
 /**
  * Actualiza un evento
@@ -524,6 +554,27 @@ export const deleteEvent = async (eventId) => {
 
   if (error) {
     console.error("Error al eliminar evento:", error);
+    throw error;
+  }
+
+  return true;
+};
+
+/**
+ * Pausa o reactiva un evento.
+ * Una publicación pausada NO aparece en Panorama ni en resultados públicos.
+ * @param {string} eventId - ID del evento
+ * @param {boolean} paused - true para pausar, false para reactivar
+ * @returns {Promise<boolean>}
+ */
+export const pauseEvent = async (eventId, paused) => {
+  const { error } = await supabase
+    .from("events")
+    .update({ is_paused: paused })
+    .eq("id", eventId);
+
+  if (error) {
+    console.error("Error al pausar/reactivar evento:", error);
     throw error;
   }
 

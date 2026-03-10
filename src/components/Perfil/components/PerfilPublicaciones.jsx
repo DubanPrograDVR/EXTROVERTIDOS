@@ -8,8 +8,16 @@ import {
   faNewspaper,
   faEye,
   faEdit,
+  faTrash,
+  faPause,
+  faPlay,
 } from "@fortawesome/free-solid-svg-icons";
-import { getCategories, updateEvent } from "../../../lib/database";
+import {
+  getCategories,
+  updateEvent,
+  deleteEvent,
+  pauseEvent,
+} from "../../../lib/database";
 import { useToast } from "../../../context/ToastContext";
 import PublicationModal from "../../Superguia/PublicationModal";
 import { UserEditModal } from "./editar";
@@ -35,6 +43,8 @@ export default function PerfilPublicaciones({
   });
   const [categories, setCategories] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(null);
+  const [pausing, setPausing] = useState(null); // ID del evento en pausa/reactivación
 
   // Cargar categorías para el modal de edición
   useEffect(() => {
@@ -67,6 +77,56 @@ export default function PerfilPublicaciones({
   // Cerrar modal de editar
   const handleCloseEdit = () => {
     setEditModal({ open: false, publication: null });
+  };
+
+  // Eliminar publicación
+  const handleDelete = async (publication) => {
+    const confirmed = window.confirm(
+      `¿Estás seguro de eliminar "${publication.titulo}"? Esta acción no se puede deshacer.`,
+    );
+    if (!confirmed) return;
+
+    setDeleting(publication.id);
+    try {
+      await deleteEvent(publication.id);
+      if (showToast) {
+        showToast("Publicación eliminada correctamente", "success");
+      }
+      if (onPublicationUpdate) {
+        onPublicationUpdate();
+      }
+    } catch (error) {
+      console.error("Error al eliminar publicación:", error);
+      if (showToast) {
+        showToast("Error al eliminar la publicación", "error");
+      }
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  // Pausar / reactivar publicación
+  const handlePause = async (publication) => {
+    const willPause = !publication.is_paused;
+    setPausing(publication.id);
+    try {
+      await pauseEvent(publication.id, willPause);
+      if (showToast) {
+        showToast(
+          willPause
+            ? "Publicación pausada. Ya no es visible en Panorama."
+            : "Publicación reactivada y visible nuevamente.",
+          "success",
+        );
+      }
+      if (onPublicationUpdate) onPublicationUpdate();
+    } catch (error) {
+      console.error("Error al pausar publicación:", error);
+      if (showToast)
+        showToast("Error al cambiar el estado de la publicación", "error");
+    } finally {
+      setPausing(null);
+    }
   };
 
   // Guardar cambios de edición
@@ -178,6 +238,42 @@ export default function PerfilPublicaciones({
                       onClick={() => handleEdit(pub)}>
                       <FontAwesomeIcon icon={faEdit} />
                       Editar
+                    </button>
+                    {pub.estado === "publicado" && (
+                      <button
+                        className={`perfil-publication-card__btn ${
+                          pub.is_paused
+                            ? "perfil-publication-card__btn--unpause"
+                            : "perfil-publication-card__btn--pause"
+                        }`}
+                        onClick={() => handlePause(pub)}
+                        disabled={pausing === pub.id}>
+                        <FontAwesomeIcon
+                          icon={
+                            pausing === pub.id
+                              ? faSpinner
+                              : pub.is_paused
+                                ? faPlay
+                                : faPause
+                          }
+                          spin={pausing === pub.id}
+                        />
+                        {pausing === pub.id
+                          ? "..."
+                          : pub.is_paused
+                            ? "Reactivar"
+                            : "Pausar"}
+                      </button>
+                    )}
+                    <button
+                      className="perfil-publication-card__btn perfil-publication-card__btn--delete"
+                      onClick={() => handleDelete(pub)}
+                      disabled={deleting === pub.id}>
+                      <FontAwesomeIcon
+                        icon={deleting === pub.id ? faSpinner : faTrash}
+                        spin={deleting === pub.id}
+                      />
+                      {deleting === pub.id ? "..." : "Eliminar"}
                     </button>
                   </div>
                 </div>
