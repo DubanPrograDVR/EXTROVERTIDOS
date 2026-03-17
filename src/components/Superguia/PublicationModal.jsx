@@ -743,20 +743,6 @@ export default function PublicationModal({
                   placeholder="Título del evento"
                 />
               )}
-              {!isEditMode && subtitulo && (
-                <p className="publication-modal__slogan">{subtitulo}</p>
-              )}
-              {isEditMode && (
-                <input
-                  type="text"
-                  className="publication-modal__edit-input"
-                  value={editData.subtitulo}
-                  onChange={(e) =>
-                    setEditData({ ...editData, subtitulo: e.target.value })
-                  }
-                  placeholder="Subtítulo (opcional)"
-                />
-              )}
             </div>
 
             {/* Organizador */}

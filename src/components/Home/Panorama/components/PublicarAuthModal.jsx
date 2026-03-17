@@ -26,7 +26,7 @@ const PublicarAuthModal = ({
         </button>
 
         <img
-          src="/img/Logo_extrovertidos.png"
+          src="/img/Logo_con_r.png"
           alt="Extrovertidos"
           className="auth-modal__logo"
         />

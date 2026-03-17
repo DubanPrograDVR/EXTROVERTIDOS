@@ -1,10 +1,12 @@
+import { useNavigate } from "react-router-dom";
 import "./styles/panoramas.css";
 
 // Imágenes servidas desde public/
 const pExtroIcon = "/img/P_Extro.png";
-const peopleImg = "/img/Home1.png";
+const peopleImg = "/img/Home3.png";
 
 export default function Panoramas() {
+  const navigate = useNavigate();
   return (
     <div className="panoramas-wrapper">
       {/* Texto destacado superior */}
@@ -46,7 +48,11 @@ export default function Panoramas() {
             </p>
 
             {/* Botón de acción */}
-            <button className="panoramas__btn">Explorar Panoramas</button>
+            <button
+              className="panoramas__btn"
+              onClick={() => navigate("/panoramas")}>
+              Explorar Panoramas
+            </button>
           </div>
         </div>
       </section>

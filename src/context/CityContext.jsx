@@ -2,16 +2,10 @@ import { createContext, useContext, useState, useEffect } from "react";
 
 // Lista de ciudades/comunas del Maule
 export const CITIES = [
-  { id: "talca", nombre: "Talca", provincia: "Talca" },
   { id: "curico", nombre: "Curicó", provincia: "Curicó" },
+  { id: "talca", nombre: "Talca", provincia: "Talca" },
   { id: "linares", nombre: "Linares", provincia: "Linares" },
   { id: "cauquenes", nombre: "Cauquenes", provincia: "Cauquenes" },
-  { id: "constitucion", nombre: "Constitución", provincia: "Talca" },
-  { id: "molina", nombre: "Molina", provincia: "Curicó" },
-  { id: "parral", nombre: "Parral", provincia: "Linares" },
-  { id: "san-clemente", nombre: "San Clemente", provincia: "Talca" },
-  { id: "maule", nombre: "Maule", provincia: "Talca" },
-  { id: "pelarco", nombre: "Pelarco", provincia: "Talca" },
 ];
 
 const CityContext = createContext(null);
@@ -80,7 +74,7 @@ export const CityProvider = ({ children }) => {
     const index = CITIES.findIndex(
       (c) =>
         c.id === cityIdOrName ||
-        c.nombre.toLowerCase() === cityIdOrName.toLowerCase()
+        c.nombre.toLowerCase() === cityIdOrName.toLowerCase(),
     );
     if (index !== -1) {
       setCurrentIndex(index);

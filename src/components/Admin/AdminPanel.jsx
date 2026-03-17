@@ -385,7 +385,7 @@ export default function AdminPanel() {
       <aside className={`admin-sidebar ${sidebarOpen ? "open" : ""}`}>
         {/* Logo */}
         <div className="admin-sidebar__logo">
-          <img src="/img/Logo_extrovertidos.png" alt="Extrovertidos" />
+          <img src="/img/Logo_con_r.png" alt="Extrovertidos" />
           <span>Admin</span>
         </div>
 
@@ -408,9 +408,7 @@ export default function AdminPanel() {
                     <FontAwesomeIcon icon={item.icon} />
                     <span>{item.label}</span>
                     {item.badge > 0 && !pubsMenuOpen && (
-                      <span className="admin-sidebar__badge">
-                        {item.badge}
-                      </span>
+                      <span className="admin-sidebar__badge">{item.badge}</span>
                     )}
                     <FontAwesomeIcon
                       icon={faChevronDown}

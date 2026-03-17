@@ -419,6 +419,20 @@ export const AuthProvider = ({ children }) => {
       password,
       options: { data: metadata },
     });
+
+    // Enviar email de bienvenida (sin bloquear el registro)
+    if (data?.user && !error) {
+      supabase.functions
+        .invoke("send-email", {
+          body: {
+            to: email,
+            type: "welcome",
+            data: { nombre: metadata.nombre || "" },
+          },
+        })
+        .catch((err) => console.error("Error enviando email de bienvenida:", err));
+    }
+
     return { data, error };
   }, []);
 

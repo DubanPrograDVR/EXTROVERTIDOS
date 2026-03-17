@@ -252,7 +252,7 @@
 .publication-modal__edit-field textarea {
   resize: vertical;
   min-height: 100px;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: inherit;
 }
 
 .publication-modal__edit-hint {
@@ -387,7 +387,7 @@
 .publication-modal__edit-textarea {
   resize: vertical;
   min-height: 80px;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: inherit;
 }
 
 .publication-modal__edit-input--title {

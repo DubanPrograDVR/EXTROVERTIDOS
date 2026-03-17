@@ -22,7 +22,7 @@ import {
 import "./styles/payment-result.css";
 
 // Logos del sitio
-const logoExtro = "/img/Logo_extrovertidos.png";
+const logoExtro = "/img/Logo_con_r.png";
 
 /**
  * Página de resultado de pago.

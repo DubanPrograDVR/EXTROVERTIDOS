@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../../../context/AuthContext";
+import { supabase } from "../../../../../lib/supabase";
 import {
   createBusiness,
   uploadBusinessImage,
@@ -480,6 +481,27 @@ export const useNegocioForm = () => {
 
         // 3. Crear negocio en la BD
         await createBusiness(businessData);
+
+        // Enviar email de negocio pendiente (solo usuarios normales)
+        if (!isAdmin && user?.email) {
+          supabase.functions
+            .invoke("send-email", {
+              body: {
+                to: user.email,
+                type: "negocio_pendiente",
+                data: {
+                  nombre:
+                    user.user_metadata?.full_name ||
+                    user.user_metadata?.nombre ||
+                    "",
+                  titulo: formData.nombre?.trim() || "",
+                },
+              },
+            })
+            .catch((err) =>
+              console.error("Error enviando email negocio pendiente:", err),
+            );
+        }
 
         if (showToast)
           showToast(

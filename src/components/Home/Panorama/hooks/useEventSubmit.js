@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../../../../lib/supabase";
 import {
   createEvent,
   updateEvent,
@@ -351,6 +352,27 @@ const useEventSubmit = ({
           }
 
           await createEvent(eventData);
+
+          // Enviar email de publicación pendiente (solo usuarios normales)
+          if (!canPublishDirectly && currentUser.email) {
+            supabase.functions
+              .invoke("send-email", {
+                body: {
+                  to: currentUser.email,
+                  type: "publicacion_pendiente",
+                  data: {
+                    nombre:
+                      currentUser.user_metadata?.full_name ||
+                      currentUser.user_metadata?.nombre ||
+                      "",
+                    titulo: formData.titulo || eventData.titulo || "",
+                  },
+                },
+              })
+              .catch((err) =>
+                console.error("Error enviando email pendiente:", err),
+              );
+          }
 
           // NOTA: El consumo de la publicación ya fue realizado atómicamente
           // por validateAndConsumePublication() antes de llegar aquí.

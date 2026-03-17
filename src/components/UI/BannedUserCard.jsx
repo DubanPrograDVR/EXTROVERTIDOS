@@ -27,7 +27,7 @@ export default function BannedUserCard({ reason, bannedAt, onClose }) {
       <div className="banned-card">
         {/* Logo */}
         <div className="banned-card__logo">
-          <img src="/img/Logo_extrovertidos.png" alt="Extrovertidos" />
+          <img src="/img/Logo_con_r.png" alt="Extrovertidos" />
         </div>
 
         {/* Icono de advertencia */}

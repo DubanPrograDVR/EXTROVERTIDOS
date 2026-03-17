@@ -246,14 +246,7 @@ export default function AdminEditModal({
             <FontAwesomeIcon icon={faInfoCircle} />
             <span>Información</span>
           </button>
-          <button
-            className={`admin-edit-tab ${
-              activeTab === "datetime" ? "active" : ""
-            }`}
-            onClick={() => setActiveTab("datetime")}>
-            <FontAwesomeIcon icon={faCalendarAlt} />
-            <span>Fecha y Hora</span>
-          </button>
+
           <button
             className={`admin-edit-tab ${
               activeTab === "location" ? "active" : ""
@@ -416,81 +409,6 @@ export default function AdminEditModal({
                       placeholder="+56 9 1234 5678"
                     />
                   </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Tab: Fecha y Hora */}
-          {activeTab === "datetime" && (
-            <div className="admin-edit-section">
-              <div className="admin-edit-field">
-                <label className="admin-edit-checkbox">
-                  <input
-                    type="checkbox"
-                    name="es_multidia"
-                    checked={formData.es_multidia}
-                    onChange={handleChange}
-                  />
-                  <span>Evento de varios días</span>
-                </label>
-              </div>
-
-              <div className="admin-edit-row">
-                <div className="admin-edit-field">
-                  <label htmlFor="fecha_evento">
-                    {formData.es_multidia ? "Fecha inicio" : "Fecha del evento"}{" "}
-                    <span className="required">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    id="fecha_evento"
-                    name="fecha_evento"
-                    value={formData.fecha_evento}
-                    onChange={handleChange}
-                    className={errors.fecha_evento ? "error" : ""}
-                  />
-                  {errors.fecha_evento && (
-                    <span className="field-error">{errors.fecha_evento}</span>
-                  )}
-                </div>
-
-                {formData.es_multidia && (
-                  <div className="admin-edit-field">
-                    <label htmlFor="fecha_fin">Fecha fin</label>
-                    <input
-                      type="date"
-                      id="fecha_fin"
-                      name="fecha_fin"
-                      value={formData.fecha_fin}
-                      onChange={handleChange}
-                      min={formData.fecha_evento}
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="admin-edit-row">
-                <div className="admin-edit-field">
-                  <label htmlFor="hora_inicio">Hora de inicio</label>
-                  <input
-                    type="time"
-                    id="hora_inicio"
-                    name="hora_inicio"
-                    value={formData.hora_inicio}
-                    onChange={handleChange}
-                  />
-                </div>
-
-                <div className="admin-edit-field">
-                  <label htmlFor="hora_fin">Hora de término</label>
-                  <input
-                    type="time"
-                    id="hora_fin"
-                    name="hora_fin"
-                    value={formData.hora_fin}
-                    onChange={handleChange}
-                  />
                 </div>
               </div>
             </div>

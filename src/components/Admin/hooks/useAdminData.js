@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { supabase } from "../../../lib/supabase";
 import {
   getPendingEvents,
   getAllUsers,
@@ -183,6 +184,7 @@ export const useAdminData = (user, isAdmin, isModerator) => {
   const handleApproveEvent = async (eventId) => {
     setActionLoading(eventId);
     try {
+      const event = pendingEvents.find((e) => e.id === eventId);
       await approveEvent(eventId, user.id);
       setPendingEvents((prev) => prev.filter((e) => e.id !== eventId));
       setStats((prev) => ({
@@ -193,6 +195,20 @@ export const useAdminData = (user, isAdmin, isModerator) => {
           publicados: prev.eventos.publicados + 1,
         },
       }));
+      // Enviar email de aprobación
+      if (event?.profiles?.email) {
+        supabase.functions
+          .invoke("send-email", {
+            body: {
+              to: event.profiles.email,
+              type: "publicacion_aprobada",
+              data: { nombre: event.profiles.nombre, titulo: event.titulo },
+            },
+          })
+          .catch((err) =>
+            console.error("Error enviando email aprobación:", err),
+          );
+      }
       return { success: true };
     } catch (err) {
       console.error("Error al aprobar:", err);
@@ -206,6 +222,9 @@ export const useAdminData = (user, isAdmin, isModerator) => {
   const handleRejectEvent = async (eventId, reason = "") => {
     setActionLoading(eventId);
     try {
+      const event =
+        pendingEvents.find((e) => e.id === eventId) ||
+        allEvents.find((e) => e.id === eventId);
       await rejectEvent(eventId, user.id, reason);
       setPendingEvents((prev) => prev.filter((e) => e.id !== eventId));
       setStats((prev) => ({
@@ -216,6 +235,22 @@ export const useAdminData = (user, isAdmin, isModerator) => {
           rechazados: prev.eventos.rechazados + 1,
         },
       }));
+      // Enviar email de rechazo
+      if (event?.profiles?.email) {
+        supabase.functions
+          .invoke("send-email", {
+            body: {
+              to: event.profiles.email,
+              type: "publicacion_rechazada",
+              data: {
+                nombre: event.profiles.nombre,
+                titulo: event.titulo,
+                motivo: reason,
+              },
+            },
+          })
+          .catch((err) => console.error("Error enviando email rechazo:", err));
+      }
       return { success: true };
     } catch (err) {
       console.error("Error al rechazar:", err);
@@ -397,6 +432,7 @@ export const useAdminData = (user, isAdmin, isModerator) => {
   const handleApproveBusiness = async (businessId) => {
     setActionLoading(businessId);
     try {
+      const business = pendingBusinesses.find((b) => b.id === businessId);
       await approveBusiness(businessId, user.id);
       setPendingBusinesses((prev) => prev.filter((b) => b.id !== businessId));
       // Actualizar en allBusinesses
@@ -412,6 +448,23 @@ export const useAdminData = (user, isAdmin, isModerator) => {
           pendientes: (prev.negocios?.pendientes || 1) - 1,
         },
       }));
+      // Enviar email de aprobación
+      if (business?.profiles?.email) {
+        supabase.functions
+          .invoke("send-email", {
+            body: {
+              to: business.profiles.email,
+              type: "negocio_aprobado",
+              data: {
+                nombre: business.profiles.nombre,
+                titulo: business.nombre,
+              },
+            },
+          })
+          .catch((err) =>
+            console.error("Error enviando email aprobación negocio:", err),
+          );
+      }
       return { success: true };
     } catch (err) {
       console.error("Error al aprobar negocio:", err);
@@ -425,6 +478,9 @@ export const useAdminData = (user, isAdmin, isModerator) => {
   const handleRejectBusiness = async (businessId, reason = "") => {
     setActionLoading(businessId);
     try {
+      const business =
+        pendingBusinesses.find((b) => b.id === businessId) ||
+        allBusinesses.find((b) => b.id === businessId);
       await rejectBusiness(businessId, user.id, reason);
       setPendingBusinesses((prev) => prev.filter((b) => b.id !== businessId));
       // Actualizar en allBusinesses
@@ -442,6 +498,24 @@ export const useAdminData = (user, isAdmin, isModerator) => {
           pendientes: (prev.negocios?.pendientes || 1) - 1,
         },
       }));
+      // Enviar email de rechazo
+      if (business?.profiles?.email) {
+        supabase.functions
+          .invoke("send-email", {
+            body: {
+              to: business.profiles.email,
+              type: "negocio_rechazado",
+              data: {
+                nombre: business.profiles.nombre,
+                titulo: business.nombre,
+                motivo: reason,
+              },
+            },
+          })
+          .catch((err) =>
+            console.error("Error enviando email rechazo negocio:", err),
+          );
+      }
       return { success: true };
     } catch (err) {
       console.error("Error al rechazar negocio:", err);

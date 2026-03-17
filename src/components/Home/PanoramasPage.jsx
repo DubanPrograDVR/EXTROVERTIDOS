@@ -28,7 +28,7 @@ import { useCity } from "../../context/CityContext";
 import { LOCATIONS, mapCategoriesToUI } from "../Superguia/data";
 import "./styles/panoramas-page.css";
 
-const ITEMS_PER_PAGE = 4;
+const ITEMS_PER_PAGE = 16;
 
 export default function PanoramasPage() {
   const navigate = useNavigate();
@@ -251,13 +251,15 @@ export default function PanoramasPage() {
         if (!event.fecha_evento) return false;
 
         // Coincide con fecha principal
-        const eventDateStr = formatDateKey(new Date(event.fecha_evento + "T00:00:00"));
+        const eventDateStr = formatDateKey(
+          new Date(event.fecha_evento + "T00:00:00"),
+        );
         if (eventDateStr === dateStr) return true;
 
         // Coincide con alguna fecha de recurrencia
         if (event.es_recurrente && Array.isArray(event.fechas_recurrencia)) {
           const matchRecurring = event.fechas_recurrencia.some(
-            (fecha) => formatDateKey(new Date(fecha + "T00:00:00")) === dateStr
+            (fecha) => formatDateKey(new Date(fecha + "T00:00:00")) === dateStr,
           );
           if (matchRecurring) return true;
         }
@@ -293,7 +295,42 @@ export default function PanoramasPage() {
       });
     }
 
-    return result;
+    // Agrupar por fecha — los de la misma fecha SIEMPRE juntos
+    const todayStr = new Date().toISOString().split("T")[0];
+    const groups = {};
+    result.forEach((event) => {
+      const key = event.fecha_evento || "sin-fecha";
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(event);
+    });
+
+    // Separar grupo de hoy y el resto de grupos
+    const todayGroup = groups[todayStr] || [];
+    delete groups[todayStr];
+    const otherDates = Object.keys(groups);
+
+    // Mezclar el orden de los grupos restantes (Fisher-Yates)
+    for (let i = otherDates.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [otherDates[i], otherDates[j]] = [otherDates[j], otherDates[i]];
+    }
+
+    // Mezclar dentro de cada grupo
+    const shuffle = (arr) => {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    };
+
+    // Hoy primero, luego los demás grupos en orden aleatorio
+    const sorted = [...shuffle(todayGroup)];
+    for (const date of otherDates) {
+      sorted.push(...shuffle(groups[date]));
+    }
+
+    return sorted;
   }, [
     events,
     searchQuery,
@@ -312,12 +349,18 @@ export default function PanoramasPage() {
 
     events.forEach((event) => {
       if (event.fecha_evento) {
-        const dateStr = formatDateKey(new Date(event.fecha_evento + "T00:00:00"));
+        const dateStr = formatDateKey(
+          new Date(event.fecha_evento + "T00:00:00"),
+        );
         counts[dateStr] = (counts[dateStr] || 0) + 1;
       }
 
       // Agregar fechas de recurrencia
-      if (event.es_recurrente && Array.isArray(event.fechas_recurrencia) && event.fechas_recurrencia.length > 0) {
+      if (
+        event.es_recurrente &&
+        Array.isArray(event.fechas_recurrencia) &&
+        event.fechas_recurrencia.length > 0
+      ) {
         event.fechas_recurrencia.forEach((fecha) => {
           const dateStr = formatDateKey(new Date(fecha + "T00:00:00"));
           counts[dateStr] = (counts[dateStr] || 0) + 1;

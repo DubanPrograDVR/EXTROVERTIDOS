@@ -51,7 +51,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }) {
         </button>
 
         <div className="auth-modal__logo">
-          <img src="/img/Logo_extrovertidos.png" alt="Extrovertidos" />
+          <img src="/img/Logo_con_r.png" alt="Extrovertidos" />
         </div>
 
         <h2 className="auth-modal__title">¡Bienvenido a Extrovertidos!</h2>

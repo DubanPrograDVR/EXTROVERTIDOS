@@ -301,14 +301,6 @@ export default function UserEditModal({
                   {errors.titulo}
                 </span>
               )}
-              <input
-                type="text"
-                className="publication-modal__edit-input"
-                name="subtitulo"
-                value={formData.subtitulo || ""}
-                onChange={handleChange}
-                placeholder="Subtítulo (opcional)"
-              />
             </div>
 
             {/* Organizador */}
@@ -443,118 +435,6 @@ export default function UserEditModal({
                     onChange={handleChange}
                     placeholder="https://maps.google.com/..."
                   />
-                </div>
-              </AccordionSection>
-
-              {/* Sección: Horarios */}
-              <AccordionSection
-                title="Horarios"
-                icon={faClock}
-                isOpen={activeSection === ACCORDION_SECTIONS.SCHEDULE}
-                onToggle={() => toggleSection(ACCORDION_SECTIONS.SCHEDULE)}>
-                <div className="publication-modal__edit-section">
-                  <div className="publication-modal__edit-row">
-                    <div className="publication-modal__edit-field">
-                      <label className="publication-modal__edit-label">
-                        <FontAwesomeIcon icon={faCalendarAlt} /> Fecha inicio *
-                      </label>
-                      <input
-                        type="date"
-                        className="publication-modal__edit-input"
-                        name="fecha_evento"
-                        value={formData.fecha_evento}
-                        onChange={handleChange}
-                      />
-                      {errors.fecha_evento && (
-                        <span style={{ color: "#ff4444", fontSize: "0.8rem" }}>
-                          {errors.fecha_evento}
-                        </span>
-                      )}
-                    </div>
-                    <div className="publication-modal__edit-field">
-                      <label className="publication-modal__edit-label">
-                        <FontAwesomeIcon icon={faCalendarAlt} /> Fecha fin
-                      </label>
-                      <input
-                        type="date"
-                        className="publication-modal__edit-input"
-                        name="fecha_fin"
-                        value={formData.fecha_fin}
-                        onChange={handleChange}
-                      />
-                    </div>
-                  </div>
-                  <div className="publication-modal__edit-row">
-                    <div className="publication-modal__edit-field">
-                      <label className="publication-modal__edit-label">
-                        Hora inicio
-                      </label>
-                      <input
-                        type="time"
-                        className="publication-modal__edit-input"
-                        name="hora_inicio"
-                        value={formData.hora_inicio}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    <div className="publication-modal__edit-field">
-                      <label className="publication-modal__edit-label">
-                        Hora fin
-                      </label>
-                      <input
-                        type="time"
-                        className="publication-modal__edit-input"
-                        name="hora_fin"
-                        value={formData.hora_fin}
-                        onChange={handleChange}
-                      />
-                    </div>
-                  </div>
-                  <label className="publication-modal__edit-label">
-                    <FontAwesomeIcon icon={faTicketAlt} /> Tipo de entrada
-                  </label>
-                  <select
-                    className="publication-modal__edit-select"
-                    name="tipo_entrada"
-                    value={formData.tipo_entrada}
-                    onChange={handleChange}>
-                    {TIPOS_ENTRADA.map((t) => (
-                      <option key={t.value} value={t.value}>
-                        {t.label}
-                      </option>
-                    ))}
-                  </select>
-                  {(formData.tipo_entrada === "pagado" ||
-                    formData.tipo_entrada === "venta_externa") && (
-                    <>
-                      <label className="publication-modal__edit-label">
-                        Precio
-                      </label>
-                      <input
-                        type="number"
-                        className="publication-modal__edit-input"
-                        name="precio"
-                        value={formData.precio}
-                        onChange={handleChange}
-                        placeholder="Precio en CLP"
-                      />
-                    </>
-                  )}
-                  {formData.tipo_entrada === "venta_externa" && (
-                    <>
-                      <label className="publication-modal__edit-label">
-                        URL de venta
-                      </label>
-                      <input
-                        type="url"
-                        className="publication-modal__edit-input"
-                        name="url_venta"
-                        value={formData.url_venta}
-                        onChange={handleChange}
-                        placeholder="https://..."
-                      />
-                    </>
-                  )}
                 </div>
               </AccordionSection>
 

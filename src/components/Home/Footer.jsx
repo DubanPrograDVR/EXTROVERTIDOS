@@ -9,7 +9,7 @@ import { faEnvelope, faCommentDots } from "@fortawesome/free-solid-svg-icons";
 import "./styles/footer.css";
 
 // Logo servido desde public/
-const logo = "/img/Logo_extrovertidos.png";
+const logo = "/img/Logo_con_r.png";
 
 // ===== DATOS =====
 const socialLinks = [

@@ -211,7 +211,7 @@
 }
 
 .logo-main {
-  width: 220px;
+  width: 300px;
   height: auto;
   transition: all var(--transition-slow);
 }
@@ -509,7 +509,7 @@
   }
 
   .logo-main {
-    width: 200px;
+    width: 260px;
   }
 
   .city-question {
@@ -578,7 +578,7 @@
   }
 
   .logo-main {
-    width: 160px;
+    width: 210px;
   }
 
   .city-picker {

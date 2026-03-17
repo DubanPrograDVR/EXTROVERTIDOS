@@ -116,14 +116,14 @@
 .nav-link {
   color: var(--color-text-primary);
   text-decoration: none;
-  font-weight: var(--font-medium);
-  font-size: var(--text-sm);
+  font-weight: var(--font-regular);
+  font-size: 0.935rem;
   padding: var(--space-2) 0;
   transition: all var(--transition-base);
   white-space: nowrap;
   position: relative;
-  letter-spacing: var(--tracking-wide);
-  text-transform: capitalize;
+  letter-spacing: 0.01em;
+  text-transform: none;
 }
 
 .nav-link::before {
@@ -184,10 +184,10 @@
 /* Activar Plan - highlighted */
 .nav-link--highlight {
   color: #ff6600;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-size: 0.78rem;
+  font-weight: var(--font-semibold);
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-size: 0.935rem;
 }
 
 .nav-link--highlight::before {

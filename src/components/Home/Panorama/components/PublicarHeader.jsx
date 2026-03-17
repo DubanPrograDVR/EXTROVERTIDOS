@@ -5,7 +5,7 @@ const PublicarHeader = () => {
   return (
     <header className="publicar-header">
       <img
-        src="/img/Logo_extrovertidos.png"
+        src="/img/Logo_con_r.png"
         alt="Extrovertidos"
         className="publicar-header__logo"
       />
