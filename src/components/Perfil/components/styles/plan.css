@@ -66,6 +66,29 @@
   border-color: rgba(255, 102, 0, 0.2);
 }
 
+/* Plan con cupo agotado (ya usado) */
+.perfil-plan__card--exhausted {
+  opacity: 0.45;
+  filter: grayscale(0.4);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.perfil-plan__card--exhausted::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #f59e0b;
+  border-radius: 16px 16px 0 0;
+  opacity: 0.5;
+}
+
+.perfil-plan__card--exhausted:hover {
+  opacity: 0.6;
+}
+
 /* Icono/imagen del plan */
 .perfil-plan__card-icon {
   width: 60px;
@@ -173,6 +196,45 @@
   font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.4);
   font-style: italic;
+}
+
+/* Cupos utilizados */
+.perfil-plan__card-quota {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 600;
+}
+
+.perfil-plan__card-quota span:first-child {
+  color: #ff6600;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.perfil-plan__card-quota-separator {
+  color: rgba(255, 255, 255, 0.3);
+  font-weight: 400;
+}
+
+.perfil-plan__card-quota span:nth-child(3) {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.perfil-plan__card-quota-label {
+  margin-left: 4px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 /* ===== CTA inferior (sin plan activo) ===== */

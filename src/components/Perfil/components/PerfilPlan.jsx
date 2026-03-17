@@ -148,6 +148,9 @@ export default function PerfilPlan() {
   const hasAnyActive = subscriptions.some(
     (s) => s.estado === "activa" && !isExpired(s),
   );
+  const hasActiveWithQuota = subscriptions.some(
+    (s) => s.estado === "activa" && !isExpired(s) && hasRemainingQuota(s),
+  );
   const hasRenewablePlan = subscriptions.some((s) => isRenewablePanorama(s));
 
   /**
@@ -221,9 +224,11 @@ export default function PerfilPlan() {
             <div
               key={plan.key}
               className={`perfil-plan__card ${
-                isContracted || isRenewable
+                isContracted
                   ? "perfil-plan__card--active"
-                  : "perfil-plan__card--inactive"
+                  : isRenewable
+                    ? "perfil-plan__card--exhausted"
+                    : "perfil-plan__card--inactive"
               }`}>
               <div className="perfil-plan__card-icon">
                 <img src={plan.img} alt={plan.nombre} />
@@ -242,6 +247,20 @@ export default function PerfilPlan() {
                       {formatDateShort(activeSub.fecha_fin)}
                     </p>
                   </div>
+
+                  {/* Mostrar cupos utilizados para planes limitados */}
+                  {["panorama_unica", "panorama_pack4"].includes(plan.key) && (
+                    <div className="perfil-plan__card-quota">
+                      <span>{Number(activeSub.publicaciones_usadas ?? 0)}</span>
+                      <span className="perfil-plan__card-quota-separator">
+                        /
+                      </span>
+                      <span>{Number(activeSub.publicaciones_total ?? 0)}</span>
+                      <span className="perfil-plan__card-quota-label">
+                        publicaciones usadas
+                      </span>
+                    </div>
+                  )}
 
                   {isRenewable ? (
                     <>
@@ -284,7 +303,7 @@ export default function PerfilPlan() {
       </div>
 
       {/* CTA inferior */}
-      {(!hasAnyActive || hasRenewablePlan) && (
+      {!hasActiveWithQuota && (
         <div className="perfil-plan__cta">
           <div className="perfil-plan__cta-icon">
             <img src={iconExtro} alt="Extrovertidos" />
@@ -292,12 +311,12 @@ export default function PerfilPlan() {
           <h3>
             {hasRenewablePlan
               ? "¡Ya puedes volver a suscribirte!"
-              : "¡Publica en Extrovertidos!"}
+              : "Aún no tienes una suscripción activa"}
           </h3>
           <p>
             {hasRenewablePlan
               ? "Tu cupo ya fue utilizado. Puedes activar nuevamente el mismo plan o elegir una opción distinta."
-              : "¡Elige un Plan para poder activar todas tus Publicaciones!"}
+              : "¡Suscríbete a un plan para poder publicar en Extrovertidos!"}
           </p>
           <button
             className="perfil-plan__cta-btn"
