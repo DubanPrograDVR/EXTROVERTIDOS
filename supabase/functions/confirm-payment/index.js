@@ -93,6 +93,47 @@ async function rejectSubscriptions(supabaseAdmin, subscriptionIds, reason) {
     .in("id", subscriptionIds);
 }
 
+/**
+ * Envía un email de resultado de pago al usuario.
+ * Non-blocking: no lanza error si falla.
+ */
+async function sendPaymentEmail(supabaseAdmin, userId, type, paymentData) {
+  try {
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("nombre, email")
+      .eq("id", userId)
+      .single();
+
+    if (!profile?.email) {
+      console.warn("[confirm-payment] Sin email para usuario:", userId);
+      return;
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${serviceKey}`,
+        apikey: serviceKey,
+      },
+      body: JSON.stringify({
+        to: profile.email,
+        type,
+        data: {
+          nombre: profile.nombre || "",
+          ...paymentData,
+        },
+      }),
+    });
+  } catch (err) {
+    console.error("[confirm-payment] Error enviando email de pago:", err);
+  }
+}
+
 // ──────────────────────────────────────────────
 // HANDLER PRINCIPAL
 // ──────────────────────────────────────────────
@@ -397,6 +438,21 @@ Deno.serve(async (req) => {
         );
       }
 
+      // Enviar boleta por email (non-blocking)
+      await sendPaymentEmail(
+        supabaseAdmin,
+        transaction.user_id,
+        "pago_exitoso",
+        {
+          buy_order: transaction.buy_order,
+          amount: transaction.amount,
+          authorization_code: tbkResult.authorization_code || "",
+          card_last_four: cardLastFour,
+          items: transaction.items || [],
+          fecha: new Date().toISOString(),
+        },
+      );
+
       return redirectToFrontend({
         status: "success",
         buy_order: transaction.buy_order,
@@ -415,6 +471,13 @@ Deno.serve(async (req) => {
       transaction.subscription_ids,
       `Pago rechazado por Transbank (código: ${tbkResult.response_code})`,
     );
+
+    // Enviar email de pago fallido (non-blocking)
+    await sendPaymentEmail(supabaseAdmin, transaction.user_id, "pago_fallido", {
+      buy_order: transaction.buy_order,
+      amount: transaction.amount,
+      items: transaction.items || [],
+    });
 
     return redirectToFrontend({
       status: "failed",
