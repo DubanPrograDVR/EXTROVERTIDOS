@@ -20,6 +20,7 @@ import {
   pauseEvent,
 } from "../../../lib/database";
 import { useToast } from "../../../context/ToastContext";
+import { useAuth } from "../../../context/AuthContext";
 import PublicationModal from "../../Superguia/PublicationModal";
 import { UserEditModal } from "./editar";
 import "./styles/section.css";
@@ -32,6 +33,7 @@ export default function PerfilPublicaciones({
 }) {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { user } = useAuth();
 
   // Estados para los modales
   const [viewModal, setViewModal] = useState({
@@ -304,6 +306,7 @@ export default function PerfilPublicaciones({
         categories={categories}
         onSave={handleSaveEdit}
         loading={saving}
+        userId={user?.id}
       />
 
       {/* Modal de confirmación de eliminación */}

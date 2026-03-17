@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faTimes,
@@ -18,6 +18,7 @@ import {
   faFacebook,
   faWhatsapp,
 } from "@fortawesome/free-brands-svg-icons";
+import { uploadEventImage } from "../../../lib/database/images";
 import "./AdminEditModal.css";
 
 // Provincias del Maule
@@ -80,6 +81,9 @@ export default function AdminEditModal({
 
   const [errors, setErrors] = useState({});
   const [activeTab, setActiveTab] = useState("info");
+  const [newImageFiles, setNewImageFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   // Cargar datos del evento cuando se abre el modal
   useEffect(() => {
@@ -114,6 +118,7 @@ export default function AdminEditModal({
       });
       setErrors({});
       setActiveTab("info");
+      setNewImageFiles([]);
     }
   }, [event, isOpen]);
 
@@ -187,6 +192,22 @@ export default function AdminEditModal({
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleAddImages = (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    const maxTotal = 5;
+    const currentTotal =
+      (formData.imagenes?.length || 0) + newImageFiles.length;
+    const available = maxTotal - currentTotal;
+    if (available <= 0) return;
+    setNewImageFiles((prev) => [...prev, ...files.slice(0, available)]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleRemoveNewImage = (index) => {
+    setNewImageFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -208,6 +229,24 @@ export default function AdminEditModal({
         ? formData.fecha_fin
         : formData.fecha_evento,
     };
+
+    // Subir nuevas imágenes si hay
+    if (newImageFiles.length > 0 && event?.user_id) {
+      setUploading(true);
+      try {
+        const uploadedUrls = [];
+        for (const file of newImageFiles) {
+          const url = await uploadEventImage(file, event.user_id);
+          uploadedUrls.push(url);
+        }
+        dataToSave.imagenes = [...(dataToSave.imagenes || []), ...uploadedUrls];
+      } catch (error) {
+        console.error("Error al subir imágenes:", error);
+        setUploading(false);
+        return;
+      }
+      setUploading(false);
+    }
 
     await onSave(event.id, dataToSave);
   };
@@ -553,10 +592,77 @@ export default function AdminEditModal({
                     <p>No hay imágenes</p>
                   </div>
                 )}
-                <p className="admin-edit-images-note">
-                  Nota: Para agregar nuevas imágenes, el usuario debe editar
-                  desde su perfil.
-                </p>
+
+                {/* Nuevas imágenes seleccionadas */}
+                {newImageFiles.length > 0 && (
+                  <>
+                    <p
+                      style={{
+                        color: "#ff6600",
+                        fontSize: "0.85rem",
+                        margin: "12px 0 8px",
+                        fontWeight: "600",
+                      }}>
+                      Nuevas imágenes a subir:
+                    </p>
+                    <div className="admin-edit-images-grid">
+                      {newImageFiles.map((file, index) => (
+                        <div
+                          key={`new-${index}`}
+                          className="admin-edit-image-item"
+                          style={{ border: "2px solid #ff6600" }}>
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={`Nueva ${index + 1}`}
+                          />
+                          <button
+                            type="button"
+                            className="admin-edit-image-remove"
+                            onClick={() => handleRemoveNewImage(index)}>
+                            <FontAwesomeIcon icon={faTrash} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* Botón para agregar imágenes */}
+                {(formData.imagenes?.length || 0) + newImageFiles.length <
+                  5 && (
+                  <>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      multiple
+                      onChange={handleAddImages}
+                      style={{ display: "none" }}
+                    />
+                    <button
+                      type="button"
+                      className="admin-edit-btn admin-edit-btn--add-image"
+                      onClick={() => fileInputRef.current?.click()}
+                      style={{
+                        marginTop: "12px",
+                        width: "100%",
+                        padding: "12px",
+                        borderRadius: "8px",
+                        border: "2px dashed rgba(255,102,0,0.5)",
+                        background: "rgba(255,102,0,0.1)",
+                        color: "#ff6600",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px",
+                        fontSize: "0.9rem",
+                        fontWeight: "600",
+                      }}>
+                      <FontAwesomeIcon icon={faPlus} /> Agregar imágenes
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -573,11 +679,11 @@ export default function AdminEditModal({
             <button
               type="submit"
               className="admin-edit-btn admin-edit-btn--save"
-              disabled={loading}>
-              {loading ? (
+              disabled={loading || uploading}>
+              {loading || uploading ? (
                 <>
                   <FontAwesomeIcon icon={faSpinner} spin />
-                  Guardando...
+                  {uploading ? "Subiendo imágenes..." : "Guardando..."}
                 </>
               ) : (
                 <>

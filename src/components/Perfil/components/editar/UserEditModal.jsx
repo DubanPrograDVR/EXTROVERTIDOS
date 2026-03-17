@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faTimes,
@@ -16,6 +16,7 @@ import {
   faClock,
   faAddressCard,
   faTrash,
+  faPlus,
   faLink,
   faCalendarAlt,
   faTicketAlt,
@@ -30,6 +31,7 @@ import {
 // Hook
 import { useEditForm } from "./useEditForm";
 import { PROVINCIAS, TIPOS_ENTRADA } from "./constants";
+import { uploadEventImage } from "../../../../lib/database/images";
 
 // Estilos - Reutilizar los estilos de PublicationModal para diseño idéntico
 import "../../../Superguia/styles/PublicationModal.css";
@@ -93,6 +95,7 @@ export default function UserEditModal({
   categories = [],
   onSave,
   loading = false,
+  userId,
 }) {
   const {
     formData,
@@ -107,6 +110,9 @@ export default function UserEditModal({
     ACCORDION_SECTIONS.DESCRIPTION,
   );
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [newImageFiles, setNewImageFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   const toggleSection = useCallback((section) => {
     setActiveSection((prev) => (prev === section ? null : section));
@@ -117,6 +123,7 @@ export default function UserEditModal({
     if (isOpen) {
       setActiveSection(ACCORDION_SECTIONS.DESCRIPTION);
       setCurrentImageIndex(0);
+      setNewImageFiles([]);
     }
   }, [isOpen, event?.id]);
 
@@ -135,10 +142,49 @@ export default function UserEditModal({
     };
   }, [isOpen, onClose, loading]);
 
+  const handleAddImages = useCallback(
+    (e) => {
+      const files = Array.from(e.target.files);
+      if (!files.length) return;
+      const maxTotal = 5;
+      const currentTotal =
+        (formData.imagenes?.length || 0) + newImageFiles.length;
+      const available = maxTotal - currentTotal;
+      if (available <= 0) return;
+      setNewImageFiles((prev) => [...prev, ...files.slice(0, available)]);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    },
+    [formData.imagenes, newImageFiles],
+  );
+
+  const handleRemoveNewImage = useCallback((index) => {
+    setNewImageFiles((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
+
     const dataToSave = prepareDataToSave();
+
+    // Subir nuevas imágenes si hay
+    if (newImageFiles.length > 0 && userId) {
+      setUploading(true);
+      try {
+        const uploadedUrls = [];
+        for (const file of newImageFiles) {
+          const url = await uploadEventImage(file, userId);
+          uploadedUrls.push(url);
+        }
+        dataToSave.imagenes = [...(dataToSave.imagenes || []), ...uploadedUrls];
+      } catch (error) {
+        console.error("Error al subir imágenes:", error);
+        setUploading(false);
+        return;
+      }
+      setUploading(false);
+    }
+
     await onSave(event.id, dataToSave);
   };
 
@@ -212,12 +258,16 @@ export default function UserEditModal({
           <button
             type="submit"
             className="publication-modal__save-btn"
-            disabled={loading}>
+            disabled={loading || uploading}>
             <FontAwesomeIcon
-              icon={loading ? faSpinner : faSave}
-              spin={loading}
+              icon={loading || uploading ? faSpinner : faSave}
+              spin={loading || uploading}
             />
-            {loading ? "Guardando..." : "Guardar"}
+            {uploading
+              ? "Subiendo imágenes..."
+              : loading
+                ? "Guardando..."
+                : "Guardar"}
           </button>
           <button
             type="button"
@@ -494,8 +544,8 @@ export default function UserEditModal({
                       fontSize: "0.85rem",
                       margin: "0 0 12px",
                     }}>
-                    <FontAwesomeIcon icon={faInfoCircle} /> Puedes eliminar
-                    imágenes existentes. Agrega nuevas desde tu perfil.
+                    <FontAwesomeIcon icon={faInfoCircle} /> Puedes eliminar o
+                    agregar imágenes (máximo 5).
                   </p>
                   {formData.imagenes && formData.imagenes.length > 0 ? (
                     <div
@@ -578,6 +628,107 @@ export default function UserEditModal({
                       />
                       <p>No hay imágenes</p>
                     </div>
+                  )}
+
+                  {/* Nuevas imágenes seleccionadas */}
+                  {newImageFiles.length > 0 && (
+                    <>
+                      <p
+                        style={{
+                          color: "#ff6600",
+                          fontSize: "0.85rem",
+                          margin: "12px 0 8px",
+                          fontWeight: "600",
+                        }}>
+                        Nuevas imágenes a subir:
+                      </p>
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns:
+                            "repeat(auto-fill, minmax(100px, 1fr))",
+                          gap: "10px",
+                        }}>
+                        {newImageFiles.map((file, index) => (
+                          <div
+                            key={index}
+                            style={{
+                              position: "relative",
+                              aspectRatio: "1",
+                              borderRadius: "8px",
+                              overflow: "hidden",
+                              border: "2px solid #ff6600",
+                            }}>
+                            <img
+                              src={URL.createObjectURL(file)}
+                              alt={`Nueva ${index + 1}`}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveNewImage(index)}
+                              style={{
+                                position: "absolute",
+                                top: "4px",
+                                right: "4px",
+                                width: "24px",
+                                height: "24px",
+                                borderRadius: "50%",
+                                background: "rgba(255,68,68,0.9)",
+                                border: "none",
+                                color: "#fff",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "0.65rem",
+                              }}>
+                              <FontAwesomeIcon icon={faTrash} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Botón para agregar imágenes */}
+                  {(formData.imagenes?.length || 0) + newImageFiles.length <
+                    5 && (
+                    <>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        multiple
+                        onChange={handleAddImages}
+                        style={{ display: "none" }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        style={{
+                          marginTop: "12px",
+                          width: "100%",
+                          padding: "12px",
+                          borderRadius: "8px",
+                          border: "2px dashed rgba(255,102,0,0.5)",
+                          background: "rgba(255,102,0,0.1)",
+                          color: "#ff6600",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "8px",
+                          fontSize: "0.9rem",
+                          fontWeight: "600",
+                        }}>
+                        <FontAwesomeIcon icon={faPlus} /> Agregar imágenes
+                      </button>
+                    </>
                   )}
                 </div>
               </AccordionSection>
