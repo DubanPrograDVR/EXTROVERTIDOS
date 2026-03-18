@@ -420,6 +420,36 @@ export default function UserEditModal({
                 </div>
               </AccordionSection>
 
+              {/* Sección: Horario */}
+              <AccordionSection
+                title="Horario"
+                icon={faClock}
+                isOpen={activeSection === ACCORDION_SECTIONS.SCHEDULE}
+                onToggle={() => toggleSection(ACCORDION_SECTIONS.SCHEDULE)}>
+                <div className="publication-modal__edit-section">
+                  <label className="publication-modal__edit-label">
+                    Hora de inicio
+                  </label>
+                  <input
+                    type="time"
+                    className="publication-modal__edit-input"
+                    name="hora_inicio"
+                    value={formData.hora_inicio}
+                    onChange={handleChange}
+                  />
+                  <label className="publication-modal__edit-label">
+                    Hora de término
+                  </label>
+                  <input
+                    type="time"
+                    className="publication-modal__edit-input"
+                    name="hora_fin"
+                    value={formData.hora_fin}
+                    onChange={handleChange}
+                  />
+                </div>
+              </AccordionSection>
+
               {/* Sección: Ubicación */}
               <AccordionSection
                 title="Ubicación"
