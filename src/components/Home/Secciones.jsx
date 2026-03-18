@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import "./styles/secciones.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMapMarkedAlt, faCompass } from "@fortawesome/free-solid-svg-icons";
@@ -26,10 +27,10 @@ const sectionsData = [
     id: 2,
     icon: null,
     customIcon: pExtroIcon,
-    title: "SUPERGUÍA EXTROVERTIDOS",
-    subtitle: "¿UN UBER, UN VETERINARIO O UN MECÁNICO?",
-    description:
-      "LA SUPERGUÍA DE NEGOCIOS Y SERVICIOS DE TU CIUDAD. Encuentra rápidamente lo que necesitas: desde servicios de emergencia hasta los mejores restaurantes y tiendas locales.",
+    title: "Superguía Extrovertidos",
+    subtitle: "¿Un Uber, Un Veterinario O Un Mecánico?",
+    btnLabel: "Explorar Superguía",
+    btnPath: "/superguia",
     highlight: false,
     alignment: "left",
     image: superguiaImg,
@@ -39,6 +40,7 @@ const sectionsData = [
 
 // ===== COMPONENTE PRINCIPAL =====
 export default function Secciones({ customSections }) {
+  const navigate = useNavigate();
   const data = customSections || sectionsData;
   const sectionRefs = useRef([]);
 
@@ -55,7 +57,7 @@ export default function Secciones({ customSections }) {
       {
         threshold: 0.2,
         rootMargin: "0px 0px -50px 0px",
-      }
+      },
     );
 
     sectionRefs.current.forEach((ref) => {
@@ -129,6 +131,14 @@ export default function Secciones({ customSections }) {
                   <p className="secciones__description">
                     {section.description}
                   </p>
+                )}
+
+                {section.btnLabel && (
+                  <button
+                    className="secciones__btn"
+                    onClick={() => navigate(section.btnPath)}>
+                    {section.btnLabel}
+                  </button>
                 )}
               </div>
             </div>

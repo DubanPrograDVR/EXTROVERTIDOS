@@ -12,8 +12,8 @@ export default function Panoramas() {
       {/* Texto destacado superior */}
       <div className="panoramas__header">
         <h2 className="panoramas__header-text">
-          ¡LO MEJOR ESTÁ EN{" "}
-          <span className="panoramas__highlight">EXTROVERTIDOS!</span>
+          ¡Lo Mejor Está En{" "}
+          <span className="panoramas__highlight">Extrovertidos!</span>
         </h2>
       </div>
 
@@ -40,11 +40,11 @@ export default function Panoramas() {
             </div>
 
             {/* Título */}
-            <h2 className="panoramas__title">PANORAMAS</h2>
+            <h2 className="panoramas__title">Panoramas</h2>
 
             {/* Subtítulo */}
             <p className="panoramas__subtitle">
-              ¡ELIGE TU CIUDAD Y ENTÉRATE DE LO QUE MÁS TE GUSTA!
+              ¡Elige Tu Ciudad Y Entérate De Lo Que Más Te Gusta!
             </p>
 
             {/* Botón de acción */}

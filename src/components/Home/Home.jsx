@@ -43,14 +43,12 @@ export default function Home() {
           {/* Título Principal */}
           <div className="home-header">
             <h1 className="home-title">
-              <span className="title-highlight">¡ENCUENTRA!</span>
+              <span className="title-highlight">¡Encuentra!</span>
               <span className="title-main">
-                LOS <span className="text-panoramas">PANORAMAS</span>,{" "}
-                <span className="text-actividades">ACTIVIDADES</span> Y{" "}
-                <span className="text-eventos">EVENTOS</span>
+                Los Panoramas, Actividades y Eventos
               </span>
-              <span className="title-accent">
-                DE TU <span className="title-ciudad">CIUDAD</span>
+              <span className="title-main" style={{ textAlign: "center" }}>
+                de tu Ciudad
               </span>
             </h1>
           </div>
@@ -104,11 +102,7 @@ export default function Home() {
               className="action-btn btn-superguia"
               onClick={handleSuperguiaClick}>
               <FontAwesomeIcon icon={faCompass} className="btn-icon" />
-              <span>
-                Superguía
-                <br />
-                Extrovertidos
-              </span>
+              <span>Superguía Extrovertidos</span>
             </button>
           </div>
         </div>

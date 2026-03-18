@@ -32,11 +32,10 @@
 }
 
 .panoramas__header-text {
-  font-size: 1.5rem;
+  font-size: var(--text-5xl);
   font-weight: 900;
   color: #ffffff;
-  text-transform: uppercase;
-  letter-spacing: 2px;
+  text-transform: capitalize;
   margin: 0;
   font-style: italic;
   text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
@@ -200,8 +199,7 @@
   font-size: 2.8rem;
   font-weight: 900;
   color: #ffffff;
-  text-transform: uppercase;
-  letter-spacing: 3px;
+  text-transform: capitalize;
   margin: 0;
   line-height: 1;
   font-style: italic;
@@ -212,13 +210,12 @@
 
 /* ===== SUBTÍTULO ===== */
 .panoramas__subtitle {
-  font-size: 0.9rem;
+  font-size: var(--text-xl);
   font-weight: 600;
   color: #ff6600;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  text-transform: capitalize;
   margin: 0;
-  max-width: 350px;
+  white-space: nowrap;
   line-height: 1.4;
   font-style: italic;
   text-shadow: 0 0 10px rgba(255, 102, 0, 0.3);
@@ -230,8 +227,7 @@
   padding: 12px 28px;
   font-size: 0.85rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 2px;
+  text-transform: capitalize;
   color: #000;
   background: linear-gradient(135deg, #ff6600 0%, #ff8833 50%, #ffaa00 100%);
   border: none;
@@ -294,7 +290,6 @@
 
   .panoramas__title {
     font-size: 2.2rem;
-    letter-spacing: 3px;
   }
 
   .panoramas__subtitle {
@@ -314,7 +309,6 @@
 
   .panoramas__header-text {
     font-size: 1.1rem;
-    letter-spacing: 2px;
   }
 
   .panoramas {
@@ -352,7 +346,6 @@
 
   .panoramas__title {
     font-size: 1.8rem;
-    letter-spacing: 2px;
   }
 
   .panoramas__subtitle {
@@ -377,7 +370,6 @@
 
   .panoramas__header-text {
     font-size: 0.95rem;
-    letter-spacing: 1px;
   }
 
   .panoramas {
@@ -395,7 +387,6 @@
 
   .panoramas__title {
     font-size: 1.4rem;
-    letter-spacing: 2px;
   }
 
   .panoramas__subtitle {

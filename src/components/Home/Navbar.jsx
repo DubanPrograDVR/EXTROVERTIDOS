@@ -17,7 +17,7 @@ import AuthModal from "../Auth/AuthModal";
 import { isPlanesEnabled } from "../../lib/database";
 
 // Imágenes servidas desde public/
-const logo = "/img/Logo_con_r.png";
+const logo = "/img/E_Extro.png";
 const manchaExtro = "/img/Mancha_Extro.png";
 import { useAuth } from "../../context/AuthContext";
 

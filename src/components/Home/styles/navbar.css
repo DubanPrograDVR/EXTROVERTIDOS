@@ -89,7 +89,7 @@
 }
 
 .logo {
-  height: 40px;
+  height: 58px;
   width: auto;
   transition: filter var(--transition-base);
 }
@@ -116,8 +116,8 @@
 .nav-link {
   color: var(--color-text-primary);
   text-decoration: none;
-  font-weight: var(--font-regular);
-  font-size: 0.935rem;
+  font-weight: var(--font-semibold);
+  font-size: 1.05rem;
   padding: var(--space-2) 0;
   transition: all var(--transition-base);
   white-space: nowrap;
