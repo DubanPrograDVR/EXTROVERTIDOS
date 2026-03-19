@@ -37,7 +37,6 @@
   color: #ffffff;
   text-transform: capitalize;
   margin: 0;
-  font-style: italic;
   text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
 }
 
@@ -187,7 +186,7 @@
 }
 
 .panoramas__logo {
-  width: 100px;
+  width: 140px;
   height: auto;
   position: relative;
   z-index: 1;
@@ -202,7 +201,6 @@
   text-transform: capitalize;
   margin: 0;
   line-height: 1;
-  font-style: italic;
   text-shadow:
     0 0 20px rgba(255, 102, 0, 0.4),
     0 4px 15px rgba(0, 0, 0, 0.5);
@@ -217,7 +215,6 @@
   margin: 0;
   white-space: nowrap;
   line-height: 1.4;
-  font-style: italic;
   text-shadow: 0 0 10px rgba(255, 102, 0, 0.3);
 }
 
@@ -285,7 +282,7 @@
   }
 
   .panoramas__logo {
-    width: 80px;
+    width: 110px;
   }
 
   .panoramas__title {
@@ -336,7 +333,7 @@
   }
 
   .panoramas__logo {
-    width: 70px;
+    width: 95px;
   }
 
   .panoramas__logo-wrapper::before {
@@ -382,7 +379,7 @@
   }
 
   .panoramas__logo {
-    width: 60px;
+    width: 80px;
   }
 
   .panoramas__title {

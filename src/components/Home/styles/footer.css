@@ -78,8 +78,9 @@
   font-size: 0.875rem;
   color: var(--footer-text-secondary);
   line-height: 1.6;
-  max-width: 220px;
   margin: 0;
+  white-space: nowrap;
+  margin-left: -60px;
 }
 
 /* ===== TÍTULOS DE SECCIÓN ===== */

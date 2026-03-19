@@ -5,7 +5,11 @@ import {
   faFacebook,
   faTiktok,
 } from "@fortawesome/free-brands-svg-icons";
-import { faEnvelope, faCommentDots } from "@fortawesome/free-solid-svg-icons";
+import {
+  faEnvelope,
+  faCommentDots,
+  faHeadset,
+} from "@fortawesome/free-solid-svg-icons";
 import "./styles/footer.css";
 
 // Logo servido desde public/
@@ -38,10 +42,8 @@ const socialLinks = [
 
 const navLinks = [
   { to: "/", label: "Inicio" },
-  { to: "/eventos", label: "Eventos" },
-  { to: "/superguia", label: "Superguía" },
-  { to: "/publicar", label: "Publicar" },
-  { to: "/faq", label: "Preguntas Frecuentes" },
+  { to: "/panoramas", label: "Panoramas" },
+  { to: "/superguia", label: "Superguía Extrovertidos" },
 ];
 
 const legalLinks = [
@@ -98,24 +100,14 @@ export default function Footer() {
                 atencion@extrovertidos.cl
               </a>
               <a
-                href="https://wa.me/56912345678"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="mailto:atencion@extrovertidos.cl"
                 className="footer__contact-link">
                 <FontAwesomeIcon
-                  icon={faCommentDots}
+                  icon={faHeadset}
                   className="footer__contact-icon"
                 />
-                WhatsApp
+                Te ayudamos
               </a>
-              <p className="footer__contact-cta">
-                ¿Tienes dudas?{" "}
-                <a
-                  href="mailto:atencion@extrovertidos.cl"
-                  className="footer__cta-link">
-                  ¡Escríbenos!
-                </a>
-              </p>
             </div>
           </div>
 
