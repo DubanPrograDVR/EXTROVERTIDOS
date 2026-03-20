@@ -165,6 +165,7 @@ export default function Navbar() {
         )}
 
         <nav className={`navbar-menu ${isMenuOpen ? "active" : ""}`}>
+          {/* Logo del menú móvil */}
           {NAV_LINKS.filter(
             (link) =>
               (!link.userOnly || !isModerator) &&

@@ -661,13 +661,15 @@
     right: -100%;
     width: 75%;
     max-width: 320px;
-    height: 100vh;
+    height: auto;
+    min-height: 100vh;
+    max-height: 100vh;
     background: linear-gradient(135deg, #000 0%, #0a0a0a 50%, #1a1a1a 100%);
     backdrop-filter: blur(20px);
     display: flex;
     flex-direction: column;
     gap: 0;
-    padding: 6rem 0 2rem 0;
+    padding: 2rem 0 2rem 0;
     overflow-y: auto;
     transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     border-left: 3px solid #ff6600;
@@ -707,6 +709,22 @@
   }
 
   /* Logo en el sidebar */
+  .navbar-menu-logo-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 1.5rem 0.5rem;
+    border-bottom: 1px solid rgba(255, 102, 0, 0.2);
+    margin-bottom: 0.5rem;
+  }
+
+  .navbar-menu-logo {
+    height: 50px;
+    width: auto;
+    filter: drop-shadow(0 0 8px rgba(255, 102, 0, 0.4));
+  }
+
+  /* Línea decorativa (reemplazada por logo) */
   .navbar-menu::after {
     content: "";
     position: absolute;
@@ -787,7 +805,7 @@
     flex-direction: column;
     gap: 12px;
     padding: 1.5rem 2rem;
-    margin-top: auto;
+    margin-top: 1rem;
     border-top: 1px solid rgba(255, 102, 0, 0.2);
     opacity: 0;
     transform: translateY(20px);
