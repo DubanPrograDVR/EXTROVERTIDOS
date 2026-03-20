@@ -302,6 +302,9 @@
 
   .footer__slogan {
     max-width: 280px;
+    text-align: center;
+    margin-left: 0;
+    white-space: normal;
   }
 
   .footer__nav-list {

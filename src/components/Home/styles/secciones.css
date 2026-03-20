@@ -272,7 +272,7 @@
 }
 
 .secciones__title {
-  font-size: 2.2rem;
+  font-size: 3.2rem;
   font-weight: 900;
   color: var(--white);
   text-transform: capitalize;
@@ -291,7 +291,7 @@
 }
 
 .secciones__subtitle {
-  font-size: var(--text-xl);
+  font-size: 1.4rem;
   font-weight: 600;
   color: #ff6600;
   text-transform: capitalize;
@@ -396,11 +396,11 @@
   }
 
   .secciones__title {
-    font-size: 1.8rem;
+    font-size: 2.8rem;
   }
 
   .secciones__subtitle {
-    font-size: 1rem;
+    font-size: 1.1rem;
   }
 
   .secciones__icon-wrapper {
@@ -450,11 +450,11 @@
   }
 
   .secciones__title {
-    font-size: 1.5rem;
+    font-size: 2.2rem;
   }
 
   .secciones__subtitle {
-    font-size: 0.9rem;
+    font-size: 1rem;
   }
 
   .secciones__description {
@@ -494,11 +494,11 @@
   }
 
   .secciones__title {
-    font-size: 1.8rem;
+    font-size: 2.2rem;
   }
 
   .secciones__subtitle {
-    font-size: 0.95rem;
+    font-size: 1.2rem;
   }
 
   .secciones__description {
