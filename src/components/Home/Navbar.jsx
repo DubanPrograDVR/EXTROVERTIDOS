@@ -166,6 +166,13 @@ export default function Navbar() {
 
         <nav className={`navbar-menu ${isMenuOpen ? "active" : ""}`}>
           {/* Logo del menú móvil */}
+          <div className="navbar-menu-logo-wrapper">
+            <img
+              src="/img/Logo_con_r.png"
+              alt="Extrovertidos"
+              className="navbar-menu-logo"
+            />
+          </div>
           {NAV_LINKS.filter(
             (link) =>
               (!link.userOnly || !isModerator) &&

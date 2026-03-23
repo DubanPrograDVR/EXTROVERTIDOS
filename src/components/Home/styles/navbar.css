@@ -114,6 +114,11 @@
   display: none;
 }
 
+/* Ocultar logo del menú móvil en desktop y tablet */
+.navbar-menu-logo-wrapper {
+  display: none;
+}
+
 .nav-link {
   color: var(--color-text-primary);
   text-decoration: none;
