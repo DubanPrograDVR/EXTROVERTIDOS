@@ -287,6 +287,24 @@
   color: #ff8f5e;
 }
 
+/* Event count badge for city/comuna filters */
+.filter-panel__count-badge {
+  margin-left: auto;
+  background: rgba(255, 107, 53, 0.15);
+  color: #ff6600;
+  font-size: 0.7rem;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+}
+
+.filter-panel__dropdown-item.selected .filter-panel__count-badge {
+  background: rgba(255, 107, 53, 0.25);
+  color: #ff8f5e;
+}
+
 /* === Subcategory chips row === */
 .filter-panel__subcategories {
   display: flex;

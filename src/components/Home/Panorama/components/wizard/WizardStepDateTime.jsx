@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faLocationDot,
@@ -6,7 +5,6 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { PROVINCIAS, COMUNAS_POR_PROVINCIA } from "../../constants";
 import DateRangePicker from "../DateRangePicker";
-import LocationPicker from "../LocationPicker";
 
 /**
  * Wizard Step 2: Fecha y Ubicación
@@ -18,12 +16,6 @@ const WizardStepDateTime = ({
   onChange,
   enabledCalendarModes,
 }) => {
-  const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
-
-  const handleLocationSave = (locationUrl) => {
-    onChange({ target: { name: "ubicacion_url", value: locationUrl } });
-  };
-
   return (
     <div className="wizard-step">
       {/* Fecha y Horas */}
@@ -123,7 +115,7 @@ const WizardStepDateTime = ({
       <div className="publicar-form__group publicar-form__group--location">
         <label className="publicar-form__label">
           <span className="publicar-form__label-hint">(Opcional)</span>
-          <FontAwesomeIcon icon={faMapMarkerAlt} /> Ubicación en Mapa
+          <FontAwesomeIcon icon={faMapMarkerAlt} /> Enlace de ubicación
           <span
             style={{
               color: "gray",
@@ -141,35 +133,13 @@ const WizardStepDateTime = ({
           className="publicar-form__input publicar-form__input--location"
           value={formData.ubicacion_url || ""}
           onChange={onChange}
-          placeholder="Pega aquí el enlace de Google Maps o selecciona en el mapa"
+          placeholder="Pega aquí el enlace de Google Maps"
         />
-        <div className="publicar-form__location-wrapper">
-          <div className="publicar-form__location-icon">
-            <svg viewBox="0 0 64 80" fill="currentColor">
-              <path d="M32 8c-11 0-20 9-20 20 0 15 20 36 20 36s20-21 20-36c0-11-9-20-20-20zm0 27c-3.9 0-7-3.1-7-7s3.1-7 7-7 7 3.1 7 7-3.1 7-7 7z" />
-              <circle cx="32" cy="60" r="3" />
-            </svg>
-          </div>
-          <button
-            type="button"
-            className="publicar-form__location-btn"
-            onClick={() => setIsLocationPickerOpen(true)}>
-            <FontAwesomeIcon icon={faMapMarkerAlt} />
-            {formData.ubicacion_url ? "Ver/Cambiar en mapa" : "Elegir en mapa"}
-          </button>
-          <p className="publicar-form__location-hint">
-            Pega un enlace de Google Maps o selecciona la ubicación manualmente.
-          </p>
-        </div>
+        <p className="publicar-form__location-hint">
+          Pega un enlace de Google Maps para que los usuarios puedan llegar
+          fácilmente.
+        </p>
       </div>
-
-      {/* Modal de selección de ubicación */}
-      <LocationPicker
-        isOpen={isLocationPickerOpen}
-        onClose={() => setIsLocationPickerOpen(false)}
-        currentLocation={formData.ubicacion_url}
-        onSave={handleLocationSave}
-      />
     </div>
   );
 };

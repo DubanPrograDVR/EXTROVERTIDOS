@@ -1,7 +1,4 @@
 import { useState, useCallback } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faTimes,
@@ -18,7 +15,6 @@ import {
   faChevronLeft,
   faChevronRight,
   faRoute,
-  faMap,
   faAlignLeft,
   faAddressCard,
   faExternalLinkAlt,
@@ -40,29 +36,6 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 import "../styles/draft-preview.css";
 
-// Fix para el icono de Leaflet
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-});
-
-// Icono personalizado naranja para el marcador
-const orangeIcon = new L.Icon({
-  iconUrl:
-    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
 // Tipos de secciones del acordeón
 const ACCORDION_SECTIONS = {
   DESCRIPTION: "description",
@@ -71,7 +44,6 @@ const ACCORDION_SECTIONS = {
   LOCATION: "location",
   SCHEDULE: "schedule",
   CONTACT: "contact",
-  MAP: "map",
 };
 
 /**
@@ -554,45 +526,23 @@ const DraftPreview = ({
                 </AccordionSection>
               )}
 
-              {/* Sección: Mapa */}
-              <AccordionSection
-                title="Mapa"
-                icon={faMap}
-                isOpen={activeSection === ACCORDION_SECTIONS.MAP}
-                onToggle={() => toggleSection(ACCORDION_SECTIONS.MAP)}>
-                {coordinates ? (
-                  <div className="publication-modal__map-section">
-                    <div className="publication-modal__map-container">
-                      <MapContainer
-                        center={[coordinates.lat, coordinates.lng]}
-                        zoom={15}
-                        scrollWheelZoom={false}
-                        className="publication-modal__map"
-                        key={`${coordinates.lat}-${coordinates.lng}`}>
-                        <TileLayer
-                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        />
-                        <Marker
-                          position={[coordinates.lat, coordinates.lng]}
-                          icon={orangeIcon}>
-                          <Popup>
-                            <strong>{formData.titulo || "Evento"}</strong>
-                            <br />
-                            {formData.direccion ||
-                              `${formData.comuna}, ${formData.provincia}`}
-                          </Popup>
-                        </Marker>
-                      </MapContainer>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="publication-modal__map-empty">
-                    <FontAwesomeIcon icon={faMap} />
-                    <p>Agrega una URL de Google Maps para ver el mapa</p>
-                  </div>
-                )}
-              </AccordionSection>
+              {/* Botón: Ir a la ubicación */}
+              {formData.ubicacion_url && (
+                <div style={{ padding: "12px 0" }}>
+                  <button
+                    className="publication-modal__directions-btn publication-modal__directions-btn--full"
+                    onClick={() =>
+                      window.open(
+                        formData.ubicacion_url,
+                        "_blank",
+                        "noopener,noreferrer",
+                      )
+                    }>
+                    <FontAwesomeIcon icon={faLocationDot} />
+                    Ir a la ubicación
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Footer con nota */}

@@ -44,7 +44,7 @@ export default function Home() {
           <div className="home-header">
             <h1 className="home-title">
               <span className="title-highlight">¡Encuentra!</span>
-              <span className="title-main">
+              <span className="title-main title-main--orange">
                 Los Panoramas, Actividades y Eventos
               </span>
               <span className="title-main" style={{ textAlign: "center" }}>

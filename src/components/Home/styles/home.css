@@ -164,13 +164,17 @@
 
 .title-main {
   color: var(--color-text-primary);
-  font-size: var(--text-4xl);
+  font-size: var(--text-5xl);
   font-weight: var(--font-black);
   text-shadow:
     0 0 20px rgba(255, 102, 0, 0.8),
     0 0 40px rgba(255, 102, 0, 0.4);
   line-height: var(--leading-snug);
   animation: text-glow 2s ease-in-out infinite;
+}
+
+.title-main--orange {
+  color: #ff6600;
 }
 
 .title-accent {
@@ -502,7 +506,7 @@
   }
 
   .title-main {
-    font-size: 1.8rem;
+    font-size: 2.2rem;
   }
 
   .title-accent {
@@ -571,7 +575,7 @@
   }
 
   .title-main {
-    font-size: 1.4rem;
+    font-size: 1.7rem;
   }
 
   .title-accent {

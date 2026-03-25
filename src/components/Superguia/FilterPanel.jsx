@@ -19,6 +19,7 @@ import "./styles/FilterPanel.css";
  * @param {boolean} showDateFilter - Mostrar filtro de fecha (default: true)
  * @param {boolean} showPriceFilter - Mostrar filtro de precio (default: true)
  * @param {boolean} showSubcategories - Mostrar subcategorías (default: true)
+ * @param {boolean} showComunaFilter - Mostrar comuna como filtro separado (default: false)
  */
 export default function FilterPanel({
   categories = [],
@@ -46,6 +47,9 @@ export default function FilterPanel({
   showDateFilter = true,
   showPriceFilter = true,
   showSubcategories = true,
+  showComunaFilter = false,
+  eventsCountByCity = {},
+  eventsCountByComuna = {},
 }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const panelRef = useRef(null);
@@ -101,10 +105,19 @@ export default function FilterPanel({
   }, [selectedCategory, subcategories]);
 
   const locationLabel = useMemo(() => {
+    if (!showComunaFilter && selectedComuna) return selectedComuna;
+    if (selectedCity)
+      return (
+        locations[selectedCity]?.nombre ||
+        (showComunaFilter ? "Ciudad" : "Ubicación")
+      );
+    return showComunaFilter ? "Ciudad" : "Ubicación";
+  }, [selectedComuna, selectedCity, locations, showComunaFilter]);
+
+  const comunaLabel = useMemo(() => {
     if (selectedComuna) return selectedComuna;
-    if (selectedCity) return locations[selectedCity]?.nombre || "Ubicación";
-    return "Ubicación";
-  }, [selectedComuna, selectedCity, locations]);
+    return "Comuna";
+  }, [selectedComuna]);
 
   const priceLabel = useMemo(() => {
     if (!selectedPrice) return "Precio";
@@ -227,7 +240,7 @@ export default function FilterPanel({
             {activeDropdown === "location" && (
               <div className="filter-panel__dropdown">
                 <div className="filter-panel__dropdown-header">
-                  <span>Seleccionar ubicación</span>
+                  <span>Seleccionar ciudad</span>
                   {(selectedCity || selectedComuna) && (
                     <button
                       onClick={() => {
@@ -239,7 +252,6 @@ export default function FilterPanel({
                   )}
                 </div>
                 <div className="filter-panel__dropdown-list">
-                  <p className="filter-panel__dropdown-label">Ciudad</p>
                   {Object.entries(locations).map(([key, city]) => (
                     <button
                       key={key}
@@ -249,15 +261,23 @@ export default function FilterPanel({
                       onClick={() => {
                         onCityChange(selectedCity === key ? null : key);
                         onComunaChange(null);
+                        if (showComunaFilter) setActiveDropdown(null);
                       }}>
                       <span>{city.nombre}</span>
+                      {eventsCountByCity[key] != null && (
+                        <span className="filter-panel__count-badge">
+                          {eventsCountByCity[key] >= 100
+                            ? "+99"
+                            : eventsCountByCity[key]}
+                        </span>
+                      )}
                       {selectedCity === key && (
                         <FontAwesomeIcon icon={faCheck} className="check" />
                       )}
                     </button>
                   ))}
 
-                  {availableComunas.length > 0 && (
+                  {!showComunaFilter && availableComunas.length > 0 && (
                     <>
                       <p className="filter-panel__dropdown-label">Comuna</p>
                       {availableComunas.map((comuna) => (
@@ -284,6 +304,61 @@ export default function FilterPanel({
               </div>
             )}
           </div>
+
+          {/* Comuna (filtro separado) */}
+          {showComunaFilter && availableComunas.length > 0 && (
+            <div className="filter-panel__dropdown-wrapper">
+              <button
+                className={`filter-panel__filter-btn ${
+                  activeDropdown === "comuna" ? "active" : ""
+                } ${selectedComuna ? "has-value" : ""}`}
+                onClick={() => toggleDropdown("comuna")}>
+                <FontAwesomeIcon icon={faMapMarkerAlt} />
+                <span>{comunaLabel}</span>
+                <FontAwesomeIcon icon={faChevronDown} className="chevron" />
+              </button>
+
+              {activeDropdown === "comuna" && (
+                <div className="filter-panel__dropdown">
+                  <div className="filter-panel__dropdown-header">
+                    <span>Seleccionar comuna</span>
+                    {selectedComuna && (
+                      <button onClick={() => onComunaChange(null)}>
+                        Limpiar
+                      </button>
+                    )}
+                  </div>
+                  <div className="filter-panel__dropdown-list">
+                    {availableComunas.map((comuna) => (
+                      <button
+                        key={comuna}
+                        className={`filter-panel__dropdown-item ${
+                          selectedComuna === comuna ? "selected" : ""
+                        }`}
+                        onClick={() => {
+                          onComunaChange(
+                            selectedComuna === comuna ? null : comuna,
+                          );
+                          setActiveDropdown(null);
+                        }}>
+                        <span>{comuna}</span>
+                        {eventsCountByComuna[comuna] != null && (
+                          <span className="filter-panel__count-badge">
+                            {eventsCountByComuna[comuna] >= 100
+                              ? "+99"
+                              : eventsCountByComuna[comuna]}
+                          </span>
+                        )}
+                        {selectedComuna === comuna && (
+                          <FontAwesomeIcon icon={faCheck} className="check" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Precio */}
           {showPriceFilter && (

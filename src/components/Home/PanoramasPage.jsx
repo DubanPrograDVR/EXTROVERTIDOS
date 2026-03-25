@@ -192,6 +192,28 @@ export default function PanoramasPage() {
     setSelectedEvent(null);
   }, []);
 
+  // Contadores de eventos por ciudad y comuna
+  const eventsCountByCity = useMemo(() => {
+    const counts = {};
+    Object.entries(LOCATIONS).forEach(([key, city]) => {
+      counts[key] = events.filter(
+        (e) => e.provincia?.toLowerCase() === city.nombre.toLowerCase(),
+      ).length;
+    });
+    return counts;
+  }, [events]);
+
+  const eventsCountByComuna = useMemo(() => {
+    const counts = {};
+    events.forEach((e) => {
+      if (e.comuna) {
+        const key = e.comuna;
+        counts[key] = (counts[key] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [events]);
+
   // Filtrar eventos (misma lógica que SuperguiaContainer)
   const filteredEvents = useMemo(() => {
     // Primero filtrar eventos pasados (respaldo del filtro de BD)
@@ -295,27 +317,18 @@ export default function PanoramasPage() {
       });
     }
 
-    // Agrupar por fecha — los de la misma fecha SIEMPRE juntos
-    const todayStr = new Date().toISOString().split("T")[0];
+    // Agrupar por fecha
     const groups = {};
     result.forEach((event) => {
-      const key = event.fecha_evento || "sin-fecha";
+      const key = event.fecha_evento || "9999-12-31";
       if (!groups[key]) groups[key] = [];
       groups[key].push(event);
     });
 
-    // Separar grupo de hoy y el resto de grupos
-    const todayGroup = groups[todayStr] || [];
-    delete groups[todayStr];
-    const otherDates = Object.keys(groups);
+    // Ordenar fechas ascendente (las más próximas primero, sin fecha al final)
+    const sortedDates = Object.keys(groups).sort((a, b) => a.localeCompare(b));
 
-    // Mezclar el orden de los grupos restantes (Fisher-Yates)
-    for (let i = otherDates.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [otherDates[i], otherDates[j]] = [otherDates[j], otherDates[i]];
-    }
-
-    // Mezclar dentro de cada grupo
+    // Mezclar aleatoriamente dentro de cada grupo del mismo día
     const shuffle = (arr) => {
       for (let i = arr.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -324,9 +337,8 @@ export default function PanoramasPage() {
       return arr;
     };
 
-    // Hoy primero, luego los demás grupos en orden aleatorio
-    const sorted = [...shuffle(todayGroup)];
-    for (const date of otherDates) {
+    const sorted = [];
+    for (const date of sortedDates) {
       sorted.push(...shuffle(groups[date]));
     }
 
@@ -521,7 +533,7 @@ export default function PanoramasPage() {
           </>
         ) : (
           <div className="panoramas-page__hero-empty">
-            <h1>Panoramas del Maule</h1>
+            <h1>Panoramas</h1>
             <p>Descubre los mejores eventos de la región</p>
           </div>
         )}
@@ -551,6 +563,10 @@ export default function PanoramasPage() {
         onSearchChange={handleSearch}
         onClearFilters={handleClearFilters}
         totalResults={filteredEvents.length}
+        showPriceFilter={false}
+        showComunaFilter={true}
+        eventsCountByCity={eventsCountByCity}
+        eventsCountByComuna={eventsCountByComuna}
       />
 
       {/* Lista de eventos */}

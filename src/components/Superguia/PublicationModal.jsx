@@ -1,7 +1,4 @@
 import { useEffect, useState, useCallback } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { updateEvent, getCategories } from "../../lib/database";
@@ -23,7 +20,6 @@ import {
   faChevronLeft,
   faChevronRight,
   faRoute,
-  faMap,
   faExternalLinkAlt,
   faShareAlt,
   faHeart,
@@ -38,6 +34,7 @@ import {
   faPencil,
   faSave,
   faSpinner,
+  faInfoCircle,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faInstagram,
@@ -49,34 +46,12 @@ import {
   faLinkedin,
 } from "@fortawesome/free-brands-svg-icons";
 
-// Fix para el icono de Leaflet
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-});
-
-// Icono personalizado naranja para el marcador
-const orangeIcon = new L.Icon({
-  iconUrl:
-    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
 // Tipos de secciones del acordeón
 const ACCORDION_SECTIONS = {
   DESCRIPTION: "description",
   MARKETING_1: "marketing_1",
   MARKETING_2: "marketing_2",
+  INFORMATION: "information",
   LOCATION: "location",
   SCHEDULE: "schedule",
   CONTACT: "contact",
@@ -918,295 +893,324 @@ export default function PublicationModal({
                 </AccordionSection>
               )}
 
-              {/* Sección: Ubicación */}
+              {/* Sección: Información (contiene Ubicación, Horarios y Mapa) */}
               <AccordionSection
-                title="Ubicación"
-                icon={faMapMarkerAlt}
-                isOpen={activeSection === ACCORDION_SECTIONS.LOCATION}
-                onToggle={() => toggleSection(ACCORDION_SECTIONS.LOCATION)}>
-                <div className="publication-modal__location-content">
-                  {!isEditMode && (
-                    <>
-                      <p className="publication-modal__location-address">
-                        {direccion && `${direccion}, `}
-                        {comuna}
-                        {provincia && `, ${provincia}`}
-                      </p>
-                      {(ubicacion_url || direccion) && (
-                        <button
-                          className="publication-modal__directions-btn"
-                          onClick={() =>
-                            window.open(getDirectionsUrl(), "_blank")
-                          }>
-                          <FontAwesomeIcon icon={faRoute} />
-                          Cómo llegar
-                        </button>
-                      )}
-                    </>
-                  )}
-                  {isEditMode && (
-                    <div className="publication-modal__edit-section">
-                      <label className="publication-modal__edit-label">
-                        Provincia
-                      </label>
-                      <select
-                        className="publication-modal__edit-select"
-                        value={editData.provincia}
-                        onChange={(e) =>
-                          setEditData({
-                            ...editData,
-                            provincia: e.target.value,
-                          })
-                        }>
-                        <option value="">Seleccionar provincia</option>
-                        {PROVINCIAS.map((p) => (
-                          <option key={p} value={p}>
-                            {p}
-                          </option>
-                        ))}
-                      </select>
-                      <label className="publication-modal__edit-label">
-                        Comuna
-                      </label>
-                      <input
-                        type="text"
-                        className="publication-modal__edit-input"
-                        value={editData.comuna}
-                        onChange={(e) =>
-                          setEditData({ ...editData, comuna: e.target.value })
-                        }
-                        placeholder="Comuna"
-                      />
-                      <label className="publication-modal__edit-label">
-                        Dirección
-                      </label>
-                      <input
-                        type="text"
-                        className="publication-modal__edit-input"
-                        value={editData.direccion}
-                        onChange={(e) =>
-                          setEditData({
-                            ...editData,
-                            direccion: e.target.value,
-                          })
-                        }
-                        placeholder="Dirección"
-                      />
-                      <label className="publication-modal__edit-label">
-                        URL de ubicación
-                      </label>
-                      <input
-                        type="url"
-                        className="publication-modal__edit-input"
-                        value={editData.ubicacion_url}
-                        onChange={(e) =>
-                          setEditData({
-                            ...editData,
-                            ubicacion_url: e.target.value,
-                          })
-                        }
-                        placeholder="https://maps.google.com/..."
-                      />
-                    </div>
-                  )}
-                </div>
-              </AccordionSection>
-
-              {/* Sección: Horarios */}
-              <AccordionSection
-                title="Horarios"
-                icon={faClock}
-                isOpen={activeSection === ACCORDION_SECTIONS.SCHEDULE}
-                onToggle={() => toggleSection(ACCORDION_SECTIONS.SCHEDULE)}>
-                <div className="publication-modal__schedule">
-                  {!isEditMode && (
-                    <>
-                      <div className="publication-modal__schedule-row">
-                        <span className="publication-modal__schedule-label">
-                          <FontAwesomeIcon icon={faCalendarDays} />
-                          {isRecurring
-                            ? "Fechas"
-                            : isMultiDay
-                              ? "Fechas"
-                              : "Fecha"}
-                        </span>
-                        <span className="publication-modal__schedule-value">
-                          {getFechaDisplay() || "Por confirmar"}
-                        </span>
-                      </div>
-
-                      {/* Fechas individuales de recurrencia */}
-                      {isRecurring && fechas_recurrencia?.length > 0 && (
-                        <div className="publication-modal__recurrence-dates">
-                          <span className="publication-modal__recurrence-label">
-                            <FontAwesomeIcon icon={faRepeat} />
-                            {recurrenciaText}
-                          </span>
-                          <div className="publication-modal__recurrence-chips">
-                            {fechas_recurrencia.map((fecha, index) => (
-                              <span
-                                key={index}
-                                className="publication-modal__recurrence-chip">
-                                {new Date(
-                                  fecha + "T00:00:00",
-                                ).toLocaleDateString("es-CL", {
-                                  weekday: "short",
-                                  day: "numeric",
-                                  month: "short",
-                                })}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="publication-modal__schedule-row">
-                        <span className="publication-modal__schedule-label">
-                          <FontAwesomeIcon icon={faClock} />
-                          Horario
-                        </span>
-                        <span className="publication-modal__schedule-value">
-                          {getHorarioDisplay()}
-                        </span>
-                      </div>
-                      <div className="publication-modal__schedule-row">
-                        <span className="publication-modal__schedule-label">
-                          <FontAwesomeIcon icon={faTicket} />
-                          Entrada
-                        </span>
-                        <span className="publication-modal__schedule-value publication-modal__schedule-value--price">
-                          {getEntradaDisplay()}
-                        </span>
-                      </div>
-                    </>
-                  )}
-                  {isEditMode && (
-                    <div className="publication-modal__edit-section">
-                      <div className="publication-modal__edit-row">
-                        <div className="publication-modal__edit-field">
-                          <label className="publication-modal__edit-label">
-                            Fecha inicio
-                          </label>
-                          <input
-                            type="date"
-                            className="publication-modal__edit-input"
-                            value={editData.fecha_evento}
-                            onChange={(e) =>
-                              setEditData({
-                                ...editData,
-                                fecha_evento: e.target.value,
-                              })
-                            }
-                          />
-                        </div>
-                        <div className="publication-modal__edit-field">
-                          <label className="publication-modal__edit-label">
-                            Fecha fin
-                          </label>
-                          <input
-                            type="date"
-                            className="publication-modal__edit-input"
-                            value={editData.fecha_fin}
-                            onChange={(e) =>
-                              setEditData({
-                                ...editData,
-                                fecha_fin: e.target.value,
-                              })
-                            }
-                          />
-                        </div>
-                      </div>
-                      <div className="publication-modal__edit-row">
-                        <div className="publication-modal__edit-field">
-                          <label className="publication-modal__edit-label">
-                            Hora inicio
-                          </label>
-                          <input
-                            type="time"
-                            className="publication-modal__edit-input"
-                            value={editData.hora_inicio}
-                            onChange={(e) =>
-                              setEditData({
-                                ...editData,
-                                hora_inicio: e.target.value,
-                              })
-                            }
-                          />
-                        </div>
-                        <div className="publication-modal__edit-field">
-                          <label className="publication-modal__edit-label">
-                            Hora fin
-                          </label>
-                          <input
-                            type="time"
-                            className="publication-modal__edit-input"
-                            value={editData.hora_fin}
-                            onChange={(e) =>
-                              setEditData({
-                                ...editData,
-                                hora_fin: e.target.value,
-                              })
-                            }
-                          />
-                        </div>
-                      </div>
-                      <label className="publication-modal__edit-label">
-                        Tipo de entrada
-                      </label>
-                      <select
-                        className="publication-modal__edit-select"
-                        value={editData.tipo_entrada}
-                        onChange={(e) =>
-                          setEditData({
-                            ...editData,
-                            tipo_entrada: e.target.value,
-                          })
-                        }>
-                        {TIPOS_ENTRADA.map((t) => (
-                          <option key={t.value} value={t.value}>
-                            {t.label}
-                          </option>
-                        ))}
-                      </select>
-                      {(editData.tipo_entrada === "pagado" ||
-                        editData.tipo_entrada === "venta_externa") && (
+                title="Información"
+                icon={faInfoCircle}
+                isOpen={activeSection === ACCORDION_SECTIONS.INFORMATION}
+                onToggle={() => toggleSection(ACCORDION_SECTIONS.INFORMATION)}>
+                <div className="publication-modal__info-nested">
+                  {/* Sección: Ubicación */}
+                  <div className="publication-modal__info-section">
+                    <h4 className="publication-modal__info-section-title">
+                      <FontAwesomeIcon icon={faMapMarkerAlt} />
+                      Ubicación
+                    </h4>
+                    <div className="publication-modal__location-content">
+                      {!isEditMode && (
                         <>
-                          <label className="publication-modal__edit-label">
-                            Precio
-                          </label>
-                          <input
-                            type="number"
-                            className="publication-modal__edit-input"
-                            value={editData.precio}
-                            onChange={(e) =>
-                              setEditData({
-                                ...editData,
-                                precio: e.target.value,
-                              })
-                            }
-                            placeholder="Precio en CLP"
-                          />
+                          <p className="publication-modal__location-address">
+                            {direccion ||
+                              `${comuna}${provincia ? `, ${provincia}` : ""}`}
+                          </p>
+                          {(ubicacion_url || direccion) && (
+                            <button
+                              className="publication-modal__directions-btn"
+                              onClick={() =>
+                                window.open(getDirectionsUrl(), "_blank")
+                              }>
+                              <FontAwesomeIcon icon={faRoute} />
+                              Cómo llegar
+                            </button>
+                          )}
                         </>
                       )}
-                      {editData.tipo_entrada === "venta_externa" && (
-                        <>
+                      {isEditMode && (
+                        <div className="publication-modal__edit-section">
                           <label className="publication-modal__edit-label">
-                            URL de venta
+                            Provincia
+                          </label>
+                          <select
+                            className="publication-modal__edit-select"
+                            value={editData.provincia}
+                            onChange={(e) =>
+                              setEditData({
+                                ...editData,
+                                provincia: e.target.value,
+                              })
+                            }>
+                            <option value="">Seleccionar provincia</option>
+                            {PROVINCIAS.map((p) => (
+                              <option key={p} value={p}>
+                                {p}
+                              </option>
+                            ))}
+                          </select>
+                          <label className="publication-modal__edit-label">
+                            Comuna
+                          </label>
+                          <input
+                            type="text"
+                            className="publication-modal__edit-input"
+                            value={editData.comuna}
+                            onChange={(e) =>
+                              setEditData({
+                                ...editData,
+                                comuna: e.target.value,
+                              })
+                            }
+                            placeholder="Comuna"
+                          />
+                          <label className="publication-modal__edit-label">
+                            Dirección
+                          </label>
+                          <input
+                            type="text"
+                            className="publication-modal__edit-input"
+                            value={editData.direccion}
+                            onChange={(e) =>
+                              setEditData({
+                                ...editData,
+                                direccion: e.target.value,
+                              })
+                            }
+                            placeholder="Dirección"
+                          />
+                          <label className="publication-modal__edit-label">
+                            URL de ubicación
                           </label>
                           <input
                             type="url"
                             className="publication-modal__edit-input"
-                            value={editData.url_venta}
+                            value={editData.ubicacion_url}
                             onChange={(e) =>
                               setEditData({
                                 ...editData,
-                                url_venta: e.target.value,
+                                ubicacion_url: e.target.value,
                               })
                             }
-                            placeholder="https://..."
+                            placeholder="https://maps.google.com/..."
                           />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Sección: Horarios */}
+                  <div className="publication-modal__info-section">
+                    <h4 className="publication-modal__info-section-title">
+                      <FontAwesomeIcon icon={faClock} />
+                      Horarios
+                    </h4>
+                    <div className="publication-modal__schedule">
+                      {!isEditMode && (
+                        <>
+                          <div className="publication-modal__schedule-row">
+                            <span className="publication-modal__schedule-label">
+                              <FontAwesomeIcon icon={faCalendarDays} />
+                              {isRecurring
+                                ? "Fechas"
+                                : isMultiDay
+                                  ? "Fechas"
+                                  : "Fecha"}
+                            </span>
+                            <span className="publication-modal__schedule-value">
+                              {getFechaDisplay() || "Por confirmar"}
+                            </span>
+                          </div>
+
+                          {/* Fechas individuales de recurrencia */}
+                          {isRecurring && fechas_recurrencia?.length > 0 && (
+                            <div className="publication-modal__recurrence-dates">
+                              <span className="publication-modal__recurrence-label">
+                                <FontAwesomeIcon icon={faRepeat} />
+                                {recurrenciaText}
+                              </span>
+                              <div className="publication-modal__recurrence-chips">
+                                {fechas_recurrencia.map((fecha, index) => (
+                                  <span
+                                    key={index}
+                                    className="publication-modal__recurrence-chip">
+                                    {new Date(
+                                      fecha + "T00:00:00",
+                                    ).toLocaleDateString("es-CL", {
+                                      weekday: "short",
+                                      day: "numeric",
+                                      month: "short",
+                                    })}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="publication-modal__schedule-row">
+                            <span className="publication-modal__schedule-label">
+                              <FontAwesomeIcon icon={faClock} />
+                              Horario
+                            </span>
+                            <span className="publication-modal__schedule-value">
+                              {getHorarioDisplay()}
+                            </span>
+                          </div>
+                          <div className="publication-modal__schedule-row">
+                            <span className="publication-modal__schedule-label">
+                              <FontAwesomeIcon icon={faTicket} />
+                              Entrada
+                            </span>
+                            <span className="publication-modal__schedule-value publication-modal__schedule-value--price">
+                              {getEntradaDisplay()}
+                            </span>
+                          </div>
                         </>
                       )}
+                      {isEditMode && (
+                        <div className="publication-modal__edit-section">
+                          <div className="publication-modal__edit-row">
+                            <div className="publication-modal__edit-field">
+                              <label className="publication-modal__edit-label">
+                                Fecha inicio
+                              </label>
+                              <input
+                                type="date"
+                                className="publication-modal__edit-input"
+                                value={editData.fecha_evento}
+                                onChange={(e) =>
+                                  setEditData({
+                                    ...editData,
+                                    fecha_evento: e.target.value,
+                                  })
+                                }
+                              />
+                            </div>
+                            <div className="publication-modal__edit-field">
+                              <label className="publication-modal__edit-label">
+                                Fecha fin
+                              </label>
+                              <input
+                                type="date"
+                                className="publication-modal__edit-input"
+                                value={editData.fecha_fin}
+                                onChange={(e) =>
+                                  setEditData({
+                                    ...editData,
+                                    fecha_fin: e.target.value,
+                                  })
+                                }
+                              />
+                            </div>
+                          </div>
+                          <div className="publication-modal__edit-row">
+                            <div className="publication-modal__edit-field">
+                              <label className="publication-modal__edit-label">
+                                Hora inicio
+                              </label>
+                              <input
+                                type="time"
+                                className="publication-modal__edit-input"
+                                value={editData.hora_inicio}
+                                onChange={(e) =>
+                                  setEditData({
+                                    ...editData,
+                                    hora_inicio: e.target.value,
+                                  })
+                                }
+                              />
+                            </div>
+                            <div className="publication-modal__edit-field">
+                              <label className="publication-modal__edit-label">
+                                Hora fin
+                              </label>
+                              <input
+                                type="time"
+                                className="publication-modal__edit-input"
+                                value={editData.hora_fin}
+                                onChange={(e) =>
+                                  setEditData({
+                                    ...editData,
+                                    hora_fin: e.target.value,
+                                  })
+                                }
+                              />
+                            </div>
+                          </div>
+                          <label className="publication-modal__edit-label">
+                            Tipo de entrada
+                          </label>
+                          <select
+                            className="publication-modal__edit-select"
+                            value={editData.tipo_entrada}
+                            onChange={(e) =>
+                              setEditData({
+                                ...editData,
+                                tipo_entrada: e.target.value,
+                              })
+                            }>
+                            {TIPOS_ENTRADA.map((t) => (
+                              <option key={t.value} value={t.value}>
+                                {t.label}
+                              </option>
+                            ))}
+                          </select>
+                          {(editData.tipo_entrada === "pagado" ||
+                            editData.tipo_entrada === "venta_externa") && (
+                            <>
+                              <label className="publication-modal__edit-label">
+                                Precio
+                              </label>
+                              <input
+                                type="number"
+                                className="publication-modal__edit-input"
+                                value={editData.precio}
+                                onChange={(e) =>
+                                  setEditData({
+                                    ...editData,
+                                    precio: e.target.value,
+                                  })
+                                }
+                                placeholder="Precio en CLP"
+                              />
+                            </>
+                          )}
+                          {editData.tipo_entrada === "venta_externa" && (
+                            <>
+                              <label className="publication-modal__edit-label">
+                                URL de venta
+                              </label>
+                              <input
+                                type="url"
+                                className="publication-modal__edit-input"
+                                value={editData.url_venta}
+                                onChange={(e) =>
+                                  setEditData({
+                                    ...editData,
+                                    url_venta: e.target.value,
+                                  })
+                                }
+                                placeholder="https://..."
+                              />
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Sección: Ubicación en mapa */}
+                  {ubicacion_url && !isEditMode && (
+                    <div className="publication-modal__info-section">
+                      <button
+                        className="publication-modal__directions-btn publication-modal__directions-btn--full"
+                        onClick={() =>
+                          window.open(
+                            ubicacion_url,
+                            "_blank",
+                            "noopener,noreferrer",
+                          )
+                        }>
+                        <FontAwesomeIcon icon={faMapMarkerAlt} />
+                        Ir a la ubicación
+                      </button>
                     </div>
                   )}
                 </div>
@@ -1283,45 +1287,6 @@ export default function PublicationModal({
                   </div>
                 </AccordionSection>
               )}
-
-              {/* Sección: Mapa */}
-              <AccordionSection
-                title="Mapa"
-                icon={faMap}
-                isOpen={activeSection === ACCORDION_SECTIONS.MAP}
-                onToggle={() => toggleSection(ACCORDION_SECTIONS.MAP)}>
-                {coordinates ? (
-                  <div className="publication-modal__map-section">
-                    <div className="publication-modal__map-container">
-                      <MapContainer
-                        center={[coordinates.lat, coordinates.lng]}
-                        zoom={15}
-                        scrollWheelZoom={false}
-                        className="publication-modal__map"
-                        key={`${coordinates.lat}-${coordinates.lng}`}>
-                        <TileLayer
-                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        />
-                        <Marker
-                          position={[coordinates.lat, coordinates.lng]}
-                          icon={orangeIcon}>
-                          <Popup>
-                            <strong>{titulo}</strong>
-                            <br />
-                            {direccion || `${comuna}, ${provincia}`}
-                          </Popup>
-                        </Marker>
-                      </MapContainer>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="publication-modal__map-empty">
-                    <FontAwesomeIcon icon={faMap} />
-                    <p>Ubicación no disponible en el mapa</p>
-                  </div>
-                )}
-              </AccordionSection>
             </div>
 
             {/* ===== SECCIÓN DE REDES SOCIALES (Debajo del mapa) ===== */}

@@ -14,6 +14,7 @@ import {
   faThumbsUp as faThumbsUpSolid,
   faBullhorn,
   faRepeat,
+  faFire,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faHeart as faHeartRegular,
@@ -384,25 +385,9 @@ export default function PublicationCard({
       <div className="publication-card__content">
         <div className="publication-card__location">
           <FontAwesomeIcon icon={faMapMarkerAlt} />
-          <span>
-            {comuna}
-            {provincia ? `, ${provincia}` : ""}
-          </span>
+          <span>{comuna}</span>
         </div>
         <h3 className="publication-card__title">{titulo}</h3>
-
-        {/* Mensaje de Marketing */}
-        {mensaje_marketing && (
-          <div className="publication-card__marketing">
-            <FontAwesomeIcon
-              icon={faBullhorn}
-              className="publication-card__marketing-icon"
-            />
-            <span className="publication-card__marketing-text">
-              {mensaje_marketing}
-            </span>
-          </div>
-        )}
 
         {/* Fecha y hora */}
         <div className="publication-card__datetime">
@@ -434,17 +419,6 @@ export default function PublicationCard({
               {horarioShort}
             </span>
           )}
-          {entradaText && (
-            <span
-              className={`publication-card__entrada ${
-                tipo_entrada === "gratis"
-                  ? "publication-card__entrada--gratis"
-                  : ""
-              }`}>
-              <FontAwesomeIcon icon={faTicketAlt} />
-              {entradaText}
-            </span>
-          )}
         </div>
 
         {/* Información del autor */}
@@ -471,14 +445,12 @@ export default function PublicationCard({
         {/* Botones de acción */}
         <div className="publication-card__actions">
           <button
-            className={`publication-card__action-btn ${isLiked ? "publication-card__action-btn--active" : ""}`}
+            className={`publication-card__action-btn publication-card__action-btn--fire ${isLiked ? "publication-card__action-btn--fire-active" : ""}`}
             onClick={handleLikeClick}
             disabled={isTogglingLike}
-            aria-label={isLiked ? "Quitar me gusta" : "Me gusta"}>
-            <FontAwesomeIcon
-              icon={isLiked ? faThumbsUpSolid : faThumbsUpRegular}
-            />
-            <span>{likeCount > 0 ? likeCount : "Me gusta"}</span>
+            aria-label={isLiked ? "Quitar imperdible" : "Imperdible"}>
+            <FontAwesomeIcon icon={faFire} />
+            <span>{likeCount > 0 ? likeCount : "Imperdible"}</span>
           </button>
           <button
             className={`publication-card__action-btn ${isFavorited ? "publication-card__action-btn--active" : ""}`}
