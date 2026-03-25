@@ -52,7 +52,9 @@ export default function AdminPanel() {
   const navigate = useNavigate();
 
   // Estado local para UI
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState(
+    () => sessionStorage.getItem("admin_activeTab") || "dashboard",
+  );
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [rejectModal, setRejectModal] = useState({
     open: false,
@@ -107,6 +109,11 @@ export default function AdminPanel() {
     handleDeleteBusiness,
     handlePauseBusiness,
   } = useAdminData(user, isAdmin, isModerator);
+
+  // Persistir activeTab en sessionStorage para que sobreviva recargas
+  useEffect(() => {
+    sessionStorage.setItem("admin_activeTab", activeTab);
+  }, [activeTab]);
 
   // Verificar acceso - redirigir si no es moderador/admin
   useEffect(() => {
@@ -289,8 +296,9 @@ export default function AdminPanel() {
     setSidebarOpen(false);
   };
 
-  // Estados de carga
-  if (authLoading || loading) {
+  // Estados de carga - solo mostrar pantalla completa de carga en la carga inicial
+  // (no en recargas por cambio de pestaña del navegador)
+  if (authLoading || (loading && !stats)) {
     return <AdminLoading message="Cargando panel de administración..." />;
   }
 

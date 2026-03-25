@@ -46,10 +46,18 @@ export const useAdminData = (user, isAdmin, isModerator) => {
   // Ref para controlar componente montado
   const isMountedRef = useRef(true);
 
+  // Ref para acceder al user actual sin que cambie la referencia del callback
+  const userRef = useRef(user);
+  userRef.current = user;
+
+  // Ref para distinguir carga inicial de recargas en background
+  const hasLoadedOnceRef = useRef(false);
+
   // Cargar datos iniciales con useCallback para evitar race conditions
   const loadData = useCallback(async () => {
-    if (!user || !isModerator) {
-      if (!user) {
+    const currentUser = userRef.current;
+    if (!currentUser || !isModerator) {
+      if (!currentUser) {
         console.error(
           "useAdminData: No se pudo cargar el usuario - user es null o undefined",
         );
@@ -63,7 +71,10 @@ export const useAdminData = (user, isAdmin, isModerator) => {
       return;
     }
 
-    setLoading(true);
+    // Solo mostrar loading completo en la carga inicial
+    if (!hasLoadedOnceRef.current) {
+      setLoading(true);
+    }
     setError(null);
 
     try {
@@ -76,7 +87,7 @@ export const useAdminData = (user, isAdmin, isModerator) => {
 
       // Definir todas las promesas base
       const basePromises = [
-        getPendingEvents(user.id).catch((err) => {
+        getPendingEvents(currentUser.id).catch((err) => {
           console.warn("Error al cargar eventos pendientes:", err);
           return [];
         }),
@@ -84,15 +95,15 @@ export const useAdminData = (user, isAdmin, isModerator) => {
           console.warn("Error al cargar negocios pendientes:", err);
           return [];
         }),
-        getAdminStats(user.id).catch((err) => {
+        getAdminStats(currentUser.id).catch((err) => {
           console.warn("Error al cargar estadísticas:", err);
           return defaultStats;
         }),
-        getEventsPerDay(user.id).catch((err) => {
+        getEventsPerDay(currentUser.id).catch((err) => {
           console.warn("Error al cargar eventos por día:", err);
           return [];
         }),
-        getUsersPerDay(user.id).catch((err) => {
+        getUsersPerDay(currentUser.id).catch((err) => {
           console.warn("Error al cargar usuarios por día:", err);
           return [];
         }),
@@ -101,15 +112,15 @@ export const useAdminData = (user, isAdmin, isModerator) => {
       // Si es admin, agregar la consulta de usuarios
       if (isAdmin) {
         basePromises.push(
-          getAllUsersWithBanStatus(user.id).catch((err) => {
+          getAllUsersWithBanStatus(currentUser.id).catch((err) => {
             console.warn("Error al cargar usuarios:", err);
             // Fallback a la función antigua
-            return getAllUsers(user.id).catch(() => []);
+            return getAllUsers(currentUser.id).catch(() => []);
           }),
         );
         // También cargar todas las publicaciones para admin
         basePromises.push(
-          getAllEvents(user.id).catch((err) => {
+          getAllEvents(currentUser.id).catch((err) => {
             console.warn("Error al cargar todas las publicaciones:", err);
             return [];
           }),
@@ -163,11 +174,14 @@ export const useAdminData = (user, isAdmin, isModerator) => {
     } finally {
       if (isMountedRef.current) {
         setLoading(false);
+        hasLoadedOnceRef.current = true;
       }
     }
-  }, [user, isAdmin, isModerator]);
+  }, [isAdmin, isModerator]);
 
   // Cargar datos cuando cambie el usuario o permisos
+  // Usar user?.id para evitar recargas innecesarias al cambiar de pestaña
+  // (Supabase emite TOKEN_REFRESHED con nueva referencia de user pero mismo id)
   useEffect(() => {
     isMountedRef.current = true;
 
@@ -178,7 +192,8 @@ export const useAdminData = (user, isAdmin, isModerator) => {
     return () => {
       isMountedRef.current = false;
     };
-  }, [user, isModerator, loadData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, isModerator, loadData]);
 
   // Aprobar evento
   const handleApproveEvent = async (eventId) => {
