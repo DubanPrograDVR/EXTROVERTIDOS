@@ -22,7 +22,6 @@ import {
   getPublishedEvents,
   getEventsByCity,
   getCategories,
-  getSubcategories,
 } from "../../lib/database";
 import { useCity } from "../../context/CityContext";
 import { LOCATIONS, mapCategoriesToUI } from "../Superguia/data";
@@ -38,12 +37,11 @@ export default function PanoramasPage() {
   // Estados de datos
   const [events, setEvents] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [subcategories, setSubcategories] = useState([]);
+
   const [loading, setLoading] = useState(true);
 
   // Estados de filtros (igual que SuperguiaContainer)
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [selectedCity, setSelectedCity] = useState(null);
   const [selectedComuna, setSelectedComuna] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -98,14 +96,10 @@ export default function PanoramasPage() {
           eventsData = await getPublishedEvents();
         }
 
-        const [categoriesData, subcategoriesData] = await Promise.all([
-          getCategories(),
-          getSubcategories(),
-        ]);
+        const categoriesData = await getCategories();
 
         setEvents(eventsData || []);
         setCategories(mapCategoriesToUI(categoriesData || []));
-        setSubcategories(subcategoriesData || []);
       } catch (error) {
         console.error("Error cargando datos:", error);
       } finally {
@@ -140,12 +134,6 @@ export default function PanoramasPage() {
 
   const handleCategoryChange = useCallback((category) => {
     setSelectedCategory(category);
-    setSelectedSubcategory(null); // Limpiar subcategoría al cambiar categoría
-    setCurrentPage(1);
-  }, []);
-
-  const handleSubcategoryChange = useCallback((subcategory) => {
-    setSelectedSubcategory(subcategory);
     setCurrentPage(1);
   }, []);
 
@@ -171,7 +159,6 @@ export default function PanoramasPage() {
 
   const handleClearFilters = useCallback(() => {
     setSelectedCategory(null);
-    setSelectedSubcategory(null);
     setSelectedCity(null);
     setSelectedComuna(null);
     setSelectedDate(null);
@@ -202,6 +189,14 @@ export default function PanoramasPage() {
     });
     return counts;
   }, [events]);
+
+  const eventsCountByCategory = useMemo(() => {
+    const counts = {};
+    categories.forEach((cat) => {
+      counts[cat.id] = events.filter((e) => e.category_id === cat.id).length;
+    });
+    return counts;
+  }, [events, categories]);
 
   const eventsCountByComuna = useMemo(() => {
     const counts = {};
@@ -243,12 +238,6 @@ export default function PanoramasPage() {
 
     if (selectedCategory) {
       result = result.filter((event) => event.category_id === selectedCategory);
-    }
-
-    if (selectedSubcategory) {
-      result = result.filter(
-        (event) => event.subcategory_id === selectedSubcategory,
-      );
     }
 
     if (selectedCity) {
@@ -347,7 +336,6 @@ export default function PanoramasPage() {
     events,
     searchQuery,
     selectedCategory,
-    selectedSubcategory,
     selectedCity,
     selectedComuna,
     selectedDate,
@@ -400,7 +388,6 @@ export default function PanoramasPage() {
   // Verificar si hay filtros activos
   const hasActiveFilters =
     selectedCategory ||
-    selectedSubcategory ||
     selectedCity ||
     selectedComuna ||
     selectedDate ||
@@ -542,10 +529,8 @@ export default function PanoramasPage() {
       {/* Panel de filtros de Superguia */}
       <FilterPanel
         categories={categories}
-        subcategories={subcategories}
         locations={LOCATIONS}
         selectedCategory={selectedCategory}
-        selectedSubcategory={selectedSubcategory}
         selectedCity={selectedCity}
         selectedComuna={selectedComuna}
         selectedDate={selectedDate}
@@ -555,7 +540,6 @@ export default function PanoramasPage() {
         recurringDates={recurringDates}
         availableComunas={availableComunas}
         onCategoryChange={handleCategoryChange}
-        onSubcategoryChange={handleSubcategoryChange}
         onCityChange={handleCityChange}
         onComunaChange={handleComunaChange}
         onDateChange={handleDateChange}
@@ -564,9 +548,11 @@ export default function PanoramasPage() {
         onClearFilters={handleClearFilters}
         totalResults={filteredEvents.length}
         showPriceFilter={false}
+        showSubcategories={false}
         showComunaFilter={true}
         eventsCountByCity={eventsCountByCity}
         eventsCountByComuna={eventsCountByComuna}
+        eventsCountByCategory={eventsCountByCategory}
       />
 
       {/* Lista de eventos */}

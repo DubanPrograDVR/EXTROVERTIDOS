@@ -50,6 +50,7 @@ export default function FilterPanel({
   showComunaFilter = false,
   eventsCountByCity = {},
   eventsCountByComuna = {},
+  eventsCountByCategory = {},
 }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const panelRef = useRef(null);
@@ -210,9 +211,11 @@ export default function FilterPanel({
                         />
                       )}
                       <span>{cat.nombre}</span>
-                      {cat.subcategorias?.length > 0 && (
-                        <span className="filter-panel__cat-subcount">
-                          {cat.subcategorias.length}
+                      {eventsCountByCategory[cat.id] != null && (
+                        <span className="filter-panel__count-badge">
+                          {eventsCountByCategory[cat.id] >= 100
+                            ? "+99"
+                            : eventsCountByCategory[cat.id]}
                         </span>
                       )}
                       {selectedCategory === cat.id && (
@@ -439,7 +442,7 @@ export default function FilterPanel({
                       selectedDate={selectedDate}
                       onDateChange={(date) => {
                         onDateChange(date);
-                        // No cerrar el dropdown para permitir ver el calendario
+                        setActiveDropdown(null);
                       }}
                       eventsPerDay={eventsPerDay}
                       recurringDates={recurringDates}
