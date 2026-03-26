@@ -23,22 +23,22 @@ export default function EmptyPanoramas({ onClearFilters, hasFilters = false }) {
 
         {/* Texto principal */}
         <h2 className="empty-panoramas__title">
-          UPS.... AUN NO SE PUBLICA
+          ups.... aun no se publica
           <br />
-          UN PANORAMA
+          un panorama
         </h2>
 
         {/* Subtítulo */}
         <p className="empty-panoramas__subtitle">
           {hasFilters
-            ? "TE INVITAMOS A SEGUIR TU BÚSQUEDA EN OTRA CATEGORÍA"
-            : "TE INVITAMOS A EXPLORAR OTRAS OPCIONES"}
+            ? "te invitamos a seguir tu búsqueda en otra categoría"
+            : "te invitamos a explorar otras opciones"}
         </p>
 
         {/* CTA */}
         <h3 className="empty-panoramas__cta-text">
-          PUBLICA AHORA TU PANORAMA, ACTIVIDAD O EVENTO Y SE PARTE DE
-          EXTROVERTIDOS
+          publica ahora tu panorama, actividad o evento y se parte de
+          extrovertidos
         </h3>
 
         {/* Botones */}
