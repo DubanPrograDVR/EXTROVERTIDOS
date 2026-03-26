@@ -360,7 +360,7 @@ export default function SuperguiaContainer() {
                       <button
                         className="superguia__empty-btn superguia__empty-btn--secondary"
                         onClick={handleClearFilters}>
-                        Limpiar filtros
+                        Ver todos
                       </button>
                     )}
                     <button

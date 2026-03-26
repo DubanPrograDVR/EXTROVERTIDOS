@@ -500,7 +500,7 @@ export default function FilterPanel({
         {hasActiveFilters && (
           <button className="filter-panel__clear-all" onClick={onClearFilters}>
             <FontAwesomeIcon icon={faTimes} />
-            Limpiar filtros
+            Ver todos
           </button>
         )}
       </div>

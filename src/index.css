@@ -6,5 +6,29 @@
 @import "./styles/design-system.css";
 @import "./styles/page-loader.css";
 
+/* ===== SCROLLBAR GLOBAL ===== */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #ff6600 #000;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #000;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #ff6600;
+  border-radius: 5px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #ff8533;
+}
+
 /* Los estilos específicos de cada componente
    se importan en sus respectivos archivos JSX */

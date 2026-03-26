@@ -47,7 +47,7 @@ export default function EmptyPanoramas({ onClearFilters, hasFilters = false }) {
             <button
               className="empty-panoramas__btn empty-panoramas__btn--secondary"
               onClick={onClearFilters}>
-              Limpiar filtros
+              Ver todos
             </button>
           )}
           <button
