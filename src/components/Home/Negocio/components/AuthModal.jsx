@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTimes, faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { faTimes } from "@fortawesome/free-solid-svg-icons";
 import { faGoogle } from "@fortawesome/free-brands-svg-icons";
 import { useAuth } from "../../../../context/AuthContext";
+import "../../../../components/Auth/styles/authModal.css";
 
 /**
  * Modal de autenticación para publicar negocio
@@ -29,29 +30,40 @@ const AuthModal = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="publicar-negocio__auth-modal" onClick={onClose}>
+    <div className="auth-modal-overlay" onClick={onClose}>
       <div
-        className="publicar-negocio__auth-content"
+        className="auth-modal auth-modal--simple"
         role="dialog"
         aria-modal="true"
         aria-label="Iniciar sesión"
         onClick={(e) => e.stopPropagation()}>
-        <button className="publicar-negocio__auth-close" onClick={onClose}>
+        <button className="auth-modal__close" onClick={onClose}>
           <FontAwesomeIcon icon={faTimes} />
         </button>
-        <h3>Inicia sesión para continuar</h3>
-        <p>Necesitas una cuenta para publicar tu negocio</p>
+
+        <img
+          src="/img/Logo_con_r.png"
+          alt="Extrovertidos"
+          className="auth-modal__logo"
+        />
+
+        <h2 className="auth-modal__title">¡Regístrate para publicar!</h2>
+        <p className="auth-modal__message">
+          Para poder publicar tu negocio tienes que registrarte
+        </p>
+
         <button
-          className="publicar-negocio__google-btn"
+          className="auth-form__google-btn"
           onClick={handleGoogleLogin}
           disabled={isGoogleLoading}>
-          {isGoogleLoading ? (
-            <FontAwesomeIcon icon={faSpinner} spin />
-          ) : (
-            <FontAwesomeIcon icon={faGoogle} />
-          )}
-          Continuar con Google
+          <FontAwesomeIcon icon={faGoogle} />
+          {isGoogleLoading ? "Conectando..." : "Continuar con Google"}
         </button>
+
+        <p className="auth-modal__terms">
+          Al continuar, aceptas nuestros <a href="#">Términos de Servicio</a> y{" "}
+          <a href="#">Política de Privacidad</a>
+        </p>
       </div>
     </div>
   );
