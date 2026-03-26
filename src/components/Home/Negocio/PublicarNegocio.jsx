@@ -12,6 +12,7 @@ import {
   faCheck,
   faExclamationTriangle,
   faXmark,
+  faInfoCircle,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "../../../context/AuthContext";
 
@@ -333,11 +334,41 @@ const PublicarNegocio = () => {
     <div className="publicar-negocio">
       {/* Header */}
       <header className="publicar-negocio__header">
+        <img
+          src="/img/Logo_con_r.png"
+          alt="Extrovertidos"
+          className="publicar-negocio__logo"
+        />
         <h1 className="publicar-negocio__title">Publicar Negocio</h1>
         <p className="publicar-negocio__subtitle">
           Registra tu negocio y llega a más clientes en la región del Maule
         </p>
       </header>
+
+      {/* Info: ¿Cómo funciona? */}
+      <section className="publicar-negocio__info">
+        <div className="publicar-negocio__info-container">
+          <h2 className="publicar-negocio__info-title">
+            <FontAwesomeIcon icon={faInfoCircle} />
+            ¿Cómo funciona?
+          </h2>
+          <div className="publicar-negocio__info-steps">
+            {[
+              "Completa el formulario con los datos de tu negocio",
+              "Sube imágenes atractivas que representen tu negocio",
+              "Nuestro equipo revisará tu publicación",
+              "¡Tu negocio estará visible para toda la comunidad!",
+            ].map((step, index) => (
+              <div key={index} className="publicar-negocio__info-step">
+                <span className="publicar-negocio__info-step-number">
+                  {index + 1}
+                </span>
+                <p>{step}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* Stepper / Progress Bar */}
       <div className="wizard-stepper">
