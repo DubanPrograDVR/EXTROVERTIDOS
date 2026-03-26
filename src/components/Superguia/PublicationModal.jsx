@@ -573,14 +573,6 @@ export default function PublicationModal({
               alt="Extrovertidos"
               className="publication-modal__brand-logo"
             />
-            {!isEditMode && (
-              <span
-                className="publication-modal__category-badge"
-                style={{ backgroundColor: categories?.color || "#ff6600" }}>
-                {categories?.icono && <span>{categories.icono}</span>}
-                {categories?.nombre}
-              </span>
-            )}
             {isEditMode && (
               <div className="publication-modal__category-edit">
                 <select
@@ -913,16 +905,6 @@ export default function PublicationModal({
                             {direccion ||
                               `${comuna}${provincia ? `, ${provincia}` : ""}`}
                           </p>
-                          {(ubicacion_url || direccion) && (
-                            <button
-                              className="publication-modal__directions-btn"
-                              onClick={() =>
-                                window.open(getDirectionsUrl(), "_blank")
-                              }>
-                              <FontAwesomeIcon icon={faRoute} />
-                              Cómo llegar
-                            </button>
-                          )}
                         </>
                       )}
                       {isEditMode && (

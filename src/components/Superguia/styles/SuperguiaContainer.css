@@ -317,7 +317,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.25s ease;
-  text-transform: uppercase;
+  text-transform: capitalize;
   letter-spacing: 0.5px;
 }
 

@@ -774,16 +774,6 @@ export default function BusinessModal({
                       {provincia && `, ${provincia}`}
                       {region && ` - ${region}`}
                     </p>
-                    {(ubicacion_url || direccion) && (
-                      <button
-                        className="publication-modal__directions-btn"
-                        onClick={() =>
-                          window.open(getDirectionsUrl(), "_blank")
-                        }>
-                        <FontAwesomeIcon icon={faRoute} />
-                        Cómo llegar
-                      </button>
-                    )}
                   </div>
                 )}
                 {isEditMode && (
