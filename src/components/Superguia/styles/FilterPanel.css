@@ -421,20 +421,29 @@
 .filter-panel__clear-all {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background: transparent;
-  border: 1px solid rgba(255, 107, 53, 0.3);
+  gap: 0.4rem;
+  background: #ff6600;
+  border: 1.5px solid #ff6600;
   border-radius: 20px;
-  padding: 0.5rem 1rem;
-  color: #ff6b35;
-  font-size: 0.85rem;
+  padding: 0.45rem 1.1rem;
+  color: #000;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
 .filter-panel__clear-all:hover {
-  background: rgba(255, 107, 53, 0.1);
-  border-color: #ff6b35;
+  background: #ff8533;
+  border-color: #ff8533;
+  box-shadow: 0 0 14px rgba(255, 107, 53, 0.4);
+  transform: translateY(-1px);
+}
+
+.filter-panel__clear-all:active {
+  transform: translateY(0);
+  box-shadow: none;
 }
 
 /* === Responsive Design === */
