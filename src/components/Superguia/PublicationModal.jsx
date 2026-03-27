@@ -1,7 +1,13 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
-import { updateEvent, getCategories } from "../../lib/database";
+import {
+  updateEvent,
+  getCategories,
+  toggleLike,
+  hasUserLiked,
+  getLikesCount,
+} from "../../lib/database";
 import "./styles/PublicationModal.css";
 import "./styles/BusinessModal.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -35,6 +41,7 @@ import {
   faSave,
   faSpinner,
   faInfoCircle,
+  faFire,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faInstagram,
@@ -102,8 +109,11 @@ export default function PublicationModal({
   onUpdate,
   startInEditMode = false,
 }) {
-  const { isAdmin, isModerator } = useAuth();
+  const { user, isAdmin, isModerator } = useAuth();
   const { showToast } = useToast();
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [isTogglingLike, setIsTogglingLike] = useState(false);
 
   // Estado único para controlar qué sección del acordeón está abierta (null = ninguna)
   const [activeSection, setActiveSection] = useState(
@@ -159,6 +169,43 @@ export default function PublicationModal({
       document.body.style.overflow = "auto";
     };
   }, [isOpen, onClose]);
+
+  // Cargar estado de likes
+  useEffect(() => {
+    if (!publication?.id) return;
+    const loadLikeState = async () => {
+      try {
+        const count = await getLikesCount(publication.id);
+        setLikeCount(count);
+        if (user) {
+          const liked = await hasUserLiked(user.id, publication.id);
+          setIsLiked(liked);
+        }
+      } catch (error) {
+        console.error("Error cargando likes:", error);
+      }
+    };
+    if (isOpen) loadLikeState();
+  }, [publication?.id, user, isOpen]);
+
+  const handleLikeClick = async () => {
+    if (!user) {
+      showToast("Inicia sesión para reaccionar", "warning");
+      return;
+    }
+    if (isTogglingLike) return;
+    setIsTogglingLike(true);
+    try {
+      const result = await toggleLike(user.id, publication.id);
+      setIsLiked(result.isLiked);
+      setLikeCount(result.count);
+    } catch (error) {
+      console.error("Error al cambiar like:", error);
+      showToast("Error al procesar tu reacción", "error");
+    } finally {
+      setIsTogglingLike(false);
+    }
+  };
 
   // Resetear índice de imagen cuando cambia la publicación
   useEffect(() => {
@@ -566,13 +613,22 @@ export default function PublicationModal({
         aria-modal="true"
         aria-label="Detalle de publicación">
         {/* Categoría en la parte superior con logo */}
-        {(categories?.nombre || isEditMode) && (
+        {(categories?.nombre || isEditMode || etiqueta_directa) && (
           <div className="publication-modal__category-header">
-            <img
-              src="/img/P_Extro.png"
-              alt="Extrovertidos"
-              className="publication-modal__brand-logo"
-            />
+            <div className="publication-modal__brand-group">
+              <img
+                src="/img/P_Extro.png"
+                alt="Extrovertidos"
+                className="publication-modal__brand-logo"
+              />
+              <span className="publication-modal__brand-text">panoramas</span>
+            </div>
+            {!isEditMode && etiqueta_directa && (
+              <span className="publication-modal__featured-tag">
+                <FontAwesomeIcon icon={faTag} />
+                {etiqueta_directa}
+              </span>
+            )}
             {isEditMode && (
               <div className="publication-modal__category-edit">
                 <select
@@ -682,14 +738,6 @@ export default function PublicationModal({
               <span className="publication-modal__recurrence-badge">
                 <FontAwesomeIcon icon={faRepeat} />
                 {recurrenciaText}
-              </span>
-            )}
-
-            {/* Etiqueta directa destacada */}
-            {etiqueta_directa && (
-              <span className="publication-modal__featured-tag">
-                <FontAwesomeIcon icon={faTag} />
-                {etiqueta_directa}
               </span>
             )}
           </div>
@@ -1474,12 +1522,11 @@ export default function PublicationModal({
                 </button>
               )}
               <button
-                className="publication-modal__cta-btn publication-modal__cta-btn--primary"
-                onClick={() =>
-                  ubicacion_url && window.open(ubicacion_url, "_blank")
-                }>
-                <FontAwesomeIcon icon={faExternalLinkAlt} />
-                Ver evento
+                className={`publication-modal__cta-btn publication-modal__cta-btn--imperdible ${isLiked ? "publication-modal__cta-btn--imperdible-active" : ""}`}
+                onClick={handleLikeClick}
+                disabled={isTogglingLike}>
+                <FontAwesomeIcon icon={faFire} />
+                {likeCount > 0 ? likeCount : ""} Imperdible
               </button>
               <button
                 className="publication-modal__cta-btn publication-modal__cta-btn--secondary"

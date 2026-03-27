@@ -150,6 +150,23 @@
   font-weight: 400;
 }
 
+/* Información combinada (Ubicación + Horarios + Contacto) */
+.publication-modal__info-combined {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.publication-modal__info-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #ff6600;
+  margin: 0 0 8px 0;
+}
+
 /* ===== RESPONSIVE ESPECÍFICO PARA NEGOCIOS ===== */
 @media (max-width: 900px) {
   .publication-modal__cta-section {

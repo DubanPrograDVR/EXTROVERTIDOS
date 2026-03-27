@@ -69,7 +69,13 @@ const CategoryForm = ({ category, onSave, onCancel, loading, type }) => {
     if (!form.nombre.trim()) return;
     const data = { ...form };
     if (type === "business") {
-      data.subcategorias = subcategorias;
+      // Auto-agregar subcategoría pendiente si el usuario no presionó "+"
+      const finalSubcats = [...subcategorias];
+      const pending = newSubcat.trim();
+      if (pending && !finalSubcats.includes(pending)) {
+        finalSubcats.push(pending);
+      }
+      data.subcategorias = finalSubcats;
     }
     onSave(data);
   };

@@ -172,42 +172,16 @@ export default function PanoramasPage() {
   const handleEventClick = useCallback((event) => {
     setSelectedEvent(event);
     setIsModalOpen(true);
+    // Auto-seleccionar la fecha del evento en el calendario
+    if (event.fecha_evento) {
+      setSelectedDate(new Date(event.fecha_evento + "T00:00:00"));
+    }
   }, []);
 
   const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);
     setSelectedEvent(null);
   }, []);
-
-  // Contadores de eventos por ciudad y comuna
-  const eventsCountByCity = useMemo(() => {
-    const counts = {};
-    Object.entries(LOCATIONS).forEach(([key, city]) => {
-      counts[key] = events.filter(
-        (e) => e.provincia?.toLowerCase() === city.nombre.toLowerCase(),
-      ).length;
-    });
-    return counts;
-  }, [events]);
-
-  const eventsCountByCategory = useMemo(() => {
-    const counts = {};
-    categories.forEach((cat) => {
-      counts[cat.id] = events.filter((e) => e.category_id === cat.id).length;
-    });
-    return counts;
-  }, [events, categories]);
-
-  const eventsCountByComuna = useMemo(() => {
-    const counts = {};
-    events.forEach((e) => {
-      if (e.comuna) {
-        const key = e.comuna;
-        counts[key] = (counts[key] || 0) + 1;
-      }
-    });
-    return counts;
-  }, [events]);
 
   // Filtrar eventos (misma lógica que SuperguiaContainer)
   const filteredEvents = useMemo(() => {
@@ -342,20 +316,199 @@ export default function PanoramasPage() {
     selectedPrice,
   ]);
 
-  // Calcular eventos por día para el calendario (incluye fechas de recurrencia)
+  // Contadores dinámicos basados en filtros activos
+  const eventsCountByCity = useMemo(() => {
+    let base = filteredEvents;
+    if (selectedCity) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      base = events.filter((event) => {
+        const eventEndDate = event.fecha_fin || event.fecha_evento;
+        if (!eventEndDate) return true;
+        return new Date(eventEndDate + "T23:59:59") >= today;
+      });
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        base = base.filter(
+          (e) =>
+            e.titulo?.toLowerCase().includes(query) ||
+            e.comuna?.toLowerCase().includes(query) ||
+            e.provincia?.toLowerCase().includes(query) ||
+            e.categories?.nombre?.toLowerCase().includes(query),
+        );
+      }
+      if (selectedCategory) {
+        base = base.filter((e) => e.category_id === selectedCategory);
+      }
+      if (selectedDate) {
+        const dateStr = formatDateKey(selectedDate);
+        base = base.filter((e) => {
+          if (!e.fecha_evento) return false;
+          if (formatDateKey(new Date(e.fecha_evento + "T00:00:00")) === dateStr)
+            return true;
+          if (e.es_recurrente && Array.isArray(e.fechas_recurrencia)) {
+            if (
+              e.fechas_recurrencia.some(
+                (f) => formatDateKey(new Date(f + "T00:00:00")) === dateStr,
+              )
+            )
+              return true;
+          }
+          if (e.es_multidia && e.fecha_fin) {
+            const inicio = new Date(e.fecha_evento + "T00:00:00");
+            const fin = new Date(e.fecha_fin + "T00:00:00");
+            const sel = new Date(dateStr + "T00:00:00");
+            if (sel >= inicio && sel <= fin) return true;
+          }
+          return false;
+        });
+      }
+    }
+    const counts = {};
+    Object.entries(LOCATIONS).forEach(([key, city]) => {
+      counts[key] = base.filter(
+        (e) => e.provincia?.toLowerCase() === city.nombre.toLowerCase(),
+      ).length;
+    });
+    return counts;
+  }, [
+    filteredEvents,
+    events,
+    selectedCity,
+    selectedCategory,
+    selectedDate,
+    searchQuery,
+  ]);
+
+  const eventsCountByCategory = useMemo(() => {
+    let base = filteredEvents;
+    if (selectedCategory) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      base = events.filter((event) => {
+        const eventEndDate = event.fecha_fin || event.fecha_evento;
+        if (!eventEndDate) return true;
+        return new Date(eventEndDate + "T23:59:59") >= today;
+      });
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        base = base.filter(
+          (e) =>
+            e.titulo?.toLowerCase().includes(query) ||
+            e.comuna?.toLowerCase().includes(query) ||
+            e.provincia?.toLowerCase().includes(query) ||
+            e.categories?.nombre?.toLowerCase().includes(query),
+        );
+      }
+      if (selectedCity) {
+        const cityName = LOCATIONS[selectedCity]?.nombre;
+        if (cityName) {
+          base = base.filter(
+            (e) => e.provincia?.toLowerCase() === cityName.toLowerCase(),
+          );
+        }
+      }
+      if (selectedComuna) {
+        base = base.filter(
+          (e) => e.comuna?.toLowerCase() === selectedComuna.toLowerCase(),
+        );
+      }
+      if (selectedDate) {
+        const dateStr = formatDateKey(selectedDate);
+        base = base.filter((e) => {
+          if (!e.fecha_evento) return false;
+          if (formatDateKey(new Date(e.fecha_evento + "T00:00:00")) === dateStr)
+            return true;
+          if (e.es_recurrente && Array.isArray(e.fechas_recurrencia)) {
+            if (
+              e.fechas_recurrencia.some(
+                (f) => formatDateKey(new Date(f + "T00:00:00")) === dateStr,
+              )
+            )
+              return true;
+          }
+          if (e.es_multidia && e.fecha_fin) {
+            const inicio = new Date(e.fecha_evento + "T00:00:00");
+            const fin = new Date(e.fecha_fin + "T00:00:00");
+            const sel = new Date(dateStr + "T00:00:00");
+            if (sel >= inicio && sel <= fin) return true;
+          }
+          return false;
+        });
+      }
+    }
+    const counts = {};
+    categories.forEach((cat) => {
+      counts[cat.id] = base.filter((e) => e.category_id === cat.id).length;
+    });
+    return counts;
+  }, [
+    filteredEvents,
+    events,
+    categories,
+    selectedCategory,
+    selectedCity,
+    selectedComuna,
+    selectedDate,
+    searchQuery,
+  ]);
+
+  const eventsCountByComuna = useMemo(() => {
+    const counts = {};
+    filteredEvents.forEach((e) => {
+      if (e.comuna) {
+        const key = e.comuna;
+        counts[key] = (counts[key] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [filteredEvents]);
+
+  // Calcular eventos por día para el calendario (basado en filtros activos, excluyendo fecha)
   const { eventsPerDay, recurringDates } = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let base = events.filter((event) => {
+      const eventEndDate = event.fecha_fin || event.fecha_evento;
+      if (!eventEndDate) return true;
+      return new Date(eventEndDate + "T23:59:59") >= today;
+    });
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      base = base.filter(
+        (e) =>
+          e.titulo?.toLowerCase().includes(query) ||
+          e.comuna?.toLowerCase().includes(query) ||
+          e.provincia?.toLowerCase().includes(query) ||
+          e.categories?.nombre?.toLowerCase().includes(query),
+      );
+    }
+    if (selectedCategory) {
+      base = base.filter((e) => e.category_id === selectedCategory);
+    }
+    if (selectedCity) {
+      const cityName = LOCATIONS[selectedCity]?.nombre;
+      if (cityName) {
+        base = base.filter(
+          (e) => e.provincia?.toLowerCase() === cityName.toLowerCase(),
+        );
+      }
+    }
+    if (selectedComuna) {
+      base = base.filter(
+        (e) => e.comuna?.toLowerCase() === selectedComuna.toLowerCase(),
+      );
+    }
+
     const counts = {};
     const recurring = new Set();
-
-    events.forEach((event) => {
+    base.forEach((event) => {
       if (event.fecha_evento) {
         const dateStr = formatDateKey(
           new Date(event.fecha_evento + "T00:00:00"),
         );
         counts[dateStr] = (counts[dateStr] || 0) + 1;
       }
-
-      // Agregar fechas de recurrencia
       if (
         event.es_recurrente &&
         Array.isArray(event.fechas_recurrencia) &&
@@ -370,7 +523,7 @@ export default function PanoramasPage() {
     });
 
     return { eventsPerDay: counts, recurringDates: recurring };
-  }, [events]);
+  }, [events, searchQuery, selectedCategory, selectedCity, selectedComuna]);
 
   // Comunas disponibles según ciudad seleccionada
   const availableComunas = useMemo(() => {

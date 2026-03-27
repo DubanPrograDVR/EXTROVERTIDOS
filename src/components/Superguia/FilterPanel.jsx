@@ -51,6 +51,7 @@ export default function FilterPanel({
   eventsCountByCity = {},
   eventsCountByComuna = {},
   eventsCountByCategory = {},
+  eventsCountBySubcategory = {},
 }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const panelRef = useRef(null);
@@ -479,6 +480,13 @@ export default function FilterPanel({
                     )
                   }>
                   <span>{subcat.nombre}</span>
+                  {eventsCountBySubcategory[subcat.id] != null && (
+                    <span className="filter-panel__count-badge">
+                      {eventsCountBySubcategory[subcat.id] >= 100
+                        ? "+99"
+                        : eventsCountBySubcategory[subcat.id]}
+                    </span>
+                  )}
                   {selectedSubcategory === subcat.id && (
                     <FontAwesomeIcon
                       icon={faTimes}

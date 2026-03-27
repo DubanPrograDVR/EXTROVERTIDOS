@@ -161,8 +161,19 @@ export const updateBusinessCategory = async (categoryId, updates) => {
     if (error.code === "23505") {
       throw new Error(`Ya existe una categoría de negocio con ese nombre`);
     }
+    if (error.code === "PGRST116") {
+      throw new Error(
+        "No se pudo actualizar la categoría. Verifica que tengas permisos de administrador.",
+      );
+    }
     console.error("Error al actualizar categoría de negocio:", error);
     throw error;
+  }
+
+  if (!data) {
+    throw new Error(
+      "La categoría no se actualizó. Verifica tus permisos o que la categoría exista.",
+    );
   }
 
   cache.invalidate("business_categories");

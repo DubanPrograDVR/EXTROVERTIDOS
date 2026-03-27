@@ -413,12 +413,6 @@ export default function PublicationCard({
               {recurrenciaText}
             </span>
           )}
-          {horarioShort && (
-            <span className="publication-card__time">
-              <FontAwesomeIcon icon={faClock} />
-              {horarioShort}
-            </span>
-          )}
         </div>
 
         {/* Información del autor */}

@@ -12,12 +12,11 @@ import {
   faLayerGroup,
   faHeart as faHeartSolid,
   faBookmark as faBookmarkSolid,
-  faThumbsUp as faThumbsUpSolid,
+  faStar,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faHeart as faHeartRegular,
   faBookmark as faBookmarkRegular,
-  faThumbsUp as faThumbsUpRegular,
 } from "@fortawesome/free-regular-svg-icons";
 import {
   faWhatsapp,
@@ -364,6 +363,14 @@ export default function BusinessCard({
 
       {/* Contenido */}
       <div className="business-card__content">
+        {/* Ubicación */}
+        {comuna && (
+          <div className="business-card__location">
+            <FontAwesomeIcon icon={faMapMarkerAlt} />
+            <span>{comuna}</span>
+          </div>
+        )}
+
         {/* Nombre y slogan */}
         <div className="business-card__header">
           <h3 className="business-card__title">{nombre}</h3>
@@ -378,31 +385,14 @@ export default function BusinessCard({
           </div>
         )}
 
-        {/* Descripción breve */}
-        {descripcion && (
-          <p className="business-card__description">{descripcion}</p>
-        )}
-
-        {/* Info row: Ubicación + Horario */}
-        <div className="business-card__info">
-          {/* Ubicación */}
-          <div className="business-card__location">
-            <FontAwesomeIcon icon={faMapMarkerAlt} />
-            <span>
-              {comuna}
-              {provincia && `, ${provincia}`}
-            </span>
+        {/* Horario de hoy */}
+        {horarioHoy && (
+          <div
+            className={`business-card__schedule ${isOpen ? "business-card__schedule--open" : "business-card__schedule--closed"}`}>
+            <FontAwesomeIcon icon={faClock} />
+            <span>{horarioHoy}</span>
           </div>
-
-          {/* Horario de hoy */}
-          {horarioHoy && (
-            <div
-              className={`business-card__schedule ${isOpen ? "business-card__schedule--open" : "business-card__schedule--closed"}`}>
-              <FontAwesomeIcon icon={faClock} />
-              <span>{horarioHoy}</span>
-            </div>
-          )}
-        </div>
+        )}
 
         {/* Acciones rápidas */}
         <div className="business-card__actions">
@@ -485,17 +475,15 @@ export default function BusinessCard({
           </div>
         )}
 
-        {/* Botones Me gusta / Guardar */}
+        {/* Botones Recomendado / Guardar */}
         <div className="business-card__interaction-buttons">
           <button
-            className={`business-card__interaction-btn ${isLiked ? "business-card__interaction-btn--active" : ""}`}
+            className={`business-card__interaction-btn business-card__interaction-btn--recommend ${isLiked ? "business-card__interaction-btn--active" : ""}`}
             onClick={handleLikeClick}
             disabled={isTogglingLike}
-            aria-label={isLiked ? "Quitar me gusta" : "Me gusta"}>
-            <FontAwesomeIcon
-              icon={isLiked ? faThumbsUpSolid : faThumbsUpRegular}
-            />
-            <span>{likeCount > 0 ? likeCount : "Me gusta"}</span>
+            aria-label={isLiked ? "Quitar recomendación" : "Recomendar"}>
+            <FontAwesomeIcon icon={faStar} />
+            <span>{likeCount > 0 ? likeCount : "Recomendado"}</span>
           </button>
           <button
             className={`business-card__interaction-btn ${isFavorited ? "business-card__interaction-btn--active" : ""}`}

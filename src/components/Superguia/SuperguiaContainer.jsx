@@ -217,6 +217,54 @@ export default function SuperguiaContainer() {
     return LOCATIONS[selectedCity]?.comunas || [];
   }, [selectedCity]);
 
+  // Conteo de negocios por categoría
+  const businessesCountByCategory = useMemo(() => {
+    const counts = {};
+    categories.forEach((cat) => {
+      counts[cat.id] = businesses.filter(
+        (b) => b.categoria?.toLowerCase() === cat.nombre.toLowerCase(),
+      ).length;
+    });
+    return counts;
+  }, [businesses, categories]);
+
+  // Conteo de negocios por ciudad
+  const businessesCountByCity = useMemo(() => {
+    const counts = {};
+    Object.entries(LOCATIONS).forEach(([key, city]) => {
+      counts[key] = businesses.filter(
+        (b) => b.provincia?.toLowerCase() === city.nombre.toLowerCase(),
+      ).length;
+    });
+    return counts;
+  }, [businesses]);
+
+  // Conteo de negocios por comuna
+  const businessesCountByComuna = useMemo(() => {
+    const counts = {};
+    if (!selectedCity) return counts;
+    const cityName = LOCATIONS[selectedCity]?.nombre;
+    availableComunas.forEach((comuna) => {
+      counts[comuna] = businesses.filter(
+        (b) =>
+          b.provincia?.toLowerCase() === cityName?.toLowerCase() &&
+          b.comuna?.toLowerCase() === comuna.toLowerCase(),
+      ).length;
+    });
+    return counts;
+  }, [businesses, selectedCity, availableComunas]);
+
+  // Conteo de negocios por subcategoría
+  const businessesCountBySubcategory = useMemo(() => {
+    const counts = {};
+    flatSubcategories.forEach((sub) => {
+      counts[sub.id] = businesses.filter(
+        (b) => b.subcategoria?.toLowerCase() === sub.nombre.toLowerCase(),
+      ).length;
+    });
+    return counts;
+  }, [businesses, flatSubcategories]);
+
   // Paginación
   const totalPages = Math.ceil(filteredBusinesses.length / ITEMS_PER_PAGE);
   const paginatedBusinesses = useMemo(() => {
@@ -237,11 +285,6 @@ export default function SuperguiaContainer() {
       <section className="superguia">
         {/* Hero Banner */}
         <div className="superguia__hero">
-          <img
-            src="/img/banner.png"
-            alt="Superguía Extrovertidos"
-            className="superguia__hero-img"
-          />
           <div className="superguia__hero-overlay"></div>
           <div className="superguia__hero-content">
             <img
@@ -249,9 +292,9 @@ export default function SuperguiaContainer() {
               alt="Extrovertidos"
               className="superguia__hero-logo"
             />
-            <h1 className="superguia__hero-title">SUPERGUÍA EXTROVERTIDOS</h1>
+            <h1 className="superguia__hero-title">superguía extrovertidos</h1>
             <p className="superguia__hero-subtitle">
-              Descubre los mejores negocios y servicios de la región
+              descubre los mejores negocios y servicios de la región
             </p>
           </div>
         </div>
@@ -296,6 +339,11 @@ export default function SuperguiaContainer() {
             showDateFilter={false}
             showPriceFilter={false}
             showSubcategories={true}
+            showComunaFilter={true}
+            eventsCountByCategory={businessesCountByCategory}
+            eventsCountByCity={businessesCountByCity}
+            eventsCountByComuna={businessesCountByComuna}
+            eventsCountBySubcategory={businessesCountBySubcategory}
           />
 
           {/* Estado de carga */}
