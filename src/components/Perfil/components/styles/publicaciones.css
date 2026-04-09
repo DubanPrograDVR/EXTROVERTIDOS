@@ -152,6 +152,63 @@
   opacity: 0.5;
 }
 
+/* ===== RECHAZO Y REENVÍO ===== */
+.perfil-publication-card__rejection,
+.perfil-business-card__rejection {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.perfil-publication-card__rejection-reason {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.perfil-publication-card__rejection-reason strong {
+  color: #ef4444;
+}
+
+.perfil-publication-card__btn--resubmit {
+  background: rgba(255, 102, 0, 0.1);
+  border: 1px solid rgba(255, 102, 0, 0.4);
+  color: #ff6600;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+}
+
+.perfil-publication-card__btn--resubmit:hover {
+  background: #ff6600;
+  color: #000;
+}
+
+.perfil-publication-card__btn--resubmit:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.perfil-publication-card__rejection-limit {
+  color: #ef4444;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin: 0;
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .perfil-publications__grid {

@@ -9,6 +9,7 @@ import {
   faChevronRight,
   faPlus,
   faFire,
+  faStore,
 } from "@fortawesome/free-solid-svg-icons";
 import Footer from "./Footer";
 import Pagination from "../Superguia/Pagination";
@@ -16,12 +17,13 @@ import FilterPanel from "../Superguia/FilterPanel";
 import PublicationModal from "../Superguia/PublicationModal";
 import PublicationGrid from "../Superguia/PublicationGrid";
 import Carousel from "../Superguia/Carousel";
+import BusinessModal from "../Superguia/BusinessModal";
 import EmptyPanoramas from "../Superguia/EmptyPanoramas";
 import { formatDateKey } from "../Superguia/DateCalendar";
 import {
   getPublishedEvents,
-  getEventsByCity,
   getCategories,
+  getPublishedBusinesses,
 } from "../../lib/database";
 import { useCity } from "../../context/CityContext";
 import { LOCATIONS, mapCategoriesToUI } from "../Superguia/data";
@@ -56,6 +58,11 @@ export default function PanoramasPage() {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Estado para negocios (carrusel cruzado)
+  const [businesses, setBusinesses] = useState([]);
+  const [selectedBusiness, setSelectedBusiness] = useState(null);
+  const [isBusinessModalOpen, setIsBusinessModalOpen] = useState(false);
+
   // Leer query params al cargar y sincronizar con CityContext y filtros
   useEffect(() => {
     const ciudadParam = searchParams.get("ciudad");
@@ -82,24 +89,20 @@ export default function PanoramasPage() {
     }
   }, [searchParams, selectCity]);
 
-  // Cargar datos - filtrado por ciudad desde Supabase
+  // Cargar todos los datos (el filtro de ciudad es client-side)
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const ciudadParam = searchParams.get("ciudad");
-
-        let eventsData;
-        if (ciudadParam) {
-          eventsData = await getEventsByCity(ciudadParam);
-        } else {
-          eventsData = await getPublishedEvents();
-        }
-
-        const categoriesData = await getCategories();
+        const [eventsData, categoriesData, businessesData] = await Promise.all([
+          getPublishedEvents(),
+          getCategories(),
+          getPublishedBusinesses(),
+        ]);
 
         setEvents(eventsData || []);
         setCategories(mapCategoriesToUI(categoriesData || []));
+        setBusinesses(businessesData || []);
       } catch (error) {
         console.error("Error cargando datos:", error);
       } finally {
@@ -108,7 +111,7 @@ export default function PanoramasPage() {
     };
 
     loadData();
-  }, [searchParams]);
+  }, []);
 
   // Handlers para filtros
   const handleCityChange = useCallback(
@@ -117,16 +120,15 @@ export default function PanoramasPage() {
       setSelectedComuna(null);
       setCurrentPage(1);
 
-      // Actualizar URL si se selecciona una ciudad
+      // Actualizar URL para compartir/navegar (sin recargar datos)
       if (city) {
         const cityName = LOCATIONS[city]?.nombre;
         if (cityName) {
-          setSearchParams({ ciudad: cityName });
+          setSearchParams({ ciudad: cityName }, { replace: true });
           selectCity(cityName);
         }
       } else {
-        // Si se limpia la ciudad, remover el param
-        setSearchParams({});
+        setSearchParams({}, { replace: true });
       }
     },
     [setSearchParams, selectCity],
@@ -172,15 +174,22 @@ export default function PanoramasPage() {
   const handleEventClick = useCallback((event) => {
     setSelectedEvent(event);
     setIsModalOpen(true);
-    // Auto-seleccionar la fecha del evento en el calendario
-    if (event.fecha_evento) {
-      setSelectedDate(new Date(event.fecha_evento + "T00:00:00"));
-    }
   }, []);
 
   const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);
     setSelectedEvent(null);
+  }, []);
+
+  // Handlers para carrusel de negocios
+  const handleBusinessClick = useCallback((business) => {
+    setSelectedBusiness(business);
+    setIsBusinessModalOpen(true);
+  }, []);
+
+  const handleCloseBusinessModal = useCallback(() => {
+    setIsBusinessModalOpen(false);
+    setSelectedBusiness(null);
   }, []);
 
   // Filtrar eventos (misma lógica que SuperguiaContainer)
@@ -508,6 +517,19 @@ export default function PanoramasPage() {
           new Date(event.fecha_evento + "T00:00:00"),
         );
         counts[dateStr] = (counts[dateStr] || 0) + 1;
+
+        // Contar cada día intermedio de eventos multi-día
+        if (event.es_multidia && event.fecha_fin) {
+          const inicio = new Date(event.fecha_evento + "T00:00:00");
+          const fin = new Date(event.fecha_fin + "T00:00:00");
+          const current = new Date(inicio);
+          current.setDate(current.getDate() + 1);
+          while (current <= fin) {
+            const dayStr = formatDateKey(current);
+            counts[dayStr] = (counts[dayStr] || 0) + 1;
+            current.setDate(current.getDate() + 1);
+          }
+        }
       }
       if (
         event.es_recurrente &&
@@ -752,24 +774,24 @@ export default function PanoramasPage() {
         )}
       </section>
 
-      {/* Sección de Eventos Destacados con Carrusel Mejorado */}
-      {events.length > 0 && (
+      {/* Sección de Negocios Destacados con Carrusel */}
+      {businesses.length > 0 && (
         <section className="panoramas-page__featured">
           <div className="panoramas-page__featured-header">
             <div className="panoramas-page__featured-title">
               <FontAwesomeIcon
-                icon={faFire}
+                icon={faStore}
                 className="panoramas-page__featured-icon"
               />
-              <h2>Descubre más panoramas</h2>
+              <h2>Descubre negocios</h2>
             </div>
             <p className="panoramas-page__featured-subtitle">
-              Explora los eventos más populares de la región
+              Explora los mejores negocios y servicios de la región
             </p>
           </div>
           <Carousel
-            publications={events.slice(0, 10)}
-            onPublicationClick={handleEventClick}
+            publications={businesses.slice(0, 10)}
+            onPublicationClick={handleBusinessClick}
           />
         </section>
       )}
@@ -794,6 +816,13 @@ export default function PanoramasPage() {
         publication={selectedEvent}
         isOpen={isModalOpen}
         onClose={handleCloseModal}
+      />
+
+      {/* Modal de negocio */}
+      <BusinessModal
+        business={selectedBusiness}
+        isOpen={isBusinessModalOpen}
+        onClose={handleCloseBusinessModal}
       />
 
       <Footer />

@@ -13,6 +13,7 @@ import {
   faEdit,
   faTrash,
   faExclamationTriangle,
+  faRedoAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "../../../context/AuthContext";
 import {
@@ -21,6 +22,7 @@ import {
   updateBusiness,
   deleteOwnBusiness,
 } from "../../../lib/database";
+import { resubmitBusiness } from "../../../lib/database/businesses";
 import { useToast } from "../../../context/ToastContext";
 import BusinessModal from "../../Superguia/BusinessModal";
 import { UserBusinessEditModal } from "./editar";
@@ -39,6 +41,7 @@ export default function PerfilNegocios() {
   const [categories, setCategories] = useState([]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(null);
+  const [resubmitting, setResubmitting] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   useEffect(() => {
@@ -103,6 +106,25 @@ export default function PerfilNegocios() {
       }
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Reenviar negocio rechazado a revisión
+  const handleResubmit = async (business) => {
+    setResubmitting(business.id);
+    try {
+      await resubmitBusiness(business.id);
+      if (showToast) {
+        showToast("¡Negocio reenviado a revisión!", "success");
+      }
+      await reloadBusinesses();
+    } catch (error) {
+      console.error("Error al reenviar negocio:", error);
+      if (showToast) {
+        showToast(error.message || "Error al reenviar el negocio", "error");
+      }
+    } finally {
+      setResubmitting(null);
     }
   };
 
@@ -246,13 +268,38 @@ export default function PerfilNegocios() {
                     {business.direccion || "Sin dirección"}
                     {business.telefono ? ` • ${business.telefono}` : ""}
                   </p>
-                  {business.estado === "rechazado" &&
-                    business.motivo_rechazo && (
-                      <div className="perfil-business-card__rejection">
-                        <strong>Motivo del rechazo:</strong>
-                        <p>{business.motivo_rechazo}</p>
-                      </div>
-                    )}
+                  {business.estado === "rechazado" && (
+                    <div className="perfil-business-card__rejection">
+                      {business.motivo_rechazo && (
+                        <p className="perfil-publication-card__rejection-reason">
+                          <strong>Motivo del rechazo:</strong>{" "}
+                          {business.motivo_rechazo}
+                        </p>
+                      )}
+                      {(business.revision_count || 0) < 3 ? (
+                        <button
+                          className="perfil-publication-card__btn perfil-publication-card__btn--resubmit"
+                          onClick={() => handleResubmit(business)}
+                          disabled={resubmitting === business.id}>
+                          <FontAwesomeIcon
+                            icon={
+                              resubmitting === business.id
+                                ? faSpinner
+                                : faRedoAlt
+                            }
+                            spin={resubmitting === business.id}
+                          />
+                          {resubmitting === business.id
+                            ? "Reenviando..."
+                            : `Reenviar a revisión (${3 - (business.revision_count || 0)} intentos restantes)`}
+                        </button>
+                      ) : (
+                        <p className="perfil-publication-card__rejection-limit">
+                          Has alcanzado el máximo de 3 intentos de revisión
+                        </p>
+                      )}
+                    </div>
+                  )}
                   <div className="perfil-business-card__actions">
                     <button
                       className="perfil-business-card__btn"

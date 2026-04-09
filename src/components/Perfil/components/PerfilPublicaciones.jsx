@@ -12,6 +12,7 @@ import {
   faPause,
   faPlay,
   faExclamationTriangle,
+  faRedoAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   getCategories,
@@ -19,6 +20,7 @@ import {
   deleteEvent,
   pauseEvent,
 } from "../../../lib/database";
+import { resubmitEvent } from "../../../lib/database/events";
 import { useToast } from "../../../context/ToastContext";
 import { useAuth } from "../../../context/AuthContext";
 import PublicationModal from "../../Superguia/PublicationModal";
@@ -33,7 +35,7 @@ export default function PerfilPublicaciones({
 }) {
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { user } = useAuth();
+  const { user, isAdmin, isModerator } = useAuth();
 
   // Estados para los modales
   const [viewModal, setViewModal] = useState({
@@ -48,6 +50,7 @@ export default function PerfilPublicaciones({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(null);
   const [pausing, setPausing] = useState(null); // ID del evento en pausa/reactivación
+  const [resubmitting, setResubmitting] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   // Cargar categorías para el modal de edición
@@ -166,6 +169,27 @@ export default function PerfilPublicaciones({
     }
   };
 
+  // Reenviar publicación rechazada a revisión
+  const handleResubmit = async (pub) => {
+    setResubmitting(pub.id);
+    try {
+      await resubmitEvent(pub.id, user?.id, isAdmin, isModerator);
+      if (showToast) {
+        showToast("¡Publicación reenviada a revisión!", "success");
+      }
+      if (onPublicationUpdate) {
+        onPublicationUpdate();
+      }
+    } catch (error) {
+      console.error("Error al reenviar publicación:", error);
+      if (showToast) {
+        showToast(error.message || "Error al reenviar la publicación", "error");
+      }
+    } finally {
+      setResubmitting(null);
+    }
+  };
+
   return (
     <div className="perfil-section">
       <div className="perfil-section__header">
@@ -234,6 +258,36 @@ export default function PerfilPublicaciones({
                       year: "numeric",
                     })}
                   </p>
+                  {pub.estado === "rechazado" && (
+                    <div className="perfil-publication-card__rejection">
+                      {pub.motivo_rechazo && (
+                        <p className="perfil-publication-card__rejection-reason">
+                          <strong>Motivo del rechazo:</strong>{" "}
+                          {pub.motivo_rechazo}
+                        </p>
+                      )}
+                      {(pub.revision_count || 0) < 3 ? (
+                        <button
+                          className="perfil-publication-card__btn perfil-publication-card__btn--resubmit"
+                          onClick={() => handleResubmit(pub)}
+                          disabled={resubmitting === pub.id}>
+                          <FontAwesomeIcon
+                            icon={
+                              resubmitting === pub.id ? faSpinner : faRedoAlt
+                            }
+                            spin={resubmitting === pub.id}
+                          />
+                          {resubmitting === pub.id
+                            ? "Reenviando..."
+                            : `Reenviar a revisión (${3 - (pub.revision_count || 0)} intentos restantes)`}
+                        </button>
+                      ) : (
+                        <p className="perfil-publication-card__rejection-limit">
+                          Has alcanzado el máximo de 3 intentos de revisión
+                        </p>
+                      )}
+                    </div>
+                  )}
                   <div className="perfil-publication-card__actions">
                     <button
                       className="perfil-publication-card__btn"
