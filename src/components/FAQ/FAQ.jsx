@@ -29,7 +29,7 @@ const FAQ = () => {
       resultado = resultado.filter(
         (faq) =>
           faq.pregunta.toLowerCase().includes(termino) ||
-          faq.respuesta.toLowerCase().includes(termino)
+          faq.respuesta.toLowerCase().includes(termino),
       );
     }
 
@@ -120,7 +120,7 @@ const FAQ = () => {
         <div className="faq-contact">
           <p>¿No encontraste lo que buscabas?</p>
           <a
-            href="https://instagram.com/extrovertidos"
+            href="https://www.instagram.com/extrovertidos.cl/"
             target="_blank"
             rel="noopener noreferrer"
             className="faq-contact__link">
