@@ -5,15 +5,22 @@ import { faTimes } from "@fortawesome/free-solid-svg-icons";
 import { faGoogle } from "@fortawesome/free-brands-svg-icons";
 import { useAuth } from "../../context/AuthContext";
 
-export default function AuthModal({
-  isOpen,
-  onClose,
-  initialMode = "login",
-  persistent = false,
-}) {
-  const { signInWithGoogle, user } = useAuth();
+const GOOGLE_GSI_SCRIPT_SRC = "https://accounts.google.com/gsi/client";
+const GOOGLE_GSI_TIMEOUT_MS = 10000;
+const GOOGLE_GSI_POLL_INTERVAL_MS = 250;
+
+export default function AuthModal({ isOpen, onClose, persistent = false }) {
+  const { signInWithGoogle, showToast, user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [googleStatus, setGoogleStatus] = useState("idle");
+  const [googleLoadAttempt, setGoogleLoadAttempt] = useState(0);
   const googleBtnRef = useRef(null);
+
+  const retryGoogleButtonLoad = () => {
+    if (isLoading) return;
+    setGoogleStatus("idle");
+    setGoogleLoadAttempt((attempt) => attempt + 1);
+  };
 
   // Cerrar modal automáticamente al iniciar sesión
   useEffect(() => {
@@ -34,33 +41,137 @@ export default function AuthModal({
     return () => window.removeEventListener("keydown", handleEsc);
   }, [onClose, persistent]);
 
-  // Inicializar el botón invisible de Google cuando el modal se abre
   useEffect(() => {
-    if (!isOpen || !window.google?.accounts?.id || !googleBtnRef.current)
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!isOpen) {
+      setGoogleStatus("idle");
       return;
+    }
+
+    if (!clientId) {
+      setGoogleStatus("missing-config");
+      return;
+    }
+
+    if (window.google?.accounts?.id) {
+      setGoogleStatus("ready");
+      return;
+    }
+
+    setGoogleStatus("loading");
+
+    let isCancelled = false;
+    let pollTimer = null;
+
+    const existingScript = document.querySelector(
+      `script[src="${GOOGLE_GSI_SCRIPT_SRC}"]`,
+    );
+    const script = existingScript || document.createElement("script");
+
+    if (!existingScript) {
+      script.src = GOOGLE_GSI_SCRIPT_SRC;
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    }
+
+    const markReady = () => {
+      if (isCancelled || !window.google?.accounts?.id) return false;
+      setGoogleStatus("ready");
+      return true;
+    };
+
+    const handleError = () => {
+      if (!isCancelled) {
+        setGoogleStatus("error");
+      }
+    };
+
+    const startPolling = () => {
+      const startedAt = Date.now();
+
+      const pollUntilReady = () => {
+        if (isCancelled || markReady()) return;
+
+        if (Date.now() - startedAt >= GOOGLE_GSI_TIMEOUT_MS) {
+          setGoogleStatus("error");
+          return;
+        }
+
+        pollTimer = window.setTimeout(
+          pollUntilReady,
+          GOOGLE_GSI_POLL_INTERVAL_MS,
+        );
+      };
+
+      pollUntilReady();
+    };
+
+    script.addEventListener("load", markReady);
+    script.addEventListener("error", handleError);
+
+    if (!markReady()) {
+      startPolling();
+    }
+
+    return () => {
+      isCancelled = true;
+      if (pollTimer) {
+        window.clearTimeout(pollTimer);
+      }
+      script.removeEventListener("load", markReady);
+      script.removeEventListener("error", handleError);
+    };
+  }, [isOpen, googleLoadAttempt]);
+
+  // Inicializar el botón invisible de Google cuando GIS ya está disponible
+  useEffect(() => {
+    if (googleStatus !== "ready" || !isOpen || !googleBtnRef.current) {
+      return;
+    }
 
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-    if (!clientId) return;
+    const googleIdentity = window.google?.accounts?.id;
+    const buttonContainer = googleBtnRef.current;
 
-    window.google.accounts.id.initialize({
+    if (!clientId || !googleIdentity || !buttonContainer) return;
+
+    buttonContainer.innerHTML = "";
+
+    googleIdentity.initialize({
       client_id: clientId,
       callback: async (response) => {
+        if (!response?.credential) {
+          showToast(
+            "Google no devolvió una credencial válida. Intenta nuevamente.",
+            "error",
+          );
+          return;
+        }
+
         setIsLoading(true);
         try {
           const { error } = await signInWithGoogle(response.credential);
           if (error) {
             console.error("Error al iniciar sesión con Google:", error);
-            alert("Error al iniciar sesión con Google. Intenta nuevamente.");
+            showToast(
+              "Error al iniciar sesión con Google. Intenta nuevamente.",
+              "error",
+            );
           }
         } catch (err) {
           console.error("Error:", err);
+          showToast(
+            "No fue posible iniciar sesión con Google. Intenta nuevamente.",
+            "error",
+          );
         } finally {
           setIsLoading(false);
         }
       },
     });
 
-    window.google.accounts.id.renderButton(googleBtnRef.current, {
+    googleIdentity.renderButton(buttonContainer, {
       type: "standard",
       size: "large",
       theme: "filled_black",
@@ -69,9 +180,18 @@ export default function AuthModal({
       width: 320,
       locale: "es",
     });
-  }, [isOpen, signInWithGoogle]);
+
+    return () => {
+      buttonContainer.innerHTML = "";
+    };
+  }, [googleStatus, isOpen, showToast, signInWithGoogle]);
 
   if (!isOpen) return null;
+
+  const isGoogleLoading = googleStatus === "loading";
+  const canRetryGoogle = googleStatus === "error";
+  const isGoogleUnavailable = googleStatus === "missing-config";
+  const isGoogleReady = googleStatus === "ready";
 
   return (
     <div
@@ -106,22 +226,49 @@ export default function AuthModal({
         </p>
 
         <div className="auth-modal__google-wrapper">
-          {/* Botón personalizado visible */}
-          <div className="auth-form__google-btn" aria-hidden="true">
-            {isLoading ? (
-              <>
-                <span className="auth-spinner" />
-                Conectando...
-              </>
-            ) : (
-              <>
-                <FontAwesomeIcon icon={faGoogle} />
-                Continuar con Google
-              </>
-            )}
-          </div>
-          {/* Botón real de Google invisible superpuesto */}
-          <div ref={googleBtnRef} className="auth-modal__google-overlay" />
+          {canRetryGoogle ? (
+            <button
+              type="button"
+              className="auth-form__google-btn auth-form__google-btn--retry"
+              onClick={retryGoogleButtonLoad}>
+              <FontAwesomeIcon icon={faGoogle} />
+              Reintentar con Google
+            </button>
+          ) : (
+            <div
+              className={`auth-form__google-btn${
+                isLoading || isGoogleLoading || isGoogleUnavailable
+                  ? " auth-form__google-btn--disabled"
+                  : ""
+              }`}
+              aria-hidden="true">
+              {isLoading ? (
+                <>
+                  <span className="auth-spinner" />
+                  Conectando...
+                </>
+              ) : isGoogleLoading ? (
+                <>
+                  <span className="auth-spinner" />
+                  Cargando acceso con Google...
+                </>
+              ) : isGoogleUnavailable ? (
+                <>
+                  <FontAwesomeIcon icon={faGoogle} />
+                  Google no disponible
+                </>
+              ) : (
+                <>
+                  <FontAwesomeIcon icon={faGoogle} />
+                  Continuar con Google
+                </>
+              )}
+            </div>
+          )}
+
+          {isGoogleReady && (
+            <div ref={googleBtnRef} className="auth-modal__google-overlay" />
+          )}
         </div>
 
         <p className="auth-modal__terms">
