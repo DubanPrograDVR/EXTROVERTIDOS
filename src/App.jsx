@@ -21,6 +21,8 @@ const PanoramasPage = lazy(() => import("./components/Home/PanoramasPage"));
 const Perfil = lazy(() => import("./components/Perfil/Perfil"));
 const AdminPanel = lazy(() => import("./components/Admin/AdminPanel"));
 const FAQ = lazy(() => import("./components/FAQ/FAQ"));
+const Terminos = lazy(() => import("./components/Legal/Terminos"));
+const Privacidad = lazy(() => import("./components/Legal/Privacidad"));
 const ActivarPlan = lazy(() => import("./components/Planes/ActivarPlan"));
 const PaymentResult = lazy(() => import("./components/Planes/PaymentResult"));
 
@@ -86,6 +88,8 @@ function App() {
                       }
                     />
                     <Route path="/faq" element={<FAQ />} />
+                    <Route path="/terminos" element={<Terminos />} />
+                    <Route path="/privacidad" element={<Privacidad />} />
                     <Route
                       path="/activar-plan"
                       element={

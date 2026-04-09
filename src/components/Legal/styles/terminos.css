@@ -1,0 +1,250 @@
+/* ===== TÉRMINOS Y CONDICIONES ===== */
+
+.terminos-section {
+  background: linear-gradient(180deg, #0a0a0a 0%, #111 100%);
+  padding: 80px 20px 60px;
+  min-height: 100vh;
+}
+
+.terminos-container {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+/* ===== HEADER ===== */
+.terminos-header {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.terminos-header__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.terminos-header__logo {
+  width: 90px;
+  height: auto;
+  filter: drop-shadow(0 0 20px rgba(255, 102, 0, 0.5));
+}
+
+.terminos-header__title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.terminos-header__subtitle {
+  font-size: 1.2rem;
+  color: #ff6600;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 2px;
+}
+
+/* ===== CONTENT ===== */
+.terminos-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.terminos-intro {
+  background: rgba(255, 102, 0, 0.08);
+  border: 1px solid rgba(255, 102, 0, 0.2);
+  border-radius: 12px;
+  padding: 24px 28px;
+  margin-bottom: 40px;
+}
+
+.terminos-intro p {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ===== CLAUSES ===== */
+.terminos-clause {
+  padding: 28px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.terminos-clause:last-child {
+  border-bottom: none;
+}
+
+.terminos-clause__title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 18px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.terminos-clause__number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #ff6600, #ff8533);
+  color: #000;
+  font-weight: 800;
+  font-size: 0.95rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.terminos-clause__subtitle {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #ff8533;
+  margin: 20px 0 10px;
+}
+
+.terminos-clause p {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.92rem;
+  line-height: 1.75;
+  margin: 0 0 12px;
+}
+
+.terminos-clause p:last-child {
+  margin-bottom: 0;
+}
+
+/* ===== LISTS ===== */
+.terminos-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.terminos-list li {
+  position: relative;
+  padding-left: 20px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.92rem;
+  line-height: 1.7;
+}
+
+.terminos-list li::before {
+  content: "▸";
+  position: absolute;
+  left: 0;
+  color: #ff6600;
+  font-weight: 700;
+}
+
+.terminos-list li strong {
+  color: #fff;
+}
+
+.terminos-list--prohibited li::before {
+  content: "✕";
+  color: #e74c3c;
+  font-size: 0.75rem;
+  top: 2px;
+}
+
+/* ===== LINK ===== */
+.terminos-link {
+  color: #ff6600;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.terminos-link:hover {
+  color: #ff8533;
+  text-decoration: underline;
+}
+
+/* ===== BACK LINK ===== */
+.terminos-back {
+  text-align: center;
+  margin-top: 50px;
+  padding-top: 30px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.terminos-back__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #ff6600;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  padding: 10px 24px;
+  border: 2px solid rgba(255, 102, 0, 0.3);
+  border-radius: 50px;
+  transition: all 0.3s ease;
+}
+
+.terminos-back__link:hover {
+  background: rgba(255, 102, 0, 0.1);
+  border-color: #ff6600;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .terminos-section {
+    padding: 70px 16px 40px;
+  }
+
+  .terminos-header__title {
+    font-size: 1.6rem;
+  }
+
+  .terminos-header__subtitle {
+    font-size: 1rem;
+  }
+
+  .terminos-header__logo {
+    width: 70px;
+  }
+
+  .terminos-clause__title {
+    font-size: 1.1rem;
+    gap: 10px;
+  }
+
+  .terminos-clause__number {
+    min-width: 30px;
+    height: 30px;
+    font-size: 0.85rem;
+  }
+
+  .terminos-intro {
+    padding: 18px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .terminos-header__title {
+    font-size: 1.3rem;
+  }
+
+  .terminos-clause__title {
+    font-size: 1rem;
+  }
+
+  .terminos-clause p,
+  .terminos-list li {
+    font-size: 0.88rem;
+  }
+}
