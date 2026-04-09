@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faTimes,
@@ -6,8 +6,59 @@ import {
   faTrash,
   faCopy,
   faClock,
+  faChevronDown,
 } from "@fortawesome/free-solid-svg-icons";
 import { DIAS_SEMANA, DEFAULT_TURNO, HOURS, MINUTES } from "./constants";
+
+/**
+ * Dropdown compacto para seleccionar un valor numérico (hora o minuto)
+ */
+const CompactPicker = ({ value, options, onChange }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const listRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (open && listRef.current) {
+      const selected = listRef.current.querySelector(".selected");
+      if (selected) selected.scrollIntoView({ block: "center" });
+    }
+  }, [open]);
+
+  return (
+    <div className="compact-picker" ref={ref}>
+      <button
+        type="button"
+        className={`compact-picker__trigger ${open ? "open" : ""}`}
+        onClick={() => setOpen((prev) => !prev)}>
+        {value}
+      </button>
+      {open && (
+        <ul className="compact-picker__menu" ref={listRef}>
+          {options.map((opt) => (
+            <li
+              key={opt}
+              className={`compact-picker__item ${opt === value ? "selected" : ""}`}
+              onClick={() => {
+                onChange(opt);
+                setOpen(false);
+              }}>
+              {opt}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
 
 /**
  * Selector de hora/minuto individual
@@ -17,27 +68,17 @@ const TimeSelect = ({ value, onChange }) => {
 
   return (
     <div className="horarios-modal__time-selects">
-      <select
-        className="horarios-modal__time-select"
+      <CompactPicker
         value={hora}
-        onChange={(e) => onChange(`${e.target.value}:${minuto}`)}>
-        {HOURS.map((h) => (
-          <option key={h} value={h}>
-            {h}
-          </option>
-        ))}
-      </select>
+        options={HOURS}
+        onChange={(h) => onChange(`${h}:${minuto}`)}
+      />
       <span className="horarios-modal__time-separator">:</span>
-      <select
-        className="horarios-modal__time-select"
+      <CompactPicker
         value={minuto}
-        onChange={(e) => onChange(`${hora}:${e.target.value}`)}>
-        {MINUTES.map((m) => (
-          <option key={m} value={m}>
-            {m}
-          </option>
-        ))}
-      </select>
+        options={MINUTES}
+        onChange={(m) => onChange(`${hora}:${m}`)}
+      />
     </div>
   );
 };

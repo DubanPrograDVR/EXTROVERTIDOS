@@ -19,6 +19,8 @@ import {
   faEnvelope,
   faGlobe,
   faStore,
+  faClock,
+  faCog,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faInstagram,
@@ -29,8 +31,14 @@ import {
 
 import { useBusinessEditForm } from "./useBusinessEditForm";
 import { PROVINCIAS } from "./constants";
+import HorariosModal from "../../../Home/Negocio/components/HorariosModal";
+import {
+  DIAS_SEMANA,
+  DIAS_SEMANA_SHORT,
+} from "../../../Home/Negocio/components/constants";
 
 import "../../../Superguia/styles/PublicationModal.css";
+import "../../../Home/Negocio/styles/publicar-negocio.css";
 import "../../../Superguia/styles/BusinessModal.css";
 import "../styles/user-edit-modal.css";
 
@@ -40,6 +48,7 @@ const SECTIONS = {
   LOCATION: "location",
   CONTACT: "contact",
   IMAGES: "images",
+  HORARIOS: "horarios",
 };
 
 const AccordionSection = ({ title, icon, isOpen, onToggle, children }) => (
@@ -86,12 +95,15 @@ export default function UserBusinessEditModal({
     errors,
     handleChange,
     handleRemoveImage,
+    handleDiaChange,
+    handleSaveHorarios,
     validateForm,
     prepareDataToSave,
   } = useBusinessEditForm(business, isOpen);
 
   const [activeSection, setActiveSection] = useState(SECTIONS.DESCRIPTION);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [horariosModalOpen, setHorariosModalOpen] = useState(false);
 
   const toggleSection = useCallback((section) => {
     setActiveSection((prev) => (prev === section ? null : section));
@@ -524,6 +536,92 @@ export default function UserBusinessEditModal({
                     placeholder="@usuario"
                   />
                 </div>
+              </AccordionSection>
+
+              {/* Horarios */}
+              <AccordionSection
+                title="Horarios de Atención"
+                icon={faClock}
+                isOpen={activeSection === SECTIONS.HORARIOS}
+                onToggle={() => toggleSection(SECTIONS.HORARIOS)}>
+                <div className="publication-modal__edit-section">
+                  <label className="publication-modal__edit-label">
+                    Días de atención
+                  </label>
+                  <div className="edit-horarios__dias-pills">
+                    {DIAS_SEMANA.map((dia) => (
+                      <button
+                        key={dia}
+                        type="button"
+                        className={`edit-horarios__dia-pill ${
+                          formData.dias_atencion.includes(dia) ? "active" : ""
+                        }`}
+                        onClick={() => handleDiaChange(dia)}>
+                        {DIAS_SEMANA_SHORT[dia]}
+                      </button>
+                    ))}
+                  </div>
+
+                  {formData.dias_atencion.length > 0 && (
+                    <button
+                      type="button"
+                      className="edit-horarios__configurar-btn"
+                      onClick={() => setHorariosModalOpen(true)}>
+                      <FontAwesomeIcon icon={faCog} />
+                      Configurar Horarios
+                    </button>
+                  )}
+
+                  {(Object.keys(formData.horarios_detalle).length > 0 ||
+                    formData.abierto_24h) && (
+                    <div className="edit-horarios__summary">
+                      {formData.abierto_24h ? (
+                        <div className="edit-horarios__24h-badge">
+                          🕐 Abierto las 24 horas
+                        </div>
+                      ) : (
+                        <div className="edit-horarios__summary-list">
+                          {formData.dias_atencion
+                            .sort(
+                              (a, b) =>
+                                DIAS_SEMANA.indexOf(a) - DIAS_SEMANA.indexOf(b),
+                            )
+                            .map((dia) => (
+                              <div
+                                key={dia}
+                                className="edit-horarios__summary-row">
+                                <span className="edit-horarios__summary-dia">
+                                  {DIAS_SEMANA_SHORT[dia]}
+                                </span>
+                                <span className="edit-horarios__summary-horario">
+                                  {formData.horarios_detalle[dia]?.map(
+                                    (turno, i) => (
+                                      <span key={i}>
+                                        {turno.apertura} - {turno.cierre}
+                                        {i <
+                                          formData.horarios_detalle[dia]
+                                            .length -
+                                            1 && " | "}
+                                      </span>
+                                    ),
+                                  ) || "Sin configurar"}
+                                </span>
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <HorariosModal
+                  isOpen={horariosModalOpen}
+                  onClose={() => setHorariosModalOpen(false)}
+                  diasSeleccionados={formData.dias_atencion}
+                  horarios={formData.horarios_detalle}
+                  abierto24h={formData.abierto_24h}
+                  onSave={handleSaveHorarios}
+                />
               </AccordionSection>
 
               {/* Imágenes */}

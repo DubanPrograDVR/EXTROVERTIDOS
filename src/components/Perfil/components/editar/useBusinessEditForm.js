@@ -1,5 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 
+const DIAS_SEMANA_KEYS = [
+  "Lunes",
+  "Martes",
+  "Miércoles",
+  "Jueves",
+  "Viernes",
+  "Sábado",
+  "Domingo",
+];
+
 const INITIAL_BUSINESS_STATE = {
   nombre: "",
   descripcion: "",
@@ -20,6 +30,36 @@ const INITIAL_BUSINESS_STATE = {
   titulo_marketing: "",
   mensaje_marketing: "",
   imagenes: [],
+  dias_atencion: [],
+  horarios_detalle: {},
+  abierto_24h: false,
+};
+
+/**
+ * Parsea el JSONB de horarios de la BD a dias_atencion + horarios_detalle + abierto_24h
+ */
+const parseHorariosFromDB = (horarios) => {
+  if (!horarios || typeof horarios !== "object") {
+    return { dias_atencion: [], horarios_detalle: {}, abierto_24h: false };
+  }
+  const abierto_24h = !!horarios.abierto_24h;
+  const dias_atencion = [];
+  const horarios_detalle = {};
+  for (const key of Object.keys(horarios)) {
+    if (key === "abierto_24h") continue;
+    if (DIAS_SEMANA_KEYS.includes(key)) {
+      dias_atencion.push(key);
+      horarios_detalle[key] = Array.isArray(horarios[key])
+        ? horarios[key]
+        : [
+            {
+              apertura: horarios[key]?.apertura || "09:00",
+              cierre: horarios[key]?.cierre || "18:00",
+            },
+          ];
+    }
+  }
+  return { dias_atencion, horarios_detalle, abierto_24h };
 };
 
 /**
@@ -31,6 +71,8 @@ export const useBusinessEditForm = (business, isOpen) => {
 
   useEffect(() => {
     if (business && isOpen) {
+      const { dias_atencion, horarios_detalle, abierto_24h } =
+        parseHorariosFromDB(business.horarios);
       setFormData({
         nombre: business.nombre || "",
         descripcion: business.descripcion || "",
@@ -51,6 +93,9 @@ export const useBusinessEditForm = (business, isOpen) => {
         titulo_marketing: business.titulo_marketing || "",
         mensaje_marketing: business.mensaje_marketing || "",
         imagenes: business.imagenes || business.galeria || [],
+        dias_atencion,
+        horarios_detalle,
+        abierto_24h,
       });
       setErrors({});
     }
@@ -66,6 +111,28 @@ export const useBusinessEditForm = (business, isOpen) => {
     setFormData((prev) => ({
       ...prev,
       imagenes: prev.imagenes.filter((_, i) => i !== index),
+    }));
+  }, []);
+
+  const handleDiaChange = useCallback((dia) => {
+    setFormData((prev) => {
+      const isRemoving = prev.dias_atencion.includes(dia);
+      const newDias = isRemoving
+        ? prev.dias_atencion.filter((d) => d !== dia)
+        : [...prev.dias_atencion, dia];
+      const newHorarios = { ...prev.horarios_detalle };
+      if (isRemoving) {
+        delete newHorarios[dia];
+      }
+      return { ...prev, dias_atencion: newDias, horarios_detalle: newHorarios };
+    });
+  }, []);
+
+  const handleSaveHorarios = useCallback((horarios, abierto24h) => {
+    setFormData((prev) => ({
+      ...prev,
+      horarios_detalle: horarios,
+      abierto_24h: abierto24h,
     }));
   }, []);
 
@@ -85,6 +152,17 @@ export const useBusinessEditForm = (business, isOpen) => {
   }, [formData]);
 
   const prepareDataToSave = useCallback(() => {
+    // Construir JSONB de horarios
+    const horarios = {};
+    if (formData.abierto_24h) {
+      horarios.abierto_24h = true;
+    }
+    formData.dias_atencion.forEach((dia) => {
+      horarios[dia] = formData.horarios_detalle[dia] || [
+        { apertura: "09:00", cierre: "18:00" },
+      ];
+    });
+
     return {
       nombre: formData.nombre,
       descripcion: formData.descripcion,
@@ -104,6 +182,8 @@ export const useBusinessEditForm = (business, isOpen) => {
       titulo_marketing: formData.titulo_marketing,
       mensaje_marketing: formData.mensaje_marketing,
       imagenes: formData.imagenes,
+      horarios: Object.keys(horarios).length > 0 ? horarios : {},
+      dias_atencion: formData.dias_atencion,
     };
   }, [formData]);
 
@@ -112,6 +192,8 @@ export const useBusinessEditForm = (business, isOpen) => {
     errors,
     handleChange,
     handleRemoveImage,
+    handleDiaChange,
+    handleSaveHorarios,
     validateForm,
     prepareDataToSave,
   };

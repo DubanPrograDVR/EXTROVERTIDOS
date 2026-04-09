@@ -389,3 +389,103 @@
     padding: 16px;
   }
 }
+
+/* ═══════════════════════════════════════════════════
+   Horarios en modal de edición de negocio
+   ═══════════════════════════════════════════════════ */
+
+.edit-horarios__dias-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.edit-horarios__dia-pill {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-horarios__dia-pill:hover {
+  border-color: #ff6600;
+  color: #ff6600;
+}
+
+.edit-horarios__dia-pill.active {
+  background: #ff6600;
+  border-color: #ff6600;
+  color: #000;
+}
+
+.edit-horarios__configurar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 102, 0, 0.4);
+  background: rgba(255, 102, 0, 0.1);
+  color: #ff6600;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 16px;
+}
+
+.edit-horarios__configurar-btn:hover {
+  background: rgba(255, 102, 0, 0.2);
+  border-color: #ff6600;
+}
+
+.edit-horarios__summary {
+  margin-top: 8px;
+}
+
+.edit-horarios__24h-badge {
+  padding: 10px 16px;
+  background: rgba(255, 102, 0, 0.1);
+  border: 1px solid rgba(255, 102, 0, 0.3);
+  border-radius: 8px;
+  color: #ff6600;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.edit-horarios__summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.edit-horarios__summary-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+}
+
+.edit-horarios__summary-dia {
+  font-weight: 700;
+  color: #ff6600;
+  min-width: 36px;
+  font-size: 0.8rem;
+}
+
+.edit-horarios__summary-horario {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+}
