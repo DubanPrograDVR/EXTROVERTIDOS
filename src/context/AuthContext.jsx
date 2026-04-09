@@ -430,7 +430,9 @@ export const AuthProvider = ({ children }) => {
             data: { nombre: metadata.nombre || "" },
           },
         })
-        .catch((err) => console.error("Error enviando email de bienvenida:", err));
+        .catch((err) =>
+          console.error("Error enviando email de bienvenida:", err),
+        );
     }
 
     return { data, error };
@@ -475,18 +477,16 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const signInWithGoogle = useCallback(async () => {
-    // Guardar URL para redirigir después del login
-    const currentPath = window.location.pathname + window.location.search;
-    if (currentPath !== "/" && currentPath !== "/auth/callback") {
-      sessionStorage.setItem("authReturnUrl", currentPath);
+  const signInWithGoogle = useCallback(async (credential) => {
+    if (!credential) {
+      return {
+        data: null,
+        error: new Error("No se recibió credencial de Google"),
+      };
     }
-
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    const { data, error } = await supabase.auth.signInWithIdToken({
       provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
+      token: credential,
     });
     return { data, error };
   }, []);
