@@ -68,7 +68,21 @@ const WizardStepMarketing = ({ formData, errors, onChange }) => {
           className="publicar-form__textarea publicar-form__textarea--marketing"
           placeholder="Ej: ¡Las primeras 50 personas recibirán una bebida gratis! 🎉 Sorpresas exclusivas para quienes lleguen temprano..."
           value={formData.mensaje_marketing}
-          onChange={onChange}
+          onChange={(e) => {
+            const lines = e.target.value.split("\n");
+            const wrapped = lines
+              .map((line) => {
+                if (line.length <= 70) return line;
+                let result = "";
+                for (let i = 0; i < line.length; i += 70) {
+                  if (result) result += "\n";
+                  result += line.slice(i, i + 70);
+                }
+                return result;
+              })
+              .join("\n");
+            onChange({ target: { name: "mensaje_marketing", value: wrapped } });
+          }}
           rows={3}
           maxLength={500}
         />
@@ -115,7 +129,23 @@ const WizardStepMarketing = ({ formData, errors, onChange }) => {
           className="publicar-form__textarea publicar-form__textarea--marketing"
           placeholder="Ej: ¡No te pierdas la experiencia VIP con acceso backstage! 🌟 Cupos limitados..."
           value={formData.mensaje_marketing_2 || ""}
-          onChange={onChange}
+          onChange={(e) => {
+            const lines = e.target.value.split("\n");
+            const wrapped = lines
+              .map((line) => {
+                if (line.length <= 70) return line;
+                let result = "";
+                for (let i = 0; i < line.length; i += 70) {
+                  if (result) result += "\n";
+                  result += line.slice(i, i + 70);
+                }
+                return result;
+              })
+              .join("\n");
+            onChange({
+              target: { name: "mensaje_marketing_2", value: wrapped },
+            });
+          }}
           rows={3}
           maxLength={500}
         />

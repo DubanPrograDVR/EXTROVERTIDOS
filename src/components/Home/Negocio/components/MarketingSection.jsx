@@ -53,7 +53,23 @@ const MarketingSection = ({ formData, onChange, onFieldFocus }) => {
             name="mensaje_marketing"
             className="publicar-negocio__textarea--marketing"
             value={formData.mensaje_marketing || ""}
-            onChange={onChange}
+            onChange={(e) => {
+              const lines = e.target.value.split("\n");
+              const wrapped = lines
+                .map((line) => {
+                  if (line.length <= 70) return line;
+                  let result = "";
+                  for (let i = 0; i < line.length; i += 70) {
+                    if (result) result += "\n";
+                    result += line.slice(i, i + 70);
+                  }
+                  return result;
+                })
+                .join("\n");
+              onChange({
+                target: { name: "mensaje_marketing", value: wrapped },
+              });
+            }}
             onFocus={onFieldFocus}
             placeholder="Ej: ¡Las primeras 50 personas recibirán un descuento especial! 🎉"
             rows={3}
@@ -104,7 +120,23 @@ const MarketingSection = ({ formData, onChange, onFieldFocus }) => {
             name="mensaje_marketing_2"
             className="publicar-negocio__textarea--marketing"
             value={formData.mensaje_marketing_2 || ""}
-            onChange={onChange}
+            onChange={(e) => {
+              const lines = e.target.value.split("\n");
+              const wrapped = lines
+                .map((line) => {
+                  if (line.length <= 70) return line;
+                  let result = "";
+                  for (let i = 0; i < line.length; i += 70) {
+                    if (result) result += "\n";
+                    result += line.slice(i, i + 70);
+                  }
+                  return result;
+                })
+                .join("\n");
+              onChange({
+                target: { name: "mensaje_marketing_2", value: wrapped },
+              });
+            }}
             onFocus={onFieldFocus}
             placeholder="Ej: Síguenos en redes sociales y participa en sorteos exclusivos 🎁"
             rows={3}

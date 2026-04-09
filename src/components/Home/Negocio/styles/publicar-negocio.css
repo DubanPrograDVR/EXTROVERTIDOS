@@ -212,9 +212,142 @@
   cursor: not-allowed;
 }
 
+/* ===== CUSTOM DROPDOWN (Categorías, Provincia, etc.) ===== */
+.publicar-negocio__field .custom-dropdown {
+  position: relative;
+  width: 100%;
+}
+
+.publicar-negocio__field .custom-dropdown__trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 18px;
+  background: #1a1a1a;
+  border: 2px solid #ff6600;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 1rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.publicar-negocio__field .custom-dropdown__trigger:hover {
+  background: #222;
+}
+
+.publicar-negocio__field .custom-dropdown__trigger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.publicar-negocio__field .custom-dropdown.open .custom-dropdown__trigger {
+  border-color: #ff6600;
+  box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.25);
+  background: #1d1919;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.publicar-negocio__field .custom-dropdown.error .custom-dropdown__trigger {
+  border-color: #ff4444;
+}
+
+.publicar-negocio__field .custom-dropdown__value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.publicar-negocio__field .custom-dropdown__value.placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.publicar-negocio__field .custom-dropdown__arrow {
+  color: #ff6600;
+  font-size: 0.85rem;
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+  margin-left: 10px;
+}
+
+.publicar-negocio__field .custom-dropdown__arrow.rotated {
+  transform: rotate(180deg);
+}
+
+.publicar-negocio__field .custom-dropdown__menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  list-style: none;
+  margin: 0;
+  padding: 6px 0;
+  background: #1a1a1a;
+  border: 2px solid #ff6600;
+  border-top: none;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  max-height: 260px;
+  overflow-y: auto;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6);
+  animation: negocioDropdownSlide 0.2s ease;
+}
+
+@keyframes negocioDropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.publicar-negocio__field .custom-dropdown__item {
+  padding: 12px 18px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.publicar-negocio__field .custom-dropdown__item:hover {
+  background: rgba(255, 102, 0, 0.15);
+  color: #ff6600;
+}
+
+.publicar-negocio__field .custom-dropdown__item.selected {
+  background: #ff6600;
+  color: #000;
+  font-weight: 600;
+}
+
+.publicar-negocio__field .custom-dropdown__menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.publicar-negocio__field .custom-dropdown__menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.publicar-negocio__field .custom-dropdown__menu::-webkit-scrollbar-thumb {
+  background: #ff6600;
+  border-radius: 3px;
+}
+
 .publicar-negocio__field textarea {
   resize: vertical;
   min-height: 120px;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  white-space: pre-wrap;
 }
 
 /* Badges - Obligatorio */
@@ -571,6 +704,106 @@
   font-size: 1.2rem;
   font-weight: 700;
   color: #fff;
+}
+
+/* ===== COMPACT PICKER (Hora/Minuto) ===== */
+.compact-picker {
+  position: relative;
+  display: inline-block;
+}
+
+.compact-picker__trigger {
+  width: 70px;
+  padding: 10px 8px;
+  background: #1a1a1a;
+  border: 2px solid #ff6600;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 1rem;
+  text-align: center;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.compact-picker__trigger:hover {
+  background: #222;
+}
+
+.compact-picker__trigger.open {
+  border-color: #ff6600;
+  box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.25);
+  background: #1d1919;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.compact-picker__menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1200;
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  background: #1a1a1a;
+  border: 2px solid #ff6600;
+  border-top: none;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+  max-height: 180px;
+  overflow-y: auto;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.6);
+  animation: compactPickerSlide 0.15s ease;
+}
+
+@keyframes compactPickerSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.compact-picker__item {
+  padding: 8px 10px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.92rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+}
+
+.compact-picker__item:hover {
+  background: rgba(255, 102, 0, 0.15);
+  color: #ff6600;
+}
+
+.compact-picker__item.selected {
+  background: #ff6600;
+  color: #000;
+  font-weight: 700;
+}
+
+.compact-picker__menu::-webkit-scrollbar {
+  width: 4px;
+}
+
+.compact-picker__menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.compact-picker__menu::-webkit-scrollbar-thumb {
+  background: #ff6600;
+  border-radius: 2px;
 }
 
 .horarios-modal__remove-turno {

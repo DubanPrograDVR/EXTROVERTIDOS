@@ -72,7 +72,9 @@ export const DEFAULT_TURNO = { apertura: "09:00", cierre: "18:00" };
 export const HOURS = Array.from({ length: 24 }, (_, i) =>
   String(i).padStart(2, "0"),
 );
-export const MINUTES = ["00", "15", "30", "45"];
+export const MINUTES = Array.from({ length: 60 }, (_, i) =>
+  String(i).padStart(2, "0"),
+);
 
 // Estado inicial del formulario
 export const INITIAL_FORM_STATE = {

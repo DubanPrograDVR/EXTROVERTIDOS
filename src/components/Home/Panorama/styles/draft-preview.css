@@ -4,8 +4,11 @@
 
 /* ===== ESTILOS ESPECÍFICOS PARA EL BORRADOR ===== */
 
-/* Badge de Vista Previa */
+/* Badge de Vista Previa - centrado */
 .publication-modal__draft-badge {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   padding: 6px 14px;
   border-radius: 20px;
   font-size: 0.75rem;
@@ -165,8 +168,8 @@
 
 @media (max-width: 768px) {
   .publication-modal__draft-badge {
-    font-size: 0.7rem;
-    padding: 5px 10px;
+    font-size: 1.1rem;
+    padding: 8px 14px;
   }
 
   .publication-modal__no-image svg {
@@ -174,7 +177,11 @@
   }
 
   .publication-modal__no-image span {
-    font-size: 1rem;
+    font-size: 1.4rem;
+  }
+
+  .publication-modal__map-empty p {
+    font-size: 1.3rem;
   }
 }
 
@@ -188,6 +195,6 @@
   }
 
   .publication-modal__draft-footer p {
-    font-size: 0.75rem;
+    font-size: 1.2rem;
   }
 }

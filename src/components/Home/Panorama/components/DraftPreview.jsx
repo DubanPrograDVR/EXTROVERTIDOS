@@ -6,24 +6,21 @@ import {
   faCalendarWeek,
   faClock,
   faTicket,
-  faLocationDot,
   faUser,
-  faBuilding,
   faImage,
   faChevronDown,
   faChevronUp,
   faChevronLeft,
   faChevronRight,
-  faRoute,
   faAlignLeft,
   faAddressCard,
-  faExternalLinkAlt,
-  faShareAlt,
-  faBookmark,
   faTag,
   faBullhorn,
   faGlobe,
   faPhone,
+  faInfoCircle,
+  faMapMarkerAlt,
+  faRepeat,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faInstagram,
@@ -36,13 +33,12 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 import "../styles/draft-preview.css";
 
-// Tipos de secciones del acordeón
+// Tipos de secciones del acordeón (igual que PublicationModal)
 const ACCORDION_SECTIONS = {
   DESCRIPTION: "description",
   MARKETING_1: "marketing_1",
   MARKETING_2: "marketing_2",
-  LOCATION: "location",
-  SCHEDULE: "schedule",
+  INFORMATION: "information",
   CONTACT: "contact",
 };
 
@@ -225,6 +221,27 @@ const DraftPreview = ({
 
   const hasMultipleImages = previewImages && previewImages.length > 1;
 
+  // Calcular duración en días para multi-día
+  const duracionDias = (() => {
+    if (!formData.es_multidia || !formData.fecha_fin || !formData.fecha_evento)
+      return null;
+    const inicio = new Date(formData.fecha_evento + "T00:00:00");
+    const fin = new Date(formData.fecha_fin + "T00:00:00");
+    const diff = Math.ceil((fin - inicio) / (1000 * 60 * 60 * 24)) + 1;
+    return diff > 1 ? diff : null;
+  })();
+
+  // Texto de recurrencia
+  const recurrenciaText = (() => {
+    if (!formData.es_recurrente) return null;
+    const tipos = {
+      semanal: "Semanal",
+      quincenal: "Quincenal",
+      mensual: "Mensual",
+    };
+    return tipos[formData.tipo_recurrencia] || "Recurrente";
+  })();
+
   return (
     <div
       className="publication-modal-overlay draft-preview-overlay"
@@ -232,23 +249,20 @@ const DraftPreview = ({
       <div
         className="publication-modal publication-modal--business-style publication-modal--draft"
         onClick={(e) => e.stopPropagation()}>
-        {/* Categoría en la parte superior */}
+        {/* Header con logo y etiqueta (igual que PublicationModal) */}
         <div className="publication-modal__category-header">
-          <img
-            src="/img/Icono.png"
-            alt="Panoramas"
-            className="publication-modal__brand-logo"
-          />
-          {selectedCategory ? (
-            <span
-              className="publication-modal__category-badge"
-              style={{ backgroundColor: selectedCategory.color || "#ff6600" }}>
-              {selectedCategory.icono && <span>{selectedCategory.icono}</span>}
-              {selectedCategory.nombre}
-            </span>
-          ) : (
-            <span className="publication-modal__category-badge">
-              Selecciona categoría
+          <div className="publication-modal__brand-group">
+            <img
+              src="/img/P_Extro.png"
+              alt="Extrovertidos"
+              className="publication-modal__brand-logo"
+            />
+            <span className="publication-modal__brand-text">panoramas</span>
+          </div>
+          {formData.etiqueta && (
+            <span className="publication-modal__featured-tag">
+              <FontAwesomeIcon icon={faTag} />
+              {formData.etiqueta}
             </span>
           )}
           <span className="publication-modal__draft-badge">Vista Previa</span>
@@ -299,6 +313,21 @@ const DraftPreview = ({
                     </div>
                   </>
                 )}
+
+                {/* Badge de duración para eventos multi-día */}
+                {formData.es_multidia && duracionDias && (
+                  <span className="publication-modal__duration-badge">
+                    🎉 {duracionDias} días
+                  </span>
+                )}
+
+                {/* Badge de recurrencia */}
+                {formData.es_recurrente && recurrenciaText && (
+                  <span className="publication-modal__recurrence-badge">
+                    <FontAwesomeIcon icon={faRepeat} />
+                    {recurrenciaText}
+                  </span>
+                )}
               </>
             ) : (
               <div className="publication-modal__no-image">
@@ -311,26 +340,18 @@ const DraftPreview = ({
 
           {/* SECCIÓN DERECHA: CONTENIDO */}
           <div className="publication-modal__right">
-            {/* Organizador */}
-            {formData.organizador && (
-              <div className="publication-modal__organizer">
-                <FontAwesomeIcon icon={faBuilding} />
-                <span>Organiza: {formData.organizador}</span>
-              </div>
-            )}
-
-            {/* Subcategoría/Etiqueta */}
-            {formData.etiqueta && (
-              <div className="publication-modal__tag-badge">
-                <FontAwesomeIcon icon={faTag} />
-                {formData.etiqueta}
-              </div>
-            )}
-
             {/* Título */}
             <div className="publication-modal__title-section">
               <h2>{formData.titulo || "Título del evento"}</h2>
             </div>
+
+            {/* Organizador */}
+            {formData.organizador && (
+              <p className="publication-modal__organizer-line">
+                <FontAwesomeIcon icon={faUser} />
+                Organiza: {formData.organizador}
+              </p>
+            )}
 
             {/* ACORDEÓN DE INFORMACIÓN */}
             <div className="publication-modal__accordion-container">
@@ -377,58 +398,94 @@ const DraftPreview = ({
                 </AccordionSection>
               )}
 
-              {/* Sección: Ubicación */}
+              {/* Sección: Información (Ubicación + Horarios anidados) */}
               <AccordionSection
-                title="Ubicación"
-                icon={faLocationDot}
-                isOpen={activeSection === ACCORDION_SECTIONS.LOCATION}
-                onToggle={() => toggleSection(ACCORDION_SECTIONS.LOCATION)}>
-                <div className="publication-modal__location-content">
-                  <p className="publication-modal__location-address">
-                    {formData.direccion || "Dirección"}
-                    {formData.comuna && `, ${formData.comuna}`}
-                    {formData.provincia && `, ${formData.provincia}`}
-                  </p>
-                  <button
-                    className="publication-modal__directions-btn"
-                    onClick={() => window.open(getDirectionsUrl(), "_blank")}>
-                    <FontAwesomeIcon icon={faRoute} />
-                    Cómo llegar
-                  </button>
-                </div>
-              </AccordionSection>
-
-              {/* Sección: Horarios */}
-              <AccordionSection
-                title="Horarios"
-                icon={faClock}
-                isOpen={activeSection === ACCORDION_SECTIONS.SCHEDULE}
-                onToggle={() => toggleSection(ACCORDION_SECTIONS.SCHEDULE)}>
-                <div className="publication-modal__schedule-simple">
-                  <div className="publication-modal__schedule-item">
-                    <span className="publication-modal__schedule-icon">
-                      <FontAwesomeIcon
-                        icon={
-                          formData.es_multidia ? faCalendarWeek : faCalendarDays
-                        }
-                      />
-                    </span>
-                    <div className="publication-modal__schedule-info">
-                      <span className="publication-modal__schedule-label">
-                        Fecha
-                      </span>
-                      <span className="publication-modal__schedule-value">
-                        {getFechaDisplay()}
-                      </span>
+                title="Información"
+                icon={faInfoCircle}
+                isOpen={activeSection === ACCORDION_SECTIONS.INFORMATION}
+                onToggle={() => toggleSection(ACCORDION_SECTIONS.INFORMATION)}>
+                <div className="publication-modal__info-nested">
+                  {/* Sub-sección: Ubicación */}
+                  <div className="publication-modal__info-section">
+                    <h4 className="publication-modal__info-section-title">
+                      <FontAwesomeIcon icon={faMapMarkerAlt} />
+                      Ubicación
+                    </h4>
+                    <div className="publication-modal__location-content">
+                      <p className="publication-modal__location-address">
+                        {formData.direccion || "Sin ubicación"}
+                      </p>
+                      {formData.ubicacion_url && (
+                        <button
+                          className="publication-modal__directions-btn publication-modal__directions-btn--full"
+                          onClick={() =>
+                            window.open(
+                              formData.ubicacion_url,
+                              "_blank",
+                              "noopener,noreferrer",
+                            )
+                          }>
+                          <FontAwesomeIcon icon={faMapMarkerAlt} />
+                          Ir a la ubicación
+                        </button>
+                      )}
                     </div>
                   </div>
-                  {(formData.hora_inicio || formData.hora_fin) && (
-                    <div className="publication-modal__schedule-item">
-                      <span className="publication-modal__schedule-icon">
-                        <FontAwesomeIcon icon={faClock} />
-                      </span>
-                      <div className="publication-modal__schedule-info">
+
+                  {/* Sub-sección: Horarios */}
+                  <div className="publication-modal__info-section">
+                    <h4 className="publication-modal__info-section-title">
+                      <FontAwesomeIcon icon={faClock} />
+                      Horarios
+                    </h4>
+                    <div className="publication-modal__schedule">
+                      <div className="publication-modal__schedule-row">
                         <span className="publication-modal__schedule-label">
+                          <FontAwesomeIcon
+                            icon={
+                              formData.es_multidia
+                                ? faCalendarWeek
+                                : faCalendarDays
+                            }
+                          />
+                          Fecha
+                        </span>
+                        <span className="publication-modal__schedule-value">
+                          {getFechaDisplay()}
+                        </span>
+                      </div>
+
+                      {/* Fechas de recurrencia */}
+                      {formData.es_recurrente &&
+                        formData.fechas_recurrencia?.length > 0 && (
+                          <div className="publication-modal__recurrence-dates">
+                            <span className="publication-modal__recurrence-label">
+                              <FontAwesomeIcon icon={faRepeat} />
+                              {recurrenciaText}
+                            </span>
+                            <div className="publication-modal__recurrence-chips">
+                              {formData.fechas_recurrencia.map(
+                                (fecha, index) => (
+                                  <span
+                                    key={index}
+                                    className="publication-modal__recurrence-chip">
+                                    {new Date(
+                                      fecha + "T00:00:00",
+                                    ).toLocaleDateString("es-CL", {
+                                      weekday: "short",
+                                      day: "numeric",
+                                      month: "short",
+                                    })}
+                                  </span>
+                                ),
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                      <div className="publication-modal__schedule-row">
+                        <span className="publication-modal__schedule-label">
+                          <FontAwesomeIcon icon={faClock} />
                           Horario
                         </span>
                         <span className="publication-modal__schedule-value">
@@ -437,113 +494,101 @@ const DraftPreview = ({
                           {formData.hora_inicio && formData.hora_fin && " - "}
                           {formData.hora_fin &&
                             formatearHora(formData.hora_fin)}
+                          {!formData.hora_inicio &&
+                            !formData.hora_fin &&
+                            "Por confirmar"}
+                        </span>
+                      </div>
+
+                      <div className="publication-modal__schedule-row">
+                        <span className="publication-modal__schedule-label">
+                          <FontAwesomeIcon icon={faTicket} />
+                          Entrada
+                        </span>
+                        <span className="publication-modal__schedule-value publication-modal__schedule-value--price">
+                          {getEntradaText()}
                         </span>
                       </div>
                     </div>
-                  )}
-                  <div className="publication-modal__schedule-item">
-                    <span className="publication-modal__schedule-icon">
-                      <FontAwesomeIcon icon={faTicket} />
-                    </span>
-                    <div className="publication-modal__schedule-info">
-                      <span className="publication-modal__schedule-label">
-                        Entrada
-                      </span>
-                      <span className="publication-modal__schedule-value">
-                        {getEntradaText()}
-                      </span>
+                  </div>
+
+                  {/* Sub-sección: Contacto */}
+                  <div className="publication-modal__info-section">
+                    <h4 className="publication-modal__info-section-title">
+                      <FontAwesomeIcon icon={faAddressCard} />
+                      Contacto
+                    </h4>
+                    <div className="publication-modal__contact-content">
+                      {formData.telefono_contacto && (
+                        <a
+                          href={`tel:${formData.telefono_contacto}`}
+                          className="publication-modal__contact-item">
+                          <FontAwesomeIcon icon={faPhone} />
+                          <span>{formData.telefono_contacto}</span>
+                        </a>
+                      )}
+                      {!formData.telefono_contacto && (
+                        <p className="publication-modal__no-data">
+                          Sin información de contacto aún
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
               </AccordionSection>
-
-              {/* Sección: Contacto */}
-              {hasRedesSociales() && (
-                <AccordionSection
-                  title="Contacto"
-                  icon={faAddressCard}
-                  isOpen={activeSection === ACCORDION_SECTIONS.CONTACT}
-                  onToggle={() => toggleSection(ACCORDION_SECTIONS.CONTACT)}>
-                  <div className="publication-modal__contact-content">
-                    {formData.telefono_contacto && (
-                      <span className="publication-modal__contact-item">
-                        <FontAwesomeIcon icon={faPhone} />
-                        <span>{formData.telefono_contacto}</span>
-                      </span>
-                    )}
-                    {formData.sitio_web && (
-                      <span className="publication-modal__contact-item publication-modal__contact-item--website">
-                        <FontAwesomeIcon icon={faGlobe} />
-                        <span>Sitio Web</span>
-                      </span>
-                    )}
-
-                    {/* Redes sociales */}
-                    <div className="publication-modal__social">
-                      {formData.redes_sociales?.whatsapp && (
-                        <span className="publication-modal__social-btn publication-modal__social-btn--whatsapp">
-                          <FontAwesomeIcon icon={faWhatsapp} />
-                          WhatsApp
-                        </span>
-                      )}
-                      {formData.redes_sociales?.instagram && (
-                        <span className="publication-modal__social-btn publication-modal__social-btn--instagram">
-                          <FontAwesomeIcon icon={faInstagram} />
-                          Instagram
-                        </span>
-                      )}
-                      {formData.redes_sociales?.facebook && (
-                        <span className="publication-modal__social-btn publication-modal__social-btn--facebook">
-                          <FontAwesomeIcon icon={faFacebook} />
-                          Facebook
-                        </span>
-                      )}
-                      {formData.redes_sociales?.tiktok && (
-                        <span className="publication-modal__social-btn publication-modal__social-btn--tiktok">
-                          <FontAwesomeIcon icon={faTiktok} />
-                          TikTok
-                        </span>
-                      )}
-                      {formData.redes_sociales?.youtube && (
-                        <span className="publication-modal__social-btn publication-modal__social-btn--youtube">
-                          <FontAwesomeIcon icon={faYoutube} />
-                          YouTube
-                        </span>
-                      )}
-                      {formData.redes_sociales?.twitter && (
-                        <span className="publication-modal__social-btn publication-modal__social-btn--twitter">
-                          <FontAwesomeIcon icon={faXTwitter} />X
-                        </span>
-                      )}
-                      {formData.redes_sociales?.linkedin && (
-                        <span className="publication-modal__social-btn publication-modal__social-btn--linkedin">
-                          <FontAwesomeIcon icon={faLinkedin} />
-                          LinkedIn
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </AccordionSection>
-              )}
-
-              {/* Botón: Ir a la ubicación */}
-              {formData.ubicacion_url && (
-                <div style={{ padding: "12px 0" }}>
-                  <button
-                    className="publication-modal__directions-btn publication-modal__directions-btn--full"
-                    onClick={() =>
-                      window.open(
-                        formData.ubicacion_url,
-                        "_blank",
-                        "noopener,noreferrer",
-                      )
-                    }>
-                    <FontAwesomeIcon icon={faLocationDot} />
-                    Ir a la ubicación
-                  </button>
-                </div>
-              )}
             </div>
+
+            {/* Redes sociales (sección separada, igual que PublicationModal) */}
+            {(hasRedesSociales() || formData.sitio_web) && (
+              <div className="publication-modal__social-section">
+                <h4 className="publication-modal__social-title">
+                  <FontAwesomeIcon icon={faShareAlt} />
+                  Síguenos en redes
+                </h4>
+                <div className="publication-modal__social-bar">
+                  {formData.sitio_web && (
+                    <span className="publication-modal__social-icon publication-modal__social-icon--website">
+                      <FontAwesomeIcon icon={faGlobe} />
+                    </span>
+                  )}
+                  {formData.redes_sociales?.whatsapp && (
+                    <span className="publication-modal__social-icon publication-modal__social-icon--whatsapp">
+                      <FontAwesomeIcon icon={faWhatsapp} />
+                    </span>
+                  )}
+                  {formData.redes_sociales?.instagram && (
+                    <span className="publication-modal__social-icon publication-modal__social-icon--instagram">
+                      <FontAwesomeIcon icon={faInstagram} />
+                    </span>
+                  )}
+                  {formData.redes_sociales?.facebook && (
+                    <span className="publication-modal__social-icon publication-modal__social-icon--facebook">
+                      <FontAwesomeIcon icon={faFacebook} />
+                    </span>
+                  )}
+                  {formData.redes_sociales?.youtube && (
+                    <span className="publication-modal__social-icon publication-modal__social-icon--youtube">
+                      <FontAwesomeIcon icon={faYoutube} />
+                    </span>
+                  )}
+                  {formData.redes_sociales?.tiktok && (
+                    <span className="publication-modal__social-icon publication-modal__social-icon--tiktok">
+                      <FontAwesomeIcon icon={faTiktok} />
+                    </span>
+                  )}
+                  {formData.redes_sociales?.twitter && (
+                    <span className="publication-modal__social-icon publication-modal__social-icon--twitter">
+                      <FontAwesomeIcon icon={faXTwitter} />
+                    </span>
+                  )}
+                  {formData.redes_sociales?.linkedin && (
+                    <span className="publication-modal__social-icon publication-modal__social-icon--linkedin">
+                      <FontAwesomeIcon icon={faLinkedin} />
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Footer con nota */}
             <div className="publication-modal__draft-footer">

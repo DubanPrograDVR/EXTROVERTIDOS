@@ -1,8 +1,10 @@
+import { useState, useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBuilding,
   faTag,
   faLayerGroup,
+  faChevronDown,
 } from "@fortawesome/free-solid-svg-icons";
 
 /**
@@ -17,6 +19,37 @@ const InformacionBasicaSection = ({
   onChange,
   onFieldFocus,
 }) => {
+  const [catOpen, setCatOpen] = useState(false);
+  const [subOpen, setSubOpen] = useState(false);
+  const catRef = useRef(null);
+  const subRef = useRef(null);
+
+  const selectedCategory = categories.find(
+    (cat) => String(cat.id) === String(formData.category_id),
+  );
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (catRef.current && !catRef.current.contains(e.target))
+        setCatOpen(false);
+      if (subRef.current && !subRef.current.contains(e.target))
+        setSubOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSelectCategory = (catId) => {
+    onChange({ target: { name: "category_id", value: String(catId) } });
+    onChange({ target: { name: "subcategoria", value: "" } });
+    setCatOpen(false);
+  };
+
+  const handleSelectSubcategoria = (sub) => {
+    onChange({ target: { name: "subcategoria", value: sub } });
+    setSubOpen(false);
+  };
+
   return (
     <section className="publicar-negocio__section">
       <h2 className="publicar-negocio__section-title">
@@ -53,12 +86,30 @@ const InformacionBasicaSection = ({
           id="descripcion"
           name="descripcion"
           value={formData.descripcion}
-          onChange={onChange}
+          onChange={(e) => {
+            const lines = e.target.value.split("\n");
+            const wrapped = lines
+              .map((line) => {
+                if (line.length <= 70) return line;
+                let result = "";
+                for (let i = 0; i < line.length; i += 70) {
+                  if (result) result += "\n";
+                  result += line.slice(i, i + 70);
+                }
+                return result;
+              })
+              .join("\n");
+            onChange({ target: { name: "descripcion", value: wrapped } });
+          }}
           onFocus={onFieldFocus}
           placeholder="Describe tu negocio, servicios que ofreces, especialidades..."
           rows={4}
+          maxLength={2000}
           className={errors.descripcion ? "error" : ""}
         />
+        <span className="publicar-negocio__char-count">
+          {formData.descripcion.length}/2000
+        </span>
         {errors.descripcion && (
           <span className="publicar-negocio__error">{errors.descripcion}</span>
         )}
@@ -77,20 +128,37 @@ const InformacionBasicaSection = ({
           {loadingCategories ? (
             <p>Cargando categorías...</p>
           ) : (
-            <select
-              id="category_id"
-              name="category_id"
-              value={formData.category_id}
-              onChange={onChange}
-              onFocus={onFieldFocus}
-              className={errors.category_id ? "error" : ""}>
-              <option value="">Selecciona una categoría</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.nombre}
-                </option>
-              ))}
-            </select>
+            <div
+              className={`custom-dropdown ${catOpen ? "open" : ""} ${errors.category_id ? "error" : ""}`}
+              ref={catRef}>
+              <button
+                type="button"
+                className="custom-dropdown__trigger"
+                onClick={() => setCatOpen((prev) => !prev)}>
+                <span
+                  className={`custom-dropdown__value ${!selectedCategory ? "placeholder" : ""}`}>
+                  {selectedCategory
+                    ? selectedCategory.nombre
+                    : "Selecciona una categoría"}
+                </span>
+                <FontAwesomeIcon
+                  icon={faChevronDown}
+                  className={`custom-dropdown__arrow ${catOpen ? "rotated" : ""}`}
+                />
+              </button>
+              {catOpen && (
+                <ul className="custom-dropdown__menu">
+                  {categories.map((cat) => (
+                    <li
+                      key={cat.id}
+                      className={`custom-dropdown__item ${String(cat.id) === String(formData.category_id) ? "selected" : ""}`}
+                      onClick={() => handleSelectCategory(cat.id)}>
+                      {cat.nombre}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           )}
           {errors.category_id && (
             <span className="publicar-negocio__error">
@@ -107,25 +175,41 @@ const InformacionBasicaSection = ({
               Obligatorio
             </span>
           </label>
-          <select
-            id="subcategoria"
-            name="subcategoria"
-            value={formData.subcategoria}
-            onChange={onChange}
-            onFocus={onFieldFocus}
-            disabled={!formData.category_id}
-            className={errors.subcategoria ? "error" : ""}>
-            <option value="">
-              {formData.category_id
-                ? "Selecciona una subcategoría"
-                : "Primero selecciona categoría"}
-            </option>
-            {subcategorias.map((sub) => (
-              <option key={sub} value={sub}>
-                {sub}
-              </option>
-            ))}
-          </select>
+          <div
+            className={`custom-dropdown ${subOpen ? "open" : ""} ${errors.subcategoria ? "error" : ""}`}
+            ref={subRef}>
+            <button
+              type="button"
+              className="custom-dropdown__trigger"
+              onClick={() =>
+                formData.category_id && setSubOpen((prev) => !prev)
+              }
+              disabled={!formData.category_id}>
+              <span
+                className={`custom-dropdown__value ${!formData.subcategoria ? "placeholder" : ""}`}>
+                {formData.subcategoria ||
+                  (formData.category_id
+                    ? "Selecciona una subcategoría"
+                    : "Primero selecciona categoría")}
+              </span>
+              <FontAwesomeIcon
+                icon={faChevronDown}
+                className={`custom-dropdown__arrow ${subOpen ? "rotated" : ""}`}
+              />
+            </button>
+            {subOpen && (
+              <ul className="custom-dropdown__menu">
+                {subcategorias.map((sub) => (
+                  <li
+                    key={sub}
+                    className={`custom-dropdown__item ${sub === formData.subcategoria ? "selected" : ""}`}
+                    onClick={() => handleSelectSubcategoria(sub)}>
+                    {sub}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           {errors.subcategoria && (
             <span className="publicar-negocio__error">
               {errors.subcategoria}

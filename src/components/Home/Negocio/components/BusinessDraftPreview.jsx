@@ -1,7 +1,4 @@
 import { useState, useCallback } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faTimes,
@@ -14,13 +11,12 @@ import {
   faChevronRight,
   faChevronDown,
   faChevronUp,
-  faRoute,
-  faMap,
   faAlignLeft,
   faAddressCard,
   faImage,
   faLayerGroup,
   faBullhorn,
+  faInfoCircle,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faWhatsapp,
@@ -29,38 +25,13 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 import "../../Panorama/styles/draft-preview.css";
 
-// Fix para el icono de Leaflet
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-});
-
-// Icono personalizado naranja
-const orangeIcon = new L.Icon({
-  iconUrl:
-    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
-// Secciones del modal
+// Secciones del modal (igual que BusinessModal)
 const ACCORDION_SECTIONS = {
   DESCRIPTION: "description",
   MARKETING_1: "marketing_1",
   MARKETING_2: "marketing_2",
-  LOCATION: "location",
-  SCHEDULE: "schedule",
+  INFORMATION: "information",
   CONTACT: "contact",
-  MAP: "map",
 };
 
 const AccordionSection = ({ title, icon, isOpen, onToggle, children }) => (
@@ -193,32 +164,6 @@ const BusinessDraftPreview = ({
     formData.redes_sociales?.whatsapp ||
     formData.redes_sociales?.instagram ||
     formData.redes_sociales?.facebook;
-
-  // Coordenadas del mapa
-  const extractCoordinates = (url) => {
-    if (!url) return null;
-    const atPattern = /@(-?\d+\.?\d*),(-?\d+\.?\d*)/;
-    const qPattern = /[?&]q=(-?\d+\.?\d*),(-?\d+\.?\d*)/;
-    const placePattern = /\/place\/(-?\d+\.?\d*),(-?\d+\.?\d*)/;
-    const match =
-      url.match(atPattern) || url.match(qPattern) || url.match(placePattern);
-    if (match) {
-      return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
-    }
-    return null;
-  };
-
-  const coordinates = extractCoordinates(formData.ubicacion_url);
-
-  const getDirectionsUrl = () => {
-    if (coordinates) {
-      return `https://www.google.com/maps/dir/?api=1&destination=${coordinates.lat},${coordinates.lng}`;
-    }
-    const destination = encodeURIComponent(
-      formData.direccion || `${formData.comuna}, ${formData.provincia}, Chile`,
-    );
-    return `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
-  };
 
   return (
     <div
@@ -379,161 +324,125 @@ const BusinessDraftPreview = ({
                 </AccordionSection>
               )}
 
-              {/* Ubicación */}
+              {/* Sección: Información (Ubicación + Horarios + Contacto anidados, igual que BusinessModal) */}
               <AccordionSection
-                title="Ubicación"
-                icon={faMapMarkerAlt}
-                isOpen={activeSection === ACCORDION_SECTIONS.LOCATION}
-                onToggle={() => toggleSection(ACCORDION_SECTIONS.LOCATION)}>
-                <div className="publication-modal__location-content">
-                  <p className="publication-modal__location-address">
-                    {formData.direccion || "Dirección"}
-                    {formData.comuna && `, ${formData.comuna}`}
-                    {formData.provincia && `, ${formData.provincia}`}
-                  </p>
-                  <button
-                    className="publication-modal__directions-btn"
-                    onClick={() => window.open(getDirectionsUrl(), "_blank")}>
-                    <FontAwesomeIcon icon={faRoute} />
-                    Cómo llegar
-                  </button>
-                </div>
-              </AccordionSection>
-
-              {/* Horarios */}
-              <AccordionSection
-                title="Horarios"
-                icon={faClock}
-                isOpen={activeSection === ACCORDION_SECTIONS.SCHEDULE}
-                onToggle={() => toggleSection(ACCORDION_SECTIONS.SCHEDULE)}>
-                <div className="publication-modal__schedule-simple">
-                  {horarioResumen ? (
-                    <>
-                      <div className="publication-modal__schedule-item">
-                        <span className="publication-modal__schedule-icon">
-                          📅
-                        </span>
-                        <div className="publication-modal__schedule-info">
-                          <span className="publication-modal__schedule-label">
-                            Días de atención
-                          </span>
-                          <span className="publication-modal__schedule-value">
-                            {horarioResumen.diasAbiertos}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="publication-modal__schedule-item">
-                        <span className="publication-modal__schedule-icon">
-                          🕐
-                        </span>
-                        <div className="publication-modal__schedule-info">
-                          <span className="publication-modal__schedule-label">
-                            Horario
-                          </span>
-                          <span className="publication-modal__schedule-value">
-                            {horarioResumen.horarioAtencion}
-                          </span>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <p className="publication-modal__no-data">
-                      Horarios no configurados
+                title="Información"
+                icon={faInfoCircle}
+                isOpen={activeSection === ACCORDION_SECTIONS.INFORMATION}
+                onToggle={() => toggleSection(ACCORDION_SECTIONS.INFORMATION)}>
+                <div className="publication-modal__info-combined">
+                  {/* Ubicación */}
+                  <div className="publication-modal__info-section">
+                    <h4 className="publication-modal__info-subtitle">
+                      <FontAwesomeIcon icon={faMapMarkerAlt} /> Dirección
+                    </h4>
+                    <p className="publication-modal__location-address">
+                      {formData.direccion || "Sin dirección"}
                     </p>
-                  )}
+                    {formData.ubicacion_url && (
+                      <button
+                        className="publication-modal__directions-btn publication-modal__directions-btn--full"
+                        onClick={() =>
+                          window.open(
+                            formData.ubicacion_url,
+                            "_blank",
+                            "noopener,noreferrer",
+                          )
+                        }>
+                        <FontAwesomeIcon icon={faMapMarkerAlt} />
+                        Ir a la ubicación
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Horarios */}
+                  <div className="publication-modal__info-section">
+                    <h4 className="publication-modal__info-subtitle">
+                      <FontAwesomeIcon icon={faClock} /> Horario de atención
+                    </h4>
+                    <div className="publication-modal__schedule-simple">
+                      {horarioResumen ? (
+                        <>
+                          <div className="publication-modal__schedule-row">
+                            <span className="publication-modal__schedule-day">
+                              Días de atención
+                            </span>
+                            <span className="publication-modal__schedule-time">
+                              {horarioResumen.diasAbiertos}
+                            </span>
+                          </div>
+                          <div className="publication-modal__schedule-row">
+                            <span className="publication-modal__schedule-day">
+                              Horario
+                            </span>
+                            <span className="publication-modal__schedule-time">
+                              {horarioResumen.horarioAtencion}
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <p className="publication-modal__no-data">
+                          Horarios no configurados
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Contacto */}
+                  <div className="publication-modal__info-section">
+                    <h4 className="publication-modal__info-subtitle">
+                      <FontAwesomeIcon icon={faAddressCard} /> Contacto
+                    </h4>
+                    <div className="publication-modal__contact-content">
+                      {formData.telefono && (
+                        <span className="publication-modal__contact-item">
+                          <FontAwesomeIcon icon={faPhone} />
+                          <span>{formData.telefono}</span>
+                        </span>
+                      )}
+                      {formData.email && (
+                        <span className="publication-modal__contact-item">
+                          <FontAwesomeIcon icon={faEnvelope} />
+                          <span>{formData.email}</span>
+                        </span>
+                      )}
+                      {formData.sitio_web && (
+                        <span className="publication-modal__contact-item">
+                          <FontAwesomeIcon icon={faGlobe} />
+                          <span>Sitio Web</span>
+                        </span>
+                      )}
+
+                      {/* Redes sociales */}
+                      <div className="publication-modal__social">
+                        {formData.redes_sociales?.whatsapp && (
+                          <span className="publication-modal__social-btn publication-modal__social-btn--whatsapp">
+                            <FontAwesomeIcon icon={faWhatsapp} />
+                            WhatsApp
+                          </span>
+                        )}
+                        {formData.redes_sociales?.instagram && (
+                          <span className="publication-modal__social-btn publication-modal__social-btn--instagram">
+                            <FontAwesomeIcon icon={faInstagram} />
+                            Instagram
+                          </span>
+                        )}
+                        {formData.redes_sociales?.facebook && (
+                          <span className="publication-modal__social-btn publication-modal__social-btn--facebook">
+                            <FontAwesomeIcon icon={faFacebook} />
+                            Facebook
+                          </span>
+                        )}
+                      </div>
+
+                      {!hasContacto && (
+                        <p className="publication-modal__no-data">
+                          Sin información de contacto aún
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </AccordionSection>
-
-              {/* Contacto */}
-              {hasContacto && (
-                <AccordionSection
-                  title="Contacto"
-                  icon={faAddressCard}
-                  isOpen={activeSection === ACCORDION_SECTIONS.CONTACT}
-                  onToggle={() => toggleSection(ACCORDION_SECTIONS.CONTACT)}>
-                  <div className="publication-modal__contact-content">
-                    {formData.telefono && (
-                      <span className="publication-modal__contact-item">
-                        <FontAwesomeIcon icon={faPhone} />
-                        <span>{formData.telefono}</span>
-                      </span>
-                    )}
-                    {formData.email && (
-                      <span className="publication-modal__contact-item">
-                        <FontAwesomeIcon icon={faEnvelope} />
-                        <span>{formData.email}</span>
-                      </span>
-                    )}
-                    {formData.sitio_web && (
-                      <span className="publication-modal__contact-item">
-                        <FontAwesomeIcon icon={faGlobe} />
-                        <span>Sitio Web</span>
-                      </span>
-                    )}
-
-                    {/* Redes sociales */}
-                    <div className="publication-modal__social">
-                      {formData.redes_sociales?.whatsapp && (
-                        <span className="publication-modal__social-btn publication-modal__social-btn--whatsapp">
-                          <FontAwesomeIcon icon={faWhatsapp} />
-                          WhatsApp
-                        </span>
-                      )}
-                      {formData.redes_sociales?.instagram && (
-                        <span className="publication-modal__social-btn publication-modal__social-btn--instagram">
-                          <FontAwesomeIcon icon={faInstagram} />
-                          Instagram
-                        </span>
-                      )}
-                      {formData.redes_sociales?.facebook && (
-                        <span className="publication-modal__social-btn publication-modal__social-btn--facebook">
-                          <FontAwesomeIcon icon={faFacebook} />
-                          Facebook
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </AccordionSection>
-              )}
-
-              {/* Mapa */}
-              <AccordionSection
-                title="Mapa"
-                icon={faMap}
-                isOpen={activeSection === ACCORDION_SECTIONS.MAP}
-                onToggle={() => toggleSection(ACCORDION_SECTIONS.MAP)}>
-                {coordinates ? (
-                  <div className="publication-modal__map-section">
-                    <div className="publication-modal__map-container">
-                      <MapContainer
-                        center={[coordinates.lat, coordinates.lng]}
-                        zoom={15}
-                        scrollWheelZoom={false}
-                        className="publication-modal__map"
-                        key={`${coordinates.lat}-${coordinates.lng}`}>
-                        <TileLayer
-                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        />
-                        <Marker
-                          position={[coordinates.lat, coordinates.lng]}
-                          icon={orangeIcon}>
-                          <Popup>
-                            <strong>{formData.nombre || "Negocio"}</strong>
-                            <br />
-                            {formData.direccion ||
-                              `${formData.comuna}, ${formData.provincia}`}
-                          </Popup>
-                        </Marker>
-                      </MapContainer>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="publication-modal__map-empty">
-                    <FontAwesomeIcon icon={faMap} />
-                    <p>Agrega una URL de Google Maps para ver el mapa</p>
-                  </div>
-                )}
               </AccordionSection>
             </div>
 

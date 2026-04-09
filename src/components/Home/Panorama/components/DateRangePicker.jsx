@@ -1053,28 +1053,54 @@ const DateRangePicker = ({
                 <FontAwesomeIcon icon={faClock} /> Hora Inicio
                 <span className="drp-calendar__time-hint">(Opcional)</span>
               </label>
-              <input
-                type="time"
-                id="hora_inicio"
-                name="hora_inicio"
-                className="drp-calendar__time-input"
-                value={horaInicio}
-                onChange={onChange}
-              />
+              <div className="drp-calendar__time-input-wrap">
+                <input
+                  type="time"
+                  id="hora_inicio"
+                  name="hora_inicio"
+                  className="drp-calendar__time-input"
+                  value={horaInicio}
+                  onChange={onChange}
+                />
+                {horaInicio && (
+                  <button
+                    type="button"
+                    className="drp-calendar__time-clear"
+                    onClick={() =>
+                      onChange({ target: { name: "hora_inicio", value: "" } })
+                    }
+                    aria-label="Limpiar hora inicio">
+                    <FontAwesomeIcon icon={faXmark} />
+                  </button>
+                )}
+              </div>
             </div>
             <div className="drp-calendar__time-field">
               <label className="drp-calendar__time-label" htmlFor="hora_fin">
                 <FontAwesomeIcon icon={faClock} /> Hora Fin
                 <span className="drp-calendar__time-hint">(Opcional)</span>
               </label>
-              <input
-                type="time"
-                id="hora_fin"
-                name="hora_fin"
-                className="drp-calendar__time-input"
-                value={horaFin}
-                onChange={onChange}
-              />
+              <div className="drp-calendar__time-input-wrap">
+                <input
+                  type="time"
+                  id="hora_fin"
+                  name="hora_fin"
+                  className="drp-calendar__time-input"
+                  value={horaFin}
+                  onChange={onChange}
+                />
+                {horaFin && (
+                  <button
+                    type="button"
+                    className="drp-calendar__time-clear"
+                    onClick={() =>
+                      onChange({ target: { name: "hora_fin", value: "" } })
+                    }
+                    aria-label="Limpiar hora fin">
+                    <FontAwesomeIcon icon={faXmark} />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           {selectionMode === "range" && mismoHorario && horaInicio && (

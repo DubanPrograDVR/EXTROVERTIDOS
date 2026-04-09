@@ -1,7 +1,9 @@
+import { useState, useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faLocationDot,
   faMapMarkerAlt,
+  faChevronDown,
 } from "@fortawesome/free-solid-svg-icons";
 import { PROVINCIAS, COMUNAS_POR_PROVINCIA } from "../../constants";
 import DateRangePicker from "../DateRangePicker";
@@ -16,6 +18,38 @@ const WizardStepDateTime = ({
   onChange,
   enabledCalendarModes,
 }) => {
+  const [provOpen, setProvOpen] = useState(false);
+  const [comOpen, setComOpen] = useState(false);
+  const provRef = useRef(null);
+  const comRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (provRef.current && !provRef.current.contains(e.target))
+        setProvOpen(false);
+      if (comRef.current && !comRef.current.contains(e.target))
+        setComOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSelectProv = (prov) => {
+    onChange({ target: { name: "provincia", value: prov } });
+    // Reset comuna when province changes
+    onChange({ target: { name: "comuna", value: "" } });
+    setProvOpen(false);
+  };
+
+  const handleSelectCom = (comuna) => {
+    onChange({ target: { name: "comuna", value: comuna } });
+    setComOpen(false);
+  };
+
+  const comunas = formData.provincia
+    ? COMUNAS_POR_PROVINCIA[formData.provincia] || []
+    : [];
+
   return (
     <div className="wizard-step">
       {/* Fecha y Horas */}
@@ -43,19 +77,35 @@ const WizardStepDateTime = ({
             <FontAwesomeIcon icon={faLocationDot} /> Provincia
             <span className="publicar-form__label-required">Obligatorio</span>
           </label>
-          <select
-            id="provincia"
-            name="provincia"
-            className={`publicar-form__select ${errors.provincia ? "error" : ""}`}
-            value={formData.provincia}
-            onChange={onChange}>
-            <option value="">Selecciona una provincia</option>
-            {PROVINCIAS.map((prov) => (
-              <option key={prov} value={prov}>
-                {prov}
-              </option>
-            ))}
-          </select>
+          <div
+            className={`custom-dropdown ${provOpen ? "open" : ""} ${errors.provincia ? "error" : ""}`}
+            ref={provRef}>
+            <button
+              type="button"
+              className="custom-dropdown__trigger"
+              onClick={() => setProvOpen((prev) => !prev)}>
+              <span
+                className={`custom-dropdown__value ${!formData.provincia ? "placeholder" : ""}`}>
+                {formData.provincia || "Selecciona una provincia"}
+              </span>
+              <FontAwesomeIcon
+                icon={faChevronDown}
+                className={`custom-dropdown__arrow ${provOpen ? "rotated" : ""}`}
+              />
+            </button>
+            {provOpen && (
+              <ul className="custom-dropdown__menu">
+                {PROVINCIAS.map((prov) => (
+                  <li
+                    key={prov}
+                    className={`custom-dropdown__item ${prov === formData.provincia ? "selected" : ""}`}
+                    onClick={() => handleSelectProv(prov)}>
+                    {prov}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           {errors.provincia && (
             <span className="publicar-form__error">{errors.provincia}</span>
           )}
@@ -66,25 +116,39 @@ const WizardStepDateTime = ({
             Comuna
             <span className="publicar-form__label-required">Obligatorio</span>
           </label>
-          <select
-            id="comuna"
-            name="comuna"
-            className={`publicar-form__select ${errors.comuna ? "error" : ""}`}
-            value={formData.comuna}
-            onChange={onChange}
-            disabled={!formData.provincia}>
-            <option value="">
-              {formData.provincia
-                ? "Selecciona una comuna"
-                : "Primero selecciona provincia"}
-            </option>
-            {formData.provincia &&
-              COMUNAS_POR_PROVINCIA[formData.provincia]?.map((comuna) => (
-                <option key={comuna} value={comuna}>
-                  {comuna}
-                </option>
-              ))}
-          </select>
+          <div
+            className={`custom-dropdown ${comOpen ? "open" : ""} ${errors.comuna ? "error" : ""}`}
+            ref={comRef}>
+            <button
+              type="button"
+              className="custom-dropdown__trigger"
+              onClick={() => formData.provincia && setComOpen((prev) => !prev)}
+              disabled={!formData.provincia}>
+              <span
+                className={`custom-dropdown__value ${!formData.comuna ? "placeholder" : ""}`}>
+                {formData.comuna ||
+                  (formData.provincia
+                    ? "Selecciona una comuna"
+                    : "Primero selecciona provincia")}
+              </span>
+              <FontAwesomeIcon
+                icon={faChevronDown}
+                className={`custom-dropdown__arrow ${comOpen ? "rotated" : ""}`}
+              />
+            </button>
+            {comOpen && (
+              <ul className="custom-dropdown__menu">
+                {comunas.map((comuna) => (
+                  <li
+                    key={comuna}
+                    className={`custom-dropdown__item ${comuna === formData.comuna ? "selected" : ""}`}
+                    onClick={() => handleSelectCom(comuna)}>
+                    {comuna}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           {errors.comuna && (
             <span className="publicar-form__error">{errors.comuna}</span>
           )}
