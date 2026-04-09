@@ -41,11 +41,9 @@ const AuthModal = ({ isOpen, onClose }) => {
           <FontAwesomeIcon icon={faTimes} />
         </button>
 
-        <img
-          src="/img/Logo_con_r.png"
-          alt="Extrovertidos"
-          className="auth-modal__logo"
-        />
+        <div className="auth-modal__logo">
+          <img src="/img/Logo_con_r.png" alt="Extrovertidos" />
+        </div>
 
         <h2 className="auth-modal__title">¡Regístrate para publicar!</h2>
         <p className="auth-modal__message">

@@ -5,7 +5,12 @@ import { faTimes } from "@fortawesome/free-solid-svg-icons";
 import { faGoogle } from "@fortawesome/free-brands-svg-icons";
 import { useAuth } from "../../context/AuthContext";
 
-export default function AuthModal({ isOpen, onClose, initialMode = "login" }) {
+export default function AuthModal({
+  isOpen,
+  onClose,
+  initialMode = "login",
+  persistent = false,
+}) {
   const { signInWithGoogle } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -15,10 +20,11 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }) {
   }, [isOpen]);
 
   useEffect(() => {
+    if (persistent) return;
     const handleEsc = (e) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
-  }, [onClose]);
+  }, [onClose, persistent]);
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
@@ -40,15 +46,25 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }) {
   return (
     <div
       className="auth-modal-overlay"
-      onClick={(e) => e.target === e.currentTarget && onClose()}>
+      onClick={(e) => !persistent && e.target === e.currentTarget && onClose()}>
       <div
         className="auth-modal auth-modal--simple"
         role="dialog"
         aria-modal="true"
         aria-label="Autenticación">
-        <button className="auth-modal__close" onClick={onClose}>
-          <FontAwesomeIcon icon={faTimes} />
-        </button>
+        {!persistent && (
+          <button className="auth-modal__close" onClick={onClose}>
+            <FontAwesomeIcon icon={faTimes} />
+          </button>
+        )}
+        {persistent && onClose && (
+          <button
+            className="auth-modal__close"
+            onClick={onClose}
+            title="Volver al inicio">
+            <FontAwesomeIcon icon={faTimes} />
+          </button>
+        )}
 
         <div className="auth-modal__logo">
           <img src="/img/Logo_con_r.png" alt="Extrovertidos" />
