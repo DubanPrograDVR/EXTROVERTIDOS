@@ -224,12 +224,27 @@ export const rejectBusiness = async (businessId, adminId, reason = "") => {
     throw new Error("No tienes permisos para rechazar negocios");
   }
 
+  // Obtener revision_count actual
+  const { data: bizData, error: fetchError } = await supabase
+    .from("businesses")
+    .select("revision_count")
+    .eq("id", businessId)
+    .single();
+
+  if (fetchError) {
+    console.error("Error al obtener negocio:", fetchError);
+    throw fetchError;
+  }
+
+  const newRevisionCount = (bizData.revision_count || 0) + 1;
+
   const { data, error } = await supabase
     .from("businesses")
     .update({
       estado: "rechazado",
       motivo_rechazo: reason,
       rejected_by: adminId,
+      revision_count: newRevisionCount,
       updated_at: new Date().toISOString(),
     })
     .eq("id", businessId)
@@ -241,6 +256,48 @@ export const rejectBusiness = async (businessId, adminId, reason = "") => {
     throw error;
   }
 
+  return data;
+};
+
+const MAX_REVISION_ATTEMPTS = 3;
+
+/**
+ * Reenvía un negocio rechazado a revisión.
+ * Máximo 3 intentos de revisión.
+ * @param {string} businessId - ID del negocio
+ * @returns {Promise<Object>} Negocio actualizado
+ */
+export const resubmitBusiness = async (businessId) => {
+  const { data: biz, error: fetchError } = await supabase
+    .from("businesses")
+    .select("estado, revision_count")
+    .eq("id", businessId)
+    .single();
+
+  if (fetchError) throw fetchError;
+
+  if (biz.estado !== "rechazado") {
+    throw new Error("Solo puedes reenviar negocios rechazados");
+  }
+
+  if ((biz.revision_count || 0) >= MAX_REVISION_ATTEMPTS) {
+    throw new Error(
+      "Has alcanzado el máximo de 3 intentos de revisión para este negocio",
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("businesses")
+    .update({
+      estado: "pendiente",
+      motivo_rechazo: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", businessId)
+    .select()
+    .single();
+
+  if (error) throw error;
   return data;
 };
 
@@ -335,6 +392,7 @@ const ALLOWED_BUSINESS_UPDATE_FIELDS = [
   "youtube",
   "linkedin",
   "horarios",
+  "dias_atencion",
   "imagenes",
   "imagen_logo",
   "categoria",

@@ -64,6 +64,7 @@ export default function BusinessCard({
     facebook,
     sitio_web,
     horarios,
+    dias_atencion,
     verificado,
     profiles,
   } = business;
@@ -153,10 +154,9 @@ export default function BusinessCard({
   const getHorarioHoy = () => {
     if (!horarios || typeof horarios !== "object") return null;
 
-    if (horarios.abierto_24h) return "Abierto 24h";
+    if (horarios.abierto_24h) return { texto: "Abierto 24h", abierto: true };
 
     const dayIndex = new Date().getDay();
-    // Todas las variantes posibles del nombre del día (con/sin acento, capitalizado/min)
     const diasVariantes = [
       ["Domingo", "domingo"],
       ["Lunes", "lunes"],
@@ -167,31 +167,61 @@ export default function BusinessCard({
       ["Sábado", "sábado", "Sabado", "sabado"],
     ];
     const variantes = diasVariantes[dayIndex];
+
+    // Verificar si hoy es un día de atención
+    if (Array.isArray(dias_atencion) && dias_atencion.length > 0) {
+      const hoyEsDiaAtencion = dias_atencion.some((dia) =>
+        variantes.some((v) => v.toLowerCase() === dia.toLowerCase()),
+      );
+      if (!hoyEsDiaAtencion) return { texto: "Cerrado hoy", abierto: false };
+    }
+
     // Buscar la primera clave que coincida con cualquier variante
     const horarioHoy = variantes.reduce(
       (found, v) => found || horarios[v],
       null,
     );
 
-    if (!horarioHoy) return "Cerrado hoy";
+    if (!horarioHoy) return { texto: "Cerrado hoy", abierto: false };
 
-    // Formato array de turnos [{apertura, cierre}]
+    // Determinar apertura y cierre
+    let apertura = null;
+    let cierre = null;
+
     if (Array.isArray(horarioHoy) && horarioHoy.length > 0) {
       const turno = horarioHoy[0];
       if (turno.apertura && turno.cierre) {
-        return `${turno.apertura} - ${turno.cierre}`;
+        apertura = turno.apertura;
+        cierre = turno.cierre;
       }
+    } else if (horarioHoy.cerrado) {
+      return { texto: "Cerrado hoy", abierto: false };
+    } else if (horarioHoy.apertura && horarioHoy.cierre) {
+      apertura = horarioHoy.apertura;
+      cierre = horarioHoy.cierre;
     }
 
-    if (horarioHoy.cerrado) return "Cerrado hoy";
-    if (horarioHoy.apertura && horarioHoy.cierre) {
-      return `${horarioHoy.apertura} - ${horarioHoy.cierre}`;
-    }
-    return null;
+    if (!apertura || !cierre) return null;
+
+    // Comparar hora actual con horario
+    const now = new Date();
+    const [hAp, mAp] = apertura.split(":").map(Number);
+    const [hCi, mCi] = cierre.split(":").map(Number);
+    const minutosAhora = now.getHours() * 60 + now.getMinutes();
+    const minutosApertura = hAp * 60 + mAp;
+    const minutosCierre = hCi * 60 + mCi;
+
+    const estaAbierto =
+      minutosAhora >= minutosApertura && minutosAhora < minutosCierre;
+
+    return {
+      texto: `${apertura} - ${cierre}`,
+      abierto: estaAbierto,
+    };
   };
 
-  const horarioHoy = getHorarioHoy();
-  const isOpen = horarioHoy && horarioHoy !== "Cerrado hoy";
+  const horarioInfo = getHorarioHoy();
+  const isOpen = horarioInfo?.abierto ?? false;
 
   // Resolver WhatsApp (puede venir de campo directo o de redes_sociales)
   const resolvedWhatsapp = whatsapp || redes_sociales?.whatsapp || null;
@@ -386,11 +416,11 @@ export default function BusinessCard({
         )}
 
         {/* Horario de hoy */}
-        {horarioHoy && (
+        {horarioInfo && (
           <div
             className={`business-card__schedule ${isOpen ? "business-card__schedule--open" : "business-card__schedule--closed"}`}>
             <FontAwesomeIcon icon={faClock} />
-            <span>{horarioHoy}</span>
+            <span>{horarioInfo.texto}</span>
           </div>
         )}
 
@@ -483,7 +513,9 @@ export default function BusinessCard({
             disabled={isTogglingLike}
             aria-label={isLiked ? "Quitar recomendación" : "Recomendar"}>
             <FontAwesomeIcon icon={faStar} />
-            <span>{likeCount > 0 ? likeCount : "Recomendado"}</span>
+            <span>
+              {likeCount > 0 ? `${likeCount} Recomendado` : "Recomendado"}
+            </span>
           </button>
           <button
             className={`business-card__interaction-btn ${isFavorited ? "business-card__interaction-btn--active" : ""}`}
