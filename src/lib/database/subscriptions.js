@@ -252,3 +252,25 @@ export async function validateAndConsumePublication(
 
   return data;
 }
+
+/**
+ * Devuelve 1 cupo de publicación a la suscripción activa del usuario.
+ * Se usa cuando una publicación es rechazada para preservar el cupo.
+ *
+ * @param {string} userId - ID del usuario al que se le devuelve el cupo
+ * @returns {Promise<Object>} Resultado con { refunded, subscription_id, ... }
+ */
+export async function refundPublication(userId) {
+  if (!userId) throw new Error("ID de usuario requerido");
+
+  const { data, error } = await supabase.rpc("refund_publication", {
+    p_user_id: userId,
+  });
+
+  if (error) {
+    console.error("Error al devolver cupo de publicación:", error);
+    throw new Error(error.message || "Error al devolver cupo de publicación.");
+  }
+
+  return data;
+}

@@ -4,6 +4,8 @@
  */
 
 import { supabase } from "../supabase";
+import { validateAndConsumePublication } from "./subscriptions";
+import { interpretPublishResult } from "../planRules";
 
 /**
  * Sanitiza un valor para usar en filtros PostgREST.
@@ -541,6 +543,73 @@ export const updateEvent = async (eventId, eventData, options = {}) => {
     throw wrapSupabaseError(error, "Error al actualizar el evento");
   }
 
+  return data;
+};
+
+const MAX_REVISION_ATTEMPTS = 3;
+
+/**
+ * Reenvía un evento rechazado a revisión.
+ * Máximo 3 intentos de revisión.
+ * Re-consume un cupo de publicación al reenviar.
+ * @param {string} eventId - ID del evento
+ * @param {string} userId - ID del usuario que reenvía
+ * @param {boolean} [isAdmin=false] - Si el usuario es admin
+ * @param {boolean} [isModerator=false] - Si el usuario es moderador
+ * @returns {Promise<Object>} Evento actualizado
+ */
+export const resubmitEvent = async (
+  eventId,
+  userId,
+  isAdmin = false,
+  isModerator = false,
+) => {
+  // Obtener estado actual y revision_count
+  const { data: event, error: fetchError } = await supabase
+    .from("events")
+    .select("estado, revision_count")
+    .eq("id", eventId)
+    .single();
+
+  if (fetchError) throw fetchError;
+
+  if (event.estado !== "rechazado") {
+    throw new Error("Solo puedes reenviar publicaciones rechazadas");
+  }
+
+  if ((event.revision_count || 0) >= MAX_REVISION_ATTEMPTS) {
+    throw new Error(
+      "Has alcanzado el máximo de 3 intentos de revisión para esta publicación",
+    );
+  }
+
+  // Re-consumir cupo de publicación (fue devuelto al rechazar)
+  const rpcData = await validateAndConsumePublication(
+    userId,
+    isAdmin,
+    isModerator,
+  );
+  const publishResult = interpretPublishResult(rpcData);
+
+  if (!publishResult.allowed) {
+    throw new Error(
+      publishResult.error ||
+        "No tienes cupo disponible para reenviar esta publicación",
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("events")
+    .update({
+      estado: "pendiente",
+      motivo_rechazo: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", eventId)
+    .select()
+    .single();
+
+  if (error) throw error;
   return data;
 };
 

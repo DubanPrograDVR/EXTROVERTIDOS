@@ -6,6 +6,7 @@
 import { supabase } from "../supabase";
 import cache from "./cache";
 import { isModerator, ESTADOS_PUBLICACION } from "./roles";
+import { refundPublication } from "./subscriptions";
 
 /**
  * Obtiene todas las publicaciones pendientes de aprobación
@@ -177,7 +178,7 @@ export const rejectEvent = async (eventId, adminUserId, motivo = "") => {
   // Obtener el evento para saber quién es el autor
   const { data: eventData, error: fetchError } = await supabase
     .from("events")
-    .select("user_id, titulo")
+    .select("user_id, titulo, revision_count")
     .eq("id", eventId)
     .single();
 
@@ -186,12 +187,14 @@ export const rejectEvent = async (eventId, adminUserId, motivo = "") => {
     throw fetchError;
   }
 
-  // Actualizar estado del evento
+  // Actualizar estado del evento e incrementar revision_count
+  const newRevisionCount = (eventData.revision_count || 0) + 1;
   const { data, error } = await supabase
     .from("events")
     .update({
       estado: ESTADOS_PUBLICACION.RECHAZADO,
       motivo_rechazo: motivo,
+      revision_count: newRevisionCount,
       updated_at: new Date().toISOString(),
     })
     .eq("id", eventId)
@@ -200,6 +203,17 @@ export const rejectEvent = async (eventId, adminUserId, motivo = "") => {
   if (error) {
     console.error("Error al rechazar evento:", error);
     throw error;
+  }
+
+  // Devolver cupo de publicación si aún tiene intentos de revisión
+  // En el 3er rechazo (revision_count = 3) el cupo se pierde definitivamente
+  if (newRevisionCount < 3) {
+    try {
+      await refundPublication(eventData.user_id);
+    } catch (refundError) {
+      // No bloquear el rechazo si falla el refund (log para debugging)
+      console.warn("No se pudo devolver el cupo de publicación:", refundError);
+    }
   }
 
   // Invalidar caché de estadísticas
