@@ -1,17 +1,34 @@
+import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimes } from "@fortawesome/free-solid-svg-icons";
 import { faGoogle } from "@fortawesome/free-brands-svg-icons";
+import { useAuth } from "../../../../context/AuthContext";
 
 /**
  * Modal de autenticación para usuarios no registrados
+ * Usa redirect OAuth en lugar de popup GIS para mayor fiabilidad
  */
-const PublicarAuthModal = ({
-  isOpen,
-  onClose,
-  onGoogleLogin,
-  isGoogleLoading,
-}) => {
+const PublicarAuthModal = ({ isOpen, onClose }) => {
+  const { signInWithGooglePopup, showToast } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+
   if (!isOpen) return null;
+
+  const handleGoogleLogin = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+    try {
+      const { error } = await signInWithGooglePopup();
+      if (error) {
+        console.error("Error al iniciar sesión con Google:", error);
+        showToast("Error al iniciar sesión con Google", "error");
+      }
+    } catch (err) {
+      console.error("Error:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="auth-modal-overlay" onClick={onClose}>
@@ -38,10 +55,19 @@ const PublicarAuthModal = ({
 
         <button
           className="auth-form__google-btn"
-          onClick={onGoogleLogin}
-          disabled={isGoogleLoading}>
-          <FontAwesomeIcon icon={faGoogle} />
-          {isGoogleLoading ? "Conectando..." : "Continuar con Google"}
+          onClick={handleGoogleLogin}
+          disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <span className="auth-spinner" />
+              Conectando con Google...
+            </>
+          ) : (
+            <>
+              <FontAwesomeIcon icon={faGoogle} />
+              Continuar con Google
+            </>
+          )}
         </button>
 
         <p className="auth-modal__terms">

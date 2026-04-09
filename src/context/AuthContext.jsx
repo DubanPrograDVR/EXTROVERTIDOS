@@ -491,6 +491,153 @@ export const AuthProvider = ({ children }) => {
     return { data, error };
   }, []);
 
+  const signInWithGoogleRedirect = useCallback(async () => {
+    try {
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      sessionStorage.setItem("authReturnUrl", window.location.pathname);
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: redirectUrl,
+        },
+      });
+
+      if (error) {
+        log.error("Error iniciando OAuth redirect:", error);
+      }
+      return { error };
+    } catch (error) {
+      log.error("Error en signInWithGoogleRedirect:", error);
+      return { error };
+    }
+  }, []);
+
+  /**
+   * Popup Google OAuth directo — muestra "Ir a extrovertidos.cl" en Google.
+   *
+   * Flujo:
+   * 1. Genera nonce raw → hashea SHA-256 → envía hash a Google
+   * 2. Google devuelve id_token con el hash en el claim "nonce"
+   * 3. AuthCallback (en el popup) extrae id_token del hash fragment
+   *    y lo envía al opener via postMessage
+   * 4. El opener llama signInWithIdToken({ token, nonce: rawNonce })
+   *    → Supabase hashea rawNonce, compara con el claim del token → match ✓
+   * 5. Si popup bloqueado → cae a redirect y AuthCallback lo procesa local
+   */
+  const signInWithGooglePopup = useCallback(async () => {
+    try {
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      if (!clientId) {
+        return { error: new Error("VITE_GOOGLE_CLIENT_ID no configurado") };
+      }
+
+      const redirectUri = `${window.location.origin}/auth/callback`;
+      const rawNonce = crypto.randomUUID();
+
+      // Google recibe el HASH, Supabase recibe el RAW
+      const encoder = new TextEncoder();
+      const hashBuffer = await crypto.subtle.digest(
+        "SHA-256",
+        encoder.encode(rawNonce),
+      );
+      const hashedNonce = Array.from(new Uint8Array(hashBuffer))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+
+      const params = new URLSearchParams({
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        response_type: "id_token",
+        scope: "openid email profile",
+        nonce: hashedNonce,
+        prompt: "select_account",
+      });
+
+      const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+
+      // Guardar nonce y flag de popup en localStorage (compartido cross-tab)
+      localStorage.setItem("googleAuthNonce", rawNonce);
+      localStorage.setItem("googleAuthIsPopup", "true");
+
+      // Abrir popup
+      const width = 500;
+      const height = 600;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
+
+      const popup = window.open(
+        googleAuthUrl,
+        "google-auth-popup",
+        `width=${width},height=${height},left=${left},top=${top},popup=yes,toolbar=no,menubar=no,scrollbars=yes`,
+      );
+
+      // Popup bloqueado → fallback a redirect
+      if (!popup || popup.closed) {
+        log.info("Popup bloqueado, usando redirect");
+        localStorage.removeItem("googleAuthIsPopup");
+        sessionStorage.setItem("authReturnUrl", window.location.pathname);
+        localStorage.setItem("googleAuthNonce", rawNonce);
+        window.location.href = googleAuthUrl;
+        return { error: null };
+      }
+
+      // Escuchar la sesión establecida por el popup via múltiples canales
+      return new Promise((resolve) => {
+        let resolved = false;
+
+        const cleanup = () => {
+          if (resolved) return;
+          resolved = true;
+          window.removeEventListener("message", handleMessage);
+          clearInterval(checkClosed);
+          authSubscription?.unsubscribe();
+        };
+
+        // Canal 1: postMessage del popup (funciona si COOP no cortó opener)
+        const handleMessage = (event) => {
+          if (event.origin !== window.location.origin) return;
+          if (event.data?.type !== "GOOGLE_AUTH_COMPLETE") return;
+          log.info("Auth completado via postMessage");
+          cleanup();
+          resolve({ error: null });
+        };
+
+        // Canal 2: Supabase onAuthStateChange (cross-tab via localStorage)
+        // El popup hace signInWithIdToken → guarda sesión → storage event
+        const {
+          data: { subscription: authSubscription },
+        } = supabase.auth.onAuthStateChange((event) => {
+          if (event === "SIGNED_IN") {
+            log.info("Auth completado via onAuthStateChange (cross-tab)");
+            cleanup();
+            resolve({ error: null });
+          }
+        });
+
+        // Canal 3: popup cerrado (puede fallar por COOP, envuelto en try-catch)
+        const checkClosed = setInterval(() => {
+          try {
+            if (popup.closed) {
+              // Esperar un momento para que la sesión se propague via storage
+              setTimeout(() => {
+                cleanup();
+                resolve({ error: null });
+              }, 500);
+            }
+          } catch {
+            // COOP bloquea acceso a popup.closed — ignorar
+          }
+        }, 500);
+
+        window.addEventListener("message", handleMessage);
+      });
+    } catch (error) {
+      log.error("Error en signInWithGooglePopup:", error);
+      return { error };
+    }
+  }, []);
+
   const resetPassword = useCallback(async (email) => {
     const { data, error } = await supabase.auth.resetPasswordForEmail(email);
     return { data, error };
@@ -528,6 +675,8 @@ export const AuthProvider = ({ children }) => {
       signIn,
       signOut,
       signInWithGoogle,
+      signInWithGoogleRedirect,
+      signInWithGooglePopup,
       resetPassword,
       refreshRole,
 
@@ -543,6 +692,8 @@ export const AuthProvider = ({ children }) => {
       signIn,
       signOut,
       signInWithGoogle,
+      signInWithGoogleRedirect,
+      signInWithGooglePopup,
       resetPassword,
       refreshRole,
       showToast,

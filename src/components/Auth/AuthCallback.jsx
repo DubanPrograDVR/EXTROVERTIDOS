@@ -19,8 +19,8 @@ import { supabase, cleanAuthTokensFromUrl } from "../../lib/supabase";
 const AuthCallback = () => {
   const navigate = useNavigate();
   const [error, setError] = useState(null);
-
   const redirectTimerRef = useRef(null);
+  const processedRef = useRef(false);
 
   // Limpiar timeout al desmontar
   useEffect(() => {
@@ -30,11 +30,101 @@ const AuthCallback = () => {
   }, []);
 
   useEffect(() => {
+    // Evitar doble ejecución (StrictMode)
+    if (processedRef.current) return;
+    processedRef.current = true;
+
     const handleAuthCallback = async () => {
       try {
         console.log("[AuthCallback] Procesando callback de autenticación...");
 
-        // Obtener la sesión - esto procesa automáticamente el código PKCE
+        // ── Flujo Google directo: id_token en el hash fragment ──
+        const hash = window.location.hash.substring(1);
+        const hashParams = new URLSearchParams(hash);
+        const idToken = hashParams.get("id_token");
+
+        if (idToken) {
+          console.log("[AuthCallback] id_token detectado (Google directo)");
+
+          // Limpiar hash de la URL por seguridad
+          window.history.replaceState(null, "", window.location.pathname);
+
+          // Recuperar nonce raw desde localStorage (compartido cross-tab)
+          const rawNonce = localStorage.getItem("googleAuthNonce");
+          localStorage.removeItem("googleAuthNonce");
+
+          // SIEMPRE autenticar aquí directamente — esto guarda la sesión
+          // en localStorage, y la ventana principal la detecta vía
+          // Supabase onAuthStateChange (cross-tab storage event)
+          const { error: signInError } = await supabase.auth.signInWithIdToken({
+            provider: "google",
+            token: idToken,
+            ...(rawNonce && { nonce: rawNonce }),
+          });
+
+          if (signInError) {
+            console.error(
+              "[AuthCallback] Error signInWithIdToken:",
+              signInError,
+            );
+
+            // Si el error es de nonce, reintentar SIN nonce
+            // (puede ocurrir si el nonce se perdió por COOP/sessionStorage aislado)
+            if (signInError.message?.includes("nonce")) {
+              console.log("[AuthCallback] Reintentando sin nonce...");
+              const { error: retryError } =
+                await supabase.auth.signInWithIdToken({
+                  provider: "google",
+                  token: idToken,
+                });
+
+              if (retryError) {
+                console.error(
+                  "[AuthCallback] Retry sin nonce falló:",
+                  retryError,
+                );
+                setError(retryError.message);
+                redirectTimerRef.current = setTimeout(
+                  () => navigate("/", { replace: true }),
+                  2000,
+                );
+                return;
+              }
+            } else {
+              setError(signInError.message);
+              redirectTimerRef.current = setTimeout(
+                () => navigate("/", { replace: true }),
+                2000,
+              );
+              return;
+            }
+          }
+
+          console.log("[AuthCallback] Sesión establecida correctamente");
+
+          // Detectar si somos un popup via flag en localStorage
+          // (window.opener es null por COOP de Google, así que usamos este flag)
+          const isPopup = localStorage.getItem("googleAuthIsPopup") === "true";
+          localStorage.removeItem("googleAuthIsPopup");
+
+          if (isPopup) {
+            // La sesión ya está en localStorage → la ventana principal
+            // la detecta vía Supabase onAuthStateChange (cross-tab)
+            window.close();
+            return;
+          }
+
+          // Fallback: si no podemos cerrar (no somos popup), navegar normalmente
+          let returnUrl = sessionStorage.getItem("authReturnUrl") || "/";
+          sessionStorage.removeItem("authReturnUrl");
+          if (!returnUrl.startsWith("/") || returnUrl.startsWith("//")) {
+            returnUrl = "/";
+          }
+          navigate(returnUrl, { replace: true });
+          return;
+        }
+
+        // ── Flujo Supabase PKCE (redirect normal) ──
         const {
           data: { session },
           error: sessionError,
@@ -46,7 +136,6 @@ const AuthCallback = () => {
             sessionError,
           );
           setError(sessionError.message);
-          // Esperar un momento antes de redirigir para que el usuario vea el error
           redirectTimerRef.current = setTimeout(
             () => navigate("/", { replace: true }),
             2000,
@@ -65,17 +154,15 @@ const AuthCallback = () => {
           );
         }
 
-        // Obtener la URL de retorno guardada o usar la raíz
+        // Navegar a la URL de retorno
         let returnUrl = sessionStorage.getItem("authReturnUrl") || "/";
         sessionStorage.removeItem("authReturnUrl");
 
         // SEGURIDAD: Validar que la URL sea una ruta interna válida
-        // Previene open redirect si alguien inyecta una URL externa
         if (!returnUrl.startsWith("/") || returnUrl.startsWith("//")) {
           returnUrl = "/";
         }
 
-        // Redirigir a la página de destino
         navigate(returnUrl, { replace: true });
       } catch (err) {
         console.error("[AuthCallback] Error inesperado:", err);

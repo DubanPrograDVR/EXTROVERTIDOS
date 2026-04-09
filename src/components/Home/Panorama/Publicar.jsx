@@ -28,7 +28,6 @@ const Publicar = () => {
     errors,
     isSubmitting,
     previewImages,
-    isGoogleLoading,
     isEditing,
     isSavingDraft,
     // Plan
@@ -40,7 +39,6 @@ const Publicar = () => {
     isLoading,
     // Handlers
     handleFieldFocus,
-    handleGoogleLogin,
     handleChange,
     handleImageChange,
     removeImage,
@@ -132,12 +130,7 @@ const Publicar = () => {
       />
 
       {/* Modal de autenticación */}
-      <PublicarAuthModal
-        isOpen={showAuthModal}
-        onClose={closeAuthModal}
-        onGoogleLogin={handleGoogleLogin}
-        isGoogleLoading={isGoogleLoading}
-      />
+      <PublicarAuthModal isOpen={showAuthModal} onClose={closeAuthModal} />
     </div>
   );
 };

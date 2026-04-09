@@ -56,7 +56,7 @@ const usePublicarFormV2 = () => {
     isAuthenticated,
     isAdmin,
     isModerator,
-    signInWithGoogle,
+    signInWithGooglePopup,
     showToast,
   } = useAuth();
   const navigate = useNavigate();
@@ -477,7 +477,7 @@ const usePublicarFormV2 = () => {
   const handleGoogleLogin = useCallback(async () => {
     setIsGoogleLoading(true);
     try {
-      const { error } = await signInWithGoogle();
+      const { error } = await signInWithGooglePopup();
       if (error) {
         console.error("Error al iniciar sesión con Google:", error);
         showToastRef.current?.("Error al iniciar sesión con Google", "error");
@@ -489,7 +489,7 @@ const usePublicarFormV2 = () => {
         setIsGoogleLoading(false);
       }
     }
-  }, [signInWithGoogle]);
+  }, [signInWithGooglePopup]);
 
   /**
    * Maneja cambios en inputs del formulario
