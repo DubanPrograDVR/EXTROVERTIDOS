@@ -444,7 +444,9 @@ export default function PublicationCard({
             disabled={isTogglingLike}
             aria-label={isLiked ? "Quitar imperdible" : "Imperdible"}>
             <FontAwesomeIcon icon={faFire} />
-            <span>{likeCount > 0 ? likeCount : "Imperdible"}</span>
+            <span>
+              {likeCount > 0 ? `${likeCount} Imperdible` : "Imperdible"}
+            </span>
           </button>
           <button
             className={`publication-card__action-btn ${isFavorited ? "publication-card__action-btn--active" : ""}`}

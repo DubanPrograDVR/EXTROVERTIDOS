@@ -6,6 +6,7 @@ import {
   faChevronRight,
   faMapMarkerAlt,
   faCalendarAlt,
+  faClock,
 } from "@fortawesome/free-solid-svg-icons";
 
 export default function Carousel({ publications, onPublicationClick }) {
@@ -162,7 +163,9 @@ export default function Carousel({ publications, onPublicationClick }) {
                 }}
               />
               <div className="carousel__info">
-                <h3 className="carousel__title">{item.titulo}</h3>
+                <h3 className="carousel__title">
+                  {item.titulo || item.nombre}
+                </h3>
                 <div className="carousel__meta">
                   <div className="carousel__location">
                     <FontAwesomeIcon icon={faMapMarkerAlt} />
@@ -182,6 +185,36 @@ export default function Carousel({ publications, onPublicationClick }) {
                             month: "short",
                           },
                         )}
+                      </span>
+                    </div>
+                  )}
+                  {!item.fecha_evento && item.horarios && (
+                    <div className="carousel__date">
+                      <FontAwesomeIcon icon={faClock} />
+                      <span>
+                        {item.horarios.abierto_24h
+                          ? "Abierto 24h"
+                          : (() => {
+                              const diasNombres = [
+                                "Domingo",
+                                "Lunes",
+                                "Martes",
+                                "Miércoles",
+                                "Jueves",
+                                "Viernes",
+                                "Sábado",
+                              ];
+                              const hoy = diasNombres[new Date().getDay()];
+                              const h = item.horarios[hoy];
+                              if (!h) return "Cerrado hoy";
+                              if (Array.isArray(h) && h[0]?.apertura) {
+                                return `${h[0].apertura} - ${h[0].cierre}`;
+                              }
+                              if (h.apertura) {
+                                return `${h.apertura} - ${h.cierre}`;
+                              }
+                              return "Cerrado hoy";
+                            })()}
                       </span>
                     </div>
                   )}

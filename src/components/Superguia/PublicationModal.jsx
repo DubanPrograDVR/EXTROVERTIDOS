@@ -227,7 +227,12 @@ export default function PublicationModal({
         comuna: publication.comuna || "",
         direccion: publication.direccion || "",
         ubicacion_url: publication.ubicacion_url || "",
-        tipo_entrada: publication.tipo_entrada || "sin_entrada",
+        tipo_entrada:
+          { gratis: "gratuito", externo: "venta_externa" }[
+            publication.tipo_entrada
+          ] ||
+          publication.tipo_entrada ||
+          "sin_entrada",
         precio: publication.precio || "",
         url_venta: publication.url_venta || "",
         telefono_contacto:
@@ -275,6 +280,7 @@ export default function PublicationModal({
     hora_fin,
     tipo_entrada,
     precio,
+    url_venta,
     direccion,
     telefono,
     ubicacion_url,
@@ -459,18 +465,26 @@ export default function PublicationModal({
 
   // Formatear entrada/precio
   const getEntradaDisplay = () => {
+    if (tipo_entrada === "pagado" && precio) {
+      return `$${Number(precio).toLocaleString("es-CL")}`;
+    }
+    if (tipo_entrada === "pagado" && !precio) {
+      return "Por confirmar";
+    }
+    if (tipo_entrada === "externo" || tipo_entrada === "venta_externa") {
+      return "Venta externa";
+    }
     if (
       tipo_entrada === "gratis" ||
       tipo_entrada === "gratuito" ||
-      tipo_entrada === "sin_entrada" ||
-      (!precio && tipo_entrada !== "pagado")
+      tipo_entrada === "sin_entrada"
     ) {
       return "Entrada gratuita";
     }
     if (precio) {
-      return `$${precio.toLocaleString("es-CL")}`;
+      return `$${Number(precio).toLocaleString("es-CL")}`;
     }
-    return "Por confirmar";
+    return "Entrada gratuita";
   };
 
   // Extraer coordenadas de la URL de Google Maps
@@ -554,6 +568,20 @@ export default function PublicationModal({
       // Convertir precio a número si existe
       if (cleanedData.precio !== null && cleanedData.precio !== undefined) {
         cleanedData.precio = Number(cleanedData.precio) || null;
+      }
+
+      // Mapear tipo_entrada de frontend a DB enum
+      const tipoEntradaMap = {
+        gratuito: "gratis",
+        sin_entrada: "gratis",
+        pagado: "pagado",
+        venta_externa: "externo",
+      };
+      if (
+        cleanedData.tipo_entrada &&
+        tipoEntradaMap[cleanedData.tipo_entrada]
+      ) {
+        cleanedData.tipo_entrada = tipoEntradaMap[cleanedData.tipo_entrada];
       }
 
       await updateEvent(publication.id, cleanedData, { adminOverride: true });
@@ -953,6 +981,20 @@ export default function PublicationModal({
                             {direccion ||
                               `${comuna}${provincia ? `, ${provincia}` : ""}`}
                           </p>
+                          {ubicacion_url && (
+                            <button
+                              className="publication-modal__directions-btn publication-modal__directions-btn--full"
+                              onClick={() =>
+                                window.open(
+                                  ubicacion_url,
+                                  "_blank",
+                                  "noopener,noreferrer",
+                                )
+                              }>
+                              <FontAwesomeIcon icon={faMapMarkerAlt} />
+                              Ir a la ubicación
+                            </button>
+                          )}
                         </>
                       )}
                       {isEditMode && (
@@ -1089,7 +1131,19 @@ export default function PublicationModal({
                               Entrada
                             </span>
                             <span className="publication-modal__schedule-value publication-modal__schedule-value--price">
-                              {getEntradaDisplay()}
+                              {(tipo_entrada === "externo" ||
+                                tipo_entrada === "venta_externa") &&
+                              url_venta ? (
+                                <a
+                                  href={url_venta}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="publication-modal__entrada-link">
+                                  Ver entradas ↗
+                                </a>
+                              ) : (
+                                getEntradaDisplay()
+                              )}
                             </span>
                           </div>
                         </>
@@ -1226,36 +1280,14 @@ export default function PublicationModal({
                     </div>
                   </div>
 
-                  {/* Sección: Ubicación en mapa */}
-                  {ubicacion_url && !isEditMode && (
+                  {/* Sección: Contacto (dentro de Información) */}
+                  {!isEditMode && (contactPhone || sitio_web) && (
                     <div className="publication-modal__info-section">
-                      <button
-                        className="publication-modal__directions-btn publication-modal__directions-btn--full"
-                        onClick={() =>
-                          window.open(
-                            ubicacion_url,
-                            "_blank",
-                            "noopener,noreferrer",
-                          )
-                        }>
-                        <FontAwesomeIcon icon={faMapMarkerAlt} />
-                        Ir a la ubicación
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </AccordionSection>
-
-              {/* Sección: Contacto (solo teléfono y sitio web) */}
-              {(contactPhone || sitio_web || isEditMode) && (
-                <AccordionSection
-                  title="Contacto"
-                  icon={faAddressCard}
-                  isOpen={activeSection === ACCORDION_SECTIONS.CONTACT}
-                  onToggle={() => toggleSection(ACCORDION_SECTIONS.CONTACT)}>
-                  <div className="publication-modal__contact-content">
-                    {!isEditMode && (
-                      <>
+                      <h4 className="publication-modal__info-section-title">
+                        <FontAwesomeIcon icon={faAddressCard} />
+                        Contacto
+                      </h4>
+                      <div className="publication-modal__contact-content">
                         {contactPhone && (
                           <a
                             href={`tel:${contactPhone}`}
@@ -1264,23 +1296,15 @@ export default function PublicationModal({
                             <span>{contactPhone}</span>
                           </a>
                         )}
-                        {sitio_web && (
-                          <a
-                            href={
-                              sitio_web.startsWith("http")
-                                ? sitio_web
-                                : `https://${sitio_web}`
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="publication-modal__contact-item publication-modal__contact-item--website">
-                            <FontAwesomeIcon icon={faGlobe} />
-                            <span>Sitio Web</span>
-                          </a>
-                        )}
-                      </>
-                    )}
-                    {isEditMode && (
+                      </div>
+                    </div>
+                  )}
+                  {isEditMode && (
+                    <div className="publication-modal__info-section">
+                      <h4 className="publication-modal__info-section-title">
+                        <FontAwesomeIcon icon={faAddressCard} />
+                        Contacto
+                      </h4>
                       <div className="publication-modal__edit-section">
                         <label className="publication-modal__edit-label">
                           Teléfono de contacto
@@ -1313,10 +1337,10 @@ export default function PublicationModal({
                           placeholder="https://..."
                         />
                       </div>
-                    )}
-                  </div>
-                </AccordionSection>
-              )}
+                    </div>
+                  )}
+                </div>
+              </AccordionSection>
             </div>
 
             {/* ===== SECCIÓN DE REDES SOCIALES (Debajo del mapa) ===== */}
@@ -1327,13 +1351,28 @@ export default function PublicationModal({
                 youtube ||
                 tiktok ||
                 twitter ||
-                linkedin) && (
+                linkedin ||
+                sitio_web) && (
                 <div className="publication-modal__social-section">
                   <h4 className="publication-modal__social-title">
                     <FontAwesomeIcon icon={faShareAlt} />
                     Síguenos en redes
                   </h4>
                   <div className="publication-modal__social-bar">
+                    {sitio_web && (
+                      <a
+                        href={
+                          sitio_web.startsWith("http")
+                            ? sitio_web
+                            : `https://${sitio_web}`
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="publication-modal__social-icon publication-modal__social-icon--website"
+                        title="Sitio Web">
+                        <FontAwesomeIcon icon={faGlobe} />
+                      </a>
+                    )}
                     {whatsapp && (
                       <button
                         className="publication-modal__social-icon publication-modal__social-icon--whatsapp"

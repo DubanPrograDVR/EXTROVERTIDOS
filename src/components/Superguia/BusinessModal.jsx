@@ -404,9 +404,7 @@ export default function BusinessModal({
               alt="Superguía"
               className="publication-modal__brand-logo"
             />
-            <span className="publication-modal__brand-text">
-              superguía extrovertidos
-            </span>
+            <span className="publication-modal__brand-text">superguía</span>
           </div>
           {!isEditMode && subcategoria && (
             <span className="publication-modal__subcategory-tag">
@@ -713,10 +711,7 @@ export default function BusinessModal({
                         <FontAwesomeIcon icon={faMapMarkerAlt} /> Dirección
                       </h4>
                       <p className="publication-modal__location-address">
-                        {direccion && `${direccion}, `}
-                        {comuna}
-                        {provincia && `, ${provincia}`}
-                        {region && ` - ${region}`}
+                        {direccion || "Sin dirección"}
                       </p>
                       {ubicacion_url && (
                         <button

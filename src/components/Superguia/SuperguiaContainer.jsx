@@ -7,20 +7,24 @@ import {
   faSearch,
   faFilter,
   faSpinner,
+  faFire,
 } from "@fortawesome/free-solid-svg-icons";
 import Footer from "../Home/Footer";
 import Pagination from "./Pagination";
 import FilterPanel from "./FilterPanel";
 import BusinessGrid from "./BusinessGrid";
 import BusinessModal from "./BusinessModal";
+import Carousel from "./Carousel";
+import PublicationModal from "./PublicationModal";
 import {
   getPublishedBusinesses,
   getBusinessCategories,
+  getPublishedEvents,
 } from "../../lib/database";
 import { LOCATIONS } from "./data";
 import "./styles/SuperguiaContainer.css";
 
-const ITEMS_PER_PAGE = 8;
+const ITEMS_PER_PAGE = 16;
 
 /**
  * SuperguiaContainer - Página para mostrar negocios publicados
@@ -46,18 +50,30 @@ export default function SuperguiaContainer() {
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Clave para forzar reordenamiento aleatorio
+  const [shuffleKey, setShuffleKey] = useState(0);
+
+  // Estado para panoramas (carrusel cruzado)
+  const [panoramas, setPanoramas] = useState([]);
+  const [selectedPanorama, setSelectedPanorama] = useState(null);
+  const [isPanoramaModalOpen, setIsPanoramaModalOpen] = useState(false);
+
   // Cargar datos
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       setError(null);
       try {
-        const [businessesData, categoriesData] = await Promise.all([
+        const [businessesData, categoriesData, eventsData] = await Promise.all([
           getPublishedBusinesses(),
           getBusinessCategories(),
+          getPublishedEvents(),
         ]);
-        setBusinesses(businessesData || []);
+        // Mezclar negocios en orden aleatorio cada vez que se carga
+        const shuffled = (businessesData || []).sort(() => Math.random() - 0.5);
+        setBusinesses(shuffled);
         setCategories(categoriesData || []);
+        setPanoramas(eventsData || []);
       } catch (err) {
         console.error("Error cargando datos:", err);
         setError("No se pudieron cargar los negocios");
@@ -98,11 +114,13 @@ export default function SuperguiaContainer() {
     setSelectedCategory(category);
     setSelectedSubcategory(null);
     setCurrentPage(1);
+    setShuffleKey((k) => k + 1);
   }, []);
 
   const handleSubcategoryChange = useCallback((subcategory) => {
     setSelectedSubcategory(subcategory);
     setCurrentPage(1);
+    setShuffleKey((k) => k + 1);
   }, []);
 
   const handleComunaChange = useCallback((comuna) => {
@@ -133,6 +151,17 @@ export default function SuperguiaContainer() {
   const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);
     setSelectedBusiness(null);
+  }, []);
+
+  // Handlers para carrusel de panoramas
+  const handlePanoramaClick = useCallback((panorama) => {
+    setSelectedPanorama(panorama);
+    setIsPanoramaModalOpen(true);
+  }, []);
+
+  const handleClosePanoramaModal = useCallback(() => {
+    setIsPanoramaModalOpen(false);
+    setSelectedPanorama(null);
   }, []);
 
   // Filtrar negocios
@@ -199,6 +228,12 @@ export default function SuperguiaContainer() {
       );
     }
 
+    // Mezclar en orden aleatorio
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+
     return result;
   }, [
     businesses,
@@ -209,6 +244,7 @@ export default function SuperguiaContainer() {
     selectedComuna,
     categories,
     flatSubcategories,
+    shuffleKey,
   ]);
 
   // Comunas disponibles según ciudad seleccionada
@@ -217,53 +253,127 @@ export default function SuperguiaContainer() {
     return LOCATIONS[selectedCity]?.comunas || [];
   }, [selectedCity]);
 
-  // Conteo de negocios por categoría
+  // Helper: aplica filtros seleccionados excepto los indicados en `exclude`
+  const applyFilters = useCallback(
+    (exclude = {}) => {
+      let result = businesses;
+
+      if (!exclude.search && searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        result = result.filter(
+          (b) =>
+            b.nombre?.toLowerCase().includes(query) ||
+            b.comuna?.toLowerCase().includes(query) ||
+            b.provincia?.toLowerCase().includes(query) ||
+            b.categoria?.toLowerCase().includes(query) ||
+            b.subcategoria?.toLowerCase().includes(query) ||
+            b.slogan?.toLowerCase().includes(query) ||
+            b.descripcion?.toLowerCase().includes(query),
+        );
+      }
+
+      if (!exclude.category && selectedCategory) {
+        const selectedCat = categories.find((c) => c.id === selectedCategory);
+        if (selectedCat) {
+          result = result.filter(
+            (b) =>
+              b.categoria?.toLowerCase() === selectedCat.nombre.toLowerCase(),
+          );
+        }
+      }
+
+      if (!exclude.subcategory && selectedSubcategory) {
+        const subcat = flatSubcategories.find(
+          (s) => s.id === selectedSubcategory,
+        );
+        if (subcat) {
+          result = result.filter(
+            (b) =>
+              b.subcategoria?.toLowerCase() === subcat.nombre.toLowerCase(),
+          );
+        }
+      }
+
+      if (!exclude.city && selectedCity) {
+        const cityName = LOCATIONS[selectedCity]?.nombre;
+        if (cityName) {
+          result = result.filter(
+            (b) => b.provincia?.toLowerCase() === cityName.toLowerCase(),
+          );
+        }
+      }
+
+      if (!exclude.comuna && selectedComuna) {
+        result = result.filter(
+          (b) => b.comuna?.toLowerCase() === selectedComuna.toLowerCase(),
+        );
+      }
+
+      return result;
+    },
+    [
+      businesses,
+      searchQuery,
+      selectedCategory,
+      selectedSubcategory,
+      selectedCity,
+      selectedComuna,
+      categories,
+      flatSubcategories,
+    ],
+  );
+
+  // Conteo de negocios por categoría (todos los filtros excepto categoría y subcategoría)
   const businessesCountByCategory = useMemo(() => {
+    const base = applyFilters({ category: true, subcategory: true });
     const counts = {};
     categories.forEach((cat) => {
-      counts[cat.id] = businesses.filter(
+      counts[cat.id] = base.filter(
         (b) => b.categoria?.toLowerCase() === cat.nombre.toLowerCase(),
       ).length;
     });
     return counts;
-  }, [businesses, categories]);
+  }, [applyFilters, categories]);
 
-  // Conteo de negocios por ciudad
+  // Conteo de negocios por ciudad (todos los filtros excepto ciudad y comuna)
   const businessesCountByCity = useMemo(() => {
+    const base = applyFilters({ city: true, comuna: true });
     const counts = {};
     Object.entries(LOCATIONS).forEach(([key, city]) => {
-      counts[key] = businesses.filter(
+      counts[key] = base.filter(
         (b) => b.provincia?.toLowerCase() === city.nombre.toLowerCase(),
       ).length;
     });
     return counts;
-  }, [businesses]);
+  }, [applyFilters]);
 
-  // Conteo de negocios por comuna
+  // Conteo de negocios por comuna (todos los filtros excepto comuna)
   const businessesCountByComuna = useMemo(() => {
     const counts = {};
     if (!selectedCity) return counts;
+    const base = applyFilters({ comuna: true });
     const cityName = LOCATIONS[selectedCity]?.nombre;
     availableComunas.forEach((comuna) => {
-      counts[comuna] = businesses.filter(
+      counts[comuna] = base.filter(
         (b) =>
           b.provincia?.toLowerCase() === cityName?.toLowerCase() &&
           b.comuna?.toLowerCase() === comuna.toLowerCase(),
       ).length;
     });
     return counts;
-  }, [businesses, selectedCity, availableComunas]);
+  }, [applyFilters, selectedCity, availableComunas]);
 
-  // Conteo de negocios por subcategoría
+  // Conteo de negocios por subcategoría (todos los filtros excepto subcategoría)
   const businessesCountBySubcategory = useMemo(() => {
+    const base = applyFilters({ subcategory: true });
     const counts = {};
     flatSubcategories.forEach((sub) => {
-      counts[sub.id] = businesses.filter(
+      counts[sub.id] = base.filter(
         (b) => b.subcategoria?.toLowerCase() === sub.nombre.toLowerCase(),
       ).length;
     });
     return counts;
-  }, [businesses, flatSubcategories]);
+  }, [applyFilters, flatSubcategories]);
 
   // Paginación
   const totalPages = Math.ceil(filteredBusinesses.length / ITEMS_PER_PAGE);
@@ -441,11 +551,40 @@ export default function SuperguiaContainer() {
         </div>
       </section>
 
+      {/* Carrusel de Panoramas */}
+      {panoramas.length > 0 && (
+        <section className="superguia__featured">
+          <div className="superguia__featured-header">
+            <div className="superguia__featured-title">
+              <FontAwesomeIcon
+                icon={faFire}
+                className="superguia__featured-icon"
+              />
+              <h2>Descubre panoramas</h2>
+            </div>
+            <p className="superguia__featured-subtitle">
+              Explora los eventos más populares de la región
+            </p>
+          </div>
+          <Carousel
+            publications={panoramas.slice(0, 10)}
+            onPublicationClick={handlePanoramaClick}
+          />
+        </section>
+      )}
+
       {/* Modal de negocio */}
       <BusinessModal
         business={selectedBusiness}
         isOpen={isModalOpen}
         onClose={handleCloseModal}
+      />
+
+      {/* Modal de panorama */}
+      <PublicationModal
+        publication={selectedPanorama}
+        isOpen={isPanoramaModalOpen}
+        onClose={handleClosePanoramaModal}
       />
 
       <Footer />
