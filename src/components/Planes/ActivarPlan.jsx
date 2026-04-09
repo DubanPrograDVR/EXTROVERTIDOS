@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import {
@@ -8,6 +8,7 @@ import {
   getUserSubscriptions,
 } from "../../lib/database";
 import { initiatePayment, PaymentError } from "../../lib/payment";
+import AuthModal from "../Auth/AuthModal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCheck,
@@ -174,6 +175,8 @@ export default function ActivarPlan() {
   const [addSuperguia, setAddSuperguia] = useState(false);
   const [checkingAccess, setCheckingAccess] = useState(true);
   const [processingPayment, setProcessingPayment] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const termsRef = useRef(null);
   const [planPrices, setPlanPrices] = useState(DEFAULT_PLAN_PRICES);
   const [activePlans, setActivePlans] = useState(new Set());
   const [renewablePlans, setRenewablePlans] = useState(new Set());
@@ -347,6 +350,14 @@ export default function ActivarPlan() {
     );
   }
 
+  if (!isAuthenticated) {
+    return (
+      <div className="activar-plan">
+        <AuthModal isOpen={true} onClose={() => navigate("/")} persistent />
+      </div>
+    );
+  }
+
   return (
     <div className="activar-plan">
       {/* Progress bar */}
@@ -395,7 +406,20 @@ export default function ActivarPlan() {
                 className={`activar-plan__card ${
                   plan.destacado ? "activar-plan__card--featured" : ""
                 } ${selectedPlan === plan.id ? "activar-plan__card--selected" : ""} ${isPlanDisabled ? "activar-plan__card--disabled" : ""} ${isOwnActive ? "activar-plan__card--own-active" : ""} ${isOtherActive ? "activar-plan__card--other-active" : ""}`}
-                onClick={() => !isPlanDisabled && setSelectedPlan(plan.id)}>
+                onClick={() => {
+                  if (!isPlanDisabled) {
+                    const newPlan = selectedPlan === plan.id ? null : plan.id;
+                    setSelectedPlan(newPlan);
+                    if (newPlan) {
+                      setTimeout(() => {
+                        termsRef.current?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "center",
+                        });
+                      }, 100);
+                    }
+                  }
+                }}>
                 {/* Badge de plan activo */}
                 {isOwnActive && (
                   <span className="activar-plan__card-active-badge">
@@ -503,8 +527,8 @@ export default function ActivarPlan() {
       <section className="activar-plan__section activar-plan__section--superguia">
         <div className="activar-plan__section-header">
           <img
-            src={iconExtro}
-            alt="Extrovertidos"
+            src={iconSuperguia}
+            alt="Superguía"
             className="activar-plan__section-icon"
           />
           <h2 className="activar-plan__section-title">
@@ -516,7 +540,19 @@ export default function ActivarPlan() {
           className={`activar-plan__superguia ${
             addSuperguia ? "activar-plan__superguia--selected" : ""
           } ${hasActiveSuperguia ? "activar-plan__superguia--disabled activar-plan__superguia--own-active" : ""}`}
-          onClick={() => !hasActiveSuperguia && setAddSuperguia(!addSuperguia)}>
+          onClick={() => {
+            if (!hasActiveSuperguia) {
+              setAddSuperguia(!addSuperguia);
+              if (!addSuperguia) {
+                setTimeout(() => {
+                  termsRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                  });
+                }, 100);
+              }
+            }
+          }}>
           <div className="activar-plan__superguia-content">
             <div className="activar-plan__superguia-icon">
               <FontAwesomeIcon icon={faStore} />
@@ -569,6 +605,51 @@ export default function ActivarPlan() {
         </div>
       </section>
 
+      {/* Términos y condiciones previos al pago */}
+      {(selectedPlan || addSuperguia) && (
+        <section className="activar-plan__terms" ref={termsRef}>
+          <label className="activar-plan__terms-label">
+            <input
+              type="checkbox"
+              className="activar-plan__terms-checkbox"
+              checked={termsAccepted}
+              onChange={(e) => setTermsAccepted(e.target.checked)}
+            />
+            <span className="activar-plan__terms-text">
+              He leído y acepto los{" "}
+              <Link to="/terminos" className="activar-plan__terms-link">
+                Términos y Condiciones
+              </Link>{" "}
+              y la{" "}
+              <Link to="/privacidad" className="activar-plan__terms-link">
+                Política de Privacidad
+              </Link>
+              . Comprendo y acepto que:
+            </span>
+          </label>
+          <ul className="activar-plan__terms-list">
+            <li>
+              En caso de que mi publicación sea rechazada por incumplir las
+              normas del sitio, cuento con un máximo de 3 intentos de edición
+              para corregir y obtener su aprobación.
+            </li>
+            <li>
+              Si tras el tercer rechazo consecutivo el contenido persiste en su
+              incumplimiento, el cupo se considerará utilizado y el servicio
+              prestado, sin derecho a nuevos intentos ni reembolsos.
+            </li>
+            <li>
+              Según el Art. 3 bis de la Ley 19.496, no aplica derecho a retracto
+              una vez realizado el pago.
+            </li>
+            <li>
+              Declaro que mi contenido no infringe las prohibiciones de lenguaje
+              ofensivo, odio o incitación al desorden público.
+            </li>
+          </ul>
+        </section>
+      )}
+
       {/* Footer con resumen y botón de pagar */}
       <footer className="activar-plan__footer">
         <div className="activar-plan__footer-summary">
@@ -584,7 +665,11 @@ export default function ActivarPlan() {
         <button
           type="button"
           className="activar-plan__next-btn"
-          disabled={(!selectedPlan && !addSuperguia) || processingPayment}
+          disabled={
+            (!selectedPlan && !addSuperguia) ||
+            !termsAccepted ||
+            processingPayment
+          }
           onClick={handleSiguiente}>
           {processingPayment ? (
             <>
