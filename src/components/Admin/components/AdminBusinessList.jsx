@@ -13,6 +13,9 @@ import {
   faPencil,
   faPause,
   faPlay,
+  faCheckSquare,
+  faSquare,
+  faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
 
 /**
@@ -33,6 +36,9 @@ export default function AdminBusinessList({
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   // Filtrar negocios
   const filteredBusinesses = businesses.filter((business) => {
@@ -87,6 +93,39 @@ export default function AdminBusinessList({
     }
   };
 
+  // Selección individual
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // Seleccionar/deseleccionar todos los filtrados
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredBusinesses.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredBusinesses.map((b) => b.id)));
+    }
+  };
+
+  // Eliminar seleccionados
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    try {
+      for (const id of selectedIds) {
+        await onDelete(id);
+      }
+      setSelectedIds(new Set());
+    } finally {
+      setBulkDeleting(false);
+      setBulkDeleteConfirm(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="admin-section">
@@ -134,6 +173,27 @@ export default function AdminBusinessList({
         </div>
       </div>
 
+      {/* Barra de selección masiva */}
+      {selectedIds.size > 0 && (
+        <div className="admin-bulk-bar">
+          <span className="admin-bulk-bar__count">
+            {selectedIds.size} seleccionado{selectedIds.size > 1 ? "s" : ""}
+          </span>
+          <button
+            className="admin-bulk-bar__btn admin-bulk-bar__btn--delete"
+            onClick={() => setBulkDeleteConfirm(true)}
+            disabled={bulkDeleting}>
+            <FontAwesomeIcon icon={faTrash} />
+            Eliminar seleccionados
+          </button>
+          <button
+            className="admin-bulk-bar__btn admin-bulk-bar__btn--cancel"
+            onClick={() => setSelectedIds(new Set())}>
+            Cancelar selección
+          </button>
+        </div>
+      )}
+
       {/* Lista de negocios */}
       {filteredBusinesses.length === 0 ? (
         <div className="admin-empty">
@@ -147,6 +207,25 @@ export default function AdminBusinessList({
             <table className="admin-table">
               <thead>
                 <tr>
+                  <th className="admin-th-checkbox">
+                    <button
+                      className="admin-select-btn"
+                      onClick={toggleSelectAll}
+                      title={
+                        selectedIds.size === filteredBusinesses.length
+                          ? "Deseleccionar todos"
+                          : "Seleccionar todos"
+                      }>
+                      <FontAwesomeIcon
+                        icon={
+                          selectedIds.size === filteredBusinesses.length &&
+                          filteredBusinesses.length > 0
+                            ? faCheckSquare
+                            : faSquare
+                        }
+                      />
+                    </button>
+                  </th>
                   <th>Negocio</th>
                   <th>Propietario</th>
                   <th>Ubicación</th>
@@ -157,7 +236,24 @@ export default function AdminBusinessList({
               </thead>
               <tbody>
                 {filteredBusinesses.map((business) => (
-                  <tr key={business.id}>
+                  <tr
+                    key={business.id}
+                    className={
+                      selectedIds.has(business.id) ? "admin-row--selected" : ""
+                    }>
+                    <td className="admin-td-checkbox">
+                      <button
+                        className="admin-select-btn"
+                        onClick={() => toggleSelect(business.id)}>
+                        <FontAwesomeIcon
+                          icon={
+                            selectedIds.has(business.id)
+                              ? faCheckSquare
+                              : faSquare
+                          }
+                        />
+                      </button>
+                    </td>
                     {/* Negocio */}
                     <td>
                       <div className="admin-table__business">
@@ -322,8 +418,19 @@ export default function AdminBusinessList({
           {/* Vista móvil - Cards */}
           <div className="admin-business__mobile-list">
             {filteredBusinesses.map((business) => (
-              <div key={business.id} className="admin-biz-mobile-card">
+              <div
+                key={business.id}
+                className={`admin-biz-mobile-card ${selectedIds.has(business.id) ? "admin-row--selected" : ""}`}>
                 <div className="admin-biz-mobile-card__header">
+                  <button
+                    className="admin-select-btn admin-select-btn--mobile"
+                    onClick={() => toggleSelect(business.id)}>
+                    <FontAwesomeIcon
+                      icon={
+                        selectedIds.has(business.id) ? faCheckSquare : faSquare
+                      }
+                    />
+                  </button>
                   <div className="admin-biz-mobile-card__image">
                     {business.imagen_url || business.logo_url ? (
                       <img
@@ -448,6 +555,46 @@ export default function AdminBusinessList({
             ))}
           </div>
         </>
+      )}
+
+      {/* Modal de confirmación de eliminación masiva */}
+      {bulkDeleteConfirm && (
+        <div
+          className="admin-delete-modal-overlay"
+          onClick={() => setBulkDeleteConfirm(false)}>
+          <div
+            className="admin-delete-modal"
+            onClick={(e) => e.stopPropagation()}>
+            <h3>¿Eliminar {selectedIds.size} negocios?</h3>
+            <p>
+              Estás a punto de eliminar{" "}
+              <strong>{selectedIds.size} negocios</strong>. Esta acción no se
+              puede deshacer.
+            </p>
+            <div className="admin-delete-modal__actions">
+              <button
+                className="admin-delete-modal__btn admin-delete-modal__btn--cancel"
+                onClick={() => setBulkDeleteConfirm(false)}>
+                Cancelar
+              </button>
+              <button
+                className="admin-delete-modal__btn admin-delete-modal__btn--confirm"
+                onClick={handleBulkDelete}
+                disabled={bulkDeleting}>
+                {bulkDeleting ? (
+                  <>
+                    <FontAwesomeIcon icon={faSpinner} spin /> Eliminando...
+                  </>
+                ) : (
+                  <>
+                    <FontAwesomeIcon icon={faTrash} /> Eliminar{" "}
+                    {selectedIds.size}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

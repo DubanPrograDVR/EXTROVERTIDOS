@@ -649,6 +649,48 @@
   color: #ef4444;
 }
 
+/* Editar subcategoría inline */
+.admin-cat-subcats__chip--editing {
+  border-color: #ff6600;
+  background: #222;
+  padding: 4px 8px;
+}
+
+.admin-cat-subcats__chip-text {
+  cursor: pointer;
+}
+
+.admin-cat-subcats__chip-text:hover {
+  color: #ff6600;
+}
+
+.admin-cat-subcats__chip-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 0.82rem;
+  width: 100px;
+  padding: 2px 0;
+}
+
+.admin-cat-subcats__chip-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 0.7rem;
+  transition: color 0.2s;
+}
+
+.admin-cat-subcats__chip-action:hover {
+  color: #ff6600;
+}
+
 .admin-cat-subcats__add {
   display: flex;
   gap: 8px;

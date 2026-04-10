@@ -34,7 +34,14 @@ import "./AdminCategoryManager.css";
 /**
  * Formulario inline para crear/editar categoría
  */
-const CategoryForm = ({ category, onSave, onCancel, loading, type }) => {
+const CategoryForm = ({
+  category,
+  onSave,
+  onSubcatSave,
+  onCancel,
+  loading,
+  type,
+}) => {
   const [form, setForm] = useState({
     nombre: category?.nombre || "",
     icono: category?.icono || "",
@@ -47,6 +54,8 @@ const CategoryForm = ({ category, onSave, onCancel, loading, type }) => {
     category?.subcategorias || [],
   );
   const [newSubcat, setNewSubcat] = useState("");
+  const [editingSubcatIndex, setEditingSubcatIndex] = useState(null);
+  const [editingSubcatValue, setEditingSubcatValue] = useState("");
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -55,13 +64,46 @@ const CategoryForm = ({ category, onSave, onCancel, loading, type }) => {
   const handleAddSubcat = () => {
     const trimmed = newSubcat.trim();
     if (trimmed && !subcategorias.includes(trimmed)) {
-      setSubcategorias((prev) => [...prev, trimmed]);
+      const updated = [...subcategorias, trimmed];
+      setSubcategorias(updated);
       setNewSubcat("");
+      if (category?.id && onSubcatSave)
+        onSubcatSave({ subcategorias: updated });
     }
   };
 
   const handleRemoveSubcat = (index) => {
-    setSubcategorias((prev) => prev.filter((_, i) => i !== index));
+    const updated = subcategorias.filter((_, i) => i !== index);
+    setSubcategorias(updated);
+    if (editingSubcatIndex === index) setEditingSubcatIndex(null);
+    if (category?.id && onSubcatSave) onSubcatSave({ subcategorias: updated });
+  };
+
+  const handleStartEditSubcat = (index) => {
+    setEditingSubcatIndex(index);
+    setEditingSubcatValue(subcategorias[index]);
+  };
+
+  const handleSaveEditSubcat = () => {
+    const trimmed = editingSubcatValue.trim();
+    if (
+      trimmed &&
+      !subcategorias.some((s, i) => s === trimmed && i !== editingSubcatIndex)
+    ) {
+      const updated = subcategorias.map((s, i) =>
+        i === editingSubcatIndex ? trimmed : s,
+      );
+      setSubcategorias(updated);
+      if (category?.id && onSubcatSave)
+        onSubcatSave({ subcategorias: updated });
+    }
+    setEditingSubcatIndex(null);
+    setEditingSubcatValue("");
+  };
+
+  const handleCancelEditSubcat = () => {
+    setEditingSubcatIndex(null);
+    setEditingSubcatValue("");
   };
 
   const handleSubmit = (e) => {
@@ -168,15 +210,65 @@ const CategoryForm = ({ category, onSave, onCancel, loading, type }) => {
           </label>
           <div className="admin-cat-subcats__list">
             {subcategorias.map((sub, i) => (
-              <span key={i} className="admin-cat-subcats__chip">
-                {sub}
-                <button
-                  type="button"
-                  onClick={() => handleRemoveSubcat(i)}
-                  className="admin-cat-subcats__chip-remove"
-                  title="Eliminar">
-                  <FontAwesomeIcon icon={faTimes} />
-                </button>
+              <span
+                key={i}
+                className={`admin-cat-subcats__chip ${editingSubcatIndex === i ? "admin-cat-subcats__chip--editing" : ""}`}>
+                {editingSubcatIndex === i ? (
+                  <>
+                    <input
+                      type="text"
+                      className="admin-cat-subcats__chip-input"
+                      value={editingSubcatValue}
+                      onChange={(e) => setEditingSubcatValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleSaveEditSubcat();
+                        }
+                        if (e.key === "Escape") handleCancelEditSubcat();
+                      }}
+                      maxLength={80}
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSaveEditSubcat}
+                      className="admin-cat-subcats__chip-action"
+                      title="Guardar">
+                      <FontAwesomeIcon icon={faCheck} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCancelEditSubcat}
+                      className="admin-cat-subcats__chip-action"
+                      title="Cancelar">
+                      <FontAwesomeIcon icon={faTimes} />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span
+                      className="admin-cat-subcats__chip-text"
+                      onClick={() => handleStartEditSubcat(i)}
+                      title="Clic para editar">
+                      {sub}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleStartEditSubcat(i)}
+                      className="admin-cat-subcats__chip-action"
+                      title="Editar">
+                      <FontAwesomeIcon icon={faEdit} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSubcat(i)}
+                      className="admin-cat-subcats__chip-remove"
+                      title="Eliminar">
+                      <FontAwesomeIcon icon={faTimes} />
+                    </button>
+                  </>
+                )}
               </span>
             ))}
           </div>
@@ -305,13 +397,24 @@ export default function AdminCategoryManager() {
   };
 
   // Actualizar categoría
-  const handleUpdate = async (categoryId, formData) => {
+  const handleUpdate = async (
+    categoryId,
+    formData,
+    { keepEditing = false } = {},
+  ) => {
     try {
       setActionLoading(categoryId);
-      await crudFns.update(categoryId, formData);
+      const updatedCat = await crudFns.update(categoryId, formData);
       showToast("Categoría actualizada", "success");
-      setEditingId(null);
-      await loadCategories();
+      if (!keepEditing) {
+        setEditingId(null);
+        await loadCategories();
+      } else {
+        // Actualizar solo esta categoría sin recargar (evita unmount del form)
+        setCategories((prev) =>
+          prev.map((c) => (c.id === categoryId ? updatedCat : c)),
+        );
+      }
     } catch (error) {
       showToast(error.message || "Error al actualizar categoría", "error");
     } finally {
@@ -466,6 +569,9 @@ export default function AdminCategoryManager() {
                 <CategoryForm
                   category={category}
                   onSave={(data) => handleUpdate(category.id, data)}
+                  onSubcatSave={(data) =>
+                    handleUpdate(category.id, data, { keepEditing: true })
+                  }
                   onCancel={() => setEditingId(null)}
                   loading={actionLoading === category.id}
                   type={categoryType}

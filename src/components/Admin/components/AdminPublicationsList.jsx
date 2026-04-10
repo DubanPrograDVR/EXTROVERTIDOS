@@ -15,6 +15,8 @@ import {
   faUser,
   faPause,
   faPlay,
+  faCheckSquare,
+  faSquare,
 } from "@fortawesome/free-solid-svg-icons";
 import { formatDate } from "../utils/formatters";
 
@@ -28,12 +30,16 @@ export default function AdminPublicationsList({
   onView,
   onEdit,
   onDelete,
+  onBulkDelete,
   onPause,
   onRefresh,
 }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   // Filtrar eventos
   const filteredEvents = events.filter((event) => {
@@ -64,6 +70,39 @@ export default function AdminPublicationsList({
 
   const handleDeleteCancel = () => {
     setDeleteConfirm(null);
+  };
+
+  // Selección individual
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // Seleccionar/deseleccionar todos los filtrados
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredEvents.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredEvents.map((e) => e.id)));
+    }
+  };
+
+  // Eliminar seleccionados
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    try {
+      for (const id of selectedIds) {
+        await onDelete(id);
+      }
+      setSelectedIds(new Set());
+    } finally {
+      setBulkDeleting(false);
+      setBulkDeleteConfirm(false);
+    }
   };
 
   // Obtener badge de estado
@@ -142,6 +181,27 @@ export default function AdminPublicationsList({
         </div>
       </div>
 
+      {/* Barra de selección masiva */}
+      {selectedIds.size > 0 && (
+        <div className="admin-bulk-bar">
+          <span className="admin-bulk-bar__count">
+            {selectedIds.size} seleccionado{selectedIds.size > 1 ? "s" : ""}
+          </span>
+          <button
+            className="admin-bulk-bar__btn admin-bulk-bar__btn--delete"
+            onClick={() => setBulkDeleteConfirm(true)}
+            disabled={bulkDeleting}>
+            <FontAwesomeIcon icon={faTrash} />
+            Eliminar seleccionados
+          </button>
+          <button
+            className="admin-bulk-bar__btn admin-bulk-bar__btn--cancel"
+            onClick={() => setSelectedIds(new Set())}>
+            Cancelar selección
+          </button>
+        </div>
+      )}
+
       {/* Empty state */}
       {filteredEvents.length === 0 ? (
         <div className="admin-publications__empty">
@@ -154,6 +214,25 @@ export default function AdminPublicationsList({
             <table className="admin-publications__table">
               <thead>
                 <tr>
+                  <th className="admin-th-checkbox">
+                    <button
+                      className="admin-select-btn"
+                      onClick={toggleSelectAll}
+                      title={
+                        selectedIds.size === filteredEvents.length
+                          ? "Deseleccionar todos"
+                          : "Seleccionar todos"
+                      }>
+                      <FontAwesomeIcon
+                        icon={
+                          selectedIds.size === filteredEvents.length &&
+                          filteredEvents.length > 0
+                            ? faCheckSquare
+                            : faSquare
+                        }
+                      />
+                    </button>
+                  </th>
                   <th>Publicación</th>
                   <th>Autor</th>
                   <th>Ubicación</th>
@@ -165,7 +244,22 @@ export default function AdminPublicationsList({
               </thead>
               <tbody>
                 {filteredEvents.map((event) => (
-                  <tr key={event.id}>
+                  <tr
+                    key={event.id}
+                    className={
+                      selectedIds.has(event.id) ? "admin-row--selected" : ""
+                    }>
+                    <td className="admin-td-checkbox">
+                      <button
+                        className="admin-select-btn"
+                        onClick={() => toggleSelect(event.id)}>
+                        <FontAwesomeIcon
+                          icon={
+                            selectedIds.has(event.id) ? faCheckSquare : faSquare
+                          }
+                        />
+                      </button>
+                    </td>
                     <td>
                       <div className="admin-pub-cell">
                         <img
@@ -263,7 +357,16 @@ export default function AdminPublicationsList({
           {/* Vista de cards - Móvil */}
           <div className="admin-publications__mobile-list">
             {filteredEvents.map((event) => (
-              <div key={event.id} className="admin-pub-mobile-card">
+              <div
+                key={event.id}
+                className={`admin-pub-mobile-card ${selectedIds.has(event.id) ? "admin-row--selected" : ""}`}>
+                <button
+                  className="admin-select-btn admin-select-btn--mobile"
+                  onClick={() => toggleSelect(event.id)}>
+                  <FontAwesomeIcon
+                    icon={selectedIds.has(event.id) ? faCheckSquare : faSquare}
+                  />
+                </button>
                 <img
                   className="admin-pub-mobile-card__image"
                   src={
@@ -396,6 +499,45 @@ export default function AdminPublicationsList({
                 ) : (
                   <>
                     <FontAwesomeIcon icon={faTrash} /> Eliminar
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modal de confirmación de eliminación masiva */}
+      {bulkDeleteConfirm && (
+        <div
+          className="admin-delete-modal-overlay"
+          onClick={() => setBulkDeleteConfirm(false)}>
+          <div
+            className="admin-delete-modal"
+            onClick={(e) => e.stopPropagation()}>
+            <h3>¿Eliminar {selectedIds.size} publicaciones?</h3>
+            <p>
+              Estás a punto de eliminar{" "}
+              <strong>{selectedIds.size} publicaciones</strong>. Esta acción no
+              se puede deshacer.
+            </p>
+            <div className="admin-delete-modal__actions">
+              <button
+                className="admin-delete-modal__btn admin-delete-modal__btn--cancel"
+                onClick={() => setBulkDeleteConfirm(false)}>
+                Cancelar
+              </button>
+              <button
+                className="admin-delete-modal__btn admin-delete-modal__btn--confirm"
+                onClick={handleBulkDelete}
+                disabled={bulkDeleting}>
+                {bulkDeleting ? (
+                  <>
+                    <FontAwesomeIcon icon={faSpinner} spin /> Eliminando...
+                  </>
+                ) : (
+                  <>
+                    <FontAwesomeIcon icon={faTrash} /> Eliminar{" "}
+                    {selectedIds.size}
                   </>
                 )}
               </button>
