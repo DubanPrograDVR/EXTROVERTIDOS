@@ -725,10 +725,12 @@
 }
 
 .publicar-form__location-hint {
-  margin: 0;
+  margin: 0 auto;
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.5);
-  max-width: 350px;
+  color: #fff;
+  max-width: 100%;
+  text-align: center;
+  white-space: nowrap;
 }
 
 /* Form Actions Container */
@@ -1352,7 +1354,7 @@
 
 .wizard-step-error {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   padding: 14px 20px;
@@ -1368,13 +1370,39 @@
 
 .wizard-step-error__content {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 10px;
 }
 
-.wizard-step-error__content svg {
+.wizard-step-error__content > svg {
   font-size: 1.1rem;
   flex-shrink: 0;
+}
+
+.wizard-step-error__fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.wizard-step-error__field-btn {
+  padding: 6px 14px;
+  border: 1px solid rgba(255, 68, 68, 0.5);
+  border-radius: 20px;
+  background: rgba(255, 68, 68, 0.08);
+  color: #ff6666;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.wizard-step-error__field-btn:hover {
+  background: rgba(255, 68, 68, 0.2);
+  border-color: #ff4444;
+  color: #fff;
+  transform: translateY(-1px);
 }
 
 .wizard-step-error__close {

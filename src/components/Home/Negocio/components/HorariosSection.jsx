@@ -42,7 +42,7 @@ const HorariosSection = ({
             (Selecciona tus días)
           </span>
         </label>
-        <div className="publicar-negocio__dias-pills">
+        <div className="publicar-negocio__dias-pills" id="dias_atencion">
           {DIAS_SEMANA.map((dia) => (
             <button
               key={dia}

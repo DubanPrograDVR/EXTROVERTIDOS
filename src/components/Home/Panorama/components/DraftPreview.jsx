@@ -266,12 +266,10 @@ const DraftPreview = ({
             </span>
           )}
           <span className="publication-modal__draft-badge">Vista Previa</span>
+          <button className="publication-modal__close" onClick={onClose}>
+            <FontAwesomeIcon icon={faTimes} />
+          </button>
         </div>
-
-        {/* Botón cerrar */}
-        <button className="publication-modal__close" onClick={onClose}>
-          <FontAwesomeIcon icon={faTimes} />
-        </button>
 
         {/* Cuerpo del modal */}
         <div className="publication-modal__body">
@@ -362,9 +360,13 @@ const DraftPreview = ({
                 isOpen={activeSection === ACCORDION_SECTIONS.DESCRIPTION}
                 onToggle={() => toggleSection(ACCORDION_SECTIONS.DESCRIPTION)}>
                 <div className="publication-modal__description-content">
-                  <p>
-                    {formData.descripcion || "Sin descripción agregada aún..."}
-                  </p>
+                  {formData.descripcion ? (
+                    formData.descripcion
+                      .split(/\n\s*\n/)
+                      .map((paragraph, i) => <p key={i}>{paragraph}</p>)
+                  ) : (
+                    <p>Sin descripción agregada aún...</p>
+                  )}
                 </div>
               </AccordionSection>
 

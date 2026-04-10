@@ -816,6 +816,7 @@ export default function PanoramasPage() {
         publication={selectedEvent}
         isOpen={isModalOpen}
         onClose={handleCloseModal}
+        modalVariant="panoramas"
       />
 
       {/* Modal de negocio */}

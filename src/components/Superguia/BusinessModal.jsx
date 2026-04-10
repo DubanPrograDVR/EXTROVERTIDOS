@@ -27,6 +27,7 @@ import {
   faSave,
   faSpinner,
   faInfoCircle,
+  faImage,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faWhatsapp,
@@ -101,6 +102,7 @@ export default function BusinessModal({
   const [editData, setEditData] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const [categoriesList, setCategoriesList] = useState([]);
+  const [isInfoExpanded, setIsInfoExpanded] = useState(false);
 
   const canEdit = isAdmin || isModerator;
 
@@ -146,6 +148,7 @@ export default function BusinessModal({
     setCurrentImageIndex(0);
     setImageError(false);
     setIsEditMode(startInEditMode);
+    setIsInfoExpanded(false);
     // Inicializar datos de edición
     if (business) {
       setEditData({
@@ -485,9 +488,22 @@ export default function BusinessModal({
         </button>
 
         {/* Cuerpo del modal */}
-        <div className="publication-modal__body">
+        <div
+          className={`publication-modal__body ${isInfoExpanded ? "publication-modal__body--expanded" : ""}`}>
           {/* SECCIÓN IZQUIERDA: IMAGEN */}
-          <div className="publication-modal__left">
+          <div
+            className={`publication-modal__left ${isInfoExpanded ? "publication-modal__left--hidden" : ""}`}>
+            {/* Botón "Más info" flotante sobre la imagen (solo móvil) */}
+            <button
+              className="publication-modal__mobile-info-btn"
+              onClick={() => setIsInfoExpanded(true)}>
+              <FontAwesomeIcon icon={faInfoCircle} />
+              Más info
+              <FontAwesomeIcon
+                icon={faChevronUp}
+                className="publication-modal__mobile-info-btn-arrow"
+              />
+            </button>
             <div
               className="publication-modal__image-bg"
               style={{ backgroundImage: `url(${getCurrentImageUrl()})` }}
@@ -526,7 +542,21 @@ export default function BusinessModal({
           </div>
 
           {/* SECCIÓN DERECHA: CONTENIDO */}
-          <div className="publication-modal__right">
+          <div
+            className={`publication-modal__right ${isInfoExpanded ? "publication-modal__right--expanded" : ""}`}>
+            {/* Botón "Ver imagen" para volver (solo móvil, solo cuando está expandido) */}
+            {isInfoExpanded && (
+              <button
+                className="publication-modal__mobile-image-btn"
+                onClick={() => setIsInfoExpanded(false)}>
+                <FontAwesomeIcon icon={faImage} />
+                Ver imagen
+                <FontAwesomeIcon
+                  icon={faChevronDown}
+                  className="publication-modal__mobile-info-btn-arrow"
+                />
+              </button>
+            )}
             {/* Título - Modo Lectura */}
             {!isEditMode && (
               <div className="publication-modal__title-section">

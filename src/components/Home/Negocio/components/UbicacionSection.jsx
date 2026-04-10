@@ -62,6 +62,7 @@ const UbicacionSection = ({ formData, errors, onChange, onFieldFocus }) => {
             ref={provRef}>
             <button
               type="button"
+              id="provincia"
               className="custom-dropdown__trigger"
               onClick={() => setProvOpen((prev) => !prev)}>
               <span
@@ -103,6 +104,7 @@ const UbicacionSection = ({ formData, errors, onChange, onFieldFocus }) => {
             ref={comRef}>
             <button
               type="button"
+              id="comuna"
               className="custom-dropdown__trigger"
               onClick={() => formData.provincia && setComOpen((prev) => !prev)}
               disabled={!formData.provincia}>

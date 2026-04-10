@@ -50,78 +50,118 @@ const PublicarForm = ({
   const [currentStep, setCurrentStep] = useState(1);
   const [isDraftPreviewOpen, setIsDraftPreviewOpen] = useState(false);
   const [stepError, setStepError] = useState("");
+  const [missingFields, setMissingFields] = useState([]);
   const [errorKey, setErrorKey] = useState(0);
 
-  // Campos obligatorios por paso
-  const validateCurrentStep = useCallback(() => {
+  // Detectar campos obligatorios faltantes por paso
+  const getMissingFields = useCallback(() => {
+    const missing = [];
     switch (currentStep) {
       case 1:
-        return formData.titulo?.trim().length >= 3 && !!formData.category_id;
-      case 2: {
-        const base =
-          !!formData.fecha_evento &&
-          !!formData.provincia &&
-          formData.comuna?.trim() &&
-          formData.direccion?.trim();
-        if (!base) return false;
-        if (formData.es_multidia && !formData.fecha_fin) return false;
+        if (!formData.titulo?.trim() || formData.titulo.trim().length < 3)
+          missing.push({ field: "titulo", label: "Título" });
+        if (!formData.category_id)
+          missing.push({ field: "category_id", label: "Categoría" });
+        break;
+      case 2:
+        if (!formData.fecha_evento)
+          missing.push({ field: "fecha_evento", label: "Fecha del evento" });
+        if (!formData.provincia)
+          missing.push({ field: "provincia", label: "Provincia" });
+        if (!formData.comuna?.trim())
+          missing.push({ field: "comuna", label: "Comuna" });
+        if (!formData.direccion?.trim())
+          missing.push({ field: "direccion", label: "Dirección" });
+        if (formData.es_multidia && !formData.fecha_fin)
+          missing.push({ field: "fecha_fin", label: "Fecha de término" });
         if (formData.es_recurrente) {
-          if (!formData.fecha_evento_recurrente) return false;
+          if (!formData.fecha_evento_recurrente)
+            missing.push({
+              field: "fecha_evento_recurrente",
+              label: "Fecha recurrente",
+            });
           const rep = Number(formData.cantidad_repeticiones);
-          if (!rep || rep < 2 || rep > 12) return false;
+          if (!rep || rep < 2 || rep > 12)
+            missing.push({
+              field: "cantidad_repeticiones",
+              label: "Cantidad de repeticiones",
+            });
         }
-        return true;
-      }
-      case 3: {
+        break;
+      case 3:
         if (formData.tipo_entrada === "pagado") {
           const precio = Number(formData.precio);
-          if (!precio || precio <= 0) return false;
+          if (!precio || precio <= 0)
+            missing.push({ field: "precio", label: "Precio" });
         }
         if (
           formData.tipo_entrada === "venta_externa" &&
           !formData.url_venta?.trim()
         )
-          return false;
-        return true;
-      }
+          missing.push({ field: "url_venta", label: "URL de venta" });
+        break;
       case 4:
-        return formData.etiqueta_directa?.trim().length >= 2;
-      case 5:
-        return true; // Se valida al publicar
+        if (
+          !formData.etiqueta_directa?.trim() ||
+          formData.etiqueta_directa.trim().length < 2
+        )
+          missing.push({
+            field: "etiqueta_directa",
+            label: "Etiqueta directa",
+          });
+        break;
       default:
-        return true;
+        break;
     }
+    return missing;
   }, [currentStep, formData]);
+
+  const validateCurrentStep = useCallback(() => {
+    return getMissingFields().length === 0;
+  }, [getMissingFields]);
 
   useEffect(() => {
     if (!stepError) return undefined;
 
     const timeoutId = window.setTimeout(() => {
       setStepError("");
-    }, 3000);
+      setMissingFields([]);
+    }, 8000);
 
     return () => window.clearTimeout(timeoutId);
   }, [errorKey]);
 
   const goToStep = useCallback((step) => {
     setStepError("");
+    setMissingFields([]);
     setCurrentStep(step);
     window.scrollTo({ top: 300, behavior: "smooth" });
   }, []);
 
+  const scrollToField = useCallback((fieldName) => {
+    const el =
+      document.getElementById(fieldName) ||
+      document.querySelector(`[name="${fieldName}"]`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.focus({ preventScroll: true });
+    }
+  }, []);
+
   const goNext = useCallback(() => {
     if (currentStep < WIZARD_STEPS.length) {
-      if (!validateCurrentStep()) {
-        setStepError(
-          "Debes completar todos los campos obligatorios para seguir avanzando",
-        );
+      const missing = getMissingFields();
+      if (missing.length > 0) {
+        setMissingFields(missing);
+        setStepError("Campos obligatorios faltantes:");
         setErrorKey((k) => k + 1);
         return;
       }
       setStepError("");
+      setMissingFields([]);
       goToStep(currentStep + 1);
     }
-  }, [currentStep, goToStep, validateCurrentStep]);
+  }, [currentStep, goToStep, getMissingFields]);
 
   const goPrev = useCallback(() => {
     if (currentStep > 1) {
@@ -231,11 +271,27 @@ const PublicarForm = ({
             <div className="wizard-step-error__content">
               <FontAwesomeIcon icon={faExclamationTriangle} />
               <span>{stepError}</span>
+              {missingFields.length > 0 && (
+                <div className="wizard-step-error__fields">
+                  {missingFields.map((f) => (
+                    <button
+                      key={f.field}
+                      type="button"
+                      className="wizard-step-error__field-btn"
+                      onClick={() => scrollToField(f.field)}>
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <button
               type="button"
               className="wizard-step-error__close"
-              onClick={() => setStepError("")}
+              onClick={() => {
+                setStepError("");
+                setMissingFields([]);
+              }}
               aria-label="Cerrar alerta">
               <FontAwesomeIcon icon={faXmark} />
             </button>

@@ -188,6 +188,36 @@
   }
 }
 
+/* ===== NEGOCIOS: Más info móvil (igual que Panoramas) ===== */
+@media (max-width: 600px) {
+  /* Imagen ocupa TODO el modal por defecto en móvil */
+  .publication-modal.publication-modal--business .publication-modal__left {
+    min-height: 0;
+    max-height: none;
+    flex: 1;
+  }
+
+  /* Contenido oculto por defecto en móvil */
+  .publication-modal.publication-modal--business .publication-modal__right {
+    display: none;
+  }
+
+  /* EXPANDIDO: ocultar imagen, mostrar contenido */
+  .publication-modal.publication-modal--business
+    .publication-modal__left.publication-modal__left--hidden {
+    display: none;
+  }
+
+  .publication-modal.publication-modal--business
+    .publication-modal__right.publication-modal__right--expanded {
+    display: flex;
+    flex: 1;
+    height: 100%;
+    max-height: none;
+    overflow-y: auto;
+  }
+}
+
 /* ===== SELECTORES DE CATEGORÍA EN EDICIÓN ===== */
 .publication-modal__category-edit {
   display: flex;

@@ -41,6 +41,11 @@
   animation: slideUp 0.4s ease;
 }
 
+.publication-modal.publication-modal--business-style.publication-modal--panoramas {
+  height: 86vh;
+  max-height: 800px;
+}
+
 /* Header de categoría - parte superior */
 .publication-modal__category-header {
   width: 100%;
@@ -346,6 +351,13 @@
   text-transform: capitalize;
   letter-spacing: 0.5px;
   white-space: nowrap;
+}
+
+/* ===== BOTONES MÓVILES: "Más info" / "Ver imagen" ===== */
+/* Ocultos en desktop por defecto */
+.publication-modal__mobile-info-btn,
+.publication-modal__mobile-image-btn {
+  display: none;
 }
 
 /* ===== SECCIÓN DERECHA (CONTENIDO) ===== */
@@ -1072,7 +1084,7 @@
 
 .publication-modal__description-content p {
   margin: 0 0 12px 0;
-  white-space: pre-line;
+  white-space: pre-wrap;
   overflow-wrap: break-word;
   word-break: break-word;
 }
@@ -1489,6 +1501,11 @@
     width: 32px;
     height: 32px;
   }
+
+  .publication-modal.publication-modal--business-style.publication-modal--panoramas {
+    height: 88vh;
+    max-height: 88vh;
+  }
 }
 
 @media (max-width: 600px) {
@@ -1497,10 +1514,19 @@
   }
 
   .publication-modal.publication-modal--business-style {
+    height: 100dvh;
     height: 100vh;
-    max-height: 100vh;
+    max-height: 100dvh;
     border-radius: 0;
     width: 100%;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .publication-modal__category-header .publication-modal__close {
+    position: static;
+    flex-shrink: 0;
+    margin-left: auto;
   }
 
   .publication-modal__left {
@@ -1595,6 +1621,7 @@
   .publication-modal__description-content p {
     margin: 0 0 14px 0;
     font-size: 1.3rem;
+    white-space: pre-wrap;
   }
 
   /* Hashtags */
@@ -1755,6 +1782,106 @@
 
   .publication-modal__draft-badge {
     font-size: 1rem;
+  }
+
+  /* Panoramas: imagen ocupa TODO el modal por defecto */
+  .publication-modal.publication-modal--business-style.publication-modal--panoramas
+    .publication-modal__left {
+    min-height: 0;
+    max-height: none;
+    flex: 1;
+  }
+
+  /* Panoramas: contenido oculto por defecto en móvil */
+  .publication-modal.publication-modal--business-style.publication-modal--panoramas
+    .publication-modal__right {
+    display: none;
+  }
+
+  /* Panoramas EXPANDIDO: ocultar imagen, mostrar contenido */
+  .publication-modal.publication-modal--business-style.publication-modal--panoramas
+    .publication-modal__left.publication-modal__left--hidden {
+    display: none;
+  }
+
+  .publication-modal.publication-modal--business-style.publication-modal--panoramas
+    .publication-modal__right.publication-modal__right--expanded {
+    display: flex;
+    flex: 1;
+    height: 100%;
+    max-height: none;
+    overflow-y: auto;
+  }
+
+  /* ===== BOTÓN "Más info" (flotante sobre la imagen) ===== */
+  .publication-modal__mobile-info-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #fff;
+    border: 1px solid rgba(255, 102, 0, 0.5);
+    border-radius: 25px;
+    padding: 10px 22px;
+    font-size: 1.4rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    transition:
+      background 0.2s,
+      transform 0.2s;
+  }
+
+  .publication-modal__mobile-info-btn:active {
+    transform: translateX(-50%) scale(0.96);
+    background: rgba(255, 102, 0, 0.6);
+  }
+
+  .publication-modal__mobile-info-btn-arrow {
+    font-size: 1rem;
+  }
+
+  /* ===== BOTÓN "Ver imagen" (dentro del contenido, arriba) ===== */
+  .publication-modal__mobile-image-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    padding: 10px 16px;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 1.3rem;
+    font-weight: 500;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+
+  .publication-modal__mobile-image-btn:active {
+    background: rgba(255, 102, 0, 0.15);
+  }
+
+  /* ===== ESTADO EXPANDIDO: ocultar imagen, expandir contenido ===== */
+  .publication-modal__left.publication-modal__left--hidden {
+    display: none;
+  }
+
+  .publication-modal__right.publication-modal__right--expanded {
+    flex: 1;
+    height: 100%;
+    max-height: none;
+    overflow-y: auto;
   }
 }
 

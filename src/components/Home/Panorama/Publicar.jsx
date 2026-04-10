@@ -1,6 +1,8 @@
 import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import usePublicarForm from "./hooks/usePublicarFormV2";
 import { useAuth } from "../../../context/AuthContext";
+import AuthModal from "../../Auth/AuthModal";
 import {
   PublicarHeader,
   PublicarInfo,
@@ -17,7 +19,8 @@ import "./styles/publicar.css";
  * Soporta creación y edición de eventos
  */
 const Publicar = () => {
-  const { isAdmin, isModerator } = useAuth();
+  const { isAdmin, isModerator, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const {
     // Estados
     formData,
@@ -77,6 +80,16 @@ const Publicar = () => {
           <div className="publicar-loading__spinner"></div>
           <p>Cargando publicación...</p>
         </div>
+      </div>
+    );
+  }
+
+  // === Si no está autenticado y planes están habilitados, mostrar login ===
+  if (!isAuthenticated && planesEnabled) {
+    return (
+      <div className="publicar-page">
+        <PublicarHeader />
+        <AuthModal isOpen={true} onClose={() => navigate("/")} persistent />
       </div>
     );
   }

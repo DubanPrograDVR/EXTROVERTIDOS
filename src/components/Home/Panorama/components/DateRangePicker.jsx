@@ -664,7 +664,7 @@ const DateRangePicker = ({
   const specificDates = fechasRecurrencia || [];
 
   return (
-    <div className="drp-calendar">
+    <div className="drp-calendar" id="fecha_evento">
       {/* HEADER */}
       <div className="drp-calendar__header">
         <div className="drp-calendar__header-left">

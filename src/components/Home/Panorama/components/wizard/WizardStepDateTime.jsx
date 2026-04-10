@@ -82,6 +82,7 @@ const WizardStepDateTime = ({
             ref={provRef}>
             <button
               type="button"
+              id="provincia"
               className="custom-dropdown__trigger"
               onClick={() => setProvOpen((prev) => !prev)}>
               <span
@@ -121,6 +122,7 @@ const WizardStepDateTime = ({
             ref={comRef}>
             <button
               type="button"
+              id="comuna"
               className="custom-dropdown__trigger"
               onClick={() => formData.provincia && setComOpen((prev) => !prev)}
               disabled={!formData.provincia}>
@@ -180,13 +182,7 @@ const WizardStepDateTime = ({
         <label className="publicar-form__label">
           <span className="publicar-form__label-hint">(Opcional)</span>
           <FontAwesomeIcon icon={faMapMarkerAlt} /> Enlace de ubicación
-          <span
-            style={{
-              color: "gray",
-              fontSize: "12px",
-              marginTop: "5px",
-              marginLeft: "10px",
-            }}>
+          <span style={{ color: "#fff", fontSize: "12px", marginTop: "5px" }}>
             Facilita que te encuentren
           </span>
         </label>

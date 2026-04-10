@@ -87,16 +87,24 @@ const InformacionBasicaSection = ({
           name="descripcion"
           value={formData.descripcion}
           onChange={(e) => {
+            const MAX = 70;
             const lines = e.target.value.split("\n");
             const wrapped = lines
               .map((line) => {
-                if (line.length <= 70) return line;
-                let result = "";
-                for (let i = 0; i < line.length; i += 70) {
-                  if (result) result += "\n";
-                  result += line.slice(i, i + 70);
+                if (line.length <= MAX) return line;
+                const words = line.split(" ");
+                let current = "";
+                const result = [];
+                for (const word of words) {
+                  if (current && (current + " " + word).length > MAX) {
+                    result.push(current);
+                    current = word;
+                  } else {
+                    current = current ? current + " " + word : word;
+                  }
                 }
-                return result;
+                if (current) result.push(current);
+                return result.join("\n");
               })
               .join("\n");
             onChange({ target: { name: "descripcion", value: wrapped } });
@@ -133,6 +141,7 @@ const InformacionBasicaSection = ({
               ref={catRef}>
               <button
                 type="button"
+                id="category_id"
                 className="custom-dropdown__trigger"
                 onClick={() => setCatOpen((prev) => !prev)}>
                 <span
@@ -180,6 +189,7 @@ const InformacionBasicaSection = ({
             ref={subRef}>
             <button
               type="button"
+              id="subcategoria"
               className="custom-dropdown__trigger"
               onClick={() =>
                 formData.category_id && setSubOpen((prev) => !prev)

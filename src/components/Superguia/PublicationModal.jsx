@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import {
@@ -42,6 +43,7 @@ import {
   faSpinner,
   faInfoCircle,
   faFire,
+  faImage,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faInstagram,
@@ -108,6 +110,7 @@ export default function PublicationModal({
   onClose,
   onUpdate,
   startInEditMode = false,
+  modalVariant = "",
 }) {
   const { user, isAdmin, isModerator } = useAuth();
   const { showToast } = useToast();
@@ -124,6 +127,7 @@ export default function PublicationModal({
   const [editData, setEditData] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const [categoriesList, setCategoriesList] = useState([]);
+  const [isInfoExpanded, setIsInfoExpanded] = useState(false);
 
   const canEdit = isAdmin || isModerator;
 
@@ -211,6 +215,7 @@ export default function PublicationModal({
   useEffect(() => {
     setCurrentImageIndex(0);
     setIsEditMode(startInEditMode);
+    setIsInfoExpanded(false);
     // Inicializar datos de edición
     if (publication) {
       setEditData({
@@ -633,10 +638,25 @@ export default function PublicationModal({
     });
   };
 
-  return (
-    <div className="publication-modal-overlay" onClick={handleOverlayClick}>
+  const overlayClassName = [
+    "publication-modal-overlay",
+    modalVariant ? `publication-modal-overlay--${modalVariant}` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const modalClassName = [
+    "publication-modal",
+    "publication-modal--business-style",
+    modalVariant ? `publication-modal--${modalVariant}` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return createPortal(
+    <div className={overlayClassName} onClick={handleOverlayClick}>
       <div
-        className="publication-modal publication-modal--business-style"
+        className={modalClassName}
         role="dialog"
         aria-modal="true"
         aria-label="Detalle de publicación">
@@ -674,10 +694,18 @@ export default function PublicationModal({
                 </select>
               </div>
             )}
+            <button className="publication-modal__close" onClick={onClose}>
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
           </div>
         )}
 
-        {/* Barra de edición (solo visible en modo edición) */}
+        {/* Botón cerrar cuando no hay header de categoría */}
+        {!(categories?.nombre || isEditMode || etiqueta_directa) && (
+          <button className="publication-modal__close" onClick={onClose}>
+            <FontAwesomeIcon icon={faTimes} />
+          </button>
+        )}
         {isEditMode && (
           <div className="publication-modal__actions">
             <button
@@ -699,15 +727,23 @@ export default function PublicationModal({
           </div>
         )}
 
-        {/* Botón cerrar */}
-        <button className="publication-modal__close" onClick={onClose}>
-          <FontAwesomeIcon icon={faTimes} />
-        </button>
-
         {/* Cuerpo del modal (imagen + contenido) */}
-        <div className="publication-modal__body">
+        <div
+          className={`publication-modal__body ${isInfoExpanded ? "publication-modal__body--expanded" : ""}`}>
           {/* ===== SECCIÓN IZQUIERDA: IMAGEN ===== */}
-          <div className="publication-modal__left">
+          <div
+            className={`publication-modal__left ${isInfoExpanded ? "publication-modal__left--hidden" : ""}`}>
+            {/* Botón "Más info" flotante sobre la imagen (solo móvil) */}
+            <button
+              className="publication-modal__mobile-info-btn"
+              onClick={() => setIsInfoExpanded(true)}>
+              <FontAwesomeIcon icon={faInfoCircle} />
+              Más info
+              <FontAwesomeIcon
+                icon={faChevronUp}
+                className="publication-modal__mobile-info-btn-arrow"
+              />
+            </button>
             {/* Fondo blur */}
             <div
               className="publication-modal__image-bg"
@@ -771,7 +807,21 @@ export default function PublicationModal({
           </div>
 
           {/* ===== SECCIÓN DERECHA: CONTENIDO ===== */}
-          <div className="publication-modal__right">
+          <div
+            className={`publication-modal__right ${isInfoExpanded ? "publication-modal__right--expanded" : ""}`}>
+            {/* Botón "Ver imagen" para volver (solo móvil, solo cuando está expandido) */}
+            {isInfoExpanded && (
+              <button
+                className="publication-modal__mobile-image-btn"
+                onClick={() => setIsInfoExpanded(false)}>
+                <FontAwesomeIcon icon={faImage} />
+                Ver imagen
+                <FontAwesomeIcon
+                  icon={faChevronDown}
+                  className="publication-modal__mobile-info-btn-arrow"
+                />
+              </button>
+            )}
             {/* Título y organizador */}
             <div className="publication-modal__title-section">
               {!isEditMode && <h2>{titulo}</h2>}
@@ -824,7 +874,10 @@ export default function PublicationModal({
                     toggleSection(ACCORDION_SECTIONS.DESCRIPTION)
                   }>
                   <div className="publication-modal__description-content">
-                    {!isEditMode && <p>{descripcion}</p>}
+                    {!isEditMode &&
+                      descripcion
+                        .split(/\n\s*\n/)
+                        .map((paragraph, i) => <p key={i}>{paragraph}</p>)}
                     {isEditMode && (
                       <textarea
                         className="publication-modal__edit-textarea"
@@ -1594,6 +1647,7 @@ export default function PublicationModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
