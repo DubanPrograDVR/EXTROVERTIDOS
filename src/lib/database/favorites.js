@@ -26,6 +26,7 @@ export async function getUserFavorites(userId) {
         descripcion,
         imagenes,
         fecha_evento,
+        fecha_fin,
         hora_inicio,
         hora_fin,
         tipo_entrada,
@@ -46,7 +47,7 @@ export async function getUserFavorites(userId) {
           avatar_url
         )
       )
-    `
+    `,
     )
     .eq("user_id", userId)
     .order("created_at", { ascending: false });

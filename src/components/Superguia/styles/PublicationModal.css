@@ -1111,11 +1111,13 @@
 }
 
 .publication-modal__marketing-content p {
-  margin: 0;
-  white-space: pre-wrap;
+  margin: 0 0 12px 0;
   overflow-wrap: break-word;
-  word-break: break-word;
-  font-size: 1.3rem;
+  font-size: 1rem;
+}
+
+.publication-modal__marketing-content p:last-child {
+  margin-bottom: 0;
 }
 
 /* Ubicación */
@@ -1427,6 +1429,16 @@
   border-color: rgba(255, 255, 255, 0.5);
 }
 
+.publication-modal__cta-btn--saved {
+  background: rgba(255, 102, 0, 0.2);
+  color: #ff6600;
+  border-color: #ff6600;
+}
+
+.publication-modal__cta-btn--saved:hover {
+  background: rgba(255, 102, 0, 0.3);
+}
+
 .publication-modal__cta-btn--imperdible {
   background: linear-gradient(135deg, #ff6600 0%, #ff8533 100%);
   color: #000;
@@ -1635,6 +1647,10 @@
     font-size: 1.3rem;
     line-height: 1.8;
     padding: 16px;
+  }
+
+  .publication-modal__marketing-content p {
+    font-size: 1.3rem;
   }
 
   /* Info section titles (Ubicación, Horarios, Contacto) */
@@ -1921,7 +1937,9 @@
     font-size: 1.5rem;
   }
 
-  .publication-modal__schedule-label,
+  .publication-modal__marketing-content p {
+    font-size: 1.5rem;
+  }
   .publication-modal__schedule-value {
     font-size: 1.3rem;
   }

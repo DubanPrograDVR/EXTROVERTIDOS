@@ -16,9 +16,7 @@ const ContactoSection = ({ formData, errors, onChange, onFieldFocus }) => {
         <div className="publicar-negocio__field">
           <label htmlFor="telefono">
             Teléfono
-            <span className="publicar-negocio__label-required">
-              Obligatorio
-            </span>
+            <span className="publicar-negocio__label-hint">(Opcional)</span>
           </label>
           <input
             type="tel"

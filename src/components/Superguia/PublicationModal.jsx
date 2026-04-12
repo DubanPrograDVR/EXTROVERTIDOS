@@ -8,6 +8,8 @@ import {
   toggleLike,
   hasUserLiked,
   getLikesCount,
+  toggleFavorite,
+  isFavorite,
 } from "../../lib/database";
 import "./styles/PublicationModal.css";
 import "./styles/BusinessModal.css";
@@ -117,6 +119,8 @@ export default function PublicationModal({
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [isTogglingLike, setIsTogglingLike] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [isTogglingSave, setIsTogglingSave] = useState(false);
 
   // Estado único para controlar qué sección del acordeón está abierta (null = ninguna)
   const [activeSection, setActiveSection] = useState(
@@ -174,7 +178,7 @@ export default function PublicationModal({
     };
   }, [isOpen, onClose]);
 
-  // Cargar estado de likes
+  // Cargar estado de likes y favoritos
   useEffect(() => {
     if (!publication?.id) return;
     const loadLikeState = async () => {
@@ -184,6 +188,8 @@ export default function PublicationModal({
         if (user) {
           const liked = await hasUserLiked(user.id, publication.id);
           setIsLiked(liked);
+          const saved = await isFavorite(user.id, publication.id);
+          setIsSaved(saved);
         }
       } catch (error) {
         console.error("Error cargando likes:", error);
@@ -208,6 +214,28 @@ export default function PublicationModal({
       showToast("Error al procesar tu reacción", "error");
     } finally {
       setIsTogglingLike(false);
+    }
+  };
+
+  const handleSaveClick = async () => {
+    if (!user) {
+      showToast("Inicia sesión para guardar", "warning");
+      return;
+    }
+    if (isTogglingSave) return;
+    setIsTogglingSave(true);
+    try {
+      const result = await toggleFavorite(user.id, publication.id);
+      setIsSaved(result.isFavorite);
+      showToast(
+        result.isFavorite ? "Guardado en favoritos" : "Eliminado de favoritos",
+        "success",
+      );
+    } catch (error) {
+      console.error("Error al guardar:", error);
+      showToast("Error al guardar", "error");
+    } finally {
+      setIsTogglingSave(false);
     }
   };
 
@@ -247,6 +275,10 @@ export default function PublicationModal({
           instagram: publication.redes_sociales?.instagram || "",
           facebook: publication.redes_sociales?.facebook || "",
           whatsapp: publication.redes_sociales?.whatsapp || "",
+          tiktok: publication.redes_sociales?.tiktok || "",
+          youtube: publication.redes_sociales?.youtube || "",
+          twitter: publication.redes_sociales?.twitter || "",
+          linkedin: publication.redes_sociales?.linkedin || "",
         },
         titulo_marketing: publication.titulo_marketing || "",
         mensaje_marketing: publication.mensaje_marketing || "",
@@ -630,6 +662,10 @@ export default function PublicationModal({
         instagram: publication.redes_sociales?.instagram || "",
         facebook: publication.redes_sociales?.facebook || "",
         whatsapp: publication.redes_sociales?.whatsapp || "",
+        tiktok: publication.redes_sociales?.tiktok || "",
+        youtube: publication.redes_sociales?.youtube || "",
+        twitter: publication.redes_sociales?.twitter || "",
+        linkedin: publication.redes_sociales?.linkedin || "",
       },
       titulo_marketing: publication.titulo_marketing || "",
       mensaje_marketing: publication.mensaje_marketing || "",
@@ -1242,33 +1278,62 @@ export default function PublicationModal({
                               <label className="publication-modal__edit-label">
                                 Hora inicio
                               </label>
-                              <input
-                                type="time"
-                                className="publication-modal__edit-input"
-                                value={editData.hora_inicio}
-                                onChange={(e) =>
-                                  setEditData({
-                                    ...editData,
-                                    hora_inicio: e.target.value,
-                                  })
-                                }
-                              />
+                              <div className="publication-modal__edit-time-wrap">
+                                <input
+                                  type="time"
+                                  className="publication-modal__edit-input"
+                                  value={editData.hora_inicio}
+                                  onChange={(e) =>
+                                    setEditData({
+                                      ...editData,
+                                      hora_inicio: e.target.value,
+                                    })
+                                  }
+                                />
+                                {editData.hora_inicio && (
+                                  <button
+                                    type="button"
+                                    className="publication-modal__edit-time-clear"
+                                    onClick={() =>
+                                      setEditData({
+                                        ...editData,
+                                        hora_inicio: "",
+                                      })
+                                    }
+                                    aria-label="Limpiar hora inicio">
+                                    <FontAwesomeIcon icon={faTimes} />
+                                  </button>
+                                )}
+                              </div>
                             </div>
                             <div className="publication-modal__edit-field">
                               <label className="publication-modal__edit-label">
                                 Hora fin
                               </label>
-                              <input
-                                type="time"
-                                className="publication-modal__edit-input"
-                                value={editData.hora_fin}
-                                onChange={(e) =>
-                                  setEditData({
-                                    ...editData,
-                                    hora_fin: e.target.value,
-                                  })
-                                }
-                              />
+                              <div className="publication-modal__edit-time-wrap">
+                                <input
+                                  type="time"
+                                  className="publication-modal__edit-input"
+                                  value={editData.hora_fin}
+                                  onChange={(e) =>
+                                    setEditData({
+                                      ...editData,
+                                      hora_fin: e.target.value,
+                                    })
+                                  }
+                                />
+                                {editData.hora_fin && (
+                                  <button
+                                    type="button"
+                                    className="publication-modal__edit-time-clear"
+                                    onClick={() =>
+                                      setEditData({ ...editData, hora_fin: "" })
+                                    }
+                                    aria-label="Limpiar hora fin">
+                                    <FontAwesomeIcon icon={faTimes} />
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </div>
                           <label className="publication-modal__edit-label">
@@ -1582,6 +1647,78 @@ export default function PublicationModal({
                     }
                     placeholder="+56 9 1234 5678"
                   />
+                  <label className="publication-modal__edit-label">
+                    <FontAwesomeIcon icon={faTiktok} /> TikTok
+                  </label>
+                  <input
+                    type="text"
+                    className="publication-modal__edit-input"
+                    value={editData.redes_sociales?.tiktok || ""}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        redes_sociales: {
+                          ...editData.redes_sociales,
+                          tiktok: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="@usuario"
+                  />
+                  <label className="publication-modal__edit-label">
+                    <FontAwesomeIcon icon={faYoutube} /> YouTube
+                  </label>
+                  <input
+                    type="text"
+                    className="publication-modal__edit-input"
+                    value={editData.redes_sociales?.youtube || ""}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        redes_sociales: {
+                          ...editData.redes_sociales,
+                          youtube: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="URL del canal"
+                  />
+                  <label className="publication-modal__edit-label">
+                    <FontAwesomeIcon icon={faXTwitter} /> Twitter / X
+                  </label>
+                  <input
+                    type="text"
+                    className="publication-modal__edit-input"
+                    value={editData.redes_sociales?.twitter || ""}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        redes_sociales: {
+                          ...editData.redes_sociales,
+                          twitter: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="@usuario o URL"
+                  />
+                  <label className="publication-modal__edit-label">
+                    <FontAwesomeIcon icon={faLinkedin} /> LinkedIn
+                  </label>
+                  <input
+                    type="text"
+                    className="publication-modal__edit-input"
+                    value={editData.redes_sociales?.linkedin || ""}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        redes_sociales: {
+                          ...editData.redes_sociales,
+                          linkedin: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="URL de perfil"
+                  />
                 </div>
               </div>
             )}
@@ -1638,10 +1775,11 @@ export default function PublicationModal({
                 Compartir
               </button>
               <button
-                className="publication-modal__cta-btn publication-modal__cta-btn--outline"
-                onClick={() => alert("Funcionalidad de guardar próximamente")}>
+                className={`publication-modal__cta-btn publication-modal__cta-btn--outline${isSaved ? " publication-modal__cta-btn--saved" : ""}`}
+                onClick={handleSaveClick}
+                disabled={isTogglingSave}>
                 <FontAwesomeIcon icon={faBookmark} />
-                Guardar
+                {isSaved ? "Guardado" : "Guardar"}
               </button>
             </div>
           </div>

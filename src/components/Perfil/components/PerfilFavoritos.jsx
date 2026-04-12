@@ -29,7 +29,16 @@ export default function PerfilFavoritos() {
 
       try {
         const data = await getUserFavorites(user.id);
-        setFavorites(data);
+        // Filtrar eventos cuya fecha ya pasó
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const active = data.filter((event) => {
+          const endDate = new Date(
+            (event.fecha_fin || event.fecha_evento) + "T23:59:59",
+          );
+          return endDate >= today;
+        });
+        setFavorites(active);
       } catch (error) {
         console.error("Error cargando favoritos:", error);
       } finally {

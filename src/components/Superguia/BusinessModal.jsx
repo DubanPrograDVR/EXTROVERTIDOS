@@ -153,7 +153,6 @@ export default function BusinessModal({
     if (business) {
       setEditData({
         nombre: business.nombre || "",
-        slogan: business.slogan || "",
         descripcion: business.descripcion || "",
         categoria: business.categoria || "",
         subcategoria: business.subcategoria || "",
@@ -163,6 +162,9 @@ export default function BusinessModal({
         instagram: business.instagram || "",
         facebook: business.facebook || "",
         tiktok: business.tiktok || "",
+        youtube: business.youtube || "",
+        twitter: business.twitter || "",
+        linkedin: business.linkedin || "",
         sitio_web: business.sitio_web || "",
         ubicacion_url: business.ubicacion_url || "",
         titulo_marketing: business.titulo_marketing || "",
@@ -373,7 +375,6 @@ export default function BusinessModal({
     setIsEditMode(false);
     setEditData({
       nombre: business.nombre || "",
-      slogan: business.slogan || "",
       descripcion: business.descripcion || "",
       categoria: business.categoria || "",
       subcategoria: business.subcategoria || "",
@@ -383,6 +384,9 @@ export default function BusinessModal({
       instagram: business.instagram || "",
       facebook: business.facebook || "",
       tiktok: business.tiktok || "",
+      youtube: business.youtube || "",
+      twitter: business.twitter || "",
+      linkedin: business.linkedin || "",
       sitio_web: business.sitio_web || "",
       ubicacion_url: business.ubicacion_url || "",
       titulo_marketing: business.titulo_marketing || "",
@@ -579,17 +583,6 @@ export default function BusinessModal({
                       setEditData({ ...editData, nombre: e.target.value })
                     }
                     placeholder="Nombre del negocio"
-                  />
-                </div>
-                <div className="publication-modal__edit-field">
-                  <label>Slogan</label>
-                  <input
-                    type="text"
-                    value={editData.slogan}
-                    onChange={(e) =>
-                      setEditData({ ...editData, slogan: e.target.value })
-                    }
-                    placeholder="Slogan del negocio"
                   />
                 </div>
               </div>
@@ -1040,6 +1033,39 @@ export default function BusinessModal({
                           setEditData({ ...editData, tiktok: e.target.value })
                         }
                         placeholder="@usuario"
+                      />
+                    </div>
+                    <div className="publication-modal__edit-field">
+                      <label>YouTube</label>
+                      <input
+                        type="text"
+                        value={editData.youtube}
+                        onChange={(e) =>
+                          setEditData({ ...editData, youtube: e.target.value })
+                        }
+                        placeholder="URL del canal"
+                      />
+                    </div>
+                    <div className="publication-modal__edit-field">
+                      <label>Twitter / X</label>
+                      <input
+                        type="text"
+                        value={editData.twitter}
+                        onChange={(e) =>
+                          setEditData({ ...editData, twitter: e.target.value })
+                        }
+                        placeholder="@usuario o URL"
+                      />
+                    </div>
+                    <div className="publication-modal__edit-field">
+                      <label>LinkedIn</label>
+                      <input
+                        type="text"
+                        value={editData.linkedin}
+                        onChange={(e) =>
+                          setEditData({ ...editData, linkedin: e.target.value })
+                        }
+                        placeholder="URL de perfil"
                       />
                     </div>
                   </div>

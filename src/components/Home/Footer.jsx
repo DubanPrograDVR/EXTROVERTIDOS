@@ -91,7 +91,9 @@ export default function Footer() {
             <h3 className="footer__title">Contacto</h3>
             <div className="footer__contact-list">
               <a
-                href="mailto:atencion@extrovertidos.cl"
+                href="https://mail.google.com/mail/?view=cm&to=atencion@extrovertidos.cl"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="footer__contact-link">
                 <FontAwesomeIcon
                   icon={faEnvelope}
@@ -100,7 +102,9 @@ export default function Footer() {
                 atencion@extrovertidos.cl
               </a>
               <a
-                href="mailto:atencion@extrovertidos.cl"
+                href="https://mail.google.com/mail/?view=cm&to=atencion@extrovertidos.cl"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="footer__contact-link">
                 <FontAwesomeIcon
                   icon={faHeadset}

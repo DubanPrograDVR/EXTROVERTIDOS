@@ -3,6 +3,7 @@ import {
   faCalendarAlt,
   faTicketAlt,
   faLink,
+  faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faInstagram,
@@ -74,24 +75,50 @@ export default function DetailsTab({ formData, errors, onChange }) {
       <div className="user-edit-modal__row">
         <div className="user-edit-modal__field">
           <label htmlFor="hora_inicio">Hora inicio</label>
-          <input
-            type="time"
-            id="hora_inicio"
-            name="hora_inicio"
-            value={formData.hora_inicio}
-            onChange={onChange}
-          />
+          <div className="publication-modal__edit-time-wrap">
+            <input
+              type="time"
+              id="hora_inicio"
+              name="hora_inicio"
+              value={formData.hora_inicio}
+              onChange={onChange}
+            />
+            {formData.hora_inicio && (
+              <button
+                type="button"
+                className="publication-modal__edit-time-clear"
+                onClick={() =>
+                  onChange({ target: { name: "hora_inicio", value: "" } })
+                }
+                aria-label="Limpiar hora inicio">
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="user-edit-modal__field">
           <label htmlFor="hora_fin">Hora fin</label>
-          <input
-            type="time"
-            id="hora_fin"
-            name="hora_fin"
-            value={formData.hora_fin}
-            onChange={onChange}
-          />
+          <div className="publication-modal__edit-time-wrap">
+            <input
+              type="time"
+              id="hora_fin"
+              name="hora_fin"
+              value={formData.hora_fin}
+              onChange={onChange}
+            />
+            {formData.hora_fin && (
+              <button
+                type="button"
+                className="publication-modal__edit-time-clear"
+                onClick={() =>
+                  onChange({ target: { name: "hora_fin", value: "" } })
+                }
+                aria-label="Limpiar hora fin">
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

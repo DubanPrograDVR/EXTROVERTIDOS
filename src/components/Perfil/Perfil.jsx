@@ -9,6 +9,7 @@ import {
   deleteNotification as deleteNotificationDB,
   countDrafts,
   isPlanesEnabled,
+  getUserSubscriptions,
 } from "../../lib/database";
 import {
   PerfilSidebar,
@@ -45,6 +46,7 @@ export default function Perfil() {
 
   // Estado de planes habilitados
   const [planesEnabled, setPlanesEnabled] = useState(false);
+  const [activeSubscriptions, setActiveSubscriptions] = useState([]);
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -58,7 +60,16 @@ export default function Perfil() {
       setLoadingPublications(true);
       try {
         const publications = await getEventsByUser(user.id);
-        setUserPublications(publications || []);
+        // Filtrar eventos cuya fecha ya pasó
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const active = (publications || []).filter((pub) => {
+          const endDate = new Date(
+            (pub.fecha_fin || pub.fecha_evento) + "T23:59:59",
+          );
+          return endDate >= today;
+        });
+        setUserPublications(active);
       } catch (error) {
         console.error("Error cargando publicaciones:", error);
         setUserPublications([]);
@@ -72,19 +83,33 @@ export default function Perfil() {
     loadUserPublications();
   }, [isAuthenticated, user?.id]);
 
-  // Consultar si los planes están habilitados
+  // Consultar si los planes están habilitados y cargar suscripciones activas
   useEffect(() => {
     const checkPlanes = async () => {
       try {
         const enabled = await isPlanesEnabled();
         setPlanesEnabled(enabled);
+        if (enabled && user?.id) {
+          const subs = await getUserSubscriptions(user.id);
+          const activeSubs = (subs || []).filter((s) => s.estado === "activa");
+          // Mostrar solo un badge por tipo de plan (el más reciente)
+          const uniqueByPlan = [];
+          const seenPlans = new Set();
+          for (const sub of activeSubs) {
+            if (!seenPlans.has(sub.plan)) {
+              seenPlans.add(sub.plan);
+              uniqueByPlan.push(sub);
+            }
+          }
+          setActiveSubscriptions(uniqueByPlan);
+        }
       } catch (error) {
         console.error("Error verificando planes:", error);
         setPlanesEnabled(false);
       }
     };
     checkPlanes();
-  }, []);
+  }, [user?.id]);
 
   // Cargar cantidad de borradores
   useEffect(() => {
@@ -257,6 +282,8 @@ export default function Perfil() {
           createdAt={createdAt}
           userRole={userRole}
           onSignOut={handleSignOut}
+          planesEnabled={planesEnabled}
+          activeSubscriptions={activeSubscriptions}
         />
 
         <PerfilStats

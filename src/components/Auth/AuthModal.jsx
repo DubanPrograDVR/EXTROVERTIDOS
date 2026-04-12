@@ -106,8 +106,14 @@ export default function AuthModal({ isOpen, onClose, persistent = false }) {
         </div>
 
         <p className="auth-modal__terms">
-          Al continuar, aceptas nuestros <a href="#">Términos de Servicio</a> y{" "}
-          <a href="#">Política de Privacidad</a>
+          Al continuar, aceptas nuestros{" "}
+          <a href="/terminos" target="_blank" rel="noopener noreferrer">
+            Términos de Servicio
+          </a>{" "}
+          y{" "}
+          <a href="/privacidad" target="_blank" rel="noopener noreferrer">
+            Política de Privacidad
+          </a>
         </p>
       </div>
     </div>

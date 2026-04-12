@@ -326,9 +326,6 @@ export const useNegocioForm = () => {
     if (!formData.direccion.trim()) {
       newErrors.direccion = "La dirección es obligatoria";
     }
-    if (!formData.telefono.trim()) {
-      newErrors.telefono = "El teléfono es obligatorio";
-    }
     if (formData.imagenes.length === 0) {
       newErrors.imagenes = "Sube al menos una imagen";
     }

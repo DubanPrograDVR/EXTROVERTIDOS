@@ -430,23 +430,53 @@ export default function UserEditModal({
                   <label className="publication-modal__edit-label">
                     Hora de inicio
                   </label>
-                  <input
-                    type="time"
-                    className="publication-modal__edit-input"
-                    name="hora_inicio"
-                    value={formData.hora_inicio}
-                    onChange={handleChange}
-                  />
+                  <div className="publication-modal__edit-time-wrap">
+                    <input
+                      type="time"
+                      className="publication-modal__edit-input"
+                      name="hora_inicio"
+                      value={formData.hora_inicio}
+                      onChange={handleChange}
+                    />
+                    {formData.hora_inicio && (
+                      <button
+                        type="button"
+                        className="publication-modal__edit-time-clear"
+                        onClick={() =>
+                          handleChange({
+                            target: { name: "hora_inicio", value: "" },
+                          })
+                        }
+                        aria-label="Limpiar hora inicio">
+                        <FontAwesomeIcon icon={faTimes} />
+                      </button>
+                    )}
+                  </div>
                   <label className="publication-modal__edit-label">
                     Hora de término
                   </label>
-                  <input
-                    type="time"
-                    className="publication-modal__edit-input"
-                    name="hora_fin"
-                    value={formData.hora_fin}
-                    onChange={handleChange}
-                  />
+                  <div className="publication-modal__edit-time-wrap">
+                    <input
+                      type="time"
+                      className="publication-modal__edit-input"
+                      name="hora_fin"
+                      value={formData.hora_fin}
+                      onChange={handleChange}
+                    />
+                    {formData.hora_fin && (
+                      <button
+                        type="button"
+                        className="publication-modal__edit-time-clear"
+                        onClick={() =>
+                          handleChange({
+                            target: { name: "hora_fin", value: "" },
+                          })
+                        }
+                        aria-label="Limpiar hora fin">
+                        <FontAwesomeIcon icon={faTimes} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </AccordionSection>
 

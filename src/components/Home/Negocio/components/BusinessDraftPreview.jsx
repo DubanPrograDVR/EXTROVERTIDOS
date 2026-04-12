@@ -275,7 +275,9 @@ const BusinessDraftPreview = ({
                   {formData.descripcion ? (
                     formData.descripcion
                       .split(/\n\s*\n/)
-                      .map((paragraph, i) => <p key={i}>{paragraph}</p>)
+                      .map((paragraph, i) => (
+                        <p key={i}>{paragraph.replace(/\n/g, " ")}</p>
+                      ))
                   ) : (
                     <p>Sin descripción agregada aún...</p>
                   )}
@@ -306,7 +308,11 @@ const BusinessDraftPreview = ({
                     toggleSection(ACCORDION_SECTIONS.MARKETING_1)
                   }>
                   <div className="publication-modal__marketing-content">
-                    <p>{formData.mensaje_marketing}</p>
+                    {formData.mensaje_marketing
+                      .split(/\n\s*\n/)
+                      .map((paragraph, i) => (
+                        <p key={i}>{paragraph.replace(/\n/g, " ")}</p>
+                      ))}
                   </div>
                 </AccordionSection>
               )}
@@ -321,7 +327,11 @@ const BusinessDraftPreview = ({
                     toggleSection(ACCORDION_SECTIONS.MARKETING_2)
                   }>
                   <div className="publication-modal__marketing-content">
-                    <p>{formData.mensaje_marketing_2}</p>
+                    {formData.mensaje_marketing_2
+                      .split(/\n\s*\n/)
+                      .map((paragraph, i) => (
+                        <p key={i}>{paragraph.replace(/\n/g, " ")}</p>
+                      ))}
                   </div>
                 </AccordionSection>
               )}

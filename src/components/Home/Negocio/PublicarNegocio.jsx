@@ -113,8 +113,6 @@ const PublicarNegocio = () => {
           missing.push({ field: "comuna", label: "Comuna" });
         if (!formData.direccion.trim())
           missing.push({ field: "direccion", label: "Dirección" });
-        if (!formData.telefono.trim())
-          missing.push({ field: "telefono", label: "Teléfono" });
         break;
       case 4:
         if (formData.dias_atencion.length === 0)

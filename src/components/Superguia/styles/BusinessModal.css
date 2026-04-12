@@ -435,6 +435,39 @@
   box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.1);
 }
 
+/* Time input wrapper + clear button */
+.publication-modal__edit-time-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.publication-modal__edit-time-wrap .publication-modal__edit-input {
+  padding-right: 36px;
+}
+
+.publication-modal__edit-time-clear {
+  position: absolute;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  font-size: 0.7rem;
+  transition: all 0.2s ease;
+}
+
+.publication-modal__edit-time-clear:hover {
+  background: rgba(255, 68, 68, 0.3);
+  color: #ff4444;
+}
+
 .publication-modal__edit-textarea {
   resize: vertical;
   min-height: 80px;

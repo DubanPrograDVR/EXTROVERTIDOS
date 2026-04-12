@@ -6,6 +6,7 @@ import {
   faSignOutAlt,
   faShieldAlt,
   faUserShield,
+  faCrown,
 } from "@fortawesome/free-solid-svg-icons";
 import "./styles/header.css";
 
@@ -22,6 +23,13 @@ const ROLE_CONFIG = {
   },
 };
 
+const PLAN_LABELS = {
+  panorama_unica: "Publicación Única",
+  panorama_pack4: "Pack 4 Publicaciones",
+  panorama_ilimitado: "Publica Sin Límite",
+  superguia: "Superguía Extrovertidos",
+};
+
 export default function PerfilHeader({
   userAvatar,
   userName,
@@ -29,6 +37,8 @@ export default function PerfilHeader({
   createdAt,
   userRole,
   onSignOut,
+  planesEnabled = false,
+  activeSubscriptions = [],
 }) {
   const roleConfig = ROLE_CONFIG[userRole];
 
@@ -71,6 +81,16 @@ export default function PerfilHeader({
             <FontAwesomeIcon icon={faCalendarAlt} />
             Miembro desde {createdAt}
           </p>
+          {planesEnabled && activeSubscriptions.length > 0 && (
+            <div className="perfil-header__plans">
+              {activeSubscriptions.map((sub) => (
+                <span key={sub.id} className="perfil-header__plan-badge">
+                  <FontAwesomeIcon icon={faCrown} />
+                  {PLAN_LABELS[sub.plan] || sub.plan}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
         <div className="perfil-header__actions">
           <button
