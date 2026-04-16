@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBars,
@@ -10,6 +11,9 @@ import {
   faFileAlt,
   faShieldAlt,
   faCrown,
+  faBookmark,
+  faChevronDown,
+  faCalendarAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
 import "./styles/sidebar.css";
@@ -28,9 +32,18 @@ export default function PerfilSidebar({
 }) {
   const navigate = useNavigate();
 
+  const pubSubSections = ["publicaciones", "negocios"];
+  const [pubMenuOpen, setPubMenuOpen] = useState(
+    pubSubSections.includes(activeSection),
+  );
+
+  const favSubSections = ["favoritos", "negocios-guardados"];
+  const [favMenuOpen, setFavMenuOpen] = useState(
+    favSubSections.includes(activeSection),
+  );
+
   // Opciones del menú lateral
   const allMenuItems = [
-    { id: "publicaciones", label: "Mis Publicaciones", icon: faNewspaper },
     {
       id: "borradores",
       label: "Mis Borradores",
@@ -43,9 +56,7 @@ export default function PerfilSidebar({
       icon: faBell,
       badge: unreadCount,
     },
-    { id: "favoritos", label: "Favoritos", icon: faHeart },
     { id: "plan", label: "Mi Plan", icon: faCrown },
-    { id: "negocios", label: "Mis Negocios", icon: faStore },
     { id: "configuracion", label: "Configuración", icon: faCog },
   ];
 
@@ -109,6 +120,78 @@ export default function PerfilSidebar({
 
         {/* Navegación */}
         <nav className="perfil-sidebar__nav">
+          {/* Dropdown: Mis Publicaciones */}
+          <div className="perfil-sidebar__dropdown">
+            <button
+              className={`perfil-sidebar__item perfil-sidebar__dropdown-toggle ${
+                pubSubSections.includes(activeSection) ? "active-parent" : ""
+              }`}
+              onClick={() => setPubMenuOpen(!pubMenuOpen)}>
+              <FontAwesomeIcon icon={faNewspaper} />
+              <span>Mis Publicaciones</span>
+              <FontAwesomeIcon
+                icon={faChevronDown}
+                className={`perfil-sidebar__chevron ${pubMenuOpen ? "open" : ""}`}
+              />
+            </button>
+            {pubMenuOpen && (
+              <div className="perfil-sidebar__sub-items">
+                <button
+                  className={`perfil-sidebar__sub-item ${
+                    activeSection === "publicaciones" ? "active" : ""
+                  }`}
+                  onClick={() => handleSectionChange("publicaciones")}>
+                  <FontAwesomeIcon icon={faCalendarAlt} />
+                  <span>Panoramas</span>
+                </button>
+                <button
+                  className={`perfil-sidebar__sub-item ${
+                    activeSection === "negocios" ? "active" : ""
+                  }`}
+                  onClick={() => handleSectionChange("negocios")}>
+                  <FontAwesomeIcon icon={faStore} />
+                  <span>Mis Negocios</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Dropdown: Guardados */}
+          <div className="perfil-sidebar__dropdown">
+            <button
+              className={`perfil-sidebar__item perfil-sidebar__dropdown-toggle ${
+                favSubSections.includes(activeSection) ? "active-parent" : ""
+              }`}
+              onClick={() => setFavMenuOpen(!favMenuOpen)}>
+              <FontAwesomeIcon icon={faHeart} />
+              <span>Guardados</span>
+              <FontAwesomeIcon
+                icon={faChevronDown}
+                className={`perfil-sidebar__chevron ${favMenuOpen ? "open" : ""}`}
+              />
+            </button>
+            {favMenuOpen && (
+              <div className="perfil-sidebar__sub-items">
+                <button
+                  className={`perfil-sidebar__sub-item ${
+                    activeSection === "favoritos" ? "active" : ""
+                  }`}
+                  onClick={() => handleSectionChange("favoritos")}>
+                  <FontAwesomeIcon icon={faHeart} />
+                  <span>Panoramas Favoritos</span>
+                </button>
+                <button
+                  className={`perfil-sidebar__sub-item ${
+                    activeSection === "negocios-guardados" ? "active" : ""
+                  }`}
+                  onClick={() => handleSectionChange("negocios-guardados")}>
+                  <FontAwesomeIcon icon={faBookmark} />
+                  <span>Negocios Favoritos</span>
+                </button>
+              </div>
+            )}
+          </div>
+
           {menuItems.map((item) => (
             <button
               key={item.id}

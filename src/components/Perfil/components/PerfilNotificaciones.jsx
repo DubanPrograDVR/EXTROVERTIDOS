@@ -9,7 +9,9 @@ import {
   faTrash,
   faSpinner,
   faEye,
+  faCheckSquare,
 } from "@fortawesome/free-solid-svg-icons";
+import { faSquare } from "@fortawesome/free-regular-svg-icons";
 import { getEventById } from "../../../lib/database";
 import PublicationModal from "../../Superguia/PublicationModal";
 import "./styles/section.css";
@@ -22,10 +24,49 @@ export default function PerfilNotificaciones({
   onMarkAsRead,
   onMarkAllAsRead,
   onDelete,
+  onDeleteMultiple,
 }) {
-  // Estado para el modal de vista previa
-  const [viewModal, setViewModal] = useState({ open: false, publication: null });
-  const [loadingEvent, setLoadingEvent] = useState(null); // ID del evento cargándose
+  const [viewModal, setViewModal] = useState({
+    open: false,
+    publication: null,
+  });
+  const [loadingEvent, setLoadingEvent] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [deleting, setDeleting] = useState(false);
+
+  const allSelected =
+    notifications.length > 0 && selectedIds.size === notifications.length;
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(notifications.map((n) => n.id)));
+    }
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedIds.size === 0 || deleting) return;
+    setDeleting(true);
+    try {
+      await onDeleteMultiple([...selectedIds]);
+      setSelectedIds(new Set());
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // Ver publicación asociada a la notificación
   const handleViewPublication = async (e, notification) => {
@@ -98,14 +139,28 @@ export default function PerfilNotificaciones({
     <div className="perfil-section">
       <div className="perfil-section__header">
         <h2>Notificaciones</h2>
-        {unreadCount > 0 && (
-          <button
-            className="perfil-section__btn perfil-section__btn--secondary"
-            onClick={onMarkAllAsRead}>
-            <FontAwesomeIcon icon={faCheck} />
-            Marcar todas como leídas
-          </button>
-        )}
+        <div className="perfil-section__header-actions">
+          {selectedIds.size > 0 && (
+            <button
+              className="perfil-section__btn perfil-section__btn--danger"
+              onClick={handleDeleteSelected}
+              disabled={deleting}>
+              <FontAwesomeIcon
+                icon={deleting ? faSpinner : faTrash}
+                spin={deleting}
+              />
+              Eliminar ({selectedIds.size})
+            </button>
+          )}
+          {unreadCount > 0 && (
+            <button
+              className="perfil-section__btn perfil-section__btn--secondary"
+              onClick={onMarkAllAsRead}>
+              <FontAwesomeIcon icon={faCheck} />
+              Marcar todas como leídas
+            </button>
+          )}
+        </div>
       </div>
 
       {notifications.length === 0 ? (
@@ -116,13 +171,37 @@ export default function PerfilNotificaciones({
         </div>
       ) : (
         <div className="perfil-notifications">
+          <div className="perfil-notifications__select-all">
+            <button
+              className="perfil-notification__checkbox"
+              onClick={toggleSelectAll}
+              title={allSelected ? "Deseleccionar todas" : "Seleccionar todas"}>
+              <FontAwesomeIcon icon={allSelected ? faCheckSquare : faSquare} />
+            </button>
+            <span className="perfil-notifications__select-label">
+              {allSelected ? "Deseleccionar todas" : "Seleccionar todas"}
+            </span>
+          </div>
           {notifications.map((notification) => (
             <div
               key={notification.id}
               className={`perfil-notification ${notification.type} ${
                 notification.read ? "read" : "unread"
-              }`}
+              } ${selectedIds.has(notification.id) ? "selected" : ""}`}
               onClick={() => onMarkAsRead(notification.id)}>
+              <button
+                className="perfil-notification__checkbox"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleSelect(notification.id);
+                }}
+                title="Seleccionar">
+                <FontAwesomeIcon
+                  icon={
+                    selectedIds.has(notification.id) ? faCheckSquare : faSquare
+                  }
+                />
+              </button>
               <div className={`perfil-notification__icon ${notification.type}`}>
                 <FontAwesomeIcon
                   icon={getNotificationIcon(notification.type)}
@@ -150,7 +229,9 @@ export default function PerfilNotificaciones({
                     disabled={loadingEvent === notification.id}
                     title="Ver publicación">
                     <FontAwesomeIcon
-                      icon={loadingEvent === notification.id ? faSpinner : faEye}
+                      icon={
+                        loadingEvent === notification.id ? faSpinner : faEye
+                      }
                       spin={loadingEvent === notification.id}
                     />
                   </button>

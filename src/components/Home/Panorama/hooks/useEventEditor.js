@@ -136,10 +136,22 @@ const useEventEditor = ({ user, isAuthenticated, isAdmin, showToast }) => {
           !event.es_recurrente;
 
         // Mapear datos del evento al formato del formulario
+        // Mapear valores antiguos de DB a valores de formulario
+        const tipoEntradaReverseMap = {
+          gratis: "gratuito",
+          externo: "venta_externa",
+        };
+        const tipoEntradaForm =
+          tipoEntradaReverseMap[event.tipo_entrada] ||
+          event.tipo_entrada ||
+          "sin_entrada";
+
         const mappedFormData = {
           titulo: event.titulo || "",
           descripcion: event.descripcion || "",
+          titulo_marketing: event.titulo_marketing || "",
           mensaje_marketing: event.mensaje_marketing || "",
+          titulo_marketing_2: event.titulo_marketing_2 || "",
           mensaje_marketing_2: event.mensaje_marketing_2 || "",
           organizador: event.organizador || "",
           category_id: event.category_id || "",
@@ -158,7 +170,7 @@ const useEventEditor = ({ user, isAuthenticated, isAdmin, showToast }) => {
           comuna: event.comuna || "",
           direccion: event.direccion || "",
           ubicacion_url: event.ubicacion_url || "",
-          tipo_entrada: event.tipo_entrada || "gratuito",
+          tipo_entrada: tipoEntradaForm,
           precio: event.precio || "",
           url_venta: event.url_venta || "",
           telefono_contacto: event.telefono_contacto || "",

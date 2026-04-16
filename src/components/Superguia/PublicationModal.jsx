@@ -13,6 +13,7 @@ import {
 } from "../../lib/database";
 import "./styles/PublicationModal.css";
 import "./styles/BusinessModal.css";
+import AuthModal from "../Auth/AuthModal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faTimes,
@@ -121,6 +122,7 @@ export default function PublicationModal({
   const [isTogglingLike, setIsTogglingLike] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isTogglingSave, setIsTogglingSave] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Estado único para controlar qué sección del acordeón está abierta (null = ninguna)
   const [activeSection, setActiveSection] = useState(
@@ -140,7 +142,7 @@ export default function PublicationModal({
 
   // Tipos de entrada
   const TIPOS_ENTRADA = [
-    { value: "sin_entrada", label: "Sin entrada" },
+    { value: "sin_entrada", label: "Pronto más información" },
     { value: "gratuito", label: "Entrada gratuita" },
     { value: "pagado", label: "Entrada pagada" },
     { value: "venta_externa", label: "Venta externa" },
@@ -200,7 +202,7 @@ export default function PublicationModal({
 
   const handleLikeClick = async () => {
     if (!user) {
-      showToast("Inicia sesión para reaccionar", "warning");
+      setShowAuthModal(true);
       return;
     }
     if (isTogglingLike) return;
@@ -219,7 +221,7 @@ export default function PublicationModal({
 
   const handleSaveClick = async () => {
     if (!user) {
-      showToast("Inicia sesión para guardar", "warning");
+      setShowAuthModal(true);
       return;
     }
     if (isTogglingSave) return;
@@ -284,6 +286,7 @@ export default function PublicationModal({
         mensaje_marketing: publication.mensaje_marketing || "",
         titulo_marketing_2: publication.titulo_marketing_2 || "",
         mensaje_marketing_2: publication.mensaje_marketing_2 || "",
+        etiqueta_directa: publication.etiqueta_directa || "",
       });
     }
   }, [publication?.id, isOpen]);
@@ -511,12 +514,11 @@ export default function PublicationModal({
     if (tipo_entrada === "externo" || tipo_entrada === "venta_externa") {
       return "Venta externa";
     }
-    if (
-      tipo_entrada === "gratis" ||
-      tipo_entrada === "gratuito" ||
-      tipo_entrada === "sin_entrada"
-    ) {
+    if (tipo_entrada === "gratis" || tipo_entrada === "gratuito") {
       return "Entrada gratuita";
+    }
+    if (tipo_entrada === "sin_entrada") {
+      return "Pronto más información";
     }
     if (precio) {
       return `$${Number(precio).toLocaleString("es-CL")}`;
@@ -596,6 +598,7 @@ export default function PublicationModal({
         "titulo_marketing_2",
         "mensaje_marketing_2",
         "category_id",
+        "etiqueta_directa",
       ];
       nullableFields.forEach((field) => {
         if (cleanedData[field] === "") {
@@ -607,18 +610,12 @@ export default function PublicationModal({
         cleanedData.precio = Number(cleanedData.precio) || null;
       }
 
-      // Mapear tipo_entrada de frontend a DB enum
-      const tipoEntradaMap = {
-        gratuito: "gratis",
-        sin_entrada: "gratis",
-        pagado: "pagado",
-        venta_externa: "externo",
-      };
-      if (
-        cleanedData.tipo_entrada &&
-        tipoEntradaMap[cleanedData.tipo_entrada]
-      ) {
-        cleanedData.tipo_entrada = tipoEntradaMap[cleanedData.tipo_entrada];
+      // tipo_entrada ya se guarda con el valor del formulario
+      if (cleanedData.tipo_entrada && cleanedData.tipo_entrada === "gratis") {
+        cleanedData.tipo_entrada = "gratuito";
+      }
+      if (cleanedData.tipo_entrada === "externo") {
+        cleanedData.tipo_entrada = "venta_externa";
       }
 
       await updateEvent(publication.id, cleanedData, { adminOverride: true });
@@ -652,7 +649,12 @@ export default function PublicationModal({
       comuna: publication.comuna || "",
       direccion: publication.direccion || "",
       ubicacion_url: publication.ubicacion_url || "",
-      tipo_entrada: publication.tipo_entrada || "sin_entrada",
+      tipo_entrada:
+        { gratis: "gratuito", externo: "venta_externa" }[
+          publication.tipo_entrada
+        ] ||
+        publication.tipo_entrada ||
+        "sin_entrada",
       precio: publication.precio || "",
       url_venta: publication.url_venta || "",
       telefono_contacto:
@@ -671,6 +673,7 @@ export default function PublicationModal({
       mensaje_marketing: publication.mensaje_marketing || "",
       titulo_marketing_2: publication.titulo_marketing_2 || "",
       mensaje_marketing_2: publication.mensaje_marketing_2 || "",
+      etiqueta_directa: publication.etiqueta_directa || "",
     });
   };
 
@@ -728,6 +731,22 @@ export default function PublicationModal({
                     </option>
                   ))}
                 </select>
+                {modalVariant !== "negocio" && (
+                  <input
+                    type="text"
+                    className="publication-modal__category-select"
+                    value={editData.etiqueta_directa}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        etiqueta_directa: e.target.value,
+                      })
+                    }
+                    placeholder="Etiqueta: Ej: Imperdible, Gratis..."
+                    maxLength={50}
+                    style={{ marginTop: "6px" }}
+                  />
+                )}
               </div>
             )}
             <button className="publication-modal__close" onClick={onClose}>
@@ -1057,11 +1076,11 @@ export default function PublicationModal({
                 isOpen={activeSection === ACCORDION_SECTIONS.INFORMATION}
                 onToggle={() => toggleSection(ACCORDION_SECTIONS.INFORMATION)}>
                 <div className="publication-modal__info-nested">
-                  {/* Sección: Ubicación */}
+                  {/* Sección: Dirección/Lugar */}
                   <div className="publication-modal__info-section">
                     <h4 className="publication-modal__info-section-title">
                       <FontAwesomeIcon icon={faMapMarkerAlt} />
-                      Ubicación
+                      Dirección / Lugar
                     </h4>
                     <div className="publication-modal__location-content">
                       {!isEditMode && (
@@ -1159,10 +1178,6 @@ export default function PublicationModal({
 
                   {/* Sección: Horarios */}
                   <div className="publication-modal__info-section">
-                    <h4 className="publication-modal__info-section-title">
-                      <FontAwesomeIcon icon={faClock} />
-                      Horarios
-                    </h4>
                     <div className="publication-modal__schedule">
                       {!isEditMode && (
                         <>
@@ -1785,6 +1800,10 @@ export default function PublicationModal({
           </div>
         </div>
       </div>
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+      />
     </div>,
     document.body,
   );

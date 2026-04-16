@@ -5,6 +5,82 @@
   gap: 15px;
 }
 
+/* Select all row */
+.perfil-notifications__select-all {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.perfil-notifications__select-label {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  user-select: none;
+}
+
+/* Checkbox button */
+.perfil-notification__checkbox {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 1.15rem;
+  cursor: pointer;
+  padding: 4px;
+  flex-shrink: 0;
+  transition: color 0.2s ease;
+  line-height: 1;
+}
+
+.perfil-notification__checkbox:hover {
+  color: #ff6600;
+}
+
+.perfil-notification.selected .perfil-notification__checkbox,
+.perfil-notifications__select-all
+  .perfil-notification__checkbox:has(+ .perfil-notifications__select-label) {
+  color: #ff6600;
+}
+
+/* Selected state for notification card */
+.perfil-notification.selected {
+  border-color: #ff6600;
+  background: rgba(255, 102, 0, 0.08);
+}
+
+/* Header actions container */
+.perfil-section__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Danger button for delete selected */
+.perfil-section__btn--danger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.perfil-section__btn--danger:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: #ef4444;
+}
+
+.perfil-section__btn--danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .perfil-notification {
   display: flex;
   align-items: flex-start;
@@ -148,7 +224,8 @@
 /* Responsive */
 @media (max-width: 768px) {
   .perfil-notification {
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     gap: 12px;
   }
 
@@ -158,6 +235,11 @@
     font-size: 1rem;
   }
 
+  .perfil-notification__content {
+    flex: 1;
+    min-width: 0;
+  }
+
   .perfil-notification__actions {
     flex-direction: row;
     align-self: flex-end;
@@ -165,5 +247,16 @@
 
   .perfil-notification__delete {
     align-self: flex-end;
+  }
+
+  .perfil-section__header-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .perfil-section__btn--danger,
+  .perfil-section__btn--secondary {
+    font-size: 0.8rem;
+    padding: 6px 12px;
   }
 }

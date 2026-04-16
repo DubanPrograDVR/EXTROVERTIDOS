@@ -170,13 +170,7 @@ const useEventSubmit = ({
         comuna: formData.comuna.trim(),
         direccion: formData.direccion.trim(),
         ubicacion_url: formData.ubicacion_url?.trim() || null,
-        tipo_entrada:
-          {
-            gratuito: "gratis",
-            sin_entrada: "gratis",
-            pagado: "pagado",
-            venta_externa: "externo",
-          }[formData.tipo_entrada] || formData.tipo_entrada,
+        tipo_entrada: formData.tipo_entrada || "sin_entrada",
         precio:
           formData.tipo_entrada === "pagado" ? parseInt(formData.precio) : null,
         url_venta: formData.url_venta?.trim() || null,

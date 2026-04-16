@@ -98,6 +98,9 @@ const TagsModal = ({ isOpen, onClose, selectedTags = [], onSave }) => {
   const [savedCustomTags, setSavedCustomTags] = useState([]);
   const customInputRef = useRef(null);
   const isMountedRef = useRef(true);
+  const contentRef = useRef(null);
+  const tagRefsMap = useRef({});
+  const [highlightedTag, setHighlightedTag] = useState(null);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -169,6 +172,13 @@ const TagsModal = ({ isOpen, onClose, selectedTags = [], onSave }) => {
       ETIQUETAS_PREDEFINIDAS.includes(formatted)
     ) {
       setCustomTagError("Esta etiqueta ya existe");
+      // Scroll y resaltar la etiqueta existente
+      const tagEl = tagRefsMap.current[formatted];
+      if (tagEl && contentRef.current) {
+        tagEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        setHighlightedTag(formatted);
+        setTimeout(() => setHighlightedTag(null), 2000);
+      }
       return;
     }
     if (internalSelected.length >= MAX_TAGS) {
@@ -282,7 +292,7 @@ const TagsModal = ({ isOpen, onClose, selectedTags = [], onSave }) => {
         </div>
 
         {/* Content */}
-        <div className="tags-modal__content">
+        <div className="tags-modal__content" ref={contentRef}>
           {/* Tags personalizados guardados */}
           {savedCustomTags.length > 0 && (
             <div className="tags-modal__section">
@@ -294,12 +304,19 @@ const TagsModal = ({ isOpen, onClose, selectedTags = [], onSave }) => {
                   <div key={tag} className="tags-modal__tag-wrapper">
                     <button
                       type="button"
+                      ref={(el) => {
+                        tagRefsMap.current[tag] = el;
+                      }}
                       className={`tags-modal__tag tags-modal__tag--custom ${
                         internalSelected.includes(tag) ? "selected" : ""
                       } ${
                         internalSelected.length >= MAX_TAGS &&
                         !internalSelected.includes(tag)
                           ? "disabled"
+                          : ""
+                      } ${
+                        highlightedTag === tag
+                          ? "tags-modal__tag--highlighted"
                           : ""
                       }`}
                       onClick={() => handleToggleTag(tag)}
@@ -339,6 +356,9 @@ const TagsModal = ({ isOpen, onClose, selectedTags = [], onSave }) => {
               {ETIQUETAS_PREDEFINIDAS.map((tag) => (
                 <button
                   key={tag}
+                  ref={(el) => {
+                    tagRefsMap.current[tag] = el;
+                  }}
                   type="button"
                   className={`tags-modal__tag ${
                     internalSelected.includes(tag) ? "selected" : ""
@@ -347,6 +367,8 @@ const TagsModal = ({ isOpen, onClose, selectedTags = [], onSave }) => {
                     !internalSelected.includes(tag)
                       ? "disabled"
                       : ""
+                  } ${
+                    highlightedTag === tag ? "tags-modal__tag--highlighted" : ""
                   }`}
                   onClick={() => handleToggleTag(tag)}
                   disabled={

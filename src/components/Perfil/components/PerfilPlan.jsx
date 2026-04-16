@@ -74,11 +74,15 @@ function isExpired(subscription) {
 
 function hasRemainingQuota(subscription) {
   if (!subscription) return false;
-  if (
-    subscription.plan === "panorama_ilimitado" ||
-    subscription.plan === "superguia"
-  ) {
+  if (subscription.plan === "panorama_ilimitado") {
     return true;
+  }
+  if (subscription.plan === "superguia") {
+    const total = Number(subscription.publicaciones_total ?? 0);
+    // Suscripciones antiguas con total=0 no tienen límite
+    if (total === 0) return true;
+    const used = Number(subscription.publicaciones_usadas ?? 0);
+    return used < total;
   }
 
   const total = Number(subscription.publicaciones_total ?? 0);
@@ -88,7 +92,9 @@ function hasRemainingQuota(subscription) {
 
 function isRenewablePanorama(subscription) {
   return (
-    ["panorama_unica", "panorama_pack4"].includes(subscription?.plan) &&
+    ["panorama_unica", "panorama_pack4", "superguia"].includes(
+      subscription?.plan,
+    ) &&
     subscription.estado === "activa" &&
     !isExpired(subscription) &&
     !hasRemainingQuota(subscription)
@@ -145,6 +151,12 @@ export default function PerfilPlan() {
     return { type: "inactive", subscription: null };
   };
 
+  const PANORAMA_PLANS = [
+    "panorama_unica",
+    "panorama_pack4",
+    "panorama_ilimitado",
+  ];
+
   const hasAnyActive = subscriptions.some(
     (s) => s.estado === "activa" && !isExpired(s),
   );
@@ -152,6 +164,23 @@ export default function PerfilPlan() {
     (s) => s.estado === "activa" && !isExpired(s) && hasRemainingQuota(s),
   );
   const hasRenewablePlan = subscriptions.some((s) => isRenewablePanorama(s));
+
+  // Verificar si ya tiene un plan panorama activo con cupo
+  const hasActivePanoramaWithQuota = subscriptions.some(
+    (s) =>
+      PANORAMA_PLANS.includes(s.plan) &&
+      s.estado === "activa" &&
+      !isExpired(s) &&
+      hasRemainingQuota(s),
+  );
+  // Verificar si ya tiene superguía activa con cupo
+  const hasActiveSuperguiaWithQuota = subscriptions.some(
+    (s) =>
+      s.plan === "superguia" &&
+      s.estado === "activa" &&
+      !isExpired(s) &&
+      hasRemainingQuota(s),
+  );
 
   /**
    * Abrir modal de confirmación de cancelación
@@ -226,16 +255,14 @@ export default function PerfilPlan() {
               className={`perfil-plan__card ${
                 isContracted
                   ? "perfil-plan__card--active"
-                  : isRenewable
-                    ? "perfil-plan__card--exhausted"
-                    : "perfil-plan__card--inactive"
+                  : "perfil-plan__card--inactive"
               }`}>
               <div className="perfil-plan__card-icon">
                 <img src={plan.img} alt={plan.nombre} />
               </div>
               <h3 className="perfil-plan__card-name">{plan.nombre}</h3>
 
-              {isContracted || isRenewable ? (
+              {isContracted ? (
                 <>
                   <div className="perfil-plan__card-dates">
                     <p>
@@ -262,35 +289,31 @@ export default function PerfilPlan() {
                     </div>
                   )}
 
-                  {isRenewable ? (
-                    <>
-                      <span className="perfil-plan__card-badge perfil-plan__card-badge--renewable">
-                        Cupo usado
-                      </span>
-                      <div className="perfil-plan__card-status perfil-plan__card-status--renewable">
-                        <FontAwesomeIcon icon={faCircleCheck} />
-                        <span>Puedes volver a suscribirte</span>
+                  {/* Mostrar cupos para plan Superguía */}
+                  {plan.key === "superguia" &&
+                    Number(activeSub.publicaciones_total ?? 0) > 0 && (
+                      <div className="perfil-plan__card-quota">
+                        <span>
+                          {Number(activeSub.publicaciones_usadas ?? 0)}
+                        </span>
+                        <span className="perfil-plan__card-quota-separator">
+                          /
+                        </span>
+                        <span>
+                          {Number(activeSub.publicaciones_total ?? 0)}
+                        </span>
+                        <span className="perfil-plan__card-quota-label">
+                          negocio publicado
+                        </span>
                       </div>
-                      <button
-                        className="perfil-plan__renew-btn"
-                        onClick={() => navigate("/activar-plan")}>
-                        Volver a suscribirme
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <span className="perfil-plan__card-badge">
-                        Contratado
-                      </span>
-                      <button
-                        className="perfil-plan__cancel-btn"
-                        onClick={() =>
-                          handleCancelClick(activeSub, plan.nombre)
-                        }>
-                        Cancelar Plan
-                      </button>
-                    </>
-                  )}
+                    )}
+
+                  <span className="perfil-plan__card-badge">Contratado</span>
+                  <button
+                    className="perfil-plan__cancel-btn"
+                    onClick={() => handleCancelClick(activeSub, plan.nombre)}>
+                    Cancelar Plan
+                  </button>
                 </>
               ) : (
                 <div className="perfil-plan__card-inactive-msg">

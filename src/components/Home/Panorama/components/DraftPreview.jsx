@@ -143,7 +143,7 @@ const DraftPreview = ({
   // Obtener texto de entrada
   const getEntradaText = () => {
     const tipos = {
-      sin_entrada: "Sin entrada requerida",
+      sin_entrada: "Pronto más información",
       gratuito: "Entrada gratuita",
       pagado: formData.precio
         ? `$${formData.precio} CLP`

@@ -5,6 +5,10 @@
 
 import { supabase } from "../supabase";
 import { isModerator } from "./roles";
+import {
+  refundBusinessPublication,
+  validateAndConsumeBusinessPublication,
+} from "./subscriptions";
 
 /**
  * Crea un nuevo negocio
@@ -88,6 +92,26 @@ export const getBusinessesByUser = async (userId) => {
   }
 
   return data;
+};
+
+/**
+ * Verifica si el usuario tiene un negocio pendiente de revisión
+ * @param {string} userId - ID del usuario
+ * @returns {Promise<boolean>} true si tiene un negocio pendiente
+ */
+export const hasUserPendingBusiness = async (userId) => {
+  const { count, error } = await supabase
+    .from("businesses")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("estado", "pendiente");
+
+  if (error) {
+    console.error("Error verificando negocio pendiente:", error);
+    return false;
+  }
+
+  return count > 0;
 };
 
 /**
@@ -190,6 +214,23 @@ export const approveBusiness = async (businessId, adminId) => {
     throw new Error("No tienes permisos para aprobar negocios");
   }
 
+  // Obtener el user_id del negocio
+  const { data: business, error: fetchError } = await supabase
+    .from("businesses")
+    .select("user_id")
+    .eq("id", businessId)
+    .single();
+
+  if (fetchError || !business) {
+    throw new Error("No se encontró el negocio");
+  }
+
+  // NOTA: El cupo ya fue consumido al momento del envío (useNegocioForm).
+  // Aquí solo aprobamos y calculamos la fecha de expiración (365 días).
+  const publicationExpiresAt = new Date(
+    Date.now() + 365 * 24 * 60 * 60 * 1000,
+  ).toISOString();
+
   const { data, error } = await supabase
     .from("businesses")
     .update({
@@ -197,6 +238,7 @@ export const approveBusiness = async (businessId, adminId) => {
       approved_by: adminId,
       approved_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      publication_expires_at: publicationExpiresAt,
     })
     .eq("id", businessId)
     .select()
@@ -205,6 +247,23 @@ export const approveBusiness = async (businessId, adminId) => {
   if (error) {
     console.error("Error al aprobar negocio:", error);
     throw error;
+  }
+
+  // Crear notificación in-app para el dueño del negocio
+  try {
+    await supabase.from("notifications").insert([
+      {
+        user_id: business.user_id,
+        type: "publication_approved",
+        title: "¡Negocio aprobado!",
+        message: `Tu negocio "${data.nombre}" ha sido aprobado y ya está visible para todos.`,
+        related_business_id: businessId,
+        read: false,
+        created_at: new Date().toISOString(),
+      },
+    ]);
+  } catch (notifError) {
+    console.warn("No se pudo crear la notificación de aprobación:", notifError);
   }
 
   return data;
@@ -224,10 +283,10 @@ export const rejectBusiness = async (businessId, adminId, reason = "") => {
     throw new Error("No tienes permisos para rechazar negocios");
   }
 
-  // Obtener revision_count actual
+  // Obtener revision_count actual y user_id para devolver cupo
   const { data: bizData, error: fetchError } = await supabase
     .from("businesses")
-    .select("revision_count")
+    .select("revision_count, user_id")
     .eq("id", businessId)
     .single();
 
@@ -256,6 +315,38 @@ export const rejectBusiness = async (businessId, adminId, reason = "") => {
     throw error;
   }
 
+  // Crear notificación in-app para el dueño del negocio
+  try {
+    const motivoTexto = reason ? ` Motivo: ${reason}` : "";
+    await supabase.from("notifications").insert([
+      {
+        user_id: bizData.user_id,
+        type: "publication_rejected",
+        title: "Negocio rechazado",
+        message: `Tu negocio "${data.nombre}" no ha sido aprobado.${motivoTexto}`,
+        related_business_id: businessId,
+        read: false,
+        created_at: new Date().toISOString(),
+      },
+    ]);
+  } catch (notifError) {
+    console.warn("No se pudo crear la notificación de rechazo:", notifError);
+  }
+
+  // Devolver cupo de publicación si aún tiene intentos de revisión
+  // En el 3er rechazo (revision_count = 3) el cupo se pierde definitivamente
+  if (newRevisionCount < 3) {
+    try {
+      await refundBusinessPublication(bizData.user_id);
+    } catch (refundError) {
+      // No bloquear el rechazo si falla el refund (log para debugging)
+      console.warn(
+        "No se pudo devolver el cupo de publicación de negocio:",
+        refundError,
+      );
+    }
+  }
+
   return data;
 };
 
@@ -270,7 +361,7 @@ const MAX_REVISION_ATTEMPTS = 3;
 export const resubmitBusiness = async (businessId) => {
   const { data: biz, error: fetchError } = await supabase
     .from("businesses")
-    .select("estado, revision_count")
+    .select("estado, revision_count, user_id")
     .eq("id", businessId)
     .single();
 
@@ -283,6 +374,20 @@ export const resubmitBusiness = async (businessId) => {
   if ((biz.revision_count || 0) >= MAX_REVISION_ATTEMPTS) {
     throw new Error(
       "Has alcanzado el máximo de 3 intentos de revisión para este negocio",
+    );
+  }
+
+  // Re-consumir cupo de publicación (fue devuelto al rechazar)
+  const publishResult = await validateAndConsumeBusinessPublication(
+    biz.user_id,
+    false,
+    false,
+  );
+
+  if (!publishResult?.allowed) {
+    throw new Error(
+      publishResult?.reason ||
+        "No tienes cupo disponible para reenviar el negocio.",
     );
   }
 
@@ -400,6 +505,11 @@ const ALLOWED_BUSINESS_UPDATE_FIELDS = [
   "ubicacion_url",
   "coordenadas",
   "tags",
+  "titulo_marketing",
+  "mensaje_marketing",
+  "titulo_marketing_2",
+  "mensaje_marketing_2",
+  "publication_expires_at",
 ];
 
 /**

@@ -6,6 +6,7 @@ import {
   getPlanPrices,
   isPlanesEnabled,
   getUserSubscriptions,
+  hasUserPendingBusiness,
 } from "../../lib/database";
 import { initiatePayment, PaymentError } from "../../lib/payment";
 import AuthModal from "../Auth/AuthModal";
@@ -182,6 +183,7 @@ export default function ActivarPlan() {
   const [renewablePlans, setRenewablePlans] = useState(new Set());
   const [hasActivePanorama, setHasActivePanorama] = useState(false);
   const [hasActiveSuperguia, setHasActiveSuperguia] = useState(false);
+  const [hasPendingBusiness, setHasPendingBusiness] = useState(false);
 
   // Verificar si los planes están habilitados
   useEffect(() => {
@@ -234,7 +236,13 @@ export default function ActivarPlan() {
           }
 
           if (s.plan === "superguia") {
-            superguiaActiva = true;
+            // Solo bloquear si tiene cupo disponible
+            const sgTotal = Number(s.publicaciones_total ?? 0);
+            const sgUsed = Number(s.publicaciones_usadas ?? 0);
+            const sgHasQuota = sgTotal === 0 || sgUsed < sgTotal;
+            if (sgHasQuota) {
+              superguiaActiva = true;
+            }
           }
         });
 
@@ -242,6 +250,10 @@ export default function ActivarPlan() {
         setRenewablePlans(renewableSet);
         setHasActivePanorama(panoramaActivo);
         setHasActiveSuperguia(superguiaActiva);
+
+        // Verificar si tiene un negocio pendiente de revisión
+        const pendingBiz = await hasUserPendingBusiness(user.id);
+        setHasPendingBusiness(pendingBiz);
       } catch (error) {
         console.error("Error cargando suscripciones activas:", error);
       }
@@ -539,9 +551,9 @@ export default function ActivarPlan() {
         <div
           className={`activar-plan__superguia ${
             addSuperguia ? "activar-plan__superguia--selected" : ""
-          } ${hasActiveSuperguia ? "activar-plan__superguia--disabled activar-plan__superguia--own-active" : ""}`}
+          } ${hasActiveSuperguia ? "activar-plan__superguia--disabled activar-plan__superguia--own-active" : ""} ${hasPendingBusiness && !hasActiveSuperguia ? "activar-plan__superguia--disabled activar-plan__superguia--pending" : ""}`}
           onClick={() => {
-            if (!hasActiveSuperguia) {
+            if (!hasActiveSuperguia && !hasPendingBusiness) {
               setAddSuperguia(!addSuperguia);
               if (!addSuperguia) {
                 setTimeout(() => {
@@ -584,6 +596,11 @@ export default function ActivarPlan() {
             <div className="activar-plan__card-active-msg activar-plan__card-active-msg--own activar-plan__superguia-active-msg">
               <FontAwesomeIcon icon={faCircleCheck} />
               <span>Superguía activa</span>
+            </div>
+          ) : hasPendingBusiness ? (
+            <div className="activar-plan__card-active-msg activar-plan__card-active-msg--other activar-plan__superguia-active-msg">
+              <FontAwesomeIcon icon={faLock} />
+              <span>Publicación en revisión</span>
             </div>
           ) : (
             <button

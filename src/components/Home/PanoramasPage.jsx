@@ -276,7 +276,12 @@ export default function PanoramasPage() {
         const precio = event.precio || 0;
         switch (selectedPrice) {
           case "gratis":
-            return precio === 0 || event.tipo_entrada === "gratis";
+            return (
+              precio === 0 ||
+              event.tipo_entrada === "gratis" ||
+              event.tipo_entrada === "gratuito" ||
+              event.tipo_entrada === "sin_entrada"
+            );
           case "economico":
             return precio > 0 && precio <= 10000;
           case "moderado":
@@ -569,19 +574,17 @@ export default function PanoramasPage() {
     selectedPrice ||
     searchQuery.trim();
 
-  // Eventos destacados (primeros 5 eventos vigentes)
+  // Eventos destacados (todos los eventos vigentes)
   const featuredEvents = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    return events
-      .filter((event) => {
-        const eventEndDate = event.fecha_fin || event.fecha_evento;
-        if (!eventEndDate) return true;
-        const endDate = new Date(eventEndDate + "T23:59:59");
-        return endDate >= today;
-      })
-      .slice(0, 5);
+    return events.filter((event) => {
+      const eventEndDate = event.fecha_fin || event.fecha_evento;
+      if (!eventEndDate) return true;
+      const endDate = new Date(eventEndDate + "T23:59:59");
+      return endDate >= today;
+    });
   }, [events]);
 
   // Navegación del carrusel
@@ -696,7 +699,9 @@ export default function PanoramasPage() {
         ) : (
           <div className="panoramas-page__hero-empty">
             <h1>Panoramas</h1>
-            <p>Descubre los mejores eventos de la región</p>
+            <p>
+              Descubre los mejores panoramas, actividades y eventos de tu ciudad
+            </p>
           </div>
         )}
       </section>

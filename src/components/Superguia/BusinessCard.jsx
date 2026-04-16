@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import "./styles/BusinessCard.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -24,11 +25,13 @@ import {
   faFacebook,
 } from "@fortawesome/free-brands-svg-icons";
 import { useAuth } from "../../context/AuthContext";
+import AuthModal from "../Auth/AuthModal";
 import {
   toggleBusinessLike,
   hasUserLikedBusiness,
   getBusinessLikesCount,
   toggleBusinessFavorite,
+  isBusinessFavorite,
 } from "../../lib/database";
 import { resolveIcon } from "./iconMap";
 
@@ -77,8 +80,9 @@ export default function BusinessCard({
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [isTogglingLike, setIsTogglingLike] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
-  // Cargar estado de likes al montar
+  // Cargar estado de likes y favoritos al montar
   useEffect(() => {
     const loadInteractions = async () => {
       try {
@@ -86,8 +90,12 @@ export default function BusinessCard({
         setLikeCount(count);
 
         if (user) {
-          const liked = await hasUserLikedBusiness(user.id, id);
+          const [liked, favorited] = await Promise.all([
+            hasUserLikedBusiness(user.id, id),
+            isBusinessFavorite(user.id, id),
+          ]);
           setIsLiked(liked);
+          setIsFavorited(favorited);
         }
       } catch (error) {
         console.error("Error cargando interacciones de negocio:", error);
@@ -153,6 +161,12 @@ export default function BusinessCard({
   // Obtener horario de hoy
   const getHorarioHoy = () => {
     if (!horarios || typeof horarios !== "object") return null;
+
+    // Si el objeto de horarios está vacío, no mostrar nada
+    const horarioKeys = Object.keys(horarios).filter(
+      (k) => k !== "abierto_24h",
+    );
+    if (!horarios.abierto_24h && horarioKeys.length === 0) return null;
 
     if (horarios.abierto_24h) return { texto: "Abierto 24h", abierto: true };
 
@@ -235,6 +249,7 @@ export default function BusinessCard({
 
   // Manejar click en la card
   const handleCardClick = () => {
+    if (showAuthModal) return;
     if (onClick) {
       onClick(business);
     }
@@ -264,7 +279,7 @@ export default function BusinessCard({
   const handleFavoriteClick = async (e) => {
     e.stopPropagation();
     if (!user) {
-      showToast?.("Inicia sesión para guardar favoritos", "warning");
+      setShowAuthModal(true);
       return;
     }
     if (isTogglingFavorite) return;
@@ -286,7 +301,7 @@ export default function BusinessCard({
   const handleLikeClick = async (e) => {
     e.stopPropagation();
     if (!user) {
-      showToast?.("Inicia sesión para dar me gusta", "warning");
+      setShowAuthModal(true);
       return;
     }
     if (isTogglingLike) return;
@@ -529,6 +544,14 @@ export default function BusinessCard({
           </button>
         </div>
       </div>
+      {showAuthModal &&
+        createPortal(
+          <AuthModal
+            isOpen={showAuthModal}
+            onClose={() => setShowAuthModal(false)}
+          />,
+          document.body,
+        )}
     </article>
   );
 }

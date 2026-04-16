@@ -15,6 +15,7 @@ import {
   faInfoCircle,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "../../../context/AuthContext";
+import { canUserPublishBusiness } from "../../../lib/planRules";
 import LoginAuthModal from "../../Auth/AuthModal";
 
 // Componentes modulares
@@ -78,17 +79,16 @@ const PublicarNegocio = () => {
   } = useNegocioForm();
 
   // Detectar si el usuario necesita plan superguía
-  const needsSuperguiaPlan = useMemo(() => {
-    if (isAdmin || isModerator) return false;
-    if (!planesEnabled) return false;
-    if (!superguiaSubscription) return true;
-    // Verificar si está vencida
-    if (superguiaSubscription.fecha_fin) {
-      const endDate = new Date(superguiaSubscription.fecha_fin);
-      if (endDate <= new Date()) return true;
-    }
-    return false;
+  const businessPublishCheck = useMemo(() => {
+    return canUserPublishBusiness({
+      subscription: superguiaSubscription,
+      planesEnabled,
+      isAdmin,
+      isModerator,
+    });
   }, [isAdmin, isModerator, planesEnabled, superguiaSubscription]);
+
+  const needsSuperguiaPlan = !businessPublishCheck.canPublish;
 
   // Detectar campos obligatorios faltantes por paso
   const getMissingFields = useCallback(() => {
@@ -115,9 +115,7 @@ const PublicarNegocio = () => {
           missing.push({ field: "direccion", label: "Dirección" });
         break;
       case 4:
-        if (formData.dias_atencion.length === 0)
-          missing.push({ field: "dias_atencion", label: "Días de atención" });
-        break;
+        break; // Horario es opcional
       default:
         break;
     }
@@ -319,6 +317,42 @@ const PublicarNegocio = () => {
 
   // Modal si no tiene plan superguía
   if (needsSuperguiaPlan) {
+    const reason = businessPublishCheck.reason;
+    const fechaFin = businessPublishCheck.fechaFin;
+    const fechaFormateada = fechaFin
+      ? new Date(fechaFin).toLocaleDateString("es-CL", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        })
+      : null;
+
+    const scenarioConfig = {
+      no_plan: {
+        title: "¡Estás a un paso de publicar tu negocio!",
+        message: "Adquiere una nueva suscripción a Superguía para publicar",
+        btnLabel: "Ver planes",
+      },
+      plan_expired: {
+        title: "¡Renueva tu plan ahora!",
+        message: `Tu plan venció el ${fechaFormateada}.\nTe invitamos a seguir publicando tu negocio en Extrovertidos.`,
+        btnLabel: "Renovar plan",
+      },
+      quota_exceeded: {
+        title: "Has usado tu cupo de publicación",
+        message: `Utilizaste ${businessPublishCheck.cuposUsados} de ${businessPublishCheck.cuposTotal} publicaciones.\nAdquiere una nueva suscripción a Superguía para publicar otro negocio.`,
+        btnLabel: "Volver a suscribirme",
+      },
+      window_expired: {
+        title: "Tu plazo de publicación ha vencido",
+        message:
+          "El período para crear tu publicación de negocio expiró.\nAdquiere una nueva suscripción para publicar.",
+        btnLabel: "Ver planes",
+      },
+    };
+
+    const config = scenarioConfig[reason] || scenarioConfig.no_plan;
+
     return (
       <div className="publicar-negocio">
         <header className="publicar-negocio__header">
@@ -339,25 +373,29 @@ const PublicarNegocio = () => {
               aria-label="Volver atrás">
               <FontAwesomeIcon icon={faTimes} />
             </button>
-            <div
-              className="plan-block-modal__icon"
-              style={{ color: "#ff6600" }}>
-              <FontAwesomeIcon icon={faStore} />
+            <div className="plan-block-modal__icon">
+              <img
+                src="/img/SG_Extro.png"
+                alt="Superguía"
+                style={{
+                  width: "160px",
+                  height: "auto",
+                  filter:
+                    "drop-shadow(0 0 20px rgba(255, 102, 0, 0.8)) drop-shadow(0 0 40px rgba(255, 102, 0, 0.4))",
+                }}
+              />
             </div>
-            <h2 className="plan-block-modal__title">
-              Debes activar tu plan para publicar un negocio
-            </h2>
+            <h2 className="plan-block-modal__title">{config.title}</h2>
             <div className="plan-block-modal__message">
-              <p>
-                Para publicar tu negocio en nuestra Superguía necesitas tener un
-                plan activo. ¡Activa tu plan y llega a más clientes!
-              </p>
+              {config.message.split("\n").map((line, i) => (
+                <p key={i}>{line}</p>
+              ))}
             </div>
             <div className="plan-block-modal__actions">
               <button
                 className="plan-block-modal__btn plan-block-modal__btn--primary"
                 onClick={() => navigate("/activar-plan")}>
-                Ver planes
+                {config.btnLabel}
               </button>
               <button
                 className="plan-block-modal__btn plan-block-modal__btn--secondary"
@@ -373,6 +411,14 @@ const PublicarNegocio = () => {
 
   return (
     <div className="publicar-negocio">
+      {/* Alerta de vencimiento próximo */}
+      {businessPublishCheck.warning && (
+        <div className="publicar-negocio__warning-banner">
+          <FontAwesomeIcon icon={faExclamationTriangle} />
+          <span>{businessPublishCheck.warning}</span>
+        </div>
+      )}
+
       {/* Header */}
       <header className="publicar-negocio__header">
         <img

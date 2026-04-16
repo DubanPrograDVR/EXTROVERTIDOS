@@ -68,9 +68,8 @@
 
 /* Plan con cupo agotado (ya usado) */
 .perfil-plan__card--exhausted {
-  opacity: 0.45;
-  filter: grayscale(0.4);
-  border-color: rgba(255, 255, 255, 0.08);
+  opacity: 0.85;
+  border-color: rgba(245, 158, 11, 0.25);
 }
 
 .perfil-plan__card--exhausted::before {
@@ -82,11 +81,11 @@
   height: 3px;
   background: #f59e0b;
   border-radius: 16px 16px 0 0;
-  opacity: 0.5;
 }
 
 .perfil-plan__card--exhausted:hover {
-  opacity: 0.6;
+  opacity: 1;
+  border-color: rgba(245, 158, 11, 0.4);
 }
 
 /* Icono/imagen del plan */

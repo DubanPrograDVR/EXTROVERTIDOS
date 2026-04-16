@@ -409,27 +409,107 @@ Deno.serve(async (req) => {
       const subscriptionIds = transaction.subscription_ids;
 
       if (Array.isArray(subscriptionIds) && subscriptionIds.length > 0) {
+        const failedActivations = [];
+
         for (const subId of subscriptionIds) {
           try {
-            await supabaseAdmin.rpc("activate_subscription", {
-              p_subscription_id: subId,
-              p_metodo: "webpay",
-              p_transaccion_id: transaction.buy_order,
-              p_detalles: {
-                authorization_code: tbkResult.authorization_code,
-                payment_type_code: tbkResult.payment_type_code,
-                installments_number: tbkResult.installments_number,
-                transaction_date: tbkResult.transaction_date,
-                card_last_four: cardLastFour,
+            const { error: rpcError } = await supabaseAdmin.rpc(
+              "activate_subscription",
+              {
+                p_subscription_id: subId,
+                p_metodo: "webpay",
+                p_transaccion_id: transaction.buy_order,
+                p_detalles: {
+                  authorization_code: tbkResult.authorization_code,
+                  payment_type_code: tbkResult.payment_type_code,
+                  installments_number: tbkResult.installments_number,
+                  transaction_date: tbkResult.transaction_date,
+                  card_last_four: cardLastFour,
+                },
               },
-            });
+            );
+
+            if (rpcError) {
+              console.error(
+                `[confirm-payment] RPC error activando suscripción ${subId}:`,
+                rpcError,
+              );
+              failedActivations.push(subId);
+            }
           } catch (activationError) {
             console.error(
               `[confirm-payment] Error activando suscripción ${subId}:`,
               activationError,
             );
-            // No falla el flujo completo, el pago ya está registrado
-            // Se puede activar manualmente desde el admin
+            failedActivations.push(subId);
+          }
+        }
+
+        // Fallback: activar directamente por UPDATE si el RPC falló
+        if (failedActivations.length > 0) {
+          console.warn(
+            `[confirm-payment] Intentando fallback para ${failedActivations.length} suscripciones fallidas`,
+          );
+
+          for (const subId of failedActivations) {
+            try {
+              // Verificar estado actual
+              const { data: subData } = await supabaseAdmin
+                .from("subscriptions")
+                .select("id, plan, estado")
+                .eq("id", subId)
+                .single();
+
+              if (
+                subData &&
+                (subData.estado === "pendiente" ||
+                  subData.estado === "rechazada")
+              ) {
+                // Determinar publicaciones según plan
+                const pubTotal = {
+                  panorama_unica: 1,
+                  panorama_pack4: 4,
+                  panorama_ilimitado: 0,
+                  superguia: 1,
+                };
+
+                const { error: updateError } = await supabaseAdmin
+                  .from("subscriptions")
+                  .update({
+                    estado: "activa",
+                    fecha_inicio: new Date().toISOString(),
+                    fecha_fin: new Date(
+                      Date.now() + 30 * 24 * 60 * 60 * 1000,
+                    ).toISOString(),
+                    publicaciones_total: pubTotal[subData.plan] ?? 0,
+                    publicaciones_usadas: 0,
+                    metodo_pago: "webpay",
+                    transaccion_id: transaction.buy_order,
+                    detalles_pago: {
+                      authorization_code: tbkResult.authorization_code,
+                      card_last_four: cardLastFour,
+                      activated_via: "fallback_direct_update",
+                    },
+                  })
+                  .eq("id", subId);
+
+                if (updateError) {
+                  console.error(
+                    `[confirm-payment] Fallback también falló para ${subId}:`,
+                    updateError,
+                  );
+                } else {
+                  console.log(
+                    `[confirm-payment] Suscripción ${subId} activada via fallback`,
+                  );
+                }
+              }
+            } catch (fallbackError) {
+              console.error(
+                `[confirm-payment] Error en fallback para ${subId}:`,
+                fallbackError,
+              );
+            }
           }
         }
       } else {

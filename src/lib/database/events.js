@@ -486,10 +486,12 @@ const ALLOWED_EVENT_UPDATE_FIELDS = [
   "tipo_recurrencia",
   "dias_recurrencia",
   "fechas_recurrentes",
-  "etiqueta_destacada",
+  "etiqueta_directa",
   "hashtags",
   "mensaje_marketing",
   "titulo_marketing",
+  "mensaje_marketing_2",
+  "titulo_marketing_2",
 ];
 
 /**

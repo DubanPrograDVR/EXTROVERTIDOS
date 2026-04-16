@@ -198,6 +198,22 @@
   overflow: hidden;
 }
 
+/* Organizador */
+.publication-card__organizer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.82rem;
+  margin-bottom: 8px;
+}
+
+.publication-card__organizer svg {
+  font-size: 0.75rem;
+  color: #ff6600;
+  flex-shrink: 0;
+}
+
 /* Mensaje de Marketing */
 .publication-card__marketing {
   display: flex;

@@ -16,19 +16,19 @@ import "./styles/plan-block-modal.css";
 const BLOCK_SCENARIOS = {
   // Sin plan contratado
   no_plan: {
-    icon: faRocket,
+    customImage: "/img/P_Extro.png",
     iconColor: "#ff6600",
-    title: "¡Necesitas un plan!",
+    title: "¡Estás a un paso de publicar tu panorama!",
     getMessage: () =>
-      "Para publicar tus panoramas necesitas activar un plan. ¡Elige el que más te acomode!",
+      "Adquiere una nueva suscripción a Panoramas para publicar",
     primaryLabel: "Ver planes",
   },
 
   // Plan vencido
   plan_expired: {
-    icon: faCalendarXmark,
+    customImage: "/img/P_Extro.png",
     iconColor: "#e74c3c",
-    title: "Tu plan ha vencido",
+    title: "¡Renueva tu plan ahora!",
     getMessage: ({ planExpiresAt }) => {
       const fecha = planExpiresAt
         ? new Date(planExpiresAt).toLocaleDateString("es-CL", {
@@ -37,7 +37,7 @@ const BLOCK_SCENARIOS = {
             year: "numeric",
           })
         : "N/A";
-      return `Tu plan venció el ${fecha}. Renueva tu plan para seguir publicando tus panoramas.`;
+      return `Tu plan venció el ${fecha}.\nTe invitamos a seguir publicando tus panoramas en Extrovertidos.`;
     },
     primaryLabel: "Renovar plan",
   },
@@ -165,12 +165,27 @@ const PlanBlockModal = ({
           <FontAwesomeIcon icon={faTimes} />
         </button>
 
-        {/* Icono grande */}
-        <div
-          className="plan-block-modal__icon"
-          style={{ color: config.iconColor }}>
-          <FontAwesomeIcon icon={config.icon} />
-        </div>
+        {/* Icono o logo */}
+        {config.customImage ? (
+          <div className="plan-block-modal__icon">
+            <img
+              src={config.customImage}
+              alt="Logo"
+              style={{
+                width: "160px",
+                height: "auto",
+                filter:
+                  "drop-shadow(0 0 20px rgba(255, 102, 0, 0.8)) drop-shadow(0 0 40px rgba(255, 102, 0, 0.4))",
+              }}
+            />
+          </div>
+        ) : (
+          <div
+            className="plan-block-modal__icon"
+            style={{ color: config.iconColor }}>
+            <FontAwesomeIcon icon={config.icon} />
+          </div>
+        )}
 
         {/* Título */}
         <h2 className="plan-block-modal__title">{config.title}</h2>

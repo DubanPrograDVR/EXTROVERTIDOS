@@ -217,3 +217,56 @@ export async function toggleBusinessFavorite(userId, businessId) {
 
   return { isFavorite: false };
 }
+
+/**
+ * Obtener negocios favoritos del usuario con datos completos
+ * @param {string} userId
+ * @returns {Promise<Array>} Lista de negocios favoritos
+ */
+export async function getUserBusinessFavorites(userId) {
+  if (!userId) return [];
+
+  const { data, error } = await supabase
+    .from("business_favorites")
+    .select(
+      `
+      id,
+      created_at,
+      business_id,
+      businesses (
+        id,
+        nombre,
+        descripcion,
+        slogan,
+        imagen_url,
+        logo_url,
+        imagen_portada_url,
+        galeria,
+        imagenes,
+        comuna,
+        provincia,
+        direccion,
+        categoria,
+        subcategoria,
+        telefono,
+        whatsapp,
+        sitio_web,
+        horarios,
+        dias_atencion,
+        verificado,
+        estado,
+        redes_sociales
+      )
+    `,
+    )
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error obteniendo negocios favoritos:", error);
+    throw error;
+  }
+
+  // Aplanar: devolver los negocios directamente
+  return (data || []).map((fav) => fav.businesses).filter((b) => b !== null);
+}

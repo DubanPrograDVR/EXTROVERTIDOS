@@ -117,6 +117,16 @@
   background: rgba(255, 102, 0, 0.1);
 }
 
+.publication-modal__cta-btn--liked {
+  background: rgba(255, 102, 0, 0.2);
+  color: #ff6600;
+  border-color: #ff6600;
+}
+
+.publication-modal__cta-btn--liked svg {
+  filter: drop-shadow(0 0 6px rgba(255, 140, 0, 0.9));
+}
+
 /* ===== HORARIOS POR DÍA ===== */
 .publication-modal__schedule-simple {
   display: flex;
@@ -169,12 +179,14 @@
 
 /* ===== RESPONSIVE ESPECÍFICO PARA NEGOCIOS ===== */
 @media (max-width: 900px) {
-  .publication-modal__cta-section {
-    flex-direction: column;
+  .publication-modal.publication-modal--business {
+    height: 95vh;
+    max-height: 95vh;
+    min-height: auto;
   }
 
   .publication-modal__cta-btn {
-    width: 100%;
+    flex: 0 1 auto;
   }
 }
 
@@ -190,6 +202,14 @@
 
 /* ===== NEGOCIOS: Más info móvil (igual que Panoramas) ===== */
 @media (max-width: 600px) {
+  .publication-modal.publication-modal--business {
+    height: 100dvh;
+    height: 100vh;
+    max-height: 100dvh;
+    border-radius: 0;
+    width: 100%;
+  }
+
   /* Imagen ocupa TODO el modal por defecto en móvil */
   .publication-modal.publication-modal--business .publication-modal__left {
     min-height: 0;
@@ -419,6 +439,11 @@
   transition: all 0.2s ease;
   width: 100%;
   box-sizing: border-box;
+}
+
+.publication-modal__edit-select option {
+  background: #000;
+  color: #fff;
 }
 
 .publication-modal__edit-input::placeholder,

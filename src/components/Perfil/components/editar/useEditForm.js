@@ -12,6 +12,11 @@ export const useEditForm = (event, isOpen) => {
   // Cargar datos del evento cuando se abre el modal
   useEffect(() => {
     if (event && isOpen) {
+      // Mapear valores antiguos de DB a valores de formulario
+      const tipoEntradaReverseMap = {
+        gratis: "gratuito",
+        externo: "venta_externa",
+      };
       setFormData({
         titulo: event.titulo || "",
         descripcion: event.descripcion || "",
@@ -29,19 +34,30 @@ export const useEditForm = (event, isOpen) => {
         provincia: event.provincia || "",
         comuna: event.comuna || "",
         direccion: event.direccion || "",
-        tipo_entrada: event.tipo_entrada || "sin_entrada",
+        tipo_entrada:
+          tipoEntradaReverseMap[event.tipo_entrada] ||
+          event.tipo_entrada ||
+          "sin_entrada",
         precio: event.precio || "",
         url_venta: event.url_venta || "",
         redes_sociales: {
           instagram: event.redes_sociales?.instagram || "",
           facebook: event.redes_sociales?.facebook || "",
           whatsapp: event.redes_sociales?.whatsapp || "",
+          tiktok: event.redes_sociales?.tiktok || "",
+          youtube: event.redes_sociales?.youtube || "",
+          twitter: event.redes_sociales?.twitter || "",
+          linkedin: event.redes_sociales?.linkedin || "",
         },
         imagenes: event.imagenes || [],
         ubicacion_url: event.ubicacion_url || "",
+        sitio_web: event.sitio_web || "",
+        etiqueta_directa: event.etiqueta_directa || "",
         subtitulo: event.subtitulo || "",
         titulo_marketing: event.titulo_marketing || "",
         mensaje_marketing: event.mensaje_marketing || "",
+        titulo_marketing_2: event.titulo_marketing_2 || "",
+        mensaje_marketing_2: event.mensaje_marketing_2 || "",
       });
       setErrors({});
       setActiveTab("info");

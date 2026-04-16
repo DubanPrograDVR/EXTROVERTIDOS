@@ -18,8 +18,15 @@ function isSubscriptionExpired(subscription) {
 
 function hasRemainingQuota(subscription) {
   if (!subscription) return false;
-  if (!PANORAMA_PLANS.includes(subscription.plan)) return true;
   if (subscription.plan === "panorama_ilimitado") return true;
+
+  // Superguía: suscripciones antiguas con total=0 no tienen límite
+  if (subscription.plan === "superguia") {
+    const total = Number(subscription.publicaciones_total ?? 0);
+    if (total === 0) return true;
+    const used = Number(subscription.publicaciones_usadas ?? 0);
+    return used < total;
+  }
 
   const total = Number(subscription.publicaciones_total ?? 0);
   const used = Number(subscription.publicaciones_usadas ?? 0);
@@ -254,6 +261,42 @@ export async function validateAndConsumePublication(
 }
 
 /**
+ * Valida y consume una publicación de negocio del plan Superguía.
+ * Llama a la función RPC validate_and_consume_business_publication en la BD.
+ *
+ * @param {string} userId - ID del usuario
+ * @param {boolean} [isAdmin=false] - Si el usuario es admin
+ * @param {boolean} [isModerator=false] - Si el usuario es moderador
+ * @returns {Promise<Object>} Resultado JSON con allowed, reason, subscription_id, etc.
+ */
+export async function validateAndConsumeBusinessPublication(
+  userId,
+  isAdmin = false,
+  isModerator = false,
+) {
+  if (!userId) throw new Error("ID de usuario requerido");
+
+  const { data, error } = await supabase.rpc(
+    "validate_and_consume_business_publication",
+    {
+      p_user_id: userId,
+      p_is_admin: isAdmin,
+      p_is_moderator: isModerator,
+    },
+  );
+
+  if (error) {
+    console.error("Error en validate_and_consume_business_publication:", error);
+    throw new Error(
+      error.message ||
+        "Error al validar permisos de publicación de negocio. Intenta nuevamente.",
+    );
+  }
+
+  return data;
+}
+
+/**
  * Devuelve 1 cupo de publicación a la suscripción activa del usuario.
  * Se usa cuando una publicación es rechazada para preservar el cupo.
  *
@@ -270,6 +313,30 @@ export async function refundPublication(userId) {
   if (error) {
     console.error("Error al devolver cupo de publicación:", error);
     throw new Error(error.message || "Error al devolver cupo de publicación.");
+  }
+
+  return data;
+}
+
+/**
+ * Devuelve 1 cupo de publicación de negocio a la suscripción superguía del usuario.
+ * Se usa cuando un negocio es rechazado para preservar el cupo (máx. 3 intentos).
+ *
+ * @param {string} userId - ID del usuario al que se le devuelve el cupo
+ * @returns {Promise<Object>} Resultado con { refunded, subscription_id, ... }
+ */
+export async function refundBusinessPublication(userId) {
+  if (!userId) throw new Error("ID de usuario requerido");
+
+  const { data, error } = await supabase.rpc("refund_business_publication", {
+    p_user_id: userId,
+  });
+
+  if (error) {
+    console.error("Error al devolver cupo de publicación de negocio:", error);
+    throw new Error(
+      error.message || "Error al devolver cupo de publicación de negocio.",
+    );
   }
 
   return data;

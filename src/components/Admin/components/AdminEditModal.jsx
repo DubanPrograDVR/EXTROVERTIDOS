@@ -12,6 +12,8 @@ import {
   faTicketAlt,
   faInfoCircle,
   faLink,
+  faGlobe,
+  faTag,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faInstagram,
@@ -26,7 +28,7 @@ const PROVINCIAS = ["Talca", "Curicó", "Linares", "Cauquenes"];
 
 // Tipos de entrada
 const TIPOS_ENTRADA = [
-  { value: "sin_entrada", label: "Sin entrada" },
+  { value: "sin_entrada", label: "Pronto más información" },
   { value: "gratuito", label: "Entrada gratuita" },
   { value: "pagado", label: "Entrada pagada" },
   { value: "venta_externa", label: "Venta externa" },
@@ -77,6 +79,8 @@ export default function AdminEditModal({
       whatsapp: "",
     },
     imagenes: [],
+    sitio_web: "",
+    etiqueta_directa: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -88,6 +92,11 @@ export default function AdminEditModal({
   // Cargar datos del evento cuando se abre el modal
   useEffect(() => {
     if (event && isOpen) {
+      // Mapear valores antiguos de DB a valores de formulario
+      const tipoEntradaReverseMap = {
+        gratis: "gratuito",
+        externo: "venta_externa",
+      };
       setFormData({
         titulo: event.titulo || "",
         descripcion: event.descripcion || "",
@@ -105,7 +114,10 @@ export default function AdminEditModal({
         provincia: event.provincia || "",
         comuna: event.comuna || "",
         direccion: event.direccion || "",
-        tipo_entrada: event.tipo_entrada || "sin_entrada",
+        tipo_entrada:
+          tipoEntradaReverseMap[event.tipo_entrada] ||
+          event.tipo_entrada ||
+          "sin_entrada",
         precio: event.precio || "",
         url_venta: event.url_venta || "",
         estado: event.estado || "pendiente",
@@ -115,6 +127,12 @@ export default function AdminEditModal({
           whatsapp: event.redes_sociales?.whatsapp || "",
         },
         imagenes: event.imagenes || [],
+        titulo_marketing: event.titulo_marketing || "",
+        mensaje_marketing: event.mensaje_marketing || "",
+        titulo_marketing_2: event.titulo_marketing_2 || "",
+        mensaje_marketing_2: event.mensaje_marketing_2 || "",
+        sitio_web: event.sitio_web || "",
+        etiqueta_directa: event.etiqueta_directa || "",
       });
       setErrors({});
       setActiveTab("info");
@@ -336,6 +354,21 @@ export default function AdminEditModal({
               </div>
 
               <div className="admin-edit-field">
+                <label htmlFor="etiqueta_directa">
+                  <FontAwesomeIcon icon={faTag} /> Etiqueta destacada
+                </label>
+                <input
+                  type="text"
+                  id="etiqueta_directa"
+                  name="etiqueta_directa"
+                  value={formData.etiqueta_directa}
+                  onChange={handleChange}
+                  placeholder="Ej: Imperdible, Gratis, Familiar..."
+                  maxLength={50}
+                />
+              </div>
+
+              <div className="admin-edit-field">
                 <label htmlFor="descripcion">Descripción</label>
                 <textarea
                   id="descripcion"
@@ -448,6 +481,18 @@ export default function AdminEditModal({
                       placeholder="+56 9 1234 5678"
                     />
                   </div>
+                </div>
+                <div
+                  className="admin-edit-field admin-edit-field--icon"
+                  style={{ marginTop: "8px" }}>
+                  <FontAwesomeIcon icon={faGlobe} className="field-icon" />
+                  <input
+                    type="url"
+                    name="sitio_web"
+                    value={formData.sitio_web}
+                    onChange={handleChange}
+                    placeholder="https://www.ejemplo.com"
+                  />
                 </div>
               </div>
             </div>

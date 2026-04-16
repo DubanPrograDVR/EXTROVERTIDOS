@@ -21,11 +21,17 @@ import {
   faCalendarAlt,
   faTicketAlt,
   faUser,
+  faGlobe,
+  faTag,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faInstagram,
   faFacebook,
   faWhatsapp,
+  faTiktok,
+  faYoutube,
+  faXTwitter,
+  faLinkedin,
 } from "@fortawesome/free-brands-svg-icons";
 
 // Hook
@@ -42,8 +48,10 @@ import "../styles/user-edit-modal.css";
 const ACCORDION_SECTIONS = {
   DESCRIPTION: "description",
   MARKETING: "marketing",
+  MARKETING_2: "marketing_2",
   LOCATION: "location",
   SCHEDULE: "schedule",
+  TICKET: "ticket",
   CONTACT: "contact",
   IMAGES: "images",
 };
@@ -368,6 +376,22 @@ export default function UserEditModal({
               />
             </div>
 
+            {/* Etiqueta destacada */}
+            <div className="publication-modal__edit-section">
+              <label className="publication-modal__edit-label">
+                <FontAwesomeIcon icon={faTag} /> Etiqueta destacada
+              </label>
+              <input
+                type="text"
+                className="publication-modal__edit-input"
+                name="etiqueta_directa"
+                value={formData.etiqueta_directa}
+                onChange={handleChange}
+                placeholder="Ej: Imperdible, Gratis, Familiar..."
+                maxLength={50}
+              />
+            </div>
+
             {/* ===== ACORDEÓN DE SECCIONES ===== */}
             <div className="publication-modal__accordion-container">
               {/* Sección: Descripción */}
@@ -417,6 +441,93 @@ export default function UserEditModal({
                     placeholder="Mensaje destacado para promocionar tu evento..."
                     rows={3}
                   />
+                </div>
+              </AccordionSection>
+
+              {/* Sección: Mensaje Marketing 2 */}
+              <AccordionSection
+                title={formData.titulo_marketing_2 || "Segundo Mensaje"}
+                icon={faBullhorn}
+                isOpen={activeSection === ACCORDION_SECTIONS.MARKETING_2}
+                onToggle={() => toggleSection(ACCORDION_SECTIONS.MARKETING_2)}>
+                <div className="publication-modal__edit-section">
+                  <label className="publication-modal__edit-label">
+                    Título Marketing 2
+                  </label>
+                  <input
+                    type="text"
+                    className="publication-modal__edit-input"
+                    name="titulo_marketing_2"
+                    value={formData.titulo_marketing_2 || ""}
+                    onChange={handleChange}
+                    placeholder="Título del segundo mensaje"
+                  />
+                  <label className="publication-modal__edit-label">
+                    Mensaje Marketing 2
+                  </label>
+                  <textarea
+                    className="publication-modal__edit-textarea"
+                    name="mensaje_marketing_2"
+                    value={formData.mensaje_marketing_2 || ""}
+                    onChange={handleChange}
+                    placeholder="Segundo mensaje promocional..."
+                    rows={3}
+                  />
+                </div>
+              </AccordionSection>
+
+              {/* Sección: Tipo de Entrada */}
+              <AccordionSection
+                title="Tipo de Entrada"
+                icon={faTicketAlt}
+                isOpen={activeSection === ACCORDION_SECTIONS.TICKET}
+                onToggle={() => toggleSection(ACCORDION_SECTIONS.TICKET)}>
+                <div className="publication-modal__edit-section">
+                  <label className="publication-modal__edit-label">
+                    Tipo de entrada
+                  </label>
+                  <select
+                    className="publication-modal__edit-select"
+                    name="tipo_entrada"
+                    value={formData.tipo_entrada}
+                    onChange={handleChange}>
+                    {TIPOS_ENTRADA.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                  {formData.tipo_entrada === "pagado" && (
+                    <>
+                      <label className="publication-modal__edit-label">
+                        Precio (CLP)
+                      </label>
+                      <input
+                        type="number"
+                        className="publication-modal__edit-input"
+                        name="precio"
+                        value={formData.precio}
+                        onChange={handleChange}
+                        placeholder="Ej: 5000"
+                        min="0"
+                      />
+                    </>
+                  )}
+                  {formData.tipo_entrada === "venta_externa" && (
+                    <>
+                      <label className="publication-modal__edit-label">
+                        URL de venta
+                      </label>
+                      <input
+                        type="url"
+                        className="publication-modal__edit-input"
+                        name="url_venta"
+                        value={formData.url_venta}
+                        onChange={handleChange}
+                        placeholder="https://..."
+                      />
+                    </>
+                  )}
                 </div>
               </AccordionSection>
 
@@ -587,6 +698,61 @@ export default function UserEditModal({
                     value={formData.redes_sociales.whatsapp}
                     onChange={handleChange}
                     placeholder="+56 9 1234 5678"
+                  />
+                  <label className="publication-modal__edit-label">
+                    <FontAwesomeIcon icon={faTiktok} /> TikTok
+                  </label>
+                  <input
+                    type="text"
+                    className="publication-modal__edit-input"
+                    name="redes_sociales.tiktok"
+                    value={formData.redes_sociales.tiktok}
+                    onChange={handleChange}
+                    placeholder="@usuario o URL"
+                  />
+                  <label className="publication-modal__edit-label">
+                    <FontAwesomeIcon icon={faYoutube} /> YouTube
+                  </label>
+                  <input
+                    type="text"
+                    className="publication-modal__edit-input"
+                    name="redes_sociales.youtube"
+                    value={formData.redes_sociales.youtube}
+                    onChange={handleChange}
+                    placeholder="URL del canal o video"
+                  />
+                  <label className="publication-modal__edit-label">
+                    <FontAwesomeIcon icon={faXTwitter} /> X (Twitter)
+                  </label>
+                  <input
+                    type="text"
+                    className="publication-modal__edit-input"
+                    name="redes_sociales.twitter"
+                    value={formData.redes_sociales.twitter}
+                    onChange={handleChange}
+                    placeholder="@usuario o URL"
+                  />
+                  <label className="publication-modal__edit-label">
+                    <FontAwesomeIcon icon={faLinkedin} /> LinkedIn
+                  </label>
+                  <input
+                    type="text"
+                    className="publication-modal__edit-input"
+                    name="redes_sociales.linkedin"
+                    value={formData.redes_sociales.linkedin}
+                    onChange={handleChange}
+                    placeholder="URL del perfil"
+                  />
+                  <label className="publication-modal__edit-label">
+                    <FontAwesomeIcon icon={faGlobe} /> Sitio Web
+                  </label>
+                  <input
+                    type="url"
+                    className="publication-modal__edit-input"
+                    name="sitio_web"
+                    value={formData.sitio_web}
+                    onChange={handleChange}
+                    placeholder="https://www.ejemplo.com"
                   />
                 </div>
               </AccordionSection>

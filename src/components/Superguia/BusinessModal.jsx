@@ -1,7 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
-import { updateBusiness, getBusinessCategories } from "../../lib/database";
+import {
+  updateBusiness,
+  getBusinessCategories,
+  toggleBusinessFavorite,
+  isBusinessFavorite,
+  toggleBusinessLike,
+  hasUserLikedBusiness,
+  getBusinessLikesCount,
+} from "../../lib/database";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faTimes,
@@ -22,6 +30,7 @@ import {
   faExternalLinkAlt,
   faShareAlt,
   faBookmark,
+  faStar,
   faBullhorn,
   faPencil,
   faSave,
@@ -39,6 +48,7 @@ import {
   faLinkedin,
 } from "@fortawesome/free-brands-svg-icons";
 import "./styles/BusinessModal.css";
+import AuthModal from "../Auth/AuthModal";
 
 const PLACEHOLDER_IMAGE = "/img/Home1.png";
 
@@ -90,7 +100,7 @@ export default function BusinessModal({
   onUpdate,
   startInEditMode = false,
 }) {
-  const { isAdmin, isModerator } = useAuth();
+  const { user, isAdmin, isModerator } = useAuth();
   const { showToast } = useToast();
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -103,6 +113,12 @@ export default function BusinessModal({
   const [isSaving, setIsSaving] = useState(false);
   const [categoriesList, setCategoriesList] = useState([]);
   const [isInfoExpanded, setIsInfoExpanded] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [isTogglingSave, setIsTogglingSave] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [isTogglingLike, setIsTogglingLike] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const canEdit = isAdmin || isModerator;
 
@@ -114,6 +130,27 @@ export default function BusinessModal({
         .catch((err) => console.error("Error cargando categorías:", err));
     }
   }, [canEdit]);
+
+  // Cargar estado de favorito y like al montar
+  useEffect(() => {
+    if (business?.id) {
+      getBusinessLikesCount(business.id)
+        .then((count) => setLikeCount(count))
+        .catch((err) => console.error("Error cargando likes:", err));
+
+      if (user) {
+        Promise.all([
+          isBusinessFavorite(user.id, business.id),
+          hasUserLikedBusiness(user.id, business.id),
+        ])
+          .then(([saved, liked]) => {
+            setIsSaved(saved);
+            setIsLiked(liked);
+          })
+          .catch((err) => console.error("Error cargando interacciones:", err));
+      }
+    }
+  }, [user, business?.id]);
 
   // Subcategorías filtradas según categoría seleccionada
   const availableSubcategories =
@@ -728,10 +765,11 @@ export default function BusinessModal({
                 onToggle={() => toggleSection(ACCORDION_SECTIONS.INFO)}>
                 {!isEditMode && (
                   <div className="publication-modal__info-combined">
-                    {/* Ubicación */}
+                    {/* Dirección/Lugar */}
                     <div className="publication-modal__info-section">
                       <h4 className="publication-modal__info-subtitle">
-                        <FontAwesomeIcon icon={faMapMarkerAlt} /> Dirección
+                        <FontAwesomeIcon icon={faMapMarkerAlt} />{" "}
+                        Dirección/Lugar
                       </h4>
                       <p className="publication-modal__location-address">
                         {direccion || "Sin dirección"}
@@ -754,9 +792,6 @@ export default function BusinessModal({
 
                     {/* Horarios */}
                     <div className="publication-modal__info-section">
-                      <h4 className="publication-modal__info-subtitle">
-                        <FontAwesomeIcon icon={faClock} /> Horario de atención
-                      </h4>
                       <div className="publication-modal__schedule-simple">
                         {horarioDetalle && horarioDetalle.length > 0 ? (
                           horarioDetalle.map((dia, idx) => (
@@ -1092,6 +1127,33 @@ export default function BusinessModal({
 
             {/* Botones CTA */}
             <div className="publication-modal__cta-section">
+              <button
+                className={`publication-modal__cta-btn publication-modal__cta-btn--outline ${isLiked ? "publication-modal__cta-btn--liked" : ""}`}
+                onClick={async () => {
+                  if (!user) {
+                    setShowAuthModal(true);
+                    return;
+                  }
+                  if (isTogglingLike) return;
+                  setIsTogglingLike(true);
+                  try {
+                    const result = await toggleBusinessLike(
+                      user.id,
+                      business.id,
+                    );
+                    setIsLiked(result.isLiked);
+                    setLikeCount(result.count);
+                  } catch (error) {
+                    console.error("Error al recomendar:", error);
+                    showToast("Error al procesar tu recomendación", "error");
+                  } finally {
+                    setIsTogglingLike(false);
+                  }
+                }}
+                disabled={isTogglingLike}>
+                <FontAwesomeIcon icon={faStar} />
+                {likeCount > 0 ? `${likeCount} Recomendado` : "Recomendado"}
+              </button>
               {sitio_web && (
                 <button
                   className="publication-modal__cta-btn publication-modal__cta-btn--primary"
@@ -1118,10 +1180,36 @@ export default function BusinessModal({
                 Compartir
               </button>
               <button
-                className="publication-modal__cta-btn publication-modal__cta-btn--outline"
-                onClick={() => alert("Funcionalidad de guardar próximamente")}>
+                className={`publication-modal__cta-btn publication-modal__cta-btn--outline ${isSaved ? "publication-modal__cta-btn--saved" : ""}`}
+                onClick={async () => {
+                  if (!user) {
+                    setShowAuthModal(true);
+                    return;
+                  }
+                  if (isTogglingSave) return;
+                  setIsTogglingSave(true);
+                  try {
+                    const result = await toggleBusinessFavorite(
+                      user.id,
+                      business.id,
+                    );
+                    setIsSaved(result.isFavorite);
+                    showToast(
+                      result.isFavorite
+                        ? "Negocio guardado"
+                        : "Negocio eliminado de guardados",
+                      "success",
+                    );
+                  } catch (error) {
+                    console.error("Error al guardar:", error);
+                    showToast("Error al guardar", "error");
+                  } finally {
+                    setIsTogglingSave(false);
+                  }
+                }}
+                disabled={isTogglingSave}>
                 <FontAwesomeIcon icon={faBookmark} />
-                Guardar
+                {isSaved ? "Guardado" : "Guardar"}
               </button>
               {canEdit && !isEditMode && (
                 <button
@@ -1136,6 +1224,10 @@ export default function BusinessModal({
           </div>
         </div>
       </div>
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+      />
     </div>
   );
 }

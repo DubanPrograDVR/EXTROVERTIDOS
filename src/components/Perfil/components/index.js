@@ -4,6 +4,7 @@ export { default as PerfilStats } from "./PerfilStats";
 export { default as PerfilPublicaciones } from "./PerfilPublicaciones";
 export { default as PerfilNotificaciones } from "./PerfilNotificaciones";
 export { default as PerfilFavoritos } from "./PerfilFavoritos";
+export { default as PerfilNegociosFavoritos } from "./PerfilNegociosFavoritos";
 export { default as PerfilNegocios } from "./PerfilNegocios";
 export { default as PerfilConfiguracion } from "./PerfilConfiguracion";
 export { default as PerfilBorradores } from "./PerfilBorradores";

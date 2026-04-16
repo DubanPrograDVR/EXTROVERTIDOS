@@ -25,7 +25,6 @@ import {
 import { resubmitBusiness } from "../../../lib/database/businesses";
 import { useToast } from "../../../context/ToastContext";
 import BusinessModal from "../../Superguia/BusinessModal";
-import { UserBusinessEditModal } from "./editar";
 import "./styles/section.css";
 import "./styles/publicaciones.css";
 
@@ -339,13 +338,12 @@ export default function PerfilNegocios() {
       />
 
       {/* Modal de edición de negocio */}
-      <UserBusinessEditModal
+      <BusinessModal
+        business={editModal.business}
         isOpen={editModal.open}
         onClose={() => setEditModal({ open: false, business: null })}
-        business={editModal.business}
-        categories={categories}
-        onSave={handleSaveEdit}
-        loading={saving}
+        startInEditMode={true}
+        onUpdate={() => reloadBusinesses()}
       />
 
       {/* Modal de confirmación de eliminación */}

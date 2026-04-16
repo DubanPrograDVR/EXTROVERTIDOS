@@ -296,6 +296,16 @@
   filter: grayscale(0.3);
 }
 
+/* Superguía bloqueada por publicación pendiente */
+.activar-plan__superguia--pending {
+  opacity: 1;
+  pointer-events: none;
+  cursor: default;
+  filter: none;
+  border-color: rgba(251, 191, 36, 0.4);
+  background: linear-gradient(180deg, rgba(251, 191, 36, 0.04) 0%, #111 100%);
+}
+
 .activar-plan__superguia-active-msg {
   flex-shrink: 0;
   width: auto;

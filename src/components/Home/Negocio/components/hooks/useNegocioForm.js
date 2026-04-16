@@ -9,8 +9,10 @@ import {
   deleteDraft,
   getBusinessCategories,
   getActiveSuperguiaSubscription,
+  validateAndConsumeBusinessPublication,
 } from "../../../../../lib/database";
 import { isPlanesEnabled } from "../../../../../lib/database/settings";
+import { canUserPublishBusiness } from "../../../../../lib/planRules";
 import { INITIAL_FORM_STATE, IMAGE_CONFIG } from "../constants";
 
 const LOCAL_DRAFT_KEY = "negocio_local_draft_v1";
@@ -329,9 +331,6 @@ export const useNegocioForm = () => {
     if (formData.imagenes.length === 0) {
       newErrors.imagenes = "Sube al menos una imagen";
     }
-    if (formData.dias_atencion.length === 0) {
-      newErrors.horarios = "Selecciona al menos un día de atención";
-    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -418,6 +417,55 @@ export const useNegocioForm = () => {
         // Ver comentario en useEventSubmit.js — compite por el navigator.locks
         // de Supabase y causa loading infinito tras cambios de pestaña.
 
+        // 0. Consumir cupo de publicación ANTES de crear el negocio
+        // (anti-bypass: validación + consumo atómico en backend)
+        let publishResult = null;
+        if (!isAdmin) {
+          const quickCheck = canUserPublishBusiness({
+            subscription: superguiaSubscription,
+            planesEnabled,
+            isAdmin,
+          });
+
+          if (!quickCheck.canPublish) {
+            if (showToast) showToast(quickCheck.error, "error");
+            setIsSubmitting(false);
+            return;
+          }
+
+          try {
+            publishResult = await validateAndConsumeBusinessPublication(
+              user.id,
+              false,
+              false,
+            );
+
+            if (!publishResult?.allowed) {
+              if (showToast)
+                showToast(
+                  publishResult?.reason ||
+                    "No tienes cupo disponible para publicar un negocio.",
+                  "error",
+                );
+              setIsSubmitting(false);
+              return;
+            }
+          } catch (rpcError) {
+            console.error(
+              "Error en validación de publicación de negocio:",
+              rpcError,
+            );
+            if (showToast)
+              showToast(
+                rpcError.message ||
+                  "Error al validar permisos de publicación. Intenta nuevamente.",
+                "error",
+              );
+            setIsSubmitting(false);
+            return;
+          }
+        }
+
         // 1. Subir imágenes
         const imageUrls = [];
         for (const file of formData.imagenes) {
@@ -477,7 +525,26 @@ export const useNegocioForm = () => {
         };
 
         // 3. Crear negocio en la BD
-        await createBusiness(businessData);
+        const createdBusiness = await createBusiness(businessData);
+
+        // Crear notificación in-app de "en revisión" (solo usuarios normales)
+        if (!isAdmin && createdBusiness?.id) {
+          try {
+            await supabase.from("notifications").insert([
+              {
+                user_id: user.id,
+                type: "publication_pending",
+                title: "Negocio en revisión",
+                message: `Tu negocio "${formData.nombre?.trim() || ""}" está siendo revisado por nuestro equipo. Te notificaremos cuando sea aprobado.`,
+                related_business_id: createdBusiness.id,
+                read: false,
+                created_at: new Date().toISOString(),
+              },
+            ]);
+          } catch (notifError) {
+            console.warn("No se pudo crear la notificación:", notifError);
+          }
+        }
 
         // Enviar email de negocio pendiente (solo usuarios normales)
         if (!isAdmin && user?.email) {

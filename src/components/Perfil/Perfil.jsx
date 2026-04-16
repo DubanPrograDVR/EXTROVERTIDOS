@@ -7,6 +7,7 @@ import {
   markNotificationAsRead,
   markAllNotificationsAsRead,
   deleteNotification as deleteNotificationDB,
+  deleteNotifications as deleteNotificationsDB,
   countDrafts,
   isPlanesEnabled,
   getUserSubscriptions,
@@ -18,6 +19,7 @@ import {
   PerfilPublicaciones,
   PerfilNotificaciones,
   PerfilFavoritos,
+  PerfilNegociosFavoritos,
   PerfilNegocios,
   PerfilConfiguracion,
   PerfilBorradores,
@@ -91,7 +93,21 @@ export default function Perfil() {
         setPlanesEnabled(enabled);
         if (enabled && user?.id) {
           const subs = await getUserSubscriptions(user.id);
-          const activeSubs = (subs || []).filter((s) => s.estado === "activa");
+          const now = new Date();
+          const activeSubs = (subs || []).filter((s) => {
+            if (s.estado !== "activa") return false;
+            // Excluir suscripciones expiradas
+            if (s.fecha_fin && new Date(s.fecha_fin) <= now) return false;
+            // Excluir suscripciones sin cupo restante (ilimitado siempre pasa)
+            if (s.plan === "panorama_ilimitado") return true;
+            if (s.plan === "superguia") {
+              const total = Number(s.publicaciones_total ?? 0);
+              if (total === 0) return true; // legacy sin límite
+              return Number(s.publicaciones_usadas ?? 0) < total;
+            }
+            const total = Number(s.publicaciones_total ?? 0);
+            return Number(s.publicaciones_usadas ?? 0) < total;
+          });
           // Mostrar solo un badge por tipo de plan (el más reciente)
           const uniqueByPlan = [];
           const seenPlans = new Set();
@@ -213,6 +229,18 @@ export default function Perfil() {
     }
   };
 
+  // Eliminar múltiples notificaciones
+  const handleDeleteNotifications = async (notificationIds) => {
+    try {
+      await deleteNotificationsDB(notificationIds, user.id);
+      setNotifications((prev) =>
+        prev.filter((n) => !notificationIds.includes(n.id)),
+      );
+    } catch (error) {
+      console.error("Error al eliminar notificaciones:", error);
+    }
+  };
+
   // Estado para evitar múltiples clicks durante logout
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -310,10 +338,15 @@ export default function Perfil() {
               onMarkAsRead={markAsRead}
               onMarkAllAsRead={markAllAsRead}
               onDelete={handleDeleteNotification}
+              onDeleteMultiple={handleDeleteNotifications}
             />
           )}
 
           {activeSection === "favoritos" && <PerfilFavoritos />}
+
+          {activeSection === "negocios-guardados" && (
+            <PerfilNegociosFavoritos />
+          )}
 
           {activeSection === "plan" && planesEnabled && <PerfilPlan />}
 

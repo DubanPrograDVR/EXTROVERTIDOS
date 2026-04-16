@@ -39,8 +39,11 @@ export const PLAN_LIMITS = {
   [PLAN_TYPES.UNICA]: 1,
   [PLAN_TYPES.PACK4]: 4,
   [PLAN_TYPES.ILIMITADO]: 0, // 0 = sin límite
-  [PLAN_TYPES.SUPERGUIA]: 0, // No aplica para eventos
+  [PLAN_TYPES.SUPERGUIA]: 1, // 1 negocio por suscripción
 };
+
+/** Duración máxima de un negocio publicado en Superguía (días) */
+export const MAX_DURACION_NEGOCIO = 365;
 
 // ═══════════════════════════════════════════════
 // FUNCIONES DE REGLAS
@@ -397,5 +400,144 @@ export function getPlanInfo(subscription, planesEnabled) {
     diasRestantes,
     isUnlimited,
     plan,
+  };
+}
+
+/**
+ * Valida si el usuario puede publicar un negocio según su plan Superguía.
+ *
+ * Verifica:
+ * 1. Que tenga un plan Superguía activo (si planes están habilitados)
+ * 2. Que no haya usado su cupo (1 negocio por suscripción)
+ * 3. Que esté dentro de la ventana de 30 días desde la compra
+ *
+ * @param {Object} params
+ * @param {Object|null} params.subscription - Suscripción superguía activa
+ * @param {boolean} params.planesEnabled - Si los planes están habilitados
+ * @param {boolean} [params.isAdmin] - Si el usuario es admin
+ * @param {boolean} [params.isModerator] - Si el usuario es moderador
+ * @returns {{ canPublish: boolean, error: string|null, warning: string|null, cuposUsados: number|null, cuposTotal: number|null, diasRestantes: number|null }}
+ */
+export function canUserPublishBusiness({
+  subscription,
+  planesEnabled,
+  isAdmin = false,
+  isModerator = false,
+}) {
+  if (isAdmin || isModerator) {
+    return {
+      canPublish: true,
+      error: null,
+      warning: null,
+      cuposUsados: null,
+      cuposTotal: null,
+      diasRestantes: null,
+    };
+  }
+
+  if (!planesEnabled) {
+    return {
+      canPublish: true,
+      error: null,
+      warning: null,
+      cuposUsados: null,
+      cuposTotal: null,
+      diasRestantes: null,
+    };
+  }
+
+  if (!subscription) {
+    return {
+      canPublish: false,
+      reason: "no_plan",
+      error:
+        "Necesitas un plan Superguía activo para publicar tu negocio. Ve a 'Activar Plan' para contratar uno.",
+      warning: null,
+      cuposUsados: 0,
+      cuposTotal: 0,
+      diasRestantes: 0,
+      fechaFin: null,
+    };
+  }
+
+  const { publicaciones_usadas, publicaciones_total, fecha_inicio, fecha_fin } =
+    subscription;
+  const total = Number(publicaciones_total ?? 0);
+  const used = Number(publicaciones_usadas ?? 0);
+
+  // Verificar si está vencida
+  if (fecha_fin) {
+    const endDate = new Date(fecha_fin);
+    if (endDate <= new Date()) {
+      return {
+        canPublish: false,
+        reason: "plan_expired",
+        error:
+          "Tu suscripción Superguía ha vencido. Adquiere una nueva para seguir publicando.",
+        warning: null,
+        cuposUsados: used,
+        cuposTotal: total,
+        diasRestantes: 0,
+        fechaFin: fecha_fin,
+      };
+    }
+  }
+
+  // Verificar cupo (solo si total > 0, las suscripciones antiguas con total=0 no tienen límite)
+  if (total > 0 && used >= total) {
+    return {
+      canPublish: false,
+      reason: "quota_exceeded",
+      error:
+        "Has utilizado tu cupo de publicación de negocio. Adquiere una nueva suscripción Superguía para publicar otro negocio.",
+      warning: null,
+      cuposUsados: used,
+      cuposTotal: total,
+      diasRestantes: null,
+      fechaFin: fecha_fin,
+    };
+  }
+
+  // Verificar ventana de 30 días
+  let diasRestantes = null;
+  if (fecha_inicio) {
+    const compra = new Date(fecha_inicio);
+    const hoy = new Date();
+    const diasDesdeCompra = Math.floor((hoy - compra) / (1000 * 60 * 60 * 24));
+
+    if (diasDesdeCompra > MAX_DIAS_CREACION) {
+      return {
+        canPublish: false,
+        reason: "window_expired",
+        error: `Tu plazo de ${MAX_DIAS_CREACION} días para crear tu publicación de negocio ha vencido. Adquiere una nueva suscripción.`,
+        warning: null,
+        cuposUsados: used,
+        cuposTotal: total,
+        diasRestantes: 0,
+        fechaFin: fecha_fin,
+      };
+    }
+
+    diasRestantes = MAX_DIAS_CREACION - diasDesdeCompra;
+
+    if (diasRestantes <= 5) {
+      return {
+        canPublish: true,
+        error: null,
+        warning: `Te quedan ${diasRestantes} día${diasRestantes !== 1 ? "s" : ""} para publicar tu negocio con esta suscripción.`,
+        cuposUsados: used,
+        cuposTotal: total,
+        diasRestantes,
+      };
+    }
+  }
+
+  return {
+    canPublish: true,
+    error: null,
+    warning: null,
+    cuposUsados: used,
+    cuposTotal: total,
+    diasRestantes,
   };
 }

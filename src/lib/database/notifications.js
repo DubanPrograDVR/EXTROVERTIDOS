@@ -74,8 +74,12 @@ export const getUserNotifications = async (userId) => {
       events:related_event_id (
         id,
         titulo
+      ),
+      businesses:related_business_id (
+        id,
+        nombre
       )
-    `
+    `,
     )
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
@@ -148,6 +152,29 @@ export const deleteNotification = async (notificationId, userId) => {
 
   if (error) {
     console.error("Error al eliminar notificación:", error);
+    throw error;
+  }
+
+  return { success: true };
+};
+
+/**
+ * Elimina múltiples notificaciones
+ * @param {string[]} notificationIds - IDs de las notificaciones
+ * @param {string} userId - ID del usuario
+ * @returns {Promise<Object>} Resultado de la operación
+ */
+export const deleteNotifications = async (notificationIds, userId) => {
+  if (!notificationIds?.length) return { success: true };
+
+  const { error } = await supabase
+    .from("notifications")
+    .delete()
+    .in("id", notificationIds)
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("Error al eliminar notificaciones:", error);
     throw error;
   }
 

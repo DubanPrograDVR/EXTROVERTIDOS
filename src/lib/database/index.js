@@ -75,6 +75,7 @@ export {
   deleteOwnBusiness,
   pauseBusiness,
   updateBusiness,
+  hasUserPendingBusiness,
 } from "./businesses";
 
 // ============ ROLES Y PERMISOS ============
@@ -109,6 +110,7 @@ export {
   markNotificationAsRead,
   markAllNotificationsAsRead,
   deleteNotification,
+  deleteNotifications,
   getUnreadNotificationsCount,
   createWelcomeNotification,
 } from "./notifications";
@@ -156,6 +158,7 @@ export {
   isBusinessFavorite,
   getBusinessFavoriteIds,
   toggleBusinessFavorite,
+  getUserBusinessFavorites,
 } from "./businessInteractions";
 
 // ============ CATEGORÍAS DE NEGOCIO ============
@@ -178,6 +181,8 @@ export {
   cancelSubscription,
   consumePublication,
   validateAndConsumePublication,
+  validateAndConsumeBusinessPublication,
+  refundBusinessPublication,
 } from "./subscriptions";
 
 // ============ CONFIGURACIONES DE LA APP ============

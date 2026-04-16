@@ -43,7 +43,7 @@ const PLAN_PUBLICATIONS = {
   panorama_unica: 1,
   panorama_pack4: 4,
   panorama_ilimitado: 0, // 0 = ilimitado
-  superguia: 0,
+  superguia: 1, // 1 negocio por suscripción
 };
 
 // Mapeo de IDs frontend → enum de base de datos
@@ -360,11 +360,16 @@ Deno.serve(async (req) => {
         );
       }
 
-      if (existingSuperguia && existingSuperguia.length > 0) {
+      // Solo bloquear si tiene una superguía activa CON cupo disponible
+      const hasBlockingSuperguia = (existingSuperguia || []).some(
+        (s) => s.publicaciones_restantes > 0,
+      );
+
+      if (hasBlockingSuperguia) {
         return jsonResponse(
           {
             error:
-              "Ya tienes un plan Superguía activo. Espera a que expire antes de comprar otro.",
+              "Ya tienes un plan Superguía activo con cupo disponible. Úsalo antes de comprar otro.",
           },
           409,
         );

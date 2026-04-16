@@ -7,7 +7,7 @@ export const PROVINCIAS = ["Talca", "Curicó", "Linares", "Cauquenes"];
 
 // Tipos de entrada
 export const TIPOS_ENTRADA = [
-  { value: "sin_entrada", label: "Sin entrada" },
+  { value: "sin_entrada", label: "Pronto más información" },
   { value: "gratuito", label: "Entrada gratuita" },
   { value: "pagado", label: "Entrada pagada" },
   { value: "venta_externa", label: "Venta externa" },
@@ -38,12 +38,20 @@ export const INITIAL_EDIT_STATE = {
     instagram: "",
     facebook: "",
     whatsapp: "",
+    tiktok: "",
+    youtube: "",
+    twitter: "",
+    linkedin: "",
   },
   imagenes: [],
   ubicacion_url: "",
+  sitio_web: "",
+  etiqueta_directa: "",
   subtitulo: "",
   titulo_marketing: "",
   mensaje_marketing: "",
+  titulo_marketing_2: "",
+  mensaje_marketing_2: "",
 };
 
 // Tabs disponibles

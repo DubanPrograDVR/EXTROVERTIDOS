@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import "./styles/PublicationCard.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -22,6 +23,7 @@ import {
   faThumbsUp as faThumbsUpRegular,
 } from "@fortawesome/free-regular-svg-icons";
 import { useAuth } from "../../context/AuthContext";
+import AuthModal from "../Auth/AuthModal";
 import {
   toggleFavorite,
   toggleLike,
@@ -58,6 +60,7 @@ export default function PublicationCard({
     precio,
     profiles,
     mensaje_marketing,
+    organizador,
   } = publication;
 
   const { user, showToast } = useAuth();
@@ -68,6 +71,7 @@ export default function PublicationCard({
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [isTogglingLike, setIsTogglingLike] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Cargar estado de likes al montar
   useEffect(() => {
@@ -250,7 +254,14 @@ export default function PublicationCard({
 
   // Obtener texto de entrada/precio
   const getEntradaText = () => {
-    if (tipo_entrada === "gratis" || (!precio && tipo_entrada !== "pagada")) {
+    if (tipo_entrada === "sin_entrada") {
+      return "Pronto más información";
+    }
+    if (
+      tipo_entrada === "gratis" ||
+      tipo_entrada === "gratuito" ||
+      (!precio && tipo_entrada !== "pagada")
+    ) {
       return "Gratis";
     }
     if (precio) {
@@ -260,6 +271,7 @@ export default function PublicationCard({
   };
 
   const handleClick = () => {
+    if (showAuthModal) return;
     if (onClick) onClick(publication);
   };
 
@@ -268,8 +280,8 @@ export default function PublicationCard({
     e.stopPropagation(); // Evitar que se abra el modal
 
     if (!user) {
-      // Aquí podrías mostrar un toast o abrir el modal de login
-      console.log("Debes iniciar sesión para guardar favoritos");
+      // Abrir modal de login
+      setShowAuthModal(true);
       return;
     }
 
@@ -295,7 +307,7 @@ export default function PublicationCard({
   const handleLikeClick = async (e) => {
     e.stopPropagation();
     if (!user) {
-      showToast?.("Inicia sesión para dar me gusta", "warning");
+      setShowAuthModal(true);
       return;
     }
     if (isTogglingLike) return;
@@ -389,6 +401,13 @@ export default function PublicationCard({
         </div>
         <h3 className="publication-card__title">{titulo}</h3>
 
+        {organizador && (
+          <div className="publication-card__organizer">
+            <FontAwesomeIcon icon={faUser} />
+            <span>{organizador}</span>
+          </div>
+        )}
+
         {/* Fecha y hora */}
         <div className="publication-card__datetime">
           {formattedDate && (
@@ -460,6 +479,14 @@ export default function PublicationCard({
           </button>
         </div>
       </div>
+      {showAuthModal &&
+        createPortal(
+          <AuthModal
+            isOpen={showAuthModal}
+            onClose={() => setShowAuthModal(false)}
+          />,
+          document.body,
+        )}
     </article>
   );
 }
