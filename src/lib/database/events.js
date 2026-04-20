@@ -478,6 +478,7 @@ const ALLOWED_EVENT_UPDATE_FIELDS = [
   "tipo_entrada",
   "precio",
   "url_venta",
+  "telefono_contacto",
   "redes_sociales",
   "motivo_rechazo",
   "sitio_web",
@@ -485,7 +486,9 @@ const ALLOWED_EVENT_UPDATE_FIELDS = [
   "es_recurrente",
   "tipo_recurrencia",
   "dias_recurrencia",
-  "fechas_recurrentes",
+  "fechas_recurrencia",
+  "es_multidia",
+  "mismo_horario",
   "etiqueta_directa",
   "hashtags",
   "mensaje_marketing",
@@ -525,10 +528,18 @@ export const updateEvent = async (eventId, eventData, options = {}) => {
     }
   }
 
-  // Caso especial: usuarios normales pueden volver su evento a "pendiente"
-  // (para re-revisión tras editar), pero NO pueden ponerlo en "publicado"
-  if (!adminOverride && eventData.estado === "pendiente") {
-    sanitized.estado = "pendiente";
+  // Auto-revert a revisión: si un usuario normal edita un evento ya publicado
+  // o uno rechazado, se envía a "en_revision" para que el admin lo revise.
+  if (!adminOverride) {
+    const { data: current } = await supabase
+      .from("events")
+      .select("estado")
+      .eq("id", eventId)
+      .single();
+    if (current?.estado === "publicado" || current?.estado === "rechazado") {
+      sanitized.estado = "en_revision";
+      sanitized.motivo_rechazo = null;
+    }
   }
 
   sanitized.updated_at = new Date().toISOString();
@@ -603,7 +614,7 @@ export const resubmitEvent = async (
   const { data, error } = await supabase
     .from("events")
     .update({
-      estado: "pendiente",
+      estado: "en_revision",
       motivo_rechazo: null,
       updated_at: new Date().toISOString(),
     })

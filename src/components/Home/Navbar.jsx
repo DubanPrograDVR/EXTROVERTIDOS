@@ -15,6 +15,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import AuthModal from "../Auth/AuthModal";
 import { isPlanesEnabled } from "../../lib/database";
+import { useAdminPendingCount } from "../../hooks/useAdminPendingCount";
+import { useUnreadNotificationsCount } from "../../hooks/useUnreadNotificationsCount";
 
 // Imágenes servidas desde public/
 const logo = "/img/E_Extro.png";
@@ -50,6 +52,21 @@ export default function Navbar() {
     user?.user_metadata?.avatar_url || user?.user_metadata?.picture || null;
   const userName =
     user?.user_metadata?.full_name || user?.user_metadata?.name || "Usuario";
+
+  // Contador de notificaciones admin en tiempo real (solo moderadores)
+  const { total: adminPendingTotal } = useAdminPendingCount(
+    Boolean(isModerator),
+  );
+  // Contador de notificaciones no leídas del usuario (solo usuarios normales)
+  const unreadNotifications = useUnreadNotificationsCount(
+    !isModerator && isAuthenticated ? user?.id : null,
+  );
+  const navbarBadgeCount = isModerator
+    ? adminPendingTotal
+    : unreadNotifications;
+  const navbarBadgeLabel = isModerator
+    ? "solicitudes pendientes"
+    : "notificaciones sin leer";
 
   // Cargar estado de planes
   useEffect(() => {
@@ -121,6 +138,7 @@ export default function Navbar() {
 
   const goToProfile = () => {
     setIsUserDropdownOpen(false);
+    setIsMenuOpen(false);
     navigate("/perfil");
   };
 
@@ -192,15 +210,25 @@ export default function Navbar() {
             {isAuthenticated ? (
               <>
                 <div className="navbar-mobile-user-info">
-                  <img
-                    src={userAvatar}
-                    alt={userName}
-                    className="navbar-mobile-user-avatar"
-                    referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      e.target.style.display = "none";
-                    }}
-                  />
+                  <div className="navbar-mobile-avatar-wrapper">
+                    <img
+                      src={userAvatar}
+                      alt={userName}
+                      className="navbar-mobile-user-avatar"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                      }}
+                    />
+                    {navbarBadgeCount > 0 && (
+                      <span
+                        className="navbar-user-badge"
+                        aria-label={`${navbarBadgeCount} ${navbarBadgeLabel}`}
+                        title={`${navbarBadgeCount} ${navbarBadgeLabel}`}>
+                        {navbarBadgeCount > 99 ? "99+" : navbarBadgeCount}
+                      </span>
+                    )}
+                  </div>
                   <span className="navbar-mobile-user-name">{userName}</span>
                 </div>
                 {/* Mi Perfil visible para todos los usuarios autenticados */}
@@ -263,6 +291,14 @@ export default function Navbar() {
                 />
               ) : (
                 <FontAwesomeIcon icon={faUser} className="navbar-user-icon" />
+              )}
+              {isAuthenticated && navbarBadgeCount > 0 && (
+                <span
+                  className="navbar-user-badge"
+                  aria-label={`${navbarBadgeCount} ${navbarBadgeLabel}`}
+                  title={`${navbarBadgeCount} ${navbarBadgeLabel}`}>
+                  {navbarBadgeCount > 99 ? "99+" : navbarBadgeCount}
+                </span>
               )}
             </button>
 

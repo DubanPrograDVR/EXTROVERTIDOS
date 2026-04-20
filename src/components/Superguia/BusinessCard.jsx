@@ -25,6 +25,7 @@ import {
   faFacebook,
 } from "@fortawesome/free-brands-svg-icons";
 import { useAuth } from "../../context/AuthContext";
+import { useRealtimeRefetch } from "../../hooks/useRealtimeRefetch";
 import AuthModal from "../Auth/AuthModal";
 import {
   toggleBusinessLike,
@@ -83,27 +84,37 @@ export default function BusinessCard({
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Cargar estado de likes y favoritos al montar
-  useEffect(() => {
-    const loadInteractions = async () => {
-      try {
-        const count = await getBusinessLikesCount(id);
-        setLikeCount(count);
+  const loadInteractions = async () => {
+    try {
+      const count = await getBusinessLikesCount(id);
+      setLikeCount(count);
 
-        if (user) {
-          const [liked, favorited] = await Promise.all([
-            hasUserLikedBusiness(user.id, id),
-            isBusinessFavorite(user.id, id),
-          ]);
-          setIsLiked(liked);
-          setIsFavorited(favorited);
-        }
-      } catch (error) {
-        console.error("Error cargando interacciones de negocio:", error);
+      if (user) {
+        const [liked, favorited] = await Promise.all([
+          hasUserLikedBusiness(user.id, id),
+          isBusinessFavorite(user.id, id),
+        ]);
+        setIsLiked(liked);
+        setIsFavorited(favorited);
       }
-    };
+    } catch (error) {
+      console.error("Error cargando interacciones de negocio:", error);
+    }
+  };
 
+  useEffect(() => {
     if (id) loadInteractions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, user]);
+
+  // Tiempo real: actualizar likes cuando cualquier usuario reacciona
+  useRealtimeRefetch({
+    table: "business_likes",
+    event: "*",
+    filter: id ? `business_id=eq.${id}` : undefined,
+    enabled: Boolean(id),
+    onChange: () => loadInteractions(),
+  });
 
   // Obtener array de imágenes válidas
   const getValidImages = () => {
@@ -320,7 +331,10 @@ export default function BusinessCard({
   };
 
   return (
-    <article className="business-card" onClick={handleCardClick}>
+    <article
+      id={`business-card-${id}`}
+      className="business-card"
+      onClick={handleCardClick}>
       {/* Imagen con carrusel */}
       <div className="business-card__image-container">
         <img

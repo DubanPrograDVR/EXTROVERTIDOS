@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "../../../lib/supabase";
+import { useRealtimeRefetch } from "../../../hooks/useRealtimeRefetch";
 import {
   getPendingEvents,
+  getInReviewEvents,
   getAllUsers,
   approveEvent,
   rejectEvent,
@@ -18,6 +20,7 @@ import {
   updateEvent,
   pauseEvent,
   getPendingBusinesses,
+  getInReviewBusinesses,
   getAllBusinesses,
   approveBusiness,
   rejectBusiness,
@@ -30,8 +33,10 @@ import {
  */
 export const useAdminData = (user, isAdmin, isModerator) => {
   const [pendingEvents, setPendingEvents] = useState([]);
+  const [reviewEvents, setReviewEvents] = useState([]);
   const [allEvents, setAllEvents] = useState([]);
   const [pendingBusinesses, setPendingBusinesses] = useState([]);
+  const [reviewBusinesses, setReviewBusinesses] = useState([]);
   const [allBusinesses, setAllBusinesses] = useState([]);
   const [users, setUsers] = useState([]);
   const [stats, setStats] = useState(null);
@@ -107,6 +112,14 @@ export const useAdminData = (user, isAdmin, isModerator) => {
           console.warn("Error al cargar usuarios por día:", err);
           return [];
         }),
+        getInReviewEvents(currentUser.id).catch((err) => {
+          console.warn("Error al cargar eventos en revisión:", err);
+          return [];
+        }),
+        getInReviewBusinesses().catch((err) => {
+          console.warn("Error al cargar negocios en revisión:", err);
+          return [];
+        }),
       ];
 
       // Si es admin, agregar la consulta de usuarios
@@ -147,6 +160,8 @@ export const useAdminData = (user, isAdmin, isModerator) => {
         statsData,
         eventsPerDayData,
         usersPerDayData,
+        reviewEventsData,
+        reviewBusinessData,
         usersData,
         allEventsData,
         allBusinessData,
@@ -154,7 +169,9 @@ export const useAdminData = (user, isAdmin, isModerator) => {
 
       // Actualizar estados una sola vez
       setPendingEvents(eventsData || []);
+      setReviewEvents(reviewEventsData || []);
       setPendingBusinesses(pendingBusinessData || []);
+      setReviewBusinesses(reviewBusinessData || []);
       setStats(statsData || defaultStats);
       setChartData({
         eventsPerDay: eventsPerDayData || [],
@@ -195,18 +212,42 @@ export const useAdminData = (user, isAdmin, isModerator) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, isModerator, loadData]);
 
+  // Tiempo real: refrescar cuando hay cambios en eventos o negocios
+  useRealtimeRefetch({
+    table: "events",
+    event: "*",
+    enabled: Boolean(user?.id && isModerator),
+    onChange: () => {
+      if (isMountedRef.current) loadData();
+    },
+  });
+  useRealtimeRefetch({
+    table: "businesses",
+    event: "*",
+    enabled: Boolean(user?.id && isModerator),
+    onChange: () => {
+      if (isMountedRef.current) loadData();
+    },
+  });
+
   // Aprobar evento
   const handleApproveEvent = async (eventId) => {
     setActionLoading(eventId);
     try {
-      const event = pendingEvents.find((e) => e.id === eventId);
+      const wasPending = pendingEvents.some((e) => e.id === eventId);
+      const event =
+        pendingEvents.find((e) => e.id === eventId) ||
+        reviewEvents.find((e) => e.id === eventId);
       await approveEvent(eventId, user.id);
       setPendingEvents((prev) => prev.filter((e) => e.id !== eventId));
+      setReviewEvents((prev) => prev.filter((e) => e.id !== eventId));
       setStats((prev) => ({
         ...prev,
         eventos: {
           ...prev.eventos,
-          pendientes: prev.eventos.pendientes - 1,
+          pendientes: wasPending
+            ? Math.max(0, prev.eventos.pendientes - 1)
+            : prev.eventos.pendientes,
           publicados: prev.eventos.publicados + 1,
         },
       }));
@@ -237,16 +278,21 @@ export const useAdminData = (user, isAdmin, isModerator) => {
   const handleRejectEvent = async (eventId, reason = "") => {
     setActionLoading(eventId);
     try {
+      const wasPending = pendingEvents.some((e) => e.id === eventId);
       const event =
         pendingEvents.find((e) => e.id === eventId) ||
+        reviewEvents.find((e) => e.id === eventId) ||
         allEvents.find((e) => e.id === eventId);
       await rejectEvent(eventId, user.id, reason);
       setPendingEvents((prev) => prev.filter((e) => e.id !== eventId));
+      setReviewEvents((prev) => prev.filter((e) => e.id !== eventId));
       setStats((prev) => ({
         ...prev,
         eventos: {
           ...prev.eventos,
-          pendientes: prev.eventos.pendientes - 1,
+          pendientes: wasPending
+            ? Math.max(0, prev.eventos.pendientes - 1)
+            : prev.eventos.pendientes,
           rechazados: prev.eventos.rechazados + 1,
         },
       }));
@@ -344,6 +390,7 @@ export const useAdminData = (user, isAdmin, isModerator) => {
       // Actualizar ambas listas
       setAllEvents((prev) => prev.filter((e) => e.id !== eventId));
       setPendingEvents((prev) => prev.filter((e) => e.id !== eventId));
+      setReviewEvents((prev) => prev.filter((e) => e.id !== eventId));
       // Actualizar estadísticas
       setStats((prev) => {
         const event = allEvents.find((e) => e.id === eventId);
@@ -386,6 +433,7 @@ export const useAdminData = (user, isAdmin, isModerator) => {
         list.map((e) => (e.id === eventId ? { ...e, is_paused: paused } : e));
       setAllEvents(updateList);
       setPendingEvents(updateList);
+      setReviewEvents(updateList);
       return { success: true };
     } catch (err) {
       console.error("Error al pausar publicación:", err);
@@ -432,6 +480,7 @@ export const useAdminData = (user, isAdmin, isModerator) => {
         list.map((e) => (e.id === eventId ? { ...e, ...eventData } : e));
       setAllEvents(updateEventInList);
       setPendingEvents(updateEventInList);
+      setReviewEvents(updateEventInList);
       return { success: true };
     } catch (err) {
       console.error("Error al actualizar publicación:", err);
@@ -447,22 +496,28 @@ export const useAdminData = (user, isAdmin, isModerator) => {
   const handleApproveBusiness = async (businessId) => {
     setActionLoading(businessId);
     try {
-      const business = pendingBusinesses.find((b) => b.id === businessId);
+      const wasPending = pendingBusinesses.some((b) => b.id === businessId);
+      const business =
+        pendingBusinesses.find((b) => b.id === businessId) ||
+        reviewBusinesses.find((b) => b.id === businessId);
       await approveBusiness(businessId, user.id);
       setPendingBusinesses((prev) => prev.filter((b) => b.id !== businessId));
+      setReviewBusinesses((prev) => prev.filter((b) => b.id !== businessId));
       // Actualizar en allBusinesses
       setAllBusinesses((prev) =>
         prev.map((b) =>
           b.id === businessId ? { ...b, estado: "publicado" } : b,
         ),
       );
-      setStats((prev) => ({
-        ...prev,
-        negocios: {
-          ...prev.negocios,
-          pendientes: (prev.negocios?.pendientes || 1) - 1,
-        },
-      }));
+      if (wasPending) {
+        setStats((prev) => ({
+          ...prev,
+          negocios: {
+            ...prev.negocios,
+            pendientes: Math.max((prev.negocios?.pendientes || 1) - 1, 0),
+          },
+        }));
+      }
       // Enviar email de aprobación
       if (business?.profiles?.email) {
         supabase.functions
@@ -493,11 +548,14 @@ export const useAdminData = (user, isAdmin, isModerator) => {
   const handleRejectBusiness = async (businessId, reason = "") => {
     setActionLoading(businessId);
     try {
+      const wasPending = pendingBusinesses.some((b) => b.id === businessId);
       const business =
         pendingBusinesses.find((b) => b.id === businessId) ||
+        reviewBusinesses.find((b) => b.id === businessId) ||
         allBusinesses.find((b) => b.id === businessId);
       await rejectBusiness(businessId, user.id, reason);
       setPendingBusinesses((prev) => prev.filter((b) => b.id !== businessId));
+      setReviewBusinesses((prev) => prev.filter((b) => b.id !== businessId));
       // Actualizar en allBusinesses
       setAllBusinesses((prev) =>
         prev.map((b) =>
@@ -506,13 +564,15 @@ export const useAdminData = (user, isAdmin, isModerator) => {
             : b,
         ),
       );
-      setStats((prev) => ({
-        ...prev,
-        negocios: {
-          ...prev.negocios,
-          pendientes: (prev.negocios?.pendientes || 1) - 1,
-        },
-      }));
+      if (wasPending) {
+        setStats((prev) => ({
+          ...prev,
+          negocios: {
+            ...prev.negocios,
+            pendientes: Math.max((prev.negocios?.pendientes || 1) - 1, 0),
+          },
+        }));
+      }
       // Enviar email de rechazo
       if (business?.profiles?.email) {
         supabase.functions
@@ -547,6 +607,7 @@ export const useAdminData = (user, isAdmin, isModerator) => {
       await deleteBusiness(businessId, user.id);
       setAllBusinesses((prev) => prev.filter((b) => b.id !== businessId));
       setPendingBusinesses((prev) => prev.filter((b) => b.id !== businessId));
+      setReviewBusinesses((prev) => prev.filter((b) => b.id !== businessId));
       return { success: true };
     } catch (err) {
       console.error("Error al eliminar negocio:", err);
@@ -567,6 +628,7 @@ export const useAdminData = (user, isAdmin, isModerator) => {
         );
       setAllBusinesses(updateList);
       setPendingBusinesses(updateList);
+      setReviewBusinesses(updateList);
       return { success: true };
     } catch (err) {
       console.error("Error al pausar negocio:", err);
@@ -579,8 +641,10 @@ export const useAdminData = (user, isAdmin, isModerator) => {
   return {
     // Estado
     pendingEvents,
+    reviewEvents,
     allEvents,
     pendingBusinesses,
+    reviewBusinesses,
     allBusinesses,
     users,
     stats,

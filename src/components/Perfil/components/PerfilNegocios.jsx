@@ -6,6 +6,7 @@ import {
   faStore,
   faSpinner,
   faClock,
+  faHourglassHalf,
   faCheckCircle,
   faTimesCircle,
   faMapMarkerAlt,
@@ -14,6 +15,7 @@ import {
   faTrash,
   faExclamationTriangle,
   faRedoAlt,
+  faLocationArrow,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "../../../context/AuthContext";
 import {
@@ -24,6 +26,7 @@ import {
 } from "../../../lib/database";
 import { resubmitBusiness } from "../../../lib/database/businesses";
 import { useToast } from "../../../context/ToastContext";
+import { useRealtimeRefetch } from "../../../hooks/useRealtimeRefetch";
 import BusinessModal from "../../Superguia/BusinessModal";
 import "./styles/section.css";
 import "./styles/publicaciones.css";
@@ -87,6 +90,15 @@ export default function PerfilNegocios() {
       console.error("Error recargando negocios:", err);
     }
   };
+
+  // Tiempo real: refrescar negocios del usuario en vivo
+  useRealtimeRefetch({
+    table: "businesses",
+    event: "*",
+    filter: user?.id ? `user_id=eq.${user.id}` : undefined,
+    enabled: Boolean(user?.id),
+    onChange: () => reloadBusinesses(),
+  });
 
   // Guardar edición
   const handleSaveEdit = async (businessId, businessData) => {
@@ -155,6 +167,11 @@ export default function PerfilNegocios() {
         icon: faClock,
         label: "Pendiente",
         className: "status-badge--pending",
+      },
+      en_revision: {
+        icon: faHourglassHalf,
+        label: "En revisión",
+        className: "status-badge--review",
       },
       publicado: {
         icon: faCheckCircle,
@@ -259,14 +276,46 @@ export default function PerfilNegocios() {
                       {business.categoria}
                     </span>
                   )}
-                  <h3 className="perfil-business-card__title">
-                    {business.nombre}
-                  </h3>
+                  <div className="perfil-business-card__title-row">
+                    <h3 className="perfil-business-card__title">
+                      {business.nombre}
+                    </h3>
+                    {business.estado === "publicado" && (
+                      <button
+                        type="button"
+                        className="perfil-business-card__goto"
+                        onClick={() =>
+                          navigate(`/superguia?highlight=${business.id}`)
+                        }
+                        title="Ver en Superguía">
+                        <FontAwesomeIcon icon={faLocationArrow} />
+                        Ir
+                      </button>
+                    )}
+                  </div>
                   <p className="perfil-business-card__info">
                     <FontAwesomeIcon icon={faMapMarkerAlt} />
                     {business.direccion || "Sin dirección"}
                     {business.telefono ? ` • ${business.telefono}` : ""}
                   </p>
+                  {business.estado === "pendiente" && (
+                    <div className="perfil-publication-card__review">
+                      <FontAwesomeIcon icon={faExclamationTriangle} />
+                      <span>
+                        Tu negocio está en revisión. Un administrador lo
+                        revisará pronto.
+                      </span>
+                    </div>
+                  )}
+                  {business.estado === "en_revision" && (
+                    <div className="perfil-publication-card__review">
+                      <FontAwesomeIcon icon={faHourglassHalf} />
+                      <span>
+                        Tus cambios están en revisión. Mientras tanto se
+                        mantiene visible la versión publicada.
+                      </span>
+                    </div>
+                  )}
                   {business.estado === "rechazado" && (
                     <div className="perfil-business-card__rejection">
                       {business.motivo_rechazo && (
@@ -308,7 +357,17 @@ export default function PerfilNegocios() {
                     </button>
                     <button
                       className="perfil-business-card__btn"
-                      onClick={() => setEditModal({ open: true, business })}>
+                      onClick={() => setEditModal({ open: true, business })}
+                      disabled={
+                        business.estado === "pendiente" ||
+                        business.estado === "en_revision"
+                      }
+                      title={
+                        business.estado === "pendiente" ||
+                        business.estado === "en_revision"
+                          ? "No puedes editar mientras está en revisión"
+                          : "Editar"
+                      }>
                       <FontAwesomeIcon icon={faEdit} />
                       Editar
                     </button>

@@ -159,6 +159,46 @@ export const getPendingBusinesses = async () => {
 };
 
 /**
+ * Obtiene todos los negocios en estado "en_revision"
+ * (negocios ya publicados que fueron editados por su dueño y requieren nueva revisión).
+ * @returns {Promise<Array>} Lista de negocios en revisión
+ */
+export const getInReviewBusinesses = async () => {
+  const { data: businesses, error } = await supabase
+    .from("businesses")
+    .select("*")
+    .eq("estado", "en_revision")
+    .order("updated_at", { ascending: true });
+
+  if (error) {
+    console.error("Error al obtener negocios en revisión:", error);
+    throw error;
+  }
+
+  if (!businesses || businesses.length === 0) {
+    return [];
+  }
+
+  const userIds = [...new Set(businesses.map((b) => b.user_id))];
+
+  const { data: profiles, error: profilesError } = await supabase
+    .from("profiles")
+    .select("id, nombre, avatar_url, email")
+    .in("id", userIds);
+
+  if (profilesError) {
+    console.warn("Error al obtener perfiles:", profilesError);
+    return businesses.map((b) => ({ ...b, profiles: null }));
+  }
+
+  const profilesMap = new Map(profiles?.map((p) => [p.id, p]) || []);
+  return businesses.map((b) => ({
+    ...b,
+    profiles: profilesMap.get(b.user_id) || null,
+  }));
+};
+
+/**
  * Obtiene todos los negocios (para admin)
  * @returns {Promise<Array>} Lista de todos los negocios
  */
@@ -394,7 +434,7 @@ export const resubmitBusiness = async (businessId) => {
   const { data, error } = await supabase
     .from("businesses")
     .update({
-      estado: "pendiente",
+      estado: "en_revision",
       motivo_rechazo: null,
       updated_at: new Date().toISOString(),
     })
@@ -517,10 +557,19 @@ const ALLOWED_BUSINESS_UPDATE_FIELDS = [
  * SEGURIDAD: Whitelist de campos + verificación de permisos
  * @param {string} businessId - ID del negocio
  * @param {Object} businessData - Datos a actualizar
- * @param {string} userId - ID del usuario que actualiza
+ * @param {string} [userId] - ID del usuario que actualiza
+ * @param {Object} [options]
+ * @param {boolean} [options.adminOverride=false] - Si es admin/moderador (no auto-revierte estado)
  * @returns {Promise<Object>} Negocio actualizado
  */
-export const updateBusiness = async (businessId, businessData, userId) => {
+export const updateBusiness = async (
+  businessId,
+  businessData,
+  userId,
+  options = {},
+) => {
+  const { adminOverride = false } = options;
+
   // Sanitizar: solo permitir campos seguros
   const sanitized = {};
   for (const key of ALLOWED_BUSINESS_UPDATE_FIELDS) {
@@ -528,6 +577,21 @@ export const updateBusiness = async (businessId, businessData, userId) => {
       sanitized[key] = businessData[key];
     }
   }
+
+  // Auto-revert a revisión: si un usuario normal edita un negocio ya publicado
+  // o uno rechazado, se envía a "en_revision" para que el administrador lo revise.
+  if (!adminOverride) {
+    const { data: current } = await supabase
+      .from("businesses")
+      .select("estado")
+      .eq("id", businessId)
+      .single();
+    if (current?.estado === "publicado" || current?.estado === "rechazado") {
+      sanitized.estado = "en_revision";
+      sanitized.motivo_rechazo = null;
+    }
+  }
+
   sanitized.updated_at = new Date().toISOString();
 
   const { data, error } = await supabase

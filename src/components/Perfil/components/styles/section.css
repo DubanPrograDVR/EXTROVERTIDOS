@@ -272,6 +272,11 @@
   color: #ffc107;
 }
 
+.status-badge--review {
+  background: rgba(250, 204, 21, 0.2);
+  color: #facc15;
+}
+
 .status-badge--published {
   background: rgba(76, 175, 80, 0.15);
   color: #4caf50;

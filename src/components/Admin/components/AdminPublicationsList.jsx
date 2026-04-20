@@ -9,6 +9,7 @@ import {
   faSpinner,
   faCheckCircle,
   faClock,
+  faHourglassHalf,
   faTimesCircle,
   faMapMarkerAlt,
   faCalendarAlt,
@@ -118,6 +119,11 @@ export default function AdminPublicationsList({
         label: "Pendiente",
         className: "admin-status--pending",
       },
+      en_revision: {
+        icon: faHourglassHalf,
+        label: "En revisión",
+        className: "admin-status--review",
+      },
       rechazado: {
         icon: faTimesCircle,
         label: "Rechazado",
@@ -176,6 +182,7 @@ export default function AdminPublicationsList({
             <option value="all">Todos los estados</option>
             <option value="publicado">Publicados</option>
             <option value="pendiente">Pendientes</option>
+            <option value="en_revision">En revisión</option>
             <option value="rechazado">Rechazados</option>
           </select>
         </div>

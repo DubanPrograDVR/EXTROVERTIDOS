@@ -68,6 +68,7 @@ export {
   getPublishedBusinesses,
   getBusinessesByUser,
   getPendingBusinesses,
+  getInReviewBusinesses,
   getAllBusinesses,
   approveBusiness,
   rejectBusiness,
@@ -100,6 +101,7 @@ export {
   getEventsPerDay,
   getUsersPerDay,
   getAllUsersWithBanStatus,
+  getInReviewEvents,
 } from "./admin";
 
 // ============ NOTIFICACIONES ============

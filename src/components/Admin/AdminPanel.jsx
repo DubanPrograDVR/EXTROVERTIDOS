@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChartLine,
   faClock,
+  faHourglassHalf,
   faUsers,
   faBars,
   faTimes,
@@ -82,12 +83,15 @@ export default function AdminPanel() {
   const [planesEnabled, setPlanesEnabled] = useState(true);
   const [planesToggleLoading, setPlanesToggleLoading] = useState(false);
   const [pubsMenuOpen, setPubsMenuOpen] = useState(false);
+  const [reviewMenuOpen, setReviewMenuOpen] = useState(false);
 
   // Hook personalizado para manejo de datos
   const {
     pendingEvents,
+    reviewEvents,
     allEvents,
     pendingBusinesses,
+    reviewBusinesses,
     allBusinesses,
     users,
     stats,
@@ -222,9 +226,11 @@ export default function AdminPanel() {
     setBanModal({ open: false, user: null });
   };
 
-  // Ver detalle de publicación (pendientes)
+  // Ver detalle de publicación (pendientes / en revisión)
   const onViewEvent = (eventId) => {
-    const event = pendingEvents.find((e) => e.id === eventId);
+    const event =
+      pendingEvents.find((e) => e.id === eventId) ||
+      reviewEvents.find((e) => e.id === eventId);
     if (event) {
       setViewModal({ open: true, event });
     }
@@ -316,11 +322,33 @@ export default function AdminPanel() {
     },
     {
       id: "pending",
-      label: "Pendientes",
+      label: "Solicitud de publicación",
       icon: faClock,
       badge:
         (stats?.eventos?.pendientes || 0) + (pendingBusinesses?.length || 0),
       show: true,
+    },
+    {
+      id: "review-group",
+      label: "Solicitud de edición",
+      icon: faHourglassHalf,
+      show: true,
+      isGroup: true,
+      badge: (reviewEvents?.length || 0) + (reviewBusinesses?.length || 0),
+      children: [
+        {
+          id: "review",
+          label: "Panoramas en Revisión",
+          icon: faNewspaper,
+          badge: reviewEvents?.length || 0,
+        },
+        {
+          id: "review-businesses",
+          label: "Negocios en Revisión",
+          icon: faStore,
+          badge: reviewBusinesses?.length || 0,
+        },
+      ],
     },
     {
       id: "publications-group",
@@ -403,50 +431,62 @@ export default function AdminPanel() {
             .filter((item) => item.show)
             .map((item) =>
               item.isGroup ? (
-                <div key={item.id} className="admin-sidebar__group">
-                  <button
-                    className={`admin-sidebar__item admin-sidebar__group-toggle ${
-                      pubsMenuOpen ? "open" : ""
-                    } ${
-                      ["publications", "businesses"].includes(activeTab)
-                        ? "active"
-                        : ""
-                    }`}
-                    onClick={() => setPubsMenuOpen(!pubsMenuOpen)}>
-                    <FontAwesomeIcon icon={item.icon} />
-                    <span>{item.label}</span>
-                    {item.badge > 0 && !pubsMenuOpen && (
-                      <span className="admin-sidebar__badge">{item.badge}</span>
-                    )}
-                    <FontAwesomeIcon
-                      icon={faChevronDown}
-                      className={`admin-sidebar__chevron ${
-                        pubsMenuOpen ? "open" : ""
-                      }`}
-                    />
-                  </button>
-                  <div
-                    className={`admin-sidebar__subitems ${
-                      pubsMenuOpen ? "open" : ""
-                    }`}>
-                    {item.children.map((child) => (
+                (() => {
+                  const childIds = item.children.map((c) => c.id);
+                  const isOpen =
+                    item.id === "review-group" ? reviewMenuOpen : pubsMenuOpen;
+                  const toggleOpen = () => {
+                    if (item.id === "review-group") {
+                      setReviewMenuOpen((v) => !v);
+                    } else {
+                      setPubsMenuOpen((v) => !v);
+                    }
+                  };
+                  return (
+                    <div key={item.id} className="admin-sidebar__group">
                       <button
-                        key={child.id}
-                        className={`admin-sidebar__item admin-sidebar__subitem ${
-                          activeTab === child.id ? "active" : ""
-                        }`}
-                        onClick={() => handleTabChange(child.id)}>
-                        <FontAwesomeIcon icon={child.icon} />
-                        <span>{child.label}</span>
-                        {child.badge > 0 && (
+                        className={`admin-sidebar__item admin-sidebar__group-toggle ${
+                          isOpen ? "open" : ""
+                        } ${childIds.includes(activeTab) ? "active" : ""}`}
+                        onClick={toggleOpen}>
+                        <FontAwesomeIcon icon={item.icon} />
+                        <span>{item.label}</span>
+                        {item.badge > 0 && !isOpen && (
                           <span className="admin-sidebar__badge">
-                            {child.badge}
+                            {item.badge}
                           </span>
                         )}
+                        <FontAwesomeIcon
+                          icon={faChevronDown}
+                          className={`admin-sidebar__chevron ${
+                            isOpen ? "open" : ""
+                          }`}
+                        />
                       </button>
-                    ))}
-                  </div>
-                </div>
+                      <div
+                        className={`admin-sidebar__subitems ${
+                          isOpen ? "open" : ""
+                        }`}>
+                        {item.children.map((child) => (
+                          <button
+                            key={child.id}
+                            className={`admin-sidebar__item admin-sidebar__subitem ${
+                              activeTab === child.id ? "active" : ""
+                            }`}
+                            onClick={() => handleTabChange(child.id)}>
+                            <FontAwesomeIcon icon={child.icon} />
+                            <span>{child.label}</span>
+                            {child.badge > 0 && (
+                              <span className="admin-sidebar__badge">
+                                {child.badge}
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()
               ) : (
                 <button
                   key={item.id}
@@ -536,6 +576,37 @@ export default function AdminPanel() {
               </div>
             )}
           </>
+        )}
+
+        {/* Lista de publicaciones en revisión (re-editadas por usuarios) */}
+        {activeTab === "review" && (
+          <AdminPendingList
+            events={reviewEvents}
+            actionLoading={actionLoading}
+            onApprove={onApprove}
+            onReject={onRejectClick}
+            onView={onViewEvent}
+            title="Publicaciones en Revisión"
+            emptyMessage="No hay publicaciones en revisión"
+          />
+        )}
+
+        {/* Lista de negocios en revisión (re-editados por usuarios) */}
+        {activeTab === "review-businesses" && (
+          <AdminBusinessList
+            businesses={reviewBusinesses}
+            loading={loading}
+            actionLoading={actionLoading}
+            onApprove={handleApproveBusiness}
+            onReject={onRejectBusinessClick}
+            onDelete={handleDeleteBusiness}
+            onPause={handlePauseBusiness}
+            onView={onViewBusiness}
+            onEdit={onEditBusiness}
+            showActions={true}
+            title="Negocios en Revisión"
+            emptyMessage="No hay negocios en revisión"
+          />
         )}
 
         {/* Gestión de todas las publicaciones (solo admin) */}

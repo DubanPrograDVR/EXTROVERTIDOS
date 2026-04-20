@@ -13,6 +13,7 @@ import {
   faPlay,
   faExclamationTriangle,
   faRedoAlt,
+  faLocationArrow,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   getCategories,
@@ -69,6 +70,11 @@ export default function PerfilPublicaciones({
   // Abrir modal de ver
   const handleView = (publication) => {
     setViewModal({ open: true, publication });
+  };
+
+  // Ir a la publicación en la página pública con resaltado
+  const handleGoToPublication = (publication) => {
+    navigate(`/panoramas?highlight=${publication.id}`);
   };
 
   // Cerrar modal de ver
@@ -239,16 +245,36 @@ export default function PerfilPublicaciones({
                     className={`perfil-publication-card__status ${
                       pub.estado || "activo"
                     }`}>
-                    {pub.estado || "activo"}
+                    {pub.estado === "en_revision"
+                      ? "En revisión"
+                      : pub.estado === "publicado"
+                        ? "Publicado"
+                        : pub.estado === "rechazado"
+                          ? "Rechazado"
+                          : pub.estado === "pendiente"
+                            ? "Pendiente"
+                            : pub.estado || "activo"}
                   </span>
                 </div>
                 <div className="perfil-publication-card__content">
                   <span className="perfil-publication-card__category">
                     {pub.categories?.nombre || "Sin categoría"}
                   </span>
-                  <h3 className="perfil-publication-card__title">
-                    {pub.titulo}
-                  </h3>
+                  <div className="perfil-publication-card__title-row">
+                    <h3 className="perfil-publication-card__title">
+                      {pub.titulo}
+                    </h3>
+                    {pub.estado === "publicado" && (
+                      <button
+                        type="button"
+                        className="perfil-publication-card__goto"
+                        onClick={() => handleGoToPublication(pub)}
+                        title="Ver en Panoramas">
+                        <FontAwesomeIcon icon={faLocationArrow} />
+                        Ir
+                      </button>
+                    )}
+                  </div>
                   <p className="perfil-publication-card__info">
                     <FontAwesomeIcon icon={faMapMarkerAlt} />
                     {pub.comuna}, {pub.provincia} •{" "}
@@ -258,6 +284,15 @@ export default function PerfilPublicaciones({
                       year: "numeric",
                     })}
                   </p>
+                  {pub.estado === "en_revision" && (
+                    <div className="perfil-publication-card__review">
+                      <FontAwesomeIcon icon={faExclamationTriangle} />
+                      <span>
+                        Tu publicación está en revisión. Un administrador la
+                        revisará pronto.
+                      </span>
+                    </div>
+                  )}
                   {pub.estado === "rechazado" && (
                     <div className="perfil-publication-card__rejection">
                       {pub.motivo_rechazo && (
@@ -297,7 +332,17 @@ export default function PerfilPublicaciones({
                     </button>
                     <button
                       className="perfil-publication-card__btn"
-                      onClick={() => handleEdit(pub)}>
+                      onClick={() => handleEdit(pub)}
+                      disabled={
+                        pub.estado === "en_revision" ||
+                        pub.estado === "pendiente"
+                      }
+                      title={
+                        pub.estado === "en_revision" ||
+                        pub.estado === "pendiente"
+                          ? "No puedes editar mientras está en revisión"
+                          : "Editar"
+                      }>
                       <FontAwesomeIcon icon={faEdit} />
                       Editar
                     </button>

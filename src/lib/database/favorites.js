@@ -35,6 +35,7 @@ export async function getUserFavorites(userId) {
         provincia,
         direccion,
         estado,
+        etiqueta_directa,
         categories (
           id,
           nombre,
@@ -223,15 +224,30 @@ export async function toggleFavorite(userId, eventId) {
 export async function countUserFavorites(userId) {
   if (!userId) return 0;
 
-  const { count, error } = await supabase
-    .from("user_favorites")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", userId);
+  const [eventFavs, businessResult] = await Promise.all([
+    getUserFavorites(userId),
+    supabase
+      .from("business_favorites")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId),
+  ]);
 
-  if (error) {
-    console.error("Error contando favoritos:", error);
-    return 0;
+  // Filtrar eventos vigentes (misma lógica que PerfilFavoritos)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const activeEvents = eventFavs.filter((event) => {
+    const endDate = new Date(
+      (event.fecha_fin || event.fecha_evento) + "T23:59:59",
+    );
+    return endDate >= today;
+  });
+
+  if (businessResult.error) {
+    console.error(
+      "Error contando favoritos de negocios:",
+      businessResult.error,
+    );
   }
 
-  return count || 0;
+  return activeEvents.length + (businessResult.count || 0);
 }

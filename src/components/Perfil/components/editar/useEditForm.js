@@ -52,6 +52,7 @@ export const useEditForm = (event, isOpen) => {
         imagenes: event.imagenes || [],
         ubicacion_url: event.ubicacion_url || "",
         sitio_web: event.sitio_web || "",
+        telefono_contacto: event.telefono_contacto || event.telefono || "",
         etiqueta_directa: event.etiqueta_directa || "",
         subtitulo: event.subtitulo || "",
         titulo_marketing: event.titulo_marketing || "",

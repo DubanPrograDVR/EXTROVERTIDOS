@@ -509,3 +509,29 @@
     font-size: 0.75rem;
   }
 }
+
+
+/* ===== HIGHLIGHT (cuando se llega con ?highlight=<id>) ===== */
+.business-card.is-highlighted {
+  animation: business-card-highlight-bounce 1.2s ease-in-out;
+  box-shadow:
+    0 0 0 3px rgba(255, 102, 0, 0.8),
+    0 0 30px rgba(255, 102, 0, 0.6);
+  border-radius: 12px;
+  position: relative;
+  z-index: 10;
+}
+
+@keyframes business-card-highlight-bounce {
+  0%, 100% { transform: translateY(0); }
+  15% { transform: translateY(-20px); }
+  30% { transform: translateY(0); }
+  45% { transform: translateY(-12px); }
+  60% { transform: translateY(0); }
+  75% { transform: translateY(-6px); }
+  90% { transform: translateY(0); }
+}
+
+
+/* Offset para que el header fijo no tape la card al hacer scrollIntoView */
+.business-card { scroll-margin-top: 100px; }

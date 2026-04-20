@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
+import { useRealtimeRefetch } from "../../hooks/useRealtimeRefetch";
 import {
   updateEvent,
   getCategories,
@@ -181,24 +182,34 @@ export default function PublicationModal({
   }, [isOpen, onClose]);
 
   // Cargar estado de likes y favoritos
-  useEffect(() => {
+  const loadLikeState = useCallback(async () => {
     if (!publication?.id) return;
-    const loadLikeState = async () => {
-      try {
-        const count = await getLikesCount(publication.id);
-        setLikeCount(count);
-        if (user) {
-          const liked = await hasUserLiked(user.id, publication.id);
-          setIsLiked(liked);
-          const saved = await isFavorite(user.id, publication.id);
-          setIsSaved(saved);
-        }
-      } catch (error) {
-        console.error("Error cargando likes:", error);
+    try {
+      const count = await getLikesCount(publication.id);
+      setLikeCount(count);
+      if (user) {
+        const liked = await hasUserLiked(user.id, publication.id);
+        setIsLiked(liked);
+        const saved = await isFavorite(user.id, publication.id);
+        setIsSaved(saved);
       }
-    };
+    } catch (error) {
+      console.error("Error cargando likes:", error);
+    }
+  }, [publication?.id, user]);
+
+  useEffect(() => {
     if (isOpen) loadLikeState();
-  }, [publication?.id, user, isOpen]);
+  }, [loadLikeState, isOpen]);
+
+  // Tiempo real: refrescar conteo cuando cualquier usuario reacciona
+  useRealtimeRefetch({
+    table: "event_likes",
+    event: "*",
+    filter: publication?.id ? `event_id=eq.${publication.id}` : undefined,
+    enabled: Boolean(isOpen && publication?.id),
+    onChange: () => loadLikeState(),
+  });
 
   const handleLikeClick = async () => {
     if (!user) {
@@ -582,6 +593,8 @@ export default function PublicationModal({
     try {
       // Limpiar datos: convertir strings vacíos a null para campos que lo requieren
       const cleanedData = { ...editData };
+      // subtitulo no es una columna de BD, removerla del payload
+      delete cleanedData.subtitulo;
       const nullableFields = [
         "hora_inicio",
         "hora_fin",
@@ -589,7 +602,6 @@ export default function PublicationModal({
         "fecha_fin",
         "precio",
         "url_venta",
-        "subtitulo",
         "ubicacion_url",
         "telefono_contacto",
         "sitio_web",

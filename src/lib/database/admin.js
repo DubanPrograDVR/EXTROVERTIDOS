@@ -58,6 +58,56 @@ export const getPendingEvents = async (adminUserId) => {
 };
 
 /**
+ * Obtiene todas las publicaciones en revisión (re-editadas por el usuario)
+ * @param {string} adminUserId - ID del usuario admin/moderador
+ * @returns {Promise<Array>} Eventos en revisión
+ */
+export const getInReviewEvents = async (adminUserId) => {
+  const canModerate = await isModerator(adminUserId);
+  if (!canModerate) {
+    throw new Error("No tienes permisos para ver publicaciones en revisión");
+  }
+
+  const { data, error } = await supabase
+    .from("events")
+    .select(
+      `
+      id,
+      titulo,
+      descripcion,
+      fecha_evento,
+      comuna,
+      provincia,
+      imagenes,
+      created_at,
+      updated_at,
+      categories (
+        id,
+        nombre,
+        icono,
+        color
+      ),
+      profiles (
+        id,
+        nombre,
+        avatar_url,
+        email
+      )
+    `,
+    )
+    .eq("estado", "en_revision")
+    .order("updated_at", { ascending: true })
+    .limit(50);
+
+  if (error) {
+    console.error("Error al obtener eventos en revisión:", error);
+    throw error;
+  }
+
+  return data;
+};
+
+/**
  * Obtiene todas las publicaciones (todos los estados) para admin
  * @param {string} adminUserId - ID del admin
  * @returns {Promise<Array>} Todos los eventos

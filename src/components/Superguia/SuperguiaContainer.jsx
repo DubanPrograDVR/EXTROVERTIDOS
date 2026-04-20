@@ -21,6 +21,8 @@ import {
   getBusinessCategories,
   getPublishedEvents,
 } from "../../lib/database";
+import { useRealtimeRefetch } from "../../hooks/useRealtimeRefetch";
+import { useHighlightCard } from "../../hooks/useHighlightCard";
 import { LOCATIONS } from "./data";
 import "./styles/SuperguiaContainer.css";
 
@@ -59,31 +61,43 @@ export default function SuperguiaContainer() {
   const [isPanoramaModalOpen, setIsPanoramaModalOpen] = useState(false);
 
   // Cargar datos
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [businessesData, categoriesData, eventsData] = await Promise.all([
-          getPublishedBusinesses(),
-          getBusinessCategories(),
-          getPublishedEvents(),
-        ]);
-        // Mezclar negocios en orden aleatorio cada vez que se carga
-        const shuffled = (businessesData || []).sort(() => Math.random() - 0.5);
-        setBusinesses(shuffled);
-        setCategories(categoriesData || []);
-        setPanoramas(eventsData || []);
-      } catch (err) {
-        console.error("Error cargando datos:", err);
-        setError("No se pudieron cargar los negocios");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
+  const loadData = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
+    setError(null);
+    try {
+      const [businessesData, categoriesData, eventsData] = await Promise.all([
+        getPublishedBusinesses(),
+        getBusinessCategories(),
+        getPublishedEvents(),
+      ]);
+      // Mezclar negocios en orden aleatorio cada vez que se carga
+      const shuffled = (businessesData || []).sort(() => Math.random() - 0.5);
+      setBusinesses(shuffled);
+      setCategories(categoriesData || []);
+      setPanoramas(eventsData || []);
+    } catch (err) {
+      console.error("Error cargando datos:", err);
+      if (!silent) setError("No se pudieron cargar los negocios");
+    } finally {
+      if (!silent) setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Tiempo real: actualizar cuando se publica/actualiza un negocio o evento
+  useRealtimeRefetch({
+    table: "businesses",
+    event: "*",
+    onChange: () => loadData({ silent: true }),
+  });
+  useRealtimeRefetch({
+    table: "events",
+    event: "*",
+    onChange: () => loadData({ silent: true }),
+  });
 
   // Construir subcategorías planas para el FilterPanel
   const flatSubcategories = useMemo(() => {
@@ -381,6 +395,18 @@ export default function SuperguiaContainer() {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredBusinesses.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredBusinesses, currentPage]);
+
+  // Resaltar card cuando venimos con ?highlight=<id>
+  useHighlightCard({
+    prefix: "business-card",
+    rawItems: businesses,
+    filteredItems: filteredBusinesses,
+    currentPage,
+    itemsPerPage: ITEMS_PER_PAGE,
+    setCurrentPage,
+    onResetFilters: handleClearFilters,
+    enabled: !loading,
+  });
 
   // Verificar si hay filtros activos
   const hasActiveFilters =

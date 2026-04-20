@@ -23,6 +23,7 @@ import {
   faThumbsUp as faThumbsUpRegular,
 } from "@fortawesome/free-regular-svg-icons";
 import { useAuth } from "../../context/AuthContext";
+import { useRealtimeRefetch } from "../../hooks/useRealtimeRefetch";
 import AuthModal from "../Auth/AuthModal";
 import {
   toggleFavorite,
@@ -74,23 +75,33 @@ export default function PublicationCard({
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Cargar estado de likes al montar
-  useEffect(() => {
-    const loadLikeState = async () => {
-      try {
-        const count = await getLikesCount(id);
-        setLikeCount(count);
+  const loadLikeState = async () => {
+    try {
+      const count = await getLikesCount(id);
+      setLikeCount(count);
 
-        if (user) {
-          const liked = await hasUserLiked(user.id, id);
-          setIsLiked(liked);
-        }
-      } catch (error) {
-        console.error("Error cargando likes:", error);
+      if (user) {
+        const liked = await hasUserLiked(user.id, id);
+        setIsLiked(liked);
       }
-    };
+    } catch (error) {
+      console.error("Error cargando likes:", error);
+    }
+  };
 
+  useEffect(() => {
     loadLikeState();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, user]);
+
+  // Tiempo real: actualizar likes cuando cualquier usuario reacciona
+  useRealtimeRefetch({
+    table: "event_likes",
+    event: "*",
+    filter: id ? `event_id=eq.${id}` : undefined,
+    enabled: Boolean(id),
+    onChange: () => loadLikeState(),
+  });
 
   // Obtener array de imágenes válidas
   const getValidImages = () => {
@@ -329,7 +340,10 @@ export default function PublicationCard({
   const entradaText = getEntradaText();
 
   return (
-    <article className="publication-card" onClick={handleClick}>
+    <article
+      id={`publication-card-${id}`}
+      className="publication-card"
+      onClick={handleClick}>
       <div className="publication-card__image-container">
         <img
           src={imageUrl}

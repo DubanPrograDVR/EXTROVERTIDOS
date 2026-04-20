@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import {
@@ -8,6 +8,7 @@ import {
   markAllNotificationsAsRead,
   deleteNotification as deleteNotificationDB,
 } from "../../../lib/database";
+import { useRealtimeRefetch } from "../../../hooks/useRealtimeRefetch";
 import {
   PerfilHeader,
   PerfilStats,
@@ -61,35 +62,45 @@ export default function AdminProfile() {
   }, [isAuthenticated, user?.id]);
 
   // Cargar notificaciones del usuario desde Supabase
-  useEffect(() => {
-    const loadNotifications = async () => {
-      if (isAuthenticated && user?.id) {
-        setLoadingNotifications(true);
-        try {
-          const data = await getUserNotifications(user.id);
-          // Transformar datos para el componente
-          const formattedNotifications = (data || []).map((n) => ({
-            id: n.id,
-            type: mapNotificationType(n.type),
-            title: n.title,
-            message: n.message,
-            date: n.created_at,
-            read: n.read,
-            eventId: n.related_event_id,
-            eventTitle: n.events?.titulo,
-          }));
-          setNotifications(formattedNotifications);
-        } catch (error) {
-          console.error("Error cargando notificaciones:", error);
-          setNotifications([]);
-        } finally {
-          setLoadingNotifications(false);
-        }
+  const loadNotifications = useCallback(
+    async ({ silent = false } = {}) => {
+      if (!isAuthenticated || !user?.id) return;
+      if (!silent) setLoadingNotifications(true);
+      try {
+        const data = await getUserNotifications(user.id);
+        const formattedNotifications = (data || []).map((n) => ({
+          id: n.id,
+          type: mapNotificationType(n.type),
+          title: n.title,
+          message: n.message,
+          date: n.created_at,
+          read: n.read,
+          eventId: n.related_event_id,
+          eventTitle: n.events?.titulo,
+        }));
+        setNotifications(formattedNotifications);
+      } catch (error) {
+        console.error("Error cargando notificaciones:", error);
+        if (!silent) setNotifications([]);
+      } finally {
+        if (!silent) setLoadingNotifications(false);
       }
-    };
+    },
+    [isAuthenticated, user?.id],
+  );
 
+  useEffect(() => {
     loadNotifications();
-  }, [isAuthenticated, user?.id]);
+  }, [loadNotifications]);
+
+  // Tiempo real
+  useRealtimeRefetch({
+    table: "notifications",
+    event: "*",
+    filter: user?.id ? `user_id=eq.${user.id}` : undefined,
+    enabled: Boolean(isAuthenticated && user?.id),
+    onChange: () => loadNotifications({ silent: true }),
+  });
 
   // Mapear tipo de notificación a tipo visual
   const mapNotificationType = (dbType) => {
@@ -118,7 +129,7 @@ export default function AdminProfile() {
     try {
       await markNotificationAsRead(notificationId, user.id);
       setNotifications((prev) =>
-        prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n))
+        prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n)),
       );
     } catch (error) {
       console.error("Error al marcar como leída:", error);

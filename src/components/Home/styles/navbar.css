@@ -262,6 +262,46 @@
   border-radius: 50%;
 }
 
+.navbar-user-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #ff6600;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 0 0 2px #000,
+    0 0 8px rgba(255, 102, 0, 0.7);
+  animation: navbar-user-badge-pulse 1.8s ease-in-out infinite;
+  z-index: 2;
+  pointer-events: none;
+}
+
+@keyframes navbar-user-badge-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 0 2px #000,
+      0 0 8px rgba(255, 102, 0, 0.7);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow:
+      0 0 0 2px #000,
+      0 0 14px rgba(255, 102, 0, 0.95);
+  }
+}
+
 .navbar-user-btn:hover {
   transform: scale(1.1) rotate(5deg);
 }
@@ -882,6 +922,17 @@
     object-fit: cover;
     border: 2px solid var(--color-primary);
     flex-shrink: 0;
+  }
+
+  .navbar-mobile-avatar-wrapper {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .navbar-mobile-avatar-wrapper .navbar-user-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
   }
 
   .navbar-mobile-user-name {

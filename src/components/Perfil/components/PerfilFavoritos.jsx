@@ -183,6 +183,7 @@ export default function PerfilFavoritos() {
         publication={viewModal.event}
         isOpen={viewModal.open}
         onClose={() => setViewModal({ open: false, event: null })}
+        modalVariant="panoramas"
       />
     </div>
   );

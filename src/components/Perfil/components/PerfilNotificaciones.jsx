@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBell,
@@ -10,6 +11,7 @@ import {
   faSpinner,
   faEye,
   faCheckSquare,
+  faLocationArrow,
 } from "@fortawesome/free-solid-svg-icons";
 import { faSquare } from "@fortawesome/free-regular-svg-icons";
 import { getEventById } from "../../../lib/database";
@@ -33,6 +35,20 @@ export default function PerfilNotificaciones({
   const [loadingEvent, setLoadingEvent] = useState(null);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [deleting, setDeleting] = useState(false);
+  const navigate = useNavigate();
+
+  const isApproved = (notification) =>
+    notification.type === "success" ||
+    notification.rawType === "publication_approved";
+
+  const handleGoTo = (e, notification) => {
+    e.stopPropagation();
+    if (notification.businessId) {
+      navigate(`/superguia?highlight=${notification.businessId}`);
+    } else if (notification.eventId) {
+      navigate(`/panoramas?highlight=${notification.eventId}`);
+    }
+  };
 
   const allSelected =
     notifications.length > 0 && selectedIds.size === notifications.length;
@@ -222,6 +238,21 @@ export default function PerfilNotificaciones({
                 </span>
               </div>
               <div className="perfil-notification__actions">
+                {isApproved(notification) &&
+                  (notification.eventId || notification.businessId) && (
+                    <button
+                      type="button"
+                      className="perfil-notification__goto"
+                      onClick={(e) => handleGoTo(e, notification)}
+                      title={
+                        notification.businessId
+                          ? "Ver en Superguía"
+                          : "Ver en Panoramas"
+                      }>
+                      <FontAwesomeIcon icon={faLocationArrow} />
+                      Ir
+                    </button>
+                  )}
                 {notification.eventId && (
                   <button
                     className="perfil-notification__view"

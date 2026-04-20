@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
+import { useRealtimeRefetch } from "../../hooks/useRealtimeRefetch";
 import {
   updateBusiness,
   getBusinessCategories,
@@ -132,25 +133,37 @@ export default function BusinessModal({
   }, [canEdit]);
 
   // Cargar estado de favorito y like al montar
-  useEffect(() => {
-    if (business?.id) {
-      getBusinessLikesCount(business.id)
-        .then((count) => setLikeCount(count))
-        .catch((err) => console.error("Error cargando likes:", err));
+  const loadInteractions = useCallback(() => {
+    if (!business?.id) return;
+    getBusinessLikesCount(business.id)
+      .then((count) => setLikeCount(count))
+      .catch((err) => console.error("Error cargando likes:", err));
 
-      if (user) {
-        Promise.all([
-          isBusinessFavorite(user.id, business.id),
-          hasUserLikedBusiness(user.id, business.id),
-        ])
-          .then(([saved, liked]) => {
-            setIsSaved(saved);
-            setIsLiked(liked);
-          })
-          .catch((err) => console.error("Error cargando interacciones:", err));
-      }
+    if (user) {
+      Promise.all([
+        isBusinessFavorite(user.id, business.id),
+        hasUserLikedBusiness(user.id, business.id),
+      ])
+        .then(([saved, liked]) => {
+          setIsSaved(saved);
+          setIsLiked(liked);
+        })
+        .catch((err) => console.error("Error cargando interacciones:", err));
     }
   }, [user, business?.id]);
+
+  useEffect(() => {
+    loadInteractions();
+  }, [loadInteractions]);
+
+  // Tiempo real: refrescar cuando cualquier usuario reacciona
+  useRealtimeRefetch({
+    table: "business_likes",
+    event: "*",
+    filter: business?.id ? `business_id=eq.${business.id}` : undefined,
+    enabled: Boolean(business?.id),
+    onChange: () => loadInteractions(),
+  });
 
   // Subcategorías filtradas según categoría seleccionada
   const availableSubcategories =
@@ -393,7 +406,9 @@ export default function BusinessModal({
   const handleSaveChanges = async () => {
     setIsSaving(true);
     try {
-      await updateBusiness(business.id, editData);
+      await updateBusiness(business.id, editData, undefined, {
+        adminOverride: canEdit,
+      });
       showToast("Cambios guardados exitosamente", "success");
       setIsEditMode(false);
       if (onUpdate) {

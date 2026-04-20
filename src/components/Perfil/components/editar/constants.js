@@ -46,6 +46,7 @@ export const INITIAL_EDIT_STATE = {
   imagenes: [],
   ubicacion_url: "",
   sitio_web: "",
+  telefono_contacto: "",
   etiqueta_directa: "",
   subtitulo: "",
   titulo_marketing: "",

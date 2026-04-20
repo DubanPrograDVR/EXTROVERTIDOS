@@ -26,6 +26,8 @@ import {
   getPublishedBusinesses,
 } from "../../lib/database";
 import { useCity } from "../../context/CityContext";
+import { useRealtimeRefetch } from "../../hooks/useRealtimeRefetch";
+import { useHighlightCard } from "../../hooks/useHighlightCard";
 import { LOCATIONS, mapCategoriesToUI } from "../Superguia/data";
 import "./styles/panoramas-page.css";
 
@@ -90,28 +92,50 @@ export default function PanoramasPage() {
   }, [searchParams, selectCity]);
 
   // Cargar todos los datos (el filtro de ciudad es client-side)
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        const [eventsData, categoriesData, businessesData] = await Promise.all([
-          getPublishedEvents(),
-          getCategories(),
-          getPublishedBusinesses(),
-        ]);
+  const loadData = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
+    try {
+      const [eventsData, categoriesData, businessesData] = await Promise.all([
+        getPublishedEvents(),
+        getCategories(),
+        getPublishedBusinesses(),
+      ]);
 
-        setEvents(eventsData || []);
-        setCategories(mapCategoriesToUI(categoriesData || []));
-        setBusinesses(businessesData || []);
-      } catch (error) {
-        console.error("Error cargando datos:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
+      setEvents(eventsData || []);
+      setCategories(mapCategoriesToUI(categoriesData || []));
+      setBusinesses(businessesData || []);
+    } catch (error) {
+      console.error("Error cargando datos:", error);
+    } finally {
+      if (!silent) setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Reset de filtros (reutilizable)
+  const resetAllFilters = useCallback(() => {
+    setSelectedCategory(null);
+    setSelectedCity(null);
+    setSelectedComuna(null);
+    setSelectedDate(null);
+    setSelectedPrice(null);
+    setSearchQuery("");
+  }, []);
+
+  // Tiempo real: actualizar cuando se publica/actualiza un evento o negocio
+  useRealtimeRefetch({
+    table: "events",
+    event: "*",
+    onChange: () => loadData({ silent: true }),
+  });
+  useRealtimeRefetch({
+    table: "businesses",
+    event: "*",
+    onChange: () => loadData({ silent: true }),
+  });
 
   // Handlers para filtros
   const handleCityChange = useCallback(
@@ -468,15 +492,82 @@ export default function PanoramasPage() {
   ]);
 
   const eventsCountByComuna = useMemo(() => {
+    let base = filteredEvents;
+    if (selectedComuna) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      base = events.filter((event) => {
+        const eventEndDate = event.fecha_fin || event.fecha_evento;
+        if (!eventEndDate) return true;
+        return new Date(eventEndDate + "T23:59:59") >= today;
+      });
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        base = base.filter(
+          (e) =>
+            e.titulo?.toLowerCase().includes(query) ||
+            e.comuna?.toLowerCase().includes(query) ||
+            e.provincia?.toLowerCase().includes(query) ||
+            e.categories?.nombre?.toLowerCase().includes(query),
+        );
+      }
+      if (selectedCategory) {
+        base = base.filter((e) => e.category_id === selectedCategory);
+      }
+      if (selectedCity) {
+        const cityName = LOCATIONS[selectedCity]?.nombre;
+        if (cityName) {
+          base = base.filter(
+            (e) => e.provincia?.toLowerCase() === cityName.toLowerCase(),
+          );
+        }
+      }
+      if (selectedDate) {
+        const dateStr = formatDateKey(selectedDate);
+        base = base.filter((e) => {
+          if (!e.fecha_evento) return false;
+          if (formatDateKey(new Date(e.fecha_evento + "T00:00:00")) === dateStr)
+            return true;
+          if (e.es_recurrente && Array.isArray(e.fechas_recurrencia)) {
+            if (
+              e.fechas_recurrencia.some(
+                (f) => formatDateKey(new Date(f + "T00:00:00")) === dateStr,
+              )
+            )
+              return true;
+          }
+          if (e.es_multidia && e.fecha_fin) {
+            const inicio = new Date(e.fecha_evento + "T00:00:00");
+            const fin = new Date(e.fecha_fin + "T00:00:00");
+            const sel = new Date(dateStr + "T00:00:00");
+            if (sel >= inicio && sel <= fin) return true;
+          }
+          return false;
+        });
+      }
+    }
     const counts = {};
-    filteredEvents.forEach((e) => {
+    // Inicializar todas las comunas de la ciudad seleccionada en 0
+    if (selectedCity && LOCATIONS[selectedCity]?.comunas) {
+      LOCATIONS[selectedCity].comunas.forEach((c) => {
+        counts[c] = 0;
+      });
+    }
+    base.forEach((e) => {
       if (e.comuna) {
-        const key = e.comuna;
-        counts[key] = (counts[key] || 0) + 1;
+        counts[e.comuna] = (counts[e.comuna] || 0) + 1;
       }
     });
     return counts;
-  }, [filteredEvents]);
+  }, [
+    filteredEvents,
+    events,
+    selectedComuna,
+    selectedCity,
+    selectedCategory,
+    selectedDate,
+    searchQuery,
+  ]);
 
   // Calcular eventos por día para el calendario (basado en filtros activos, excluyendo fecha)
   const { eventsPerDay, recurringDates } = useMemo(() => {
@@ -564,6 +655,18 @@ export default function PanoramasPage() {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredEvents.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredEvents, currentPage]);
+
+  // Resaltar card cuando venimos con ?highlight=<id>
+  useHighlightCard({
+    prefix: "publication-card",
+    rawItems: events,
+    filteredItems: filteredEvents,
+    currentPage,
+    itemsPerPage: ITEMS_PER_PAGE,
+    setCurrentPage,
+    onResetFilters: resetAllFilters,
+    enabled: !loading,
+  });
 
   // Verificar si hay filtros activos
   const hasActiveFilters =

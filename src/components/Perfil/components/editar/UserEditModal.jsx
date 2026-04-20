@@ -23,6 +23,7 @@ import {
   faUser,
   faGlobe,
   faTag,
+  faPhone,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faInstagram,
@@ -666,6 +667,17 @@ export default function UserEditModal({
                 isOpen={activeSection === ACCORDION_SECTIONS.CONTACT}
                 onToggle={() => toggleSection(ACCORDION_SECTIONS.CONTACT)}>
                 <div className="publication-modal__edit-section">
+                  <label className="publication-modal__edit-label">
+                    <FontAwesomeIcon icon={faPhone} /> Teléfono de contacto
+                  </label>
+                  <input
+                    type="tel"
+                    className="publication-modal__edit-input"
+                    name="telefono_contacto"
+                    value={formData.telefono_contacto}
+                    onChange={handleChange}
+                    placeholder="+56 9 1234 5678"
+                  />
                   <label className="publication-modal__edit-label">
                     <FontAwesomeIcon icon={faInstagram} /> Instagram
                   </label>

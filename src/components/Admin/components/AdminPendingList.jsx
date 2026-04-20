@@ -16,13 +16,15 @@ export default function AdminPendingList({
   onApprove,
   onReject,
   onView,
+  title = "Publicaciones Pendientes de Aprobación",
+  emptyMessage = "No hay publicaciones pendientes de revisar",
 }) {
   return (
     <div className="admin-pending">
-      <h2>Publicaciones Pendientes de Aprobación</h2>
+      <h2>{title}</h2>
 
       {events.length === 0 ? (
-        <EmptyState />
+        <EmptyState message={emptyMessage} />
       ) : (
         <div className="admin-pending__list">
           {events.map((event) => (
@@ -44,12 +46,12 @@ export default function AdminPendingList({
 /**
  * Estado vacío cuando no hay publicaciones pendientes
  */
-function EmptyState() {
+function EmptyState({ message }) {
   return (
     <div className="admin-empty">
       <FontAwesomeIcon icon={faCheck} />
       <h3>¡Todo al día!</h3>
-      <p>No hay publicaciones pendientes de revisar</p>
+      <p>{message}</p>
     </div>
   );
 }

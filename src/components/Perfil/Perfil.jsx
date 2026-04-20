@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import {
@@ -9,9 +9,11 @@ import {
   deleteNotification as deleteNotificationDB,
   deleteNotifications as deleteNotificationsDB,
   countDrafts,
+  countUserFavorites,
   isPlanesEnabled,
   getUserSubscriptions,
 } from "../../lib/database";
+import { useRealtimeRefetch } from "../../hooks/useRealtimeRefetch";
 import {
   PerfilSidebar,
   PerfilHeader,
@@ -46,6 +48,9 @@ export default function Perfil() {
   // Estado de borradores
   const [draftsCount, setDraftsCount] = useState(0);
 
+  // Estado de favoritos (conteo)
+  const [favoritesCount, setFavoritesCount] = useState(0);
+
   // Estado de planes habilitados
   const [planesEnabled, setPlanesEnabled] = useState(false);
   const [activeSubscriptions, setActiveSubscriptions] = useState([]);
@@ -57,9 +62,9 @@ export default function Perfil() {
   }, [isAuthenticated, loading, navigate]);
 
   // Cargar publicaciones del usuario
-  const loadUserPublications = async () => {
+  const loadUserPublications = async ({ silent = false } = {}) => {
     if (isAuthenticated && user?.id) {
-      setLoadingPublications(true);
+      if (!silent) setLoadingPublications(true);
       try {
         const publications = await getEventsByUser(user.id);
         // Filtrar eventos cuya fecha ya pasó
@@ -74,16 +79,26 @@ export default function Perfil() {
         setUserPublications(active);
       } catch (error) {
         console.error("Error cargando publicaciones:", error);
-        setUserPublications([]);
+        if (!silent) setUserPublications([]);
       } finally {
-        setLoadingPublications(false);
+        if (!silent) setLoadingPublications(false);
       }
     }
   };
 
   useEffect(() => {
     loadUserPublications();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, user?.id]);
+
+  // Tiempo real: refrescar publicaciones del usuario en vivo
+  useRealtimeRefetch({
+    table: "events",
+    event: "*",
+    filter: user?.id ? `user_id=eq.${user.id}` : undefined,
+    enabled: Boolean(isAuthenticated && user?.id),
+    onChange: () => loadUserPublications({ silent: true }),
+  });
 
   // Consultar si los planes están habilitados y cargar suscripciones activas
   useEffect(() => {
@@ -145,35 +160,81 @@ export default function Perfil() {
   }, [isAuthenticated, user?.id]);
 
   // Cargar notificaciones del usuario desde Supabase
-  useEffect(() => {
-    const loadNotifications = async () => {
-      if (isAuthenticated && user?.id) {
-        setLoadingNotifications(true);
-        try {
-          const data = await getUserNotifications(user.id);
-          // Transformar datos para el componente
-          const formattedNotifications = (data || []).map((n) => ({
-            id: n.id,
-            type: mapNotificationType(n.type),
-            title: n.title,
-            message: n.message,
-            date: n.created_at,
-            read: n.read,
-            eventId: n.related_event_id,
-            eventTitle: n.events?.titulo,
-          }));
-          setNotifications(formattedNotifications);
-        } catch (error) {
-          console.error("Error cargando notificaciones:", error);
-          setNotifications([]);
-        } finally {
-          setLoadingNotifications(false);
-        }
+  const loadNotifications = useCallback(
+    async ({ silent = false } = {}) => {
+      if (!isAuthenticated || !user?.id) return;
+      if (!silent) setLoadingNotifications(true);
+      try {
+        const data = await getUserNotifications(user.id);
+        // Transformar datos para el componente
+        const formattedNotifications = (data || []).map((n) => ({
+          id: n.id,
+          type: mapNotificationType(n.type),
+          title: n.title,
+          message: n.message,
+          date: n.created_at,
+          read: n.read,
+          eventId: n.related_event_id,
+          eventTitle: n.events?.titulo,
+          businessId: n.related_business_id,
+          businessName: n.businesses?.nombre,
+          rawType: n.type,
+        }));
+        setNotifications(formattedNotifications);
+      } catch (error) {
+        console.error("Error cargando notificaciones:", error);
+        if (!silent) setNotifications([]);
+      } finally {
+        if (!silent) setLoadingNotifications(false);
       }
-    };
+    },
+    [isAuthenticated, user?.id],
+  );
 
+  useEffect(() => {
     loadNotifications();
+  }, [loadNotifications]);
+
+  // Tiempo real: actualizar notificaciones del usuario en vivo
+  useRealtimeRefetch({
+    table: "notifications",
+    event: "*",
+    filter: user?.id ? `user_id=eq.${user.id}` : undefined,
+    enabled: Boolean(isAuthenticated && user?.id),
+    onChange: () => loadNotifications({ silent: true }),
+  });
+
+  // Cargar conteo de favoritos
+  const loadFavoritesCount = useCallback(async () => {
+    if (!isAuthenticated || !user?.id) return;
+    try {
+      const count = await countUserFavorites(user.id);
+      setFavoritesCount(count || 0);
+    } catch (error) {
+      console.error("Error contando favoritos:", error);
+    }
   }, [isAuthenticated, user?.id]);
+
+  useEffect(() => {
+    loadFavoritesCount();
+  }, [loadFavoritesCount]);
+
+  // Tiempo real: actualizar conteo de favoritos en vivo
+  useRealtimeRefetch({
+    table: "user_favorites",
+    event: "*",
+    filter: user?.id ? `user_id=eq.${user.id}` : undefined,
+    enabled: Boolean(isAuthenticated && user?.id),
+    onChange: () => loadFavoritesCount(),
+  });
+
+  useRealtimeRefetch({
+    table: "business_favorites",
+    event: "*",
+    filter: user?.id ? `user_id=eq.${user.id}` : undefined,
+    enabled: Boolean(isAuthenticated && user?.id),
+    onChange: () => loadFavoritesCount(),
+  });
 
   // Mapear tipo de notificación a tipo visual
   const mapNotificationType = (dbType) => {
@@ -317,6 +378,7 @@ export default function Perfil() {
         <PerfilStats
           publicationsCount={userPublications.length}
           unreadCount={unreadCount}
+          favoritesCount={favoritesCount}
         />
 
         <section className="perfil-content">

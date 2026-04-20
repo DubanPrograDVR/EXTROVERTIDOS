@@ -33,6 +33,7 @@ export default function AdminBusinessList({
   onEdit,
   showActions = true,
   title = "Negocios",
+  emptyMessage,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -72,6 +73,8 @@ export default function AdminBusinessList({
         return "status--published";
       case "pendiente":
         return "status--pending";
+      case "en_revision":
+        return "status--review";
       case "rechazado":
         return "status--rejected";
       default:
@@ -86,6 +89,8 @@ export default function AdminBusinessList({
         return "Publicado";
       case "pendiente":
         return "Pendiente";
+      case "en_revision":
+        return "En revisión";
       case "rechazado":
         return "Rechazado";
       default:
@@ -167,6 +172,7 @@ export default function AdminBusinessList({
             onChange={(e) => setFilterStatus(e.target.value)}>
             <option value="all">Todos los estados</option>
             <option value="pendiente">Pendientes</option>
+            <option value="en_revision">En revisión</option>
             <option value="publicado">Publicados</option>
             <option value="rechazado">Rechazados</option>
           </select>
@@ -198,7 +204,7 @@ export default function AdminBusinessList({
       {filteredBusinesses.length === 0 ? (
         <div className="admin-empty">
           <FontAwesomeIcon icon={faStore} />
-          <h3>No hay negocios</h3>
+          <h3>{emptyMessage || "No hay negocios"}</h3>
           <p>No se encontraron negocios con los filtros seleccionados.</p>
         </div>
       ) : (
@@ -345,26 +351,28 @@ export default function AdminBusinessList({
                           </button>
                         )}
 
-                        {/* Aprobar (solo para pendientes) */}
-                        {showActions && business.estado === "pendiente" && (
-                          <>
-                            <button
-                              className="admin-table__action admin-table__action--approve"
-                              onClick={() => onApprove(business.id)}
-                              disabled={actionLoading === business.id}
-                              title="Aprobar negocio">
-                              <FontAwesomeIcon icon={faCheck} />
-                            </button>
+                        {/* Aprobar (pendientes o en revisión) */}
+                        {showActions &&
+                          (business.estado === "pendiente" ||
+                            business.estado === "en_revision") && (
+                            <>
+                              <button
+                                className="admin-table__action admin-table__action--approve"
+                                onClick={() => onApprove(business.id)}
+                                disabled={actionLoading === business.id}
+                                title="Aprobar negocio">
+                                <FontAwesomeIcon icon={faCheck} />
+                              </button>
 
-                            <button
-                              className="admin-table__action admin-table__action--reject"
-                              onClick={() => onReject(business.id)}
-                              disabled={actionLoading === business.id}
-                              title="Rechazar negocio">
-                              <FontAwesomeIcon icon={faTimes} />
-                            </button>
-                          </>
-                        )}
+                              <button
+                                className="admin-table__action admin-table__action--reject"
+                                onClick={() => onReject(business.id)}
+                                disabled={actionLoading === business.id}
+                                title="Rechazar negocio">
+                                <FontAwesomeIcon icon={faTimes} />
+                              </button>
+                            </>
+                          )}
 
                         {/* Eliminar */}
                         {onDelete && (
