@@ -68,26 +68,12 @@ const WizardStepMarketing = ({ formData, errors, onChange }) => {
           className="publicar-form__textarea publicar-form__textarea--marketing"
           placeholder="Ej: ¡Las primeras 50 personas recibirán una bebida gratis! 🎉 Sorpresas exclusivas para quienes lleguen temprano..."
           value={formData.mensaje_marketing}
-          onChange={(e) => {
-            const lines = e.target.value.split("\n");
-            const wrapped = lines
-              .map((line) => {
-                if (line.length <= 70) return line;
-                let result = "";
-                for (let i = 0; i < line.length; i += 70) {
-                  if (result) result += "\n";
-                  result += line.slice(i, i + 70);
-                }
-                return result;
-              })
-              .join("\n");
-            onChange({ target: { name: "mensaje_marketing", value: wrapped } });
-          }}
+          onChange={onChange}
           rows={3}
-          maxLength={500}
+          maxLength={1000}
         />
         <span className="publicar-form__char-count">
-          {formData.mensaje_marketing?.length || 0}/500
+          {formData.mensaje_marketing?.length || 0}/1000
         </span>
       </div>
 
@@ -129,28 +115,12 @@ const WizardStepMarketing = ({ formData, errors, onChange }) => {
           className="publicar-form__textarea publicar-form__textarea--marketing"
           placeholder="Ej: ¡No te pierdas la experiencia VIP con acceso backstage! 🌟 Cupos limitados..."
           value={formData.mensaje_marketing_2 || ""}
-          onChange={(e) => {
-            const lines = e.target.value.split("\n");
-            const wrapped = lines
-              .map((line) => {
-                if (line.length <= 70) return line;
-                let result = "";
-                for (let i = 0; i < line.length; i += 70) {
-                  if (result) result += "\n";
-                  result += line.slice(i, i + 70);
-                }
-                return result;
-              })
-              .join("\n");
-            onChange({
-              target: { name: "mensaje_marketing_2", value: wrapped },
-            });
-          }}
+          onChange={onChange}
           rows={3}
-          maxLength={500}
+          maxLength={1000}
         />
         <span className="publicar-form__char-count">
-          {formData.mensaje_marketing_2?.length || 0}/500
+          {formData.mensaje_marketing_2?.length || 0}/1000
         </span>
       </div>
 

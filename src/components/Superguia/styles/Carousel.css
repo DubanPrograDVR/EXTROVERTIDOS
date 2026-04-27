@@ -2,107 +2,78 @@
 
 .carousel {
   position: relative;
-  padding: 30px 60px;
+  padding: 30px 0;
   margin-bottom: 50px;
   user-select: none;
+  overflow: hidden;
 }
 
-/* Estado pausado - indicador visual sutil */
-.carousel--paused .carousel__track {
-  transition: none;
-}
-
-/* ===== NAVEGACIÓN ===== */
-.carousel__nav {
+.carousel::before,
+.carousel::after {
+  content: "";
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 52px;
-  height: 52px;
-  background: linear-gradient(135deg, #ff6600 0%, #ff8533 100%);
-  border: none;
-  border-radius: 50%;
-  color: #fff;
-  font-size: 1.2rem;
-  cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow:
-    0 4px 20px rgba(255, 102, 0, 0.4),
-    0 0 0 0 rgba(255, 102, 0, 0);
+  top: 0;
+  bottom: 0;
+  width: 72px;
+  pointer-events: none;
+  z-index: 4;
 }
 
-.carousel__nav:hover {
-  background: linear-gradient(135deg, #ff8533 0%, #ffaa66 100%);
-  transform: translateY(-50%) scale(1.12);
-  box-shadow:
-    0 8px 30px rgba(255, 102, 0, 0.5),
-    0 0 0 8px rgba(255, 102, 0, 0.1);
-}
-
-.carousel__nav:active {
-  transform: translateY(-50%) scale(1.05);
-}
-
-.carousel__nav:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  transform: translateY(-50%);
-  box-shadow: none;
-}
-
-.carousel__nav--prev {
+.carousel::before {
   left: 0;
+  background: linear-gradient(
+    to right,
+    rgba(10, 10, 10, 0.98) 0%,
+    rgba(10, 10, 10, 0.82) 35%,
+    rgba(10, 10, 10, 0) 100%
+  );
 }
 
-.carousel__nav--next {
+.carousel::after {
   right: 0;
+  background: linear-gradient(
+    to left,
+    rgba(10, 10, 10, 0.98) 0%,
+    rgba(10, 10, 10, 0.82) 35%,
+    rgba(10, 10, 10, 0) 100%
+  );
 }
 
-/* ===== TRACK ===== */
+/* ===== TRACK - efecto tren continuo ===== */
 .carousel__track {
   display: flex;
-  gap: 24px;
-  overflow: hidden;
-  transition: opacity 0.3s ease;
   padding: 10px 0;
+  width: max-content;
+  -webkit-transform: translateX(0);
+  transform: translateX(0);
+}
+
+.carousel__group {
+  display: flex;
+  gap: 24px;
+  flex: none;
+  min-width: max-content;
+  padding-right: 24px;
 }
 
 /* ===== ITEMS ===== */
 .carousel__item {
-  flex: 0 0 calc(25% - 18px);
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  flex: 0 0 280px;
   cursor: pointer;
-  animation: carouselFadeIn 0.6s ease forwards;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@keyframes carouselFadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.92) translateY(10px);
+@media (hover: hover) and (pointer: fine) {
+  .carousel__item:hover .carousel__card {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow:
+      0 20px 40px rgba(0, 0, 0, 0.4),
+      0 0 0 1px rgba(255, 102, 0, 0.3);
   }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
+
+  .carousel__item:hover .carousel__image {
+    transform: scale(1.08);
   }
-}
-
-.carousel__item:hover .carousel__card {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow:
-    0 20px 40px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 102, 0, 0.3);
-}
-
-.carousel__item.active .carousel__card {
-  transform: translateY(-12px) scale(1.05);
-  box-shadow:
-    0 25px 50px rgba(0, 0, 0, 0.5),
-    0 0 0 2px rgba(255, 102, 0, 0.5),
-    0 0 30px rgba(255, 102, 0, 0.2);
 }
 
 /* ===== CARD ===== */
@@ -111,6 +82,7 @@
   border-radius: 16px;
   overflow: hidden;
   position: relative;
+  height: 100%;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -135,14 +107,11 @@
 
 /* ===== IMAGEN ===== */
 .carousel__image {
+  display: block;
   width: 100%;
   aspect-ratio: 3/4;
   object-fit: cover;
   transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.carousel__item:hover .carousel__image {
-  transform: scale(1.08);
 }
 
 /* ===== INFO ===== */
@@ -219,120 +188,36 @@
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
 }
 
-/* ===== INDICADORES ===== */
-.carousel__indicators {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 30px;
-}
-
-.carousel__dot {
-  width: 12px;
-  height: 12px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.carousel__dot:hover {
-  background: rgba(255, 102, 0, 0.3);
-  border-color: rgba(255, 102, 0, 0.5);
-  transform: scale(1.15);
-}
-
-.carousel__dot.active {
-  background: #ff6600;
-  border-color: #ff6600;
-  transform: scale(1.25);
-  box-shadow:
-    0 0 15px rgba(255, 102, 0, 0.6),
-    0 0 30px rgba(255, 102, 0, 0.3);
-}
-
-/* Animación de progreso en el dot activo cuando está en autoplay */
-.carousel:not(.carousel--paused) .carousel__dot.active::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.4);
-  border-radius: 50%;
-  animation: dotProgressPulse 3.5s linear infinite;
-}
-
-@keyframes dotProgressPulse {
-  0% {
-    transform: scale(0);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.5);
-    opacity: 0;
-  }
-}
-
 /* ===== RESPONSIVE ===== */
-@media (max-width: 1400px) {
-  .carousel {
-    padding: 25px 55px;
-  }
-
-  .carousel__item {
-    flex: 0 0 calc(33.333% - 16px);
-  }
-}
-
 @media (max-width: 1200px) {
   .carousel__item {
-    flex: 0 0 calc(33.333% - 16px);
-  }
-
-  .carousel__nav {
-    width: 46px;
-    height: 46px;
-    font-size: 1.1rem;
+    flex: 0 0 240px;
   }
 }
 
 @media (max-width: 900px) {
-  .carousel {
-    padding: 20px 50px;
-  }
-
   .carousel__item {
-    flex: 0 0 calc(50% - 12px);
+    flex: 0 0 220px;
   }
 
-  .carousel__track {
+  .carousel__group {
     gap: 20px;
+    padding-right: 20px;
   }
 }
 
 @media (max-width: 600px) {
   .carousel {
-    padding: 15px 45px;
     margin-bottom: 30px;
   }
 
   .carousel__item {
-    flex: 0 0 calc(50% - 10px);
+    flex: 0 0 200px;
   }
 
-  .carousel__nav {
-    width: 40px;
-    height: 40px;
-    font-size: 1rem;
-  }
-
-  .carousel__track {
+  .carousel__group {
     gap: 16px;
+    padding-right: 16px;
   }
 
   .carousel__info {
@@ -346,34 +231,18 @@
   .carousel__location {
     font-size: 0.8rem;
   }
-
-  .carousel__indicators {
-    gap: 8px;
-    margin-top: 20px;
-  }
-
-  .carousel__dot {
-    width: 10px;
-    height: 10px;
-  }
 }
 
 @media (max-width: 400px) {
-  .carousel {
-    padding: 10px 35px;
-  }
-
   .carousel__item {
-    flex: 0 0 100%;
+    flex: 0 0 180px;
   }
+}
 
-  .carousel__nav {
-    width: 36px;
-    height: 36px;
-    font-size: 0.9rem;
-  }
-
-  .carousel__card {
-    border-radius: 12px;
+/* Respetar preferencia del usuario por reducir movimiento */
+@media (prefers-reduced-motion: reduce) {
+  .carousel__track {
+    -webkit-transform: translateX(0) !important;
+    transform: translateX(0) !important;
   }
 }

@@ -151,11 +151,14 @@ const validateEventData = (eventData) => {
 
 /**
  * Crea un nuevo evento
- * También crea una notificación de "en revisión"
+ * También crea la notificación inicial que corresponda
  * @param {Object} eventData - Datos del evento
+ * @param {Object} options - Opciones de creación
  * @returns {Promise<Object>} Evento creado
  */
-export const createEvent = async (eventData) => {
+export const createEvent = async (eventData, options = {}) => {
+  const { notifyPublishedApproval = false } = options;
+
   // Validar datos antes de insertar
   validateEventData(eventData);
 
@@ -173,10 +176,9 @@ export const createEvent = async (eventData) => {
     throw wrapSupabaseError(error, "Error al crear el evento");
   }
 
-  // Crear notificación de "en revisión" para el autor
-  try {
-    await supabase.from("notifications").insert([
-      {
+  const isPublishedDirectly = eventData.estado === "publicado";
+  const notificationPayload = !isPublishedDirectly
+    ? {
         user_id: eventData.user_id,
         type: "publication_pending",
         title: "Publicación en revisión",
@@ -184,10 +186,25 @@ export const createEvent = async (eventData) => {
         related_event_id: data.id,
         read: false,
         created_at: new Date().toISOString(),
-      },
-    ]);
-  } catch (notifError) {
-    console.warn("No se pudo crear la notificación:", notifError);
+      }
+    : notifyPublishedApproval
+      ? {
+          user_id: eventData.user_id,
+          type: "publication_approved",
+          title: "¡Publicación aprobada!",
+          message: `Tu evento "${eventData.titulo}" fue publicado correctamente y ya está visible para todos.`,
+          related_event_id: data.id,
+          read: false,
+          created_at: new Date().toISOString(),
+        }
+      : null;
+
+  if (notificationPayload) {
+    try {
+      await supabase.from("notifications").insert([notificationPayload]);
+    } catch (notifError) {
+      console.warn("No se pudo crear la notificación:", notifError);
+    }
   }
 
   return data;

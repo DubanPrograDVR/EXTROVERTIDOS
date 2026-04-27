@@ -377,7 +377,7 @@ export default function Perfil() {
 
         <PerfilStats
           publicationsCount={userPublications.length}
-          unreadCount={unreadCount}
+          notificationsCount={notifications.length}
           favoritesCount={favoritesCount}
         />
 

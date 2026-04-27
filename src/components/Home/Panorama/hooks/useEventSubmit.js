@@ -351,7 +351,9 @@ const useEventSubmit = ({
             eventData.publication_expires_at = expiresAt.toISOString();
           }
 
-          await createEvent(eventData);
+          await createEvent(eventData, {
+            notifyPublishedApproval: currentIsAdmin,
+          });
 
           // Enviar email de publicación pendiente (solo usuarios normales)
           if (!canPublishDirectly && currentUser.email) {

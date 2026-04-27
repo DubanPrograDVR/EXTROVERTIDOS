@@ -287,9 +287,17 @@
 
 /* ===== RESPONSIVE SIDEBAR ===== */
 @media (max-width: 1024px) {
+  .admin-layout {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
   .admin-sidebar {
     transform: translateX(-100%);
     width: 260px;
+    max-width: calc(100vw - 24px);
     z-index: 150;
   }
 
@@ -298,9 +306,13 @@
   }
 
   .admin-main {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     margin-left: 0;
     padding: 20px;
     padding-top: 70px;
+    overflow-x: hidden;
   }
 
   .admin-layout__mobile-toggle {
@@ -1921,6 +1933,18 @@
   color: #fff;
 }
 
+.admin-pub-btn--goto {
+  background: rgba(255, 102, 0, 0.15);
+  color: #ff6600;
+  border: 1px solid rgba(255, 102, 0, 0.4);
+}
+
+.admin-pub-btn--goto:hover {
+  background: #ff6600;
+  color: #000;
+  transform: translateY(-1px);
+}
+
 .admin-pub-btn--edit {
   background: rgba(251, 191, 36, 0.15);
   color: #fbbf24;
@@ -2329,6 +2353,18 @@
   background: rgba(59, 130, 246, 0.3);
 }
 
+.admin-table__action--goto {
+  background: rgba(255, 102, 0, 0.15);
+  color: #ff6600;
+  border: 1px solid rgba(255, 102, 0, 0.4);
+}
+
+.admin-table__action--goto:hover:not(:disabled) {
+  background: #ff6600;
+  color: #000;
+  transform: translateY(-1px);
+}
+
 .admin-table__action--edit {
   background: rgba(255, 102, 0, 0.15);
   color: #ff6600;
@@ -2397,6 +2433,34 @@
   display: none;
 }
 
+/* Barra de "Seleccionar todos" visible solo en móvil */
+.admin-mobile-select-all {
+  display: none;
+}
+
+.admin-mobile-select-all__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 102, 0, 0.12);
+  color: #ff6600;
+  border: 1px solid rgba(255, 102, 0, 0.35);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.admin-mobile-select-all__btn:hover {
+  background: rgba(255, 102, 0, 0.2);
+}
+
+.admin-mobile-select-all__btn svg {
+  font-size: 1rem;
+}
+
 @media (max-width: 900px) {
   .admin-table-wrapper {
     display: none;
@@ -2404,6 +2468,11 @@
 
   .admin-business__mobile-list {
     display: block;
+  }
+
+  .admin-mobile-select-all {
+    display: flex;
+    margin-bottom: 12px;
   }
 }
 
@@ -2535,6 +2604,18 @@
 .admin-biz-mobile-card__btn--view {
   background: rgba(59, 130, 246, 0.15);
   color: #3b82f6;
+}
+
+.admin-biz-mobile-card__btn--goto {
+  background: rgba(255, 102, 0, 0.15);
+  color: #ff6600;
+  border: 1px solid rgba(255, 102, 0, 0.4);
+  font-weight: 700;
+}
+
+.admin-biz-mobile-card__btn--goto:hover {
+  background: #ff6600;
+  color: #000;
 }
 
 .admin-biz-mobile-card__btn--edit {
@@ -2714,6 +2795,15 @@
   width: 100%;
   height: 180px;
   object-fit: cover;
+}
+
+.admin-pub-mobile-card__image--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 102, 0, 0.1);
+  color: #ff6600;
+  font-size: 2.4rem;
 }
 
 .admin-pub-mobile-card__content {

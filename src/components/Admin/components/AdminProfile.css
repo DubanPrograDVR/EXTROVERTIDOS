@@ -3,6 +3,10 @@
 .admin-profile {
   padding: 0;
   position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 /* Loading state */
@@ -39,6 +43,8 @@
   background: var(--surface-secondary);
   border-radius: 12px;
   margin: 1.5rem 0;
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
   scrollbar-width: thin;
 }
@@ -90,6 +96,9 @@
 /* Contenido */
 .admin-profile__content {
   padding: 0;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* Badge de rol */
@@ -110,6 +119,8 @@
 /* Ajustes para el header del perfil dentro del admin */
 .admin-profile .perfil-header {
   margin: 0;
+  width: 100%;
+  max-width: 100%;
   border-radius: 12px;
   overflow: hidden;
 }
@@ -121,6 +132,8 @@
 /* Ajustes para stats */
 .admin-profile .perfil-stats {
   margin: 1.5rem 0;
+  width: 100%;
+  max-width: 100%;
   border-radius: 12px;
 }
 
@@ -129,39 +142,79 @@
   background: var(--surface-secondary);
   border-radius: 12px;
   padding: 1.5rem;
+  width: 100%;
+  max-width: 100%;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
   .admin-profile__tabs {
-    padding: 0.75rem 1rem;
+    display: flex;
+    gap: 0.6rem;
+    padding: 0.75rem 0.85rem;
     margin: 1rem 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
   }
 
   .admin-profile__tab {
-    padding: 0.6rem 1rem;
+    justify-content: flex-start;
+    flex: 0 0 auto;
+    padding: 0.75rem 1rem;
     font-size: 0.85rem;
+    min-width: 0;
+    scroll-snap-align: start;
   }
 
   .admin-profile__role-badge {
-    bottom: 1rem;
-    right: 1rem;
+    position: static;
     font-size: 0.75rem;
     padding: 0.4rem 0.8rem;
+    width: fit-content;
+    margin: 1rem 0 0 auto;
   }
 
   .admin-profile .perfil-section {
     padding: 1rem;
   }
+
+  .admin-profile .perfil-stats {
+    gap: 1rem;
+    padding: 1.25rem 1rem;
+    justify-content: space-between;
+  }
+
+  .admin-profile .perfil-stats__item {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .admin-profile .perfil-header__content {
+    padding: 0 1.1rem 1.25rem;
+  }
 }
 
 @media (max-width: 480px) {
   .admin-profile__tabs {
-    gap: 0.25rem;
+    padding: 0.65rem 0.75rem;
+    gap: 0.5rem;
   }
 
   .admin-profile__tab {
-    padding: 0.5rem 0.75rem;
+    padding: 0.7rem 0.9rem;
     font-size: 0.8rem;
+  }
+
+  .admin-profile__tab-badge {
+    margin-left: 0.35rem;
+  }
+
+  .admin-profile .perfil-header__background {
+    height: calc(110px + 70px);
+  }
+
+  .admin-profile .perfil-header__content {
+    margin-top: 110px;
   }
 }

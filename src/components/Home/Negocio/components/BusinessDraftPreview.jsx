@@ -34,6 +34,33 @@ const ACCORDION_SECTIONS = {
   CONTACT: "contact",
 };
 
+const shouldPreserveLineBreaks = (lines) =>
+  lines.length > 1 &&
+  lines.every((line) => {
+    const trimmedLine = line.trim();
+    return /^[^\p{L}\p{N}]/u.test(trimmedLine) || /^\d+[.)-]/.test(trimmedLine);
+  });
+
+const getFormattedTextBlocks = (text) => {
+  if (!text) return [];
+
+  return text
+    .split(/\n\s*\n/)
+    .map((block) => {
+      const lines = block
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+      if (lines.length === 0) return null;
+
+      return shouldPreserveLineBreaks(lines)
+        ? lines.join("\n")
+        : lines.join(" ");
+    })
+    .filter(Boolean);
+};
+
 const AccordionSection = ({ title, icon, isOpen, onToggle, children }) => (
   <div
     className={`accordion-section ${isOpen ? "accordion-section--open" : ""}`}>
@@ -170,7 +197,7 @@ const BusinessDraftPreview = ({
       className="publication-modal-overlay draft-preview-overlay"
       onClick={onClose}>
       <div
-        className="publication-modal publication-modal--business-style publication-modal--draft"
+        className="publication-modal publication-modal--business-style publication-modal--business-draft publication-modal--draft"
         onClick={(e) => e.stopPropagation()}>
         {/* Header con categoría */}
         <div className="publication-modal__category-header">
@@ -273,11 +300,9 @@ const BusinessDraftPreview = ({
                 onToggle={() => toggleSection(ACCORDION_SECTIONS.DESCRIPTION)}>
                 <div className="publication-modal__description-content">
                   {formData.descripcion ? (
-                    formData.descripcion
-                      .split(/\n\s*\n/)
-                      .map((paragraph, i) => (
-                        <p key={i}>{paragraph.replace(/\n/g, " ")}</p>
-                      ))
+                    getFormattedTextBlocks(formData.descripcion).map(
+                      (paragraph, index) => <p key={index}>{paragraph}</p>,
+                    )
                   ) : (
                     <p>Sin descripción agregada aún...</p>
                   )}
@@ -308,11 +333,11 @@ const BusinessDraftPreview = ({
                     toggleSection(ACCORDION_SECTIONS.MARKETING_1)
                   }>
                   <div className="publication-modal__marketing-content">
-                    {formData.mensaje_marketing
-                      .split(/\n\s*\n/)
-                      .map((paragraph, i) => (
-                        <p key={i}>{paragraph.replace(/\n/g, " ")}</p>
-                      ))}
+                    {getFormattedTextBlocks(formData.mensaje_marketing).map(
+                      (paragraph, index) => (
+                        <p key={index}>{paragraph}</p>
+                      ),
+                    )}
                   </div>
                 </AccordionSection>
               )}
@@ -327,11 +352,11 @@ const BusinessDraftPreview = ({
                     toggleSection(ACCORDION_SECTIONS.MARKETING_2)
                   }>
                   <div className="publication-modal__marketing-content">
-                    {formData.mensaje_marketing_2
-                      .split(/\n\s*\n/)
-                      .map((paragraph, i) => (
-                        <p key={i}>{paragraph.replace(/\n/g, " ")}</p>
-                      ))}
+                    {getFormattedTextBlocks(formData.mensaje_marketing_2).map(
+                      (paragraph, index) => (
+                        <p key={index}>{paragraph}</p>
+                      ),
+                    )}
                   </div>
                 </AccordionSection>
               )}

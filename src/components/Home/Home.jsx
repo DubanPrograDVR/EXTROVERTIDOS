@@ -21,19 +21,24 @@ export default function Home() {
   const navigate = useNavigate();
   const { cityName, prevCity, nextCity } = useCity();
 
+  const navigateWithScrollTop = (path) => {
+    navigate(path);
+    window.scrollTo({ top: 0, behavior: "auto" });
+  };
+
   // Buscar panoramas por ciudad seleccionada
   const handleSearch = () => {
-    navigate(`/panoramas?ciudad=${encodeURIComponent(cityName)}`);
+    navigateWithScrollTop(`/panoramas?ciudad=${encodeURIComponent(cityName)}`);
   };
 
   // Ir a panoramas con la ciudad seleccionada
   const handlePanoramasClick = () => {
-    navigate(`/panoramas?ciudad=${encodeURIComponent(cityName)}`);
+    navigateWithScrollTop(`/panoramas?ciudad=${encodeURIComponent(cityName)}`);
   };
 
   // Ir a superguía
   const handleSuperguiaClick = () => {
-    navigate("/superguia");
+    navigateWithScrollTop("/superguia");
   };
 
   return (

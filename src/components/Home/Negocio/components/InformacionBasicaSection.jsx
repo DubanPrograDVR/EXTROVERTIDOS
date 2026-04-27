@@ -80,7 +80,7 @@ const InformacionBasicaSection = ({
       <div className="publicar-negocio__field">
         <label htmlFor="descripcion">
           Descripción
-          <span className="publicar-negocio__label-required">Obligatorio</span>
+          <span className="publicar-negocio__label-hint">(Opcional)</span>
         </label>
         <textarea
           id="descripcion"

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { useRealtimeRefetch } from "../../hooks/useRealtimeRefetch";
@@ -49,7 +49,45 @@ import {
   faLinkedin,
 } from "@fortawesome/free-brands-svg-icons";
 import "./styles/BusinessModal.css";
+import "../Home/Negocio/styles/publicar-negocio.css";
 import AuthModal from "../Auth/AuthModal";
+import HorariosSection from "../Home/Negocio/components/HorariosSection";
+
+// Convierte horarios JSONB → campos del formulario
+const parseHorarios = (horarios) => {
+  if (
+    !horarios ||
+    typeof horarios !== "object" ||
+    Object.keys(horarios).length === 0
+  ) {
+    return { dias_atencion: [], horarios_detalle: {}, abierto_24h: false };
+  }
+  const abierto_24h = Boolean(horarios.abierto_24h);
+  const dias = Object.keys(horarios).filter(
+    (k) => k !== "abierto_24h" && !horarios[k]?.cerrado,
+  );
+  const horarios_detalle = {};
+  dias.forEach((dia) => {
+    horarios_detalle[dia] = Array.isArray(horarios[dia])
+      ? horarios[dia]
+      : horarios[dia]
+        ? [horarios[dia]]
+        : [{ apertura: "09:00", cierre: "18:00" }];
+  });
+  return { dias_atencion: dias, horarios_detalle, abierto_24h };
+};
+
+// Convierte campos del formulario → horarios JSONB
+const serializeHorarios = (dias_atencion, horarios_detalle, abierto_24h) => {
+  if (abierto_24h) return { abierto_24h: true };
+  const result = {};
+  dias_atencion.forEach((dia) => {
+    result[dia] = horarios_detalle[dia] || [
+      { apertura: "09:00", cierre: "18:00" },
+    ];
+  });
+  return result;
+};
 
 const PLACEHOLDER_IMAGE = "/img/Home1.png";
 
@@ -59,7 +97,35 @@ const ACCORDION_SECTIONS = {
   MARKETING_1: "marketing_1",
   MARKETING_2: "marketing_2",
   LOCATION: "location",
+  SCHEDULE: "schedule",
   INFO: "info",
+};
+
+const shouldPreserveLineBreaks = (lines) =>
+  lines.length > 1 &&
+  lines.every((line) => {
+    const trimmedLine = line.trim();
+    return /^[^\p{L}\p{N}]/u.test(trimmedLine) || /^\d+[.)-]/.test(trimmedLine);
+  });
+
+const getFormattedTextBlocks = (text) => {
+  if (!text) return [];
+
+  return text
+    .split(/\n\s*\n/)
+    .map((block) => {
+      const lines = block
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+      if (lines.length === 0) return null;
+
+      return shouldPreserveLineBreaks(lines)
+        ? lines.join("\n")
+        : lines.join(" ");
+    })
+    .filter(Boolean);
 };
 
 /**
@@ -95,7 +161,7 @@ const AccordionSection = ({ title, icon, isOpen, onToggle, children }) => {
 };
 
 export default function BusinessModal({
-  business,
+  business: rawBusiness,
   isOpen,
   onClose,
   onUpdate,
@@ -120,6 +186,17 @@ export default function BusinessModal({
   const [likeCount, setLikeCount] = useState(0);
   const [isTogglingLike, setIsTogglingLike] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+
+  // Overrides locales aplicados tras un guardado para reflejar los cambios
+  // en vivo sin depender de que el padre recargue el negocio.
+  const [liveOverrides, setLiveOverrides] = useState(null);
+  const business = useMemo(
+    () =>
+      liveOverrides && rawBusiness
+        ? { ...rawBusiness, ...liveOverrides }
+        : rawBusiness,
+    [rawBusiness, liveOverrides],
+  );
 
   const canEdit = isAdmin || isModerator;
 
@@ -199,6 +276,7 @@ export default function BusinessModal({
     setImageError(false);
     setIsEditMode(startInEditMode);
     setIsInfoExpanded(false);
+    setLiveOverrides(null);
     // Inicializar datos de edición
     if (business) {
       setEditData({
@@ -221,6 +299,7 @@ export default function BusinessModal({
         mensaje_marketing: business.mensaje_marketing || "",
         titulo_marketing_2: business.titulo_marketing_2 || "",
         mensaje_marketing_2: business.mensaje_marketing_2 || "",
+        ...parseHorarios(business.horarios),
       });
     }
   }, [business?.id, isOpen]);
@@ -406,13 +485,25 @@ export default function BusinessModal({
   const handleSaveChanges = async () => {
     setIsSaving(true);
     try {
-      await updateBusiness(business.id, editData, undefined, {
+      const { dias_atencion, horarios_detalle, abierto_24h, ...rest } =
+        editData;
+      const dataToSave = {
+        ...rest,
+        horarios: serializeHorarios(
+          dias_atencion,
+          horarios_detalle,
+          abierto_24h,
+        ),
+      };
+      await updateBusiness(business.id, dataToSave, undefined, {
         adminOverride: canEdit,
       });
       showToast("Cambios guardados exitosamente", "success");
       setIsEditMode(false);
+      // Aplicar los cambios en vivo sobre la vista previa del modal
+      setLiveOverrides((prev) => ({ ...(prev || {}), ...dataToSave }));
       if (onUpdate) {
-        onUpdate({ ...business, ...editData });
+        onUpdate({ ...business, ...dataToSave });
       }
     } catch (error) {
       console.error("Error al guardar cambios:", error);
@@ -445,6 +536,7 @@ export default function BusinessModal({
       mensaje_marketing: business.mensaje_marketing || "",
       titulo_marketing_2: business.titulo_marketing_2 || "",
       mensaje_marketing_2: business.mensaje_marketing_2 || "",
+      ...parseHorarios(business.horarios),
     });
   };
 
@@ -653,7 +745,11 @@ export default function BusinessModal({
                   }>
                   {!isEditMode && (
                     <div className="publication-modal__description-content">
-                      <p>{descripcion}</p>
+                      {getFormattedTextBlocks(descripcion).map(
+                        (paragraph, index) => (
+                          <p key={index}>{paragraph}</p>
+                        ),
+                      )}
                     </div>
                   )}
                   {isEditMode && (
@@ -685,7 +781,11 @@ export default function BusinessModal({
                   }>
                   {!isEditMode && (
                     <div className="publication-modal__marketing-content">
-                      <p>{mensaje_marketing}</p>
+                      {getFormattedTextBlocks(mensaje_marketing).map(
+                        (paragraph, index) => (
+                          <p key={index}>{paragraph}</p>
+                        ),
+                      )}
                     </div>
                   )}
                   {isEditMode && (
@@ -701,6 +801,7 @@ export default function BusinessModal({
                               titulo_marketing: e.target.value,
                             })
                           }
+                          maxLength={100}
                           placeholder="Título destacado"
                         />
                       </div>
@@ -714,6 +815,7 @@ export default function BusinessModal({
                               mensaje_marketing: e.target.value,
                             })
                           }
+                          maxLength={1000}
                           placeholder="Mensaje destacado"
                           rows="4"
                         />
@@ -734,7 +836,11 @@ export default function BusinessModal({
                   }>
                   {!isEditMode && (
                     <div className="publication-modal__marketing-content">
-                      <p>{mensaje_marketing_2}</p>
+                      {getFormattedTextBlocks(mensaje_marketing_2).map(
+                        (paragraph, index) => (
+                          <p key={index}>{paragraph}</p>
+                        ),
+                      )}
                     </div>
                   )}
                   {isEditMode && (
@@ -750,6 +856,7 @@ export default function BusinessModal({
                               titulo_marketing_2: e.target.value,
                             })
                           }
+                          maxLength={100}
                           placeholder="Segundo título destacado"
                         />
                       </div>
@@ -763,6 +870,7 @@ export default function BusinessModal({
                               mensaje_marketing_2: e.target.value,
                             })
                           }
+                          maxLength={1000}
                           placeholder="Segundo mensaje destacado"
                           rows="4"
                         />
@@ -771,6 +879,63 @@ export default function BusinessModal({
                   )}
                 </AccordionSection>
               )}
+
+              {/* Sección: Horario */}
+              <AccordionSection
+                title="Horario"
+                icon={faClock}
+                isOpen={activeSection === ACCORDION_SECTIONS.SCHEDULE}
+                onToggle={() => toggleSection(ACCORDION_SECTIONS.SCHEDULE)}>
+                {!isEditMode && (
+                  <div className="publication-modal__edit-section">
+                    <div className="publication-modal__schedule-simple">
+                      {horarioDetalle && horarioDetalle.length > 0 ? (
+                        horarioDetalle.map((dia, idx) => (
+                          <div
+                            key={idx}
+                            className="publication-modal__schedule-row">
+                            <span className="publication-modal__schedule-day">
+                              {dia.label}
+                            </span>
+                            <span className="publication-modal__schedule-time">
+                              {dia.horario}
+                            </span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="publication-modal__no-data">
+                          Horarios no disponibles
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {isEditMode && (
+                  <HorariosSection
+                    formData={{
+                      dias_atencion: editData.dias_atencion || [],
+                      horarios_detalle: editData.horarios_detalle || {},
+                      abierto_24h: editData.abierto_24h || false,
+                    }}
+                    errors={{}}
+                    onDiaChange={(dia) => {
+                      const dias = editData.dias_atencion || [];
+                      const newDias = dias.includes(dia)
+                        ? dias.filter((d) => d !== dia)
+                        : [...dias, dia];
+                      setEditData({ ...editData, dias_atencion: newDias });
+                    }}
+                    onSaveHorarios={(horarios_detalle, abierto_24h) =>
+                      setEditData({
+                        ...editData,
+                        horarios_detalle,
+                        abierto_24h,
+                      })
+                    }
+                    onFieldFocus={() => {}}
+                  />
+                )}
+              </AccordionSection>
 
               {/* Sección: Información */}
               <AccordionSection

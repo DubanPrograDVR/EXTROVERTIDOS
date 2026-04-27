@@ -11,6 +11,7 @@ import {
   PlanBlockModal,
   detectBlockScenario,
 } from "./components";
+import { INITIAL_FORM_STATE } from "./constants";
 import "./styles/publicar.css";
 
 /**
@@ -48,6 +49,7 @@ const Publicar = () => {
     handleSubmit,
     handleSaveDraft,
     closeAuthModal,
+    resetForm,
   } = usePublicarForm();
 
   // Detectar si el usuario está bloqueado para publicar
@@ -70,6 +72,35 @@ const Publicar = () => {
     isAdmin,
     isModerator,
   ]);
+
+  // Detectar si el formulario tiene datos (no está en blanco)
+  const isDirty = useMemo(() => {
+    if (!formData) return false;
+    const keys = Object.keys(INITIAL_FORM_STATE);
+    for (const key of keys) {
+      const initial = INITIAL_FORM_STATE[key];
+      const current = formData[key];
+      if (Array.isArray(initial)) {
+        if (Array.isArray(current) && current.length > 0) return true;
+      } else if (initial !== null && typeof initial === "object") {
+        const initialJson = JSON.stringify(initial);
+        const currentJson = JSON.stringify(current ?? {});
+        if (initialJson !== currentJson) return true;
+      } else if (typeof initial === "boolean") {
+        if (current !== initial) return true;
+      } else if (typeof initial === "number") {
+        if (current !== initial && current !== "" && current != null)
+          return true;
+      } else {
+        const val =
+          current === undefined || current === null ? "" : String(current);
+        const init =
+          initial === undefined || initial === null ? "" : String(initial);
+        if (val.trim() !== init.trim()) return true;
+      }
+    }
+    return false;
+  }, [formData]);
 
   // Mostrar carga mientras se obtienen datos
   if (loadingEvent || isLoading) {
@@ -140,6 +171,8 @@ const Publicar = () => {
         onRemoveImage={removeImage}
         onSaveDraft={handleSaveDraft}
         enabledCalendarModes={enabledCalendarModes}
+        isDirty={isDirty && !isEditing}
+        onReset={resetForm}
       />
 
       {/* Modal de autenticación */}

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
@@ -71,6 +71,33 @@ const ACCORDION_SECTIONS = {
   MAP: "map",
 };
 
+const shouldPreserveLineBreaks = (lines) =>
+  lines.length > 1 &&
+  lines.every((line) => {
+    const trimmedLine = line.trim();
+    return /^[^\p{L}\p{N}]/u.test(trimmedLine) || /^\d+[.)-]/.test(trimmedLine);
+  });
+
+const getFormattedTextBlocks = (text) => {
+  if (!text) return [];
+
+  return text
+    .split(/\n\s*\n/)
+    .map((block) => {
+      const lines = block
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+      if (lines.length === 0) return null;
+
+      return shouldPreserveLineBreaks(lines)
+        ? lines.join("\n")
+        : lines.join(" ");
+    })
+    .filter(Boolean);
+};
+
 /**
  * Componente AccordionSection reutilizable con icono
  */
@@ -109,7 +136,7 @@ const AccordionSection = ({ title, icon, isOpen, onToggle, children }) => {
 };
 
 export default function PublicationModal({
-  publication,
+  publication: rawPublication,
   isOpen,
   onClose,
   onUpdate,
@@ -124,6 +151,17 @@ export default function PublicationModal({
   const [isSaved, setIsSaved] = useState(false);
   const [isTogglingSave, setIsTogglingSave] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+
+  // Overrides locales aplicados tras un guardado para reflejar los cambios
+  // en vivo sin depender de que el padre recargue la publicación.
+  const [liveOverrides, setLiveOverrides] = useState(null);
+  const publication = useMemo(
+    () =>
+      liveOverrides && rawPublication
+        ? { ...rawPublication, ...liveOverrides }
+        : rawPublication,
+    [rawPublication, liveOverrides],
+  );
 
   // Estado único para controlar qué sección del acordeón está abierta (null = ninguna)
   const [activeSection, setActiveSection] = useState(
@@ -257,6 +295,7 @@ export default function PublicationModal({
     setCurrentImageIndex(0);
     setIsEditMode(startInEditMode);
     setIsInfoExpanded(false);
+    setLiveOverrides(null);
     // Inicializar datos de edición
     if (publication) {
       setEditData({
@@ -633,8 +672,10 @@ export default function PublicationModal({
       await updateEvent(publication.id, cleanedData, { adminOverride: true });
       showToast("Cambios guardados exitosamente", "success");
       setIsEditMode(false);
+      // Aplicar los cambios en vivo sobre la vista previa del modal
+      setLiveOverrides((prev) => ({ ...(prev || {}), ...cleanedData }));
       if (onUpdate) {
-        onUpdate({ ...publication, ...editData });
+        onUpdate({ ...publication, ...cleanedData });
       }
     } catch (error) {
       console.error("Error al guardar cambios:", error);
@@ -942,9 +983,9 @@ export default function PublicationModal({
                   }>
                   <div className="publication-modal__description-content">
                     {!isEditMode &&
-                      descripcion
-                        .split(/\n\s*\n/)
-                        .map((paragraph, i) => <p key={i}>{paragraph}</p>)}
+                      getFormattedTextBlocks(descripcion).map(
+                        (paragraph, index) => <p key={index}>{paragraph}</p>,
+                      )}
                     {isEditMode && (
                       <textarea
                         className="publication-modal__edit-textarea"
@@ -989,7 +1030,10 @@ export default function PublicationModal({
                     toggleSection(ACCORDION_SECTIONS.MARKETING_1)
                   }>
                   <div className="publication-modal__marketing-content">
-                    {!isEditMode && <p>{mensaje_marketing}</p>}
+                    {!isEditMode &&
+                      getFormattedTextBlocks(mensaje_marketing).map(
+                        (paragraph, index) => <p key={index}>{paragraph}</p>,
+                      )}
                     {isEditMode && (
                       <div className="publication-modal__edit-section">
                         <label className="publication-modal__edit-label">
@@ -1005,6 +1049,7 @@ export default function PublicationModal({
                               titulo_marketing: e.target.value,
                             })
                           }
+                          maxLength={100}
                           placeholder="Título del mensaje de marketing"
                         />
                         <label className="publication-modal__edit-label">
@@ -1019,6 +1064,7 @@ export default function PublicationModal({
                               mensaje_marketing: e.target.value,
                             })
                           }
+                          maxLength={1000}
                           placeholder="Mensaje de marketing"
                           rows={3}
                         />
@@ -1042,7 +1088,10 @@ export default function PublicationModal({
                     toggleSection(ACCORDION_SECTIONS.MARKETING_2)
                   }>
                   <div className="publication-modal__marketing-content">
-                    {!isEditMode && <p>{mensaje_marketing_2}</p>}
+                    {!isEditMode &&
+                      getFormattedTextBlocks(mensaje_marketing_2).map(
+                        (paragraph, index) => <p key={index}>{paragraph}</p>,
+                      )}
                     {isEditMode && (
                       <div className="publication-modal__edit-section">
                         <label className="publication-modal__edit-label">
@@ -1058,6 +1107,7 @@ export default function PublicationModal({
                               titulo_marketing_2: e.target.value,
                             })
                           }
+                          maxLength={100}
                           placeholder="Título del mensaje de marketing 2"
                         />
                         <label className="publication-modal__edit-label">
@@ -1072,6 +1122,7 @@ export default function PublicationModal({
                               mensaje_marketing_2: e.target.value,
                             })
                           }
+                          maxLength={1000}
                           placeholder="Mensaje de marketing 2"
                           rows={3}
                         />

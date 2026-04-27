@@ -31,6 +31,8 @@ import {
   useNegocioForm,
 } from "./components";
 import BusinessDraftPreview from "./components/BusinessDraftPreview";
+import { INITIAL_FORM_STATE } from "./components/constants";
+import FormResetButton from "../../UI/FormResetButton";
 
 import "./styles/publicar-negocio.css";
 import "../Panorama/components/styles/plan-block-modal.css";
@@ -76,6 +78,7 @@ const PublicarNegocio = () => {
     handleSubmit,
     handleSaveDraft,
     setShowAuthModal,
+    resetForm,
   } = useNegocioForm();
 
   // Detectar si el usuario necesita plan superguía
@@ -90,6 +93,32 @@ const PublicarNegocio = () => {
 
   const needsSuperguiaPlan = !businessPublishCheck.canPublish;
 
+  // Detectar si el formulario tiene datos (no está en blanco)
+  const isDirty = useMemo(() => {
+    if (!formData) return false;
+    const keys = Object.keys(INITIAL_FORM_STATE);
+    for (const key of keys) {
+      const initial = INITIAL_FORM_STATE[key];
+      const current = formData[key];
+      if (Array.isArray(initial)) {
+        if (Array.isArray(current) && current.length > 0) return true;
+      } else if (initial !== null && typeof initial === "object") {
+        const initialJson = JSON.stringify(initial);
+        const currentJson = JSON.stringify(current ?? {});
+        if (initialJson !== currentJson) return true;
+      } else if (typeof initial === "boolean") {
+        if (current !== initial) return true;
+      } else {
+        const val =
+          current === undefined || current === null ? "" : String(current);
+        const init =
+          initial === undefined || initial === null ? "" : String(initial);
+        if (val.trim() !== init.trim()) return true;
+      }
+    }
+    return false;
+  }, [formData]);
+
   // Detectar campos obligatorios faltantes por paso
   const getMissingFields = useCallback(() => {
     const missing = [];
@@ -97,8 +126,6 @@ const PublicarNegocio = () => {
       case 1:
         if (!formData.nombre.trim())
           missing.push({ field: "nombre", label: "Nombre" });
-        if (!formData.descripcion.trim())
-          missing.push({ field: "descripcion", label: "Descripción" });
         if (!formData.category_id)
           missing.push({ field: "category_id", label: "Categoría" });
         if (!formData.subcategoria)
@@ -125,6 +152,49 @@ const PublicarNegocio = () => {
   const validateCurrentStep = useCallback(() => {
     return getMissingFields().length === 0;
   }, [getMissingFields]);
+
+  // Determina si un paso tiene todos sus campos obligatorios completos
+  const isStepValid = useCallback(
+    (stepId) => {
+      switch (stepId) {
+        case 1:
+          return (
+            !!formData.nombre?.trim() &&
+            !!formData.category_id &&
+            !!formData.subcategoria
+          );
+        case 2:
+          // Marketing es opcional: válido sólo cuando el usuario escribió algo
+          return (
+            !!formData.titulo_marketing?.trim() ||
+            !!formData.mensaje_marketing?.trim() ||
+            !!formData.titulo_marketing_2?.trim() ||
+            !!formData.mensaje_marketing_2?.trim()
+          );
+        case 3:
+          return (
+            !!formData.provincia &&
+            !!formData.comuna?.trim() &&
+            !!formData.direccion?.trim()
+          );
+        case 4: {
+          // Horarios es opcional: válido cuando hay al menos un día o abierto 24h
+          if (formData.abierto_24h) return true;
+          const dias = Array.isArray(formData.dias_atencion)
+            ? formData.dias_atencion
+            : [];
+          return dias.length > 0;
+        }
+        case 5:
+          return (
+            Array.isArray(formData.imagenes) && formData.imagenes.length > 0
+          );
+        default:
+          return false;
+      }
+    },
+    [formData],
+  );
 
   useEffect(() => {
     if (!stepError) return undefined;
@@ -465,7 +535,9 @@ const PublicarNegocio = () => {
             type="button"
             className={`wizard-stepper__step ${
               step.id === currentStep ? "wizard-stepper__step--active" : ""
-            } ${step.id < currentStep ? "wizard-stepper__step--completed" : ""}`}
+            } ${step.id < currentStep ? "wizard-stepper__step--completed" : ""} ${
+              isStepValid(step.id) ? "wizard-stepper__step--valid" : ""
+            }`}
             onClick={() => goToStep(step.id)}>
             <span className="wizard-stepper__number">
               {step.id < currentStep ? (
@@ -491,7 +563,21 @@ const PublicarNegocio = () => {
       {/* Formulario */}
       <form className="publicar-negocio__form" onSubmit={handleSubmit}>
         {/* Contenido del paso actual */}
-        <div className="wizard-step-container">{renderStep()}</div>
+        <div className="wizard-step-container">
+          {/* Reset discreto en esquina superior derecha: solo paso 1 */}
+          {currentStep === 1 && (
+            <div className="publicar-negocio__reset-corner">
+              <FormResetButton
+                isDirty={isDirty}
+                onReset={resetForm}
+                label="Limpiar todo"
+                confirmTitle="¿Limpiar todo el formulario?"
+                confirmMessage="Se borrará toda la información ingresada del negocio (nombre, ubicación, horarios, imágenes, etc.). Esta acción no se puede deshacer."
+              />
+            </div>
+          )}
+          {renderStep()}
+        </div>
 
         {/* Mensaje de validación */}
         {stepError && (

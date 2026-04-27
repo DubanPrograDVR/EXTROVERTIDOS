@@ -17,6 +17,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import {
   getCategories,
+  getEventById,
   updateEvent,
   deleteEvent,
   pauseEvent,
@@ -52,6 +53,7 @@ export default function PerfilPublicaciones({
   const [deleting, setDeleting] = useState(null);
   const [pausing, setPausing] = useState(null); // ID del evento en pausa/reactivación
   const [resubmitting, setResubmitting] = useState(null);
+  const [loadingView, setLoadingView] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   // Cargar categorías para el modal de edición
@@ -68,8 +70,26 @@ export default function PerfilPublicaciones({
   }, []);
 
   // Abrir modal de ver
-  const handleView = (publication) => {
-    setViewModal({ open: true, publication });
+  const handleView = async (publication) => {
+    setLoadingView(publication.id);
+    try {
+      const fullPublication = await getEventById(publication.id);
+      setViewModal({
+        open: true,
+        publication: fullPublication || publication,
+      });
+    } catch (error) {
+      console.error("Error al cargar publicación completa:", error);
+      if (showToast) {
+        showToast(
+          "No se pudo cargar toda la información de la publicación",
+          "error",
+        );
+      }
+      setViewModal({ open: true, publication });
+    } finally {
+      setLoadingView(null);
+    }
   };
 
   // Ir a la publicación en la página pública con resaltado
@@ -153,7 +173,9 @@ export default function PerfilPublicaciones({
   const handleSaveEdit = async (eventId, eventData) => {
     setSaving(true);
     try {
-      await updateEvent(eventId, eventData);
+      await updateEvent(eventId, eventData, {
+        adminOverride: isAdmin || isModerator,
+      });
 
       if (showToast) {
         showToast("¡Publicación actualizada exitosamente!", "success");
@@ -326,9 +348,13 @@ export default function PerfilPublicaciones({
                   <div className="perfil-publication-card__actions">
                     <button
                       className="perfil-publication-card__btn"
-                      onClick={() => handleView(pub)}>
-                      <FontAwesomeIcon icon={faEye} />
-                      Ver
+                      onClick={() => handleView(pub)}
+                      disabled={loadingView === pub.id}>
+                      <FontAwesomeIcon
+                        icon={loadingView === pub.id ? faSpinner : faEye}
+                        spin={loadingView === pub.id}
+                      />
+                      {loadingView === pub.id ? "Cargando..." : "Ver"}
                     </button>
                     <button
                       className="perfil-publication-card__btn"
@@ -395,6 +421,7 @@ export default function PerfilPublicaciones({
         publication={viewModal.publication}
         isOpen={viewModal.open}
         onClose={handleCloseView}
+        modalVariant="panoramas"
       />
 
       {/* Modal de edición */}

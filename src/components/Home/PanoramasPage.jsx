@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -8,7 +8,6 @@ import {
   faChevronLeft,
   faChevronRight,
   faPlus,
-  faFire,
   faStore,
 } from "@fortawesome/free-solid-svg-icons";
 import Footer from "./Footer";
@@ -52,9 +51,31 @@ export default function PanoramasPage() {
   const [selectedPrice, setSelectedPrice] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const filterRef = useRef(null);
+  const shouldScrollToFiltersRef = useRef(false);
 
-  // Estado del carrusel
+  const handlePageChange = useCallback(
+    (page) => {
+      if (page === currentPage) return;
+      shouldScrollToFiltersRef.current = true;
+      setCurrentPage(page);
+    },
+    [currentPage],
+  );
+
+  // Scroll a los filtros cuando la paginación cambia de página
+  useEffect(() => {
+    if (!shouldScrollToFiltersRef.current) return;
+
+    filterRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    shouldScrollToFiltersRef.current = false;
+  }, [currentPage]);
   const [carouselIndex, setCarouselIndex] = useState(0);
+  const [isPageVisible, setIsPageVisible] = useState(
+    () =>
+      typeof document === "undefined" || document.visibilityState === "visible",
+  );
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   // Estado del modal
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -677,18 +698,62 @@ export default function PanoramasPage() {
     selectedPrice ||
     searchQuery.trim();
 
-  // Eventos destacados (todos los eventos vigentes)
+  // Negocios filtrados por ciudad para el carrusel
+  const filteredBusinesses = useMemo(() => {
+    if (!selectedCity) return businesses;
+    const cityName = LOCATIONS[selectedCity]?.nombre;
+    if (!cityName) return businesses;
+    return businesses.filter(
+      (b) => b.provincia?.toLowerCase() === cityName.toLowerCase(),
+    );
+  }, [businesses, selectedCity]);
+
+  // Eventos destacados: filtrados por ciudad/comuna, próximos 7 días con fallback a todos los futuros
   const featuredEvents = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    return events.filter((event) => {
-      const eventEndDate = event.fecha_fin || event.fecha_evento;
-      if (!eventEndDate) return true;
-      const endDate = new Date(eventEndDate + "T23:59:59");
-      return endDate >= today;
+    const in7Days = new Date(today);
+    in7Days.setDate(in7Days.getDate() + 7);
+    in7Days.setHours(23, 59, 59, 999);
+
+    // Filtro de ciudad/comuna base
+    const applyLocationFilter = (list) => {
+      let result = list;
+      if (selectedCity) {
+        const cityName = LOCATIONS[selectedCity]?.nombre;
+        if (cityName) {
+          result = result.filter(
+            (e) => e.provincia?.toLowerCase() === cityName.toLowerCase(),
+          );
+        }
+      }
+      if (selectedComuna) {
+        result = result.filter(
+          (e) => e.comuna?.toLowerCase() === selectedComuna.toLowerCase(),
+        );
+      }
+      return result;
+    };
+
+    // Todos los eventos futuros vigentes (con filtro de ubicación)
+    const futureEvents = applyLocationFilter(
+      events.filter((event) => {
+        const eventEndDate = event.fecha_fin || event.fecha_evento;
+        if (!eventEndDate) return false;
+        return new Date(eventEndDate + "T23:59:59") >= today;
+      }),
+    );
+
+    // Intentar primero solo los de los próximos 7 días
+    const next7 = futureEvents.filter((event) => {
+      if (!event.fecha_evento) return false;
+      return new Date(event.fecha_evento + "T00:00:00") <= in7Days;
     });
-  }, [events]);
+
+    // Si hay eventos esta semana, mostrarlos; si no, mostrar todos los futuros
+    return next7.length > 0 ? next7 : futureEvents;
+  }, [events, selectedCity, selectedComuna]);
 
   // Navegación del carrusel
   const nextSlide = useCallback(() => {
@@ -703,13 +768,72 @@ export default function PanoramasPage() {
     );
   }, [featuredEvents.length]);
 
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return undefined;
+
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updateMotionPreference = () => {
+      setPrefersReducedMotion(mediaQuery.matches);
+    };
+
+    updateMotionPreference();
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener("change", updateMotionPreference);
+      return () =>
+        mediaQuery.removeEventListener("change", updateMotionPreference);
+    }
+
+    mediaQuery.addListener(updateMotionPreference);
+    return () => mediaQuery.removeListener(updateMotionPreference);
+  }, []);
+
+  useEffect(() => {
+    const updateVisibility = () => {
+      setIsPageVisible(document.visibilityState === "visible");
+    };
+
+    updateVisibility();
+
+    document.addEventListener("visibilitychange", updateVisibility);
+    window.addEventListener("pageshow", updateVisibility);
+    window.addEventListener("focus", updateVisibility);
+    window.addEventListener("blur", updateVisibility);
+
+    return () => {
+      document.removeEventListener("visibilitychange", updateVisibility);
+      window.removeEventListener("pageshow", updateVisibility);
+      window.removeEventListener("focus", updateVisibility);
+      window.removeEventListener("blur", updateVisibility);
+    };
+  }, []);
+
+  useEffect(() => {
+    setCarouselIndex((prev) =>
+      featuredEvents.length > 0 ? Math.min(prev, featuredEvents.length - 1) : 0,
+    );
+  }, [featuredEvents.length]);
+
   // Auto-avance del carrusel
   useEffect(() => {
-    if (featuredEvents.length > 1) {
-      const interval = setInterval(nextSlide, 5000);
-      return () => clearInterval(interval);
+    if (featuredEvents.length <= 1 || prefersReducedMotion || !isPageVisible) {
+      return undefined;
     }
-  }, [featuredEvents.length, nextSlide]);
+
+    const timeout = window.setTimeout(nextSlide, 3500);
+    return () => window.clearTimeout(timeout);
+  }, [
+    carouselIndex,
+    featuredEvents.length,
+    isPageVisible,
+    nextSlide,
+    prefersReducedMotion,
+  ]);
+
+  // Resetear índice al cambiar filtros de ciudad/comuna
+  useEffect(() => {
+    setCarouselIndex(0);
+  }, [selectedCity, selectedComuna]);
 
   // Formatear fecha
   const formatDate = (dateString) => {
@@ -810,33 +934,35 @@ export default function PanoramasPage() {
       </section>
 
       {/* Panel de filtros de Superguia */}
-      <FilterPanel
-        categories={categories}
-        locations={LOCATIONS}
-        selectedCategory={selectedCategory}
-        selectedCity={selectedCity}
-        selectedComuna={selectedComuna}
-        selectedDate={selectedDate}
-        selectedPrice={selectedPrice}
-        searchQuery={searchQuery}
-        eventsPerDay={eventsPerDay}
-        recurringDates={recurringDates}
-        availableComunas={availableComunas}
-        onCategoryChange={handleCategoryChange}
-        onCityChange={handleCityChange}
-        onComunaChange={handleComunaChange}
-        onDateChange={handleDateChange}
-        onPriceChange={handlePriceChange}
-        onSearchChange={handleSearch}
-        onClearFilters={handleClearFilters}
-        totalResults={filteredEvents.length}
-        showPriceFilter={false}
-        showSubcategories={false}
-        showComunaFilter={true}
-        eventsCountByCity={eventsCountByCity}
-        eventsCountByComuna={eventsCountByComuna}
-        eventsCountByCategory={eventsCountByCategory}
-      />
+      <div ref={filterRef}>
+        <FilterPanel
+          categories={categories}
+          locations={LOCATIONS}
+          selectedCategory={selectedCategory}
+          selectedCity={selectedCity}
+          selectedComuna={selectedComuna}
+          selectedDate={selectedDate}
+          selectedPrice={selectedPrice}
+          searchQuery={searchQuery}
+          eventsPerDay={eventsPerDay}
+          recurringDates={recurringDates}
+          availableComunas={availableComunas}
+          onCategoryChange={handleCategoryChange}
+          onCityChange={handleCityChange}
+          onComunaChange={handleComunaChange}
+          onDateChange={handleDateChange}
+          onPriceChange={handlePriceChange}
+          onSearchChange={handleSearch}
+          onClearFilters={handleClearFilters}
+          totalResults={filteredEvents.length}
+          showPriceFilter={false}
+          showSubcategories={false}
+          showComunaFilter={true}
+          eventsCountByCity={eventsCountByCity}
+          eventsCountByComuna={eventsCountByComuna}
+          eventsCountByCategory={eventsCountByCategory}
+        />
+      </div>
 
       {/* Lista de eventos */}
       <section className="panoramas-page__events">
@@ -875,7 +1001,7 @@ export default function PanoramasPage() {
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
-                onPageChange={setCurrentPage}
+                onPageChange={handlePageChange}
               />
             )}
           </>
@@ -883,7 +1009,7 @@ export default function PanoramasPage() {
       </section>
 
       {/* Sección de Negocios Destacados con Carrusel */}
-      {businesses.length > 0 && (
+      {filteredBusinesses.length > 0 && (
         <section className="panoramas-page__featured">
           <div className="panoramas-page__featured-header">
             <div className="panoramas-page__featured-title">
@@ -894,11 +1020,13 @@ export default function PanoramasPage() {
               <h2>Descubre negocios</h2>
             </div>
             <p className="panoramas-page__featured-subtitle">
-              Explora los mejores negocios y servicios de la región
+              {selectedCity
+                ? `Negocios en ${LOCATIONS[selectedCity]?.nombre || selectedCity}`
+                : "Explora los mejores negocios y servicios de la región"}
             </p>
           </div>
           <Carousel
-            publications={businesses.slice(0, 10)}
+            publications={filteredBusinesses}
             onPublicationClick={handleBusinessClick}
           />
         </section>

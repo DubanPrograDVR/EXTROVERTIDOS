@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import "./styles/navbar.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -40,6 +40,7 @@ const NAV_LINKS = [
 export default function Navbar() {
   const { user, isAuthenticated, isModerator, signOut, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -81,8 +82,21 @@ export default function Navbar() {
     checkPlanes();
   }, []);
 
-  const handleLinkClick = () => {
+  const handleLinkClick = (e, href) => {
     setIsMenuOpen(false);
+    // Si el link requiere autenticación y el usuario no está logueado,
+    // abrir modal de login en vez de navegar
+    const link = NAV_LINKS.find((l) => l.href === href);
+    if (link?.userOnly && !isAuthenticated) {
+      e.preventDefault();
+      setAuthModalMode("login");
+      setIsAuthModalOpen(true);
+      return;
+    }
+    if (location.pathname === href) {
+      e.preventDefault();
+      window.location.href = href;
+    }
   };
 
   const handleOverlayClick = (e) => {
@@ -200,7 +214,7 @@ export default function Navbar() {
               key={index}
               to={link.href}
               className={`nav-link ${link.highlight ? "nav-link--highlight" : ""}`}
-              onClick={handleLinkClick}>
+              onClick={(e) => handleLinkClick(e, link.href)}>
               {link.label}
             </Link>
           ))}

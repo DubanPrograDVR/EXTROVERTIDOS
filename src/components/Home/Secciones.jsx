@@ -136,7 +136,10 @@ export default function Secciones({ customSections }) {
                 {section.btnLabel && (
                   <button
                     className="secciones__btn"
-                    onClick={() => navigate(section.btnPath)}>
+                    onClick={() => {
+                      navigate(section.btnPath);
+                      window.scrollTo({ top: 0, behavior: "auto" });
+                    }}>
                     {section.btnLabel}
                   </button>
                 )}

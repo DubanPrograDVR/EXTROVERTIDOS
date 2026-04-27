@@ -102,7 +102,7 @@ export default function Footer() {
                 atencion@extrovertidos.cl
               </a>
               <a
-                href="https://mail.google.com/mail/?view=cm&to=atencion@extrovertidos.cl"
+                href="https://mail.google.com/mail/?view=cm&to=Asesorias@extrovertidos.cl"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="footer__contact-link">

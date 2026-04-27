@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faStore,
@@ -16,6 +17,7 @@ import {
   faCheckSquare,
   faSquare,
   faSpinner,
+  faLocationArrow,
 } from "@fortawesome/free-solid-svg-icons";
 
 /**
@@ -35,6 +37,7 @@ export default function AdminBusinessList({
   title = "Negocios",
   emptyMessage,
 }) {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -331,6 +334,17 @@ export default function AdminBusinessList({
                     {/* Acciones */}
                     <td>
                       <div className="admin-table__actions">
+                        {/* Ir (solo publicados) */}
+                        {business.estado === "publicado" && (
+                          <button
+                            className="admin-table__action admin-table__action--goto"
+                            onClick={() =>
+                              navigate(`/superguia?highlight=${business.id}`)
+                            }
+                            title="Ir a Superguía">
+                            <FontAwesomeIcon icon={faLocationArrow} />
+                          </button>
+                        )}
                         {/* Ver */}
                         {onView && (
                           <button
@@ -423,141 +437,185 @@ export default function AdminBusinessList({
             </table>
           </div>
 
+          {/* Barra de "Seleccionar todos" solo en móvil */}
+          <div className="admin-mobile-select-all">
+            <button
+              type="button"
+              className="admin-mobile-select-all__btn"
+              onClick={toggleSelectAll}>
+              <FontAwesomeIcon
+                icon={
+                  selectedIds.size === filteredBusinesses.length &&
+                  filteredBusinesses.length > 0
+                    ? faCheckSquare
+                    : faSquare
+                }
+              />
+              {selectedIds.size === filteredBusinesses.length &&
+              filteredBusinesses.length > 0
+                ? "Deseleccionar todos"
+                : "Seleccionar todos"}
+            </button>
+          </div>
+
           {/* Vista móvil - Cards */}
           <div className="admin-business__mobile-list">
             {filteredBusinesses.map((business) => (
               <div
                 key={business.id}
-                className={`admin-biz-mobile-card ${selectedIds.has(business.id) ? "admin-row--selected" : ""}`}>
-                <div className="admin-biz-mobile-card__header">
-                  <button
-                    className="admin-select-btn admin-select-btn--mobile"
-                    onClick={() => toggleSelect(business.id)}>
-                    <FontAwesomeIcon
-                      icon={
-                        selectedIds.has(business.id) ? faCheckSquare : faSquare
-                      }
-                    />
-                  </button>
-                  <div className="admin-biz-mobile-card__image">
-                    {business.imagen_url || business.logo_url ? (
-                      <img
-                        src={business.imagen_url || business.logo_url}
-                        alt={business.nombre}
-                      />
-                    ) : (
-                      <div className="admin-biz-mobile-card__placeholder">
-                        <FontAwesomeIcon icon={faStore} />
-                      </div>
-                    )}
+                className={`admin-pub-mobile-card ${selectedIds.has(business.id) ? "admin-row--selected" : ""}`}>
+                <button
+                  className="admin-select-btn admin-select-btn--mobile"
+                  onClick={() => toggleSelect(business.id)}>
+                  <FontAwesomeIcon
+                    icon={
+                      selectedIds.has(business.id) ? faCheckSquare : faSquare
+                    }
+                  />
+                </button>
+                {business.imagen_url || business.logo_url ? (
+                  <img
+                    className="admin-pub-mobile-card__image"
+                    src={business.imagen_url || business.logo_url}
+                    alt={business.nombre}
+                    onError={(e) => {
+                      e.target.src = "/img/Home2.png";
+                    }}
+                  />
+                ) : (
+                  <div className="admin-pub-mobile-card__image admin-pub-mobile-card__image--placeholder">
+                    <FontAwesomeIcon icon={faStore} />
                   </div>
-                  <div className="admin-biz-mobile-card__info">
-                    <span className="admin-biz-mobile-card__name">
+                )}
+                <div className="admin-pub-mobile-card__content">
+                  <div className="admin-pub-mobile-card__header">
+                    <h3 className="admin-pub-mobile-card__title">
                       {business.nombre}
-                    </span>
-                    <span className="admin-biz-mobile-card__category">
+                    </h3>
+                    <span className="admin-pub-mobile-card__category">
                       {business.categoria || "Sin categoría"}
                     </span>
+                  </div>
+
+                  <div className="admin-pub-mobile-card__meta">
+                    <span>
+                      <FontAwesomeIcon icon={faMapMarkerAlt} />
+                      {business.comuna}
+                      {business.provincia ? `, ${business.provincia}` : ""}
+                    </span>
+                  </div>
+
+                  <div className="admin-pub-mobile-card__author">
+                    {business.profiles?.avatar_url ? (
+                      <img
+                        src={business.profiles.avatar_url}
+                        alt={business.profiles.nombre}
+                      />
+                    ) : (
+                      <div className="admin-table__user-placeholder">
+                        {business.profiles?.nombre?.charAt(0) || "?"}
+                      </div>
+                    )}
+                    <div className="admin-pub-mobile-card__author-info">
+                      <span className="admin-pub-mobile-card__author-name">
+                        {business.profiles?.nombre || "Desconocido"}
+                      </span>
+                      <span className="admin-pub-mobile-card__author-date">
+                        Creado: {formatDate(business.created_at)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="admin-pub-mobile-card__footer">
                     <span
                       className={`admin-table__status ${getStatusClass(
                         business.estado,
                       )}`}>
                       {getStatusText(business.estado)}
                     </span>
+                    <div className="admin-pub-mobile-card__actions">
+                      {business.estado === "publicado" && (
+                        <button
+                          className="admin-pub-btn admin-pub-btn--goto"
+                          onClick={() =>
+                            navigate(`/superguia?highlight=${business.id}`)
+                          }
+                          title="Ir">
+                          <FontAwesomeIcon icon={faLocationArrow} />
+                        </button>
+                      )}
+                      {onView && (
+                        <button
+                          className="admin-pub-btn admin-pub-btn--view"
+                          onClick={() => onView(business.id)}
+                          title="Ver">
+                          <FontAwesomeIcon icon={faEye} />
+                        </button>
+                      )}
+                      {onEdit && (
+                        <button
+                          className="admin-pub-btn admin-pub-btn--edit"
+                          onClick={() => onEdit(business.id)}
+                          title="Editar">
+                          <FontAwesomeIcon icon={faPencil} />
+                        </button>
+                      )}
+                      {showActions &&
+                        (business.estado === "pendiente" ||
+                          business.estado === "en_revision") && (
+                          <>
+                            <button
+                              className="admin-pub-btn admin-pub-btn--approve"
+                              onClick={() => onApprove(business.id)}
+                              disabled={actionLoading === business.id}
+                              title="Aprobar">
+                              <FontAwesomeIcon icon={faCheck} />
+                            </button>
+                            <button
+                              className="admin-pub-btn admin-pub-btn--reject"
+                              onClick={() => onReject(business.id)}
+                              disabled={actionLoading === business.id}
+                              title="Rechazar">
+                              <FontAwesomeIcon icon={faTimes} />
+                            </button>
+                          </>
+                        )}
+                      {onDelete && (
+                        <button
+                          className="admin-pub-btn admin-pub-btn--delete"
+                          onClick={() => {
+                            if (
+                              window.confirm(
+                                `¿Eliminar el negocio "${business.nombre}"?`,
+                              )
+                            ) {
+                              onDelete(business.id);
+                            }
+                          }}
+                          disabled={actionLoading === business.id}
+                          title="Eliminar">
+                          <FontAwesomeIcon icon={faTrash} />
+                        </button>
+                      )}
+                      {onPause && (
+                        <button
+                          className={`admin-pub-btn ${
+                            business.is_paused
+                              ? "admin-pub-btn--unpause"
+                              : "admin-pub-btn--pause"
+                          }`}
+                          onClick={() =>
+                            onPause(business.id, !business.is_paused)
+                          }
+                          disabled={actionLoading === business.id}
+                          title={business.is_paused ? "Reactivar" : "Pausar"}>
+                          <FontAwesomeIcon
+                            icon={business.is_paused ? faPlay : faPause}
+                          />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-
-                <div className="admin-biz-mobile-card__details">
-                  <div className="admin-biz-mobile-card__detail">
-                    <span className="admin-biz-mobile-card__detail-label">
-                      Propietario
-                    </span>
-                    <span className="admin-biz-mobile-card__detail-value">
-                      {business.profiles?.nombre || "Desconocido"}
-                    </span>
-                  </div>
-                  <div className="admin-biz-mobile-card__detail">
-                    <span className="admin-biz-mobile-card__detail-label">
-                      Ubicación
-                    </span>
-                    <span className="admin-biz-mobile-card__detail-value">
-                      <FontAwesomeIcon icon={faMapMarkerAlt} />{" "}
-                      {business.comuna}
-                      {business.provincia && `, ${business.provincia}`}
-                    </span>
-                  </div>
-                  <div className="admin-biz-mobile-card__detail">
-                    <span className="admin-biz-mobile-card__detail-label">
-                      Creado
-                    </span>
-                    <span className="admin-biz-mobile-card__detail-value">
-                      {formatDate(business.created_at)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="admin-biz-mobile-card__actions">
-                  {onView && (
-                    <button
-                      className="admin-biz-mobile-card__btn admin-biz-mobile-card__btn--view"
-                      onClick={() => onView(business.id)}>
-                      <FontAwesomeIcon icon={faEye} /> Ver
-                    </button>
-                  )}
-                  {onEdit && (
-                    <button
-                      className="admin-biz-mobile-card__btn admin-biz-mobile-card__btn--edit"
-                      onClick={() => onEdit(business.id)}>
-                      <FontAwesomeIcon icon={faPencil} /> Editar
-                    </button>
-                  )}
-                  {showActions && business.estado === "pendiente" && (
-                    <>
-                      <button
-                        className="admin-biz-mobile-card__btn admin-biz-mobile-card__btn--approve"
-                        onClick={() => onApprove(business.id)}
-                        disabled={actionLoading === business.id}>
-                        <FontAwesomeIcon icon={faCheck} /> Aprobar
-                      </button>
-                      <button
-                        className="admin-biz-mobile-card__btn admin-biz-mobile-card__btn--reject"
-                        onClick={() => onReject(business.id)}
-                        disabled={actionLoading === business.id}>
-                        <FontAwesomeIcon icon={faTimes} /> Rechazar
-                      </button>
-                    </>
-                  )}
-                  {onDelete && (
-                    <button
-                      className="admin-biz-mobile-card__btn admin-biz-mobile-card__btn--delete"
-                      onClick={() => {
-                        if (
-                          window.confirm(
-                            `¿Eliminar el negocio "${business.nombre}"?`,
-                          )
-                        ) {
-                          onDelete(business.id);
-                        }
-                      }}
-                      disabled={actionLoading === business.id}>
-                      <FontAwesomeIcon icon={faTrash} /> Eliminar
-                    </button>
-                  )}
-                  {onPause && (
-                    <button
-                      className={`admin-biz-mobile-card__btn ${
-                        business.is_paused
-                          ? "admin-biz-mobile-card__btn--approve"
-                          : "admin-biz-mobile-card__btn--pause"
-                      }`}
-                      onClick={() => onPause(business.id, !business.is_paused)}
-                      disabled={actionLoading === business.id}>
-                      <FontAwesomeIcon
-                        icon={business.is_paused ? faPlay : faPause}
-                      />{" "}
-                      {business.is_paused ? "Reactivar" : "Pausar"}
-                    </button>
-                  )}
                 </div>
               </div>
             ))}

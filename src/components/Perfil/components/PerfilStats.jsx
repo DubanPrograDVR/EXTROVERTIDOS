@@ -2,7 +2,7 @@ import "./styles/stats.css";
 
 export default function PerfilStats({
   publicationsCount,
-  unreadCount,
+  notificationsCount = 0,
   favoritesCount = 0,
 }) {
   return (
@@ -12,7 +12,7 @@ export default function PerfilStats({
         <span className="perfil-stats__label">Publicaciones</span>
       </div>
       <div className="perfil-stats__item">
-        <span className="perfil-stats__number">{unreadCount}</span>
+        <span className="perfil-stats__number">{notificationsCount}</span>
         <span className="perfil-stats__label">Notificaciones</span>
       </div>
       <div className="perfil-stats__item">

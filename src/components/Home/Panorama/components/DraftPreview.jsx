@@ -43,6 +43,33 @@ const ACCORDION_SECTIONS = {
   CONTACT: "contact",
 };
 
+const shouldPreserveLineBreaks = (lines) =>
+  lines.length > 1 &&
+  lines.every((line) => {
+    const trimmedLine = line.trim();
+    return /^[^\p{L}\p{N}]/u.test(trimmedLine) || /^\d+[.)-]/.test(trimmedLine);
+  });
+
+const getFormattedTextBlocks = (text) => {
+  if (!text) return [];
+
+  return text
+    .split(/\n\s*\n/)
+    .map((block) => {
+      const lines = block
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+      if (lines.length === 0) return null;
+
+      return shouldPreserveLineBreaks(lines)
+        ? lines.join("\n")
+        : lines.join(" ");
+    })
+    .filter(Boolean);
+};
+
 /**
  * Componente AccordionSection reutilizable con icono
  */
@@ -79,13 +106,7 @@ const AccordionSection = ({ title, icon, isOpen, onToggle, children }) => {
  * Componente de vista previa del borrador
  * Muestra cómo se verá la publicación en tiempo real - Estilo PublicationModal
  */
-const DraftPreview = ({
-  isOpen,
-  onClose,
-  formData,
-  previewImages,
-  categories,
-}) => {
+const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
   const [activeSection, setActiveSection] = useState(
     ACCORDION_SECTIONS.DESCRIPTION,
   );
@@ -97,11 +118,6 @@ const DraftPreview = ({
   }, []);
 
   if (!isOpen) return null;
-
-  // Obtener categoría seleccionada
-  const selectedCategory = categories?.find(
-    (cat) => cat.id === parseInt(formData.category_id),
-  );
 
   // Formatear fecha
   const formatearFecha = (fecha, formato = "largo") => {
@@ -193,33 +209,6 @@ const DraftPreview = ({
     );
   };
 
-  // Extraer coordenadas de URL de Google Maps
-  const extractCoordinates = (url) => {
-    if (!url) return null;
-    const atPattern = /@(-?\d+\.?\d*),(-?\d+\.?\d*)/;
-    const qPattern = /[?&]q=(-?\d+\.?\d*),(-?\d+\.?\d*)/;
-    const placePattern = /\/place\/(-?\d+\.?\d*),(-?\d+\.?\d*)/;
-    let match =
-      url.match(atPattern) || url.match(qPattern) || url.match(placePattern);
-    if (match) {
-      return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
-    }
-    return null;
-  };
-
-  const coordinates = extractCoordinates(formData.ubicacion_url);
-
-  // Generar URL de direcciones
-  const getDirectionsUrl = () => {
-    if (coordinates) {
-      return `https://www.google.com/maps/dir/?api=1&destination=${coordinates.lat},${coordinates.lng}`;
-    }
-    const destination = encodeURIComponent(
-      formData.direccion || `${formData.comuna}, ${formData.provincia}, Chile`,
-    );
-    return `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
-  };
-
   const hasMultipleImages = previewImages && previewImages.length > 1;
 
   // Calcular duración en días para multi-día
@@ -248,7 +237,7 @@ const DraftPreview = ({
       className="publication-modal-overlay draft-preview-overlay"
       onClick={onClose}>
       <div
-        className="publication-modal publication-modal--business-style publication-modal--draft"
+        className="publication-modal publication-modal--business-style publication-modal--panoramas publication-modal--draft"
         onClick={(e) => e.stopPropagation()}>
         {/* Header con logo y etiqueta (igual que PublicationModal) */}
         <div className="publication-modal__category-header">
@@ -362,11 +351,9 @@ const DraftPreview = ({
                 onToggle={() => toggleSection(ACCORDION_SECTIONS.DESCRIPTION)}>
                 <div className="publication-modal__description-content">
                   {formData.descripcion ? (
-                    formData.descripcion
-                      .split(/\n\s*\n/)
-                      .map((paragraph, i) => (
-                        <p key={i}>{paragraph.replace(/\n/g, " ")}</p>
-                      ))
+                    getFormattedTextBlocks(formData.descripcion).map(
+                      (paragraph, index) => <p key={index}>{paragraph}</p>,
+                    )
                   ) : (
                     <p>Sin descripción agregada aún...</p>
                   )}
@@ -383,11 +370,11 @@ const DraftPreview = ({
                     toggleSection(ACCORDION_SECTIONS.MARKETING_1)
                   }>
                   <div className="publication-modal__marketing-content">
-                    {formData.mensaje_marketing
-                      .split(/\n\s*\n/)
-                      .map((paragraph, i) => (
-                        <p key={i}>{paragraph.replace(/\n/g, " ")}</p>
-                      ))}
+                    {getFormattedTextBlocks(formData.mensaje_marketing).map(
+                      (paragraph, index) => (
+                        <p key={index}>{paragraph}</p>
+                      ),
+                    )}
                   </div>
                 </AccordionSection>
               )}
@@ -402,11 +389,11 @@ const DraftPreview = ({
                     toggleSection(ACCORDION_SECTIONS.MARKETING_2)
                   }>
                   <div className="publication-modal__marketing-content">
-                    {formData.mensaje_marketing_2
-                      .split(/\n\s*\n/)
-                      .map((paragraph, i) => (
-                        <p key={i}>{paragraph.replace(/\n/g, " ")}</p>
-                      ))}
+                    {getFormattedTextBlocks(formData.mensaje_marketing_2).map(
+                      (paragraph, index) => (
+                        <p key={index}>{paragraph}</p>
+                      ),
+                    )}
                   </div>
                 </AccordionSection>
               )}

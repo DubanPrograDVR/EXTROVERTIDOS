@@ -7,6 +7,7 @@ import {
   markNotificationAsRead,
   markAllNotificationsAsRead,
   deleteNotification as deleteNotificationDB,
+  deleteNotifications as deleteNotificationsDB,
 } from "../../../lib/database";
 import { useRealtimeRefetch } from "../../../hooks/useRealtimeRefetch";
 import {
@@ -41,25 +42,37 @@ export default function AdminProfile() {
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Cargar publicaciones del usuario
-  useEffect(() => {
-    const loadUserPublications = async () => {
+  const loadUserPublications = useCallback(
+    async ({ silent = false } = {}) => {
       if (isAuthenticated && user?.id) {
-        setLoadingPublications(true);
+        if (!silent) setLoadingPublications(true);
         try {
           const publications = await getEventsByUser(user.id);
           setUserPublications(publications || []);
         } catch (error) {
           console.error("Error cargando publicaciones:", error);
-          setUserPublications([]);
+          if (!silent) setUserPublications([]);
         } finally {
-          setLoadingPublications(false);
+          if (!silent) setLoadingPublications(false);
         }
       }
-    };
+    },
+    [isAuthenticated, user?.id],
+  );
 
+  // Cargar publicaciones del usuario
+  useEffect(() => {
     loadUserPublications();
-  }, [isAuthenticated, user?.id]);
+  }, [loadUserPublications]);
+
+  // Tiempo real: refrescar publicaciones del admin en vivo
+  useRealtimeRefetch({
+    table: "events",
+    event: "*",
+    filter: user?.id ? `user_id=eq.${user.id}` : undefined,
+    enabled: Boolean(isAuthenticated && user?.id),
+    onChange: () => loadUserPublications({ silent: true }),
+  });
 
   // Cargar notificaciones del usuario desde Supabase
   const loadNotifications = useCallback(
@@ -156,6 +169,18 @@ export default function AdminProfile() {
     }
   };
 
+  // Eliminar múltiples notificaciones
+  const handleDeleteNotifications = async (notificationIds) => {
+    try {
+      await deleteNotificationsDB(notificationIds, user.id);
+      setNotifications((prev) =>
+        prev.filter((n) => !notificationIds.includes(n.id)),
+      );
+    } catch (error) {
+      console.error("Error al eliminar notificaciones:", error);
+    }
+  };
+
   // Estado para evitar múltiples clicks durante logout
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -201,11 +226,16 @@ export default function AdminProfile() {
     month: "long",
     day: "numeric",
   });
+  const notificationsCount = notifications.length;
 
   // Tabs de navegación interna del perfil
   const profileTabs = [
     { id: "publicaciones", label: "Publicaciones" },
-    { id: "notificaciones", label: "Notificaciones", badge: unreadCount },
+    {
+      id: "notificaciones",
+      label: "Notificaciones",
+      badge: notificationsCount,
+    },
     { id: "favoritos", label: "Favoritos" },
     { id: "negocios", label: "Negocios" },
     { id: "configuracion", label: "Configuración" },
@@ -225,7 +255,7 @@ export default function AdminProfile() {
       {/* Stats */}
       <PerfilStats
         publicationsCount={userPublications.length}
-        unreadCount={unreadCount}
+        notificationsCount={notificationsCount}
       />
 
       {/* Navegación interna del perfil */}
@@ -251,6 +281,7 @@ export default function AdminProfile() {
           <PerfilPublicaciones
             publications={userPublications}
             loading={loadingPublications}
+            onPublicationUpdate={loadUserPublications}
           />
         )}
 
@@ -262,6 +293,7 @@ export default function AdminProfile() {
             onMarkAsRead={markAsRead}
             onMarkAllAsRead={markAllAsRead}
             onDelete={handleDeleteNotification}
+            onDeleteMultiple={handleDeleteNotifications}
           />
         )}
 

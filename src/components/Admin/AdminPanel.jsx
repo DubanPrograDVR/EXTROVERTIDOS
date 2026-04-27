@@ -694,7 +694,16 @@ export default function AdminPanel() {
         isOpen={viewModal.open}
         onClose={onViewClose}
         startInEditMode={viewModal.editMode}
-        onUpdate={() => {
+        modalVariant="panoramas"
+        onUpdate={(updatedEvent) => {
+          // Reflejar cambios en vivo dentro del modal sin necesidad de cerrarlo
+          if (updatedEvent) {
+            setViewModal((prev) => ({
+              ...prev,
+              event: { ...prev.event, ...updatedEvent },
+              editMode: false,
+            }));
+          }
           loadData();
         }}
       />
@@ -706,6 +715,14 @@ export default function AdminPanel() {
         onClose={onViewBusinessClose}
         startInEditMode={viewBusinessModal.editMode}
         onUpdate={(updatedBusiness) => {
+          // Reflejar cambios en vivo dentro del modal sin necesidad de cerrarlo
+          if (updatedBusiness) {
+            setViewBusinessModal((prev) => ({
+              ...prev,
+              business: { ...prev.business, ...updatedBusiness },
+              editMode: false,
+            }));
+          }
           loadData();
         }}
       />

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faEye,
@@ -18,6 +19,7 @@ import {
   faPlay,
   faCheckSquare,
   faSquare,
+  faLocationArrow,
 } from "@fortawesome/free-solid-svg-icons";
 import { formatDate } from "../utils/formatters";
 
@@ -35,6 +37,7 @@ export default function AdminPublicationsList({
   onPause,
   onRefresh,
 }) {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -311,6 +314,16 @@ export default function AdminPublicationsList({
                     <td>{formatDate(event.created_at)}</td>
                     <td>
                       <div className="admin-publications__actions">
+                        {event.estado === "publicado" && (
+                          <button
+                            className="admin-pub-btn admin-pub-btn--goto"
+                            onClick={() =>
+                              navigate(`/panoramas?highlight=${event.id}`)
+                            }
+                            title="Ir a Panoramas">
+                            <FontAwesomeIcon icon={faLocationArrow} />
+                          </button>
+                        )}
                         <button
                           className="admin-pub-btn admin-pub-btn--view"
                           onClick={() => onView(event.id)}
@@ -359,6 +372,27 @@ export default function AdminPublicationsList({
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Barra de "Seleccionar todos" solo en móvil */}
+          <div className="admin-mobile-select-all">
+            <button
+              type="button"
+              className="admin-mobile-select-all__btn"
+              onClick={toggleSelectAll}>
+              <FontAwesomeIcon
+                icon={
+                  selectedIds.size === filteredEvents.length &&
+                  filteredEvents.length > 0
+                    ? faCheckSquare
+                    : faSquare
+                }
+              />
+              {selectedIds.size === filteredEvents.length &&
+              filteredEvents.length > 0
+                ? "Deseleccionar todos"
+                : "Seleccionar todos"}
+            </button>
           </div>
 
           {/* Vista de cards - Móvil */}
@@ -428,6 +462,16 @@ export default function AdminPublicationsList({
                   <div className="admin-pub-mobile-card__footer">
                     {getStatusBadge(event.estado)}
                     <div className="admin-pub-mobile-card__actions">
+                      {event.estado === "publicado" && (
+                        <button
+                          className="admin-pub-btn admin-pub-btn--goto"
+                          onClick={() =>
+                            navigate(`/panoramas?highlight=${event.id}`)
+                          }
+                          title="Ir">
+                          <FontAwesomeIcon icon={faLocationArrow} />
+                        </button>
+                      )}
                       <button
                         className="admin-pub-btn admin-pub-btn--view"
                         onClick={() => onView(event.id)}

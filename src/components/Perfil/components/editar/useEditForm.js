@@ -59,6 +59,7 @@ export const useEditForm = (event, isOpen) => {
         mensaje_marketing: event.mensaje_marketing || "",
         titulo_marketing_2: event.titulo_marketing_2 || "",
         mensaje_marketing_2: event.mensaje_marketing_2 || "",
+        hashtags: event.hashtags || "",
       });
       setErrors({});
       setActiveTab("info");

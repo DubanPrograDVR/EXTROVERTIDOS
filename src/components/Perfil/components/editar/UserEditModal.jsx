@@ -24,6 +24,7 @@ import {
   faGlobe,
   faTag,
   faPhone,
+  faHashtag,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faInstagram,
@@ -54,6 +55,7 @@ const ACCORDION_SECTIONS = {
   SCHEDULE: "schedule",
   TICKET: "ticket",
   CONTACT: "contact",
+  HASHTAGS: "hashtags",
   IMAGES: "images",
 };
 
@@ -121,6 +123,7 @@ export default function UserEditModal({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [newImageFiles, setNewImageFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [hashtagInput, setHashtagInput] = useState("");
   const fileInputRef = useRef(null);
 
   const toggleSection = useCallback((section) => {
@@ -766,6 +769,163 @@ export default function UserEditModal({
                     onChange={handleChange}
                     placeholder="https://www.ejemplo.com"
                   />
+                </div>
+              </AccordionSection>
+
+              {/* Sección: Hashtags */}
+              <AccordionSection
+                title="Hashtags"
+                icon={faHashtag}
+                isOpen={activeSection === ACCORDION_SECTIONS.HASHTAGS}
+                onToggle={() => toggleSection(ACCORDION_SECTIONS.HASHTAGS)}>
+                <div className="publication-modal__edit-section">
+                  {/* Chips de hashtags actuales */}
+                  {(() => {
+                    const currentTags = (formData.hashtags || "")
+                      .split("#")
+                      .map((t) => t.trim())
+                      .filter((t) => t.length > 0)
+                      .map((t) => `#${t}`);
+
+                    const removeTag = (tagToRemove) => {
+                      const updated = currentTags
+                        .filter((t) => t !== tagToRemove)
+                        .join(" ");
+                      handleChange({
+                        target: { name: "hashtags", value: updated },
+                      });
+                    };
+
+                    const addTag = () => {
+                      const raw = hashtagInput.trim().toUpperCase();
+                      if (!raw) return;
+                      const formatted = raw.startsWith("#") ? raw : `#${raw}`;
+                      if (
+                        currentTags.includes(formatted) ||
+                        currentTags.length >= 10
+                      )
+                        return;
+                      const updated = [...currentTags, formatted].join(" ");
+                      handleChange({
+                        target: { name: "hashtags", value: updated },
+                      });
+                      setHashtagInput("");
+                    };
+
+                    return (
+                      <>
+                        {currentTags.length > 0 && (
+                          <div
+                            style={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: "8px",
+                              marginBottom: "14px",
+                            }}>
+                            {currentTags.map((tag) => (
+                              <span
+                                key={tag}
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "6px",
+                                  background: "rgba(255,102,0,0.15)",
+                                  border: "1px solid rgba(255,102,0,0.4)",
+                                  color: "#ff6600",
+                                  borderRadius: "20px",
+                                  padding: "4px 12px",
+                                  fontSize: "0.82rem",
+                                  fontWeight: 600,
+                                }}>
+                                {tag}
+                                <button
+                                  type="button"
+                                  onClick={() => removeTag(tag)}
+                                  aria-label={`Eliminar ${tag}`}
+                                  style={{
+                                    background: "none",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    color: "#ff6600",
+                                    padding: "0",
+                                    lineHeight: 1,
+                                    fontSize: "0.85rem",
+                                    display: "flex",
+                                    alignItems: "center",
+                                  }}>
+                                  <FontAwesomeIcon icon={faTimes} />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {currentTags.length < 10 && (
+                          <div style={{ display: "flex", gap: "8px" }}>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                flex: 1,
+                                background: "rgba(255,255,255,0.05)",
+                                border: "1px solid rgba(255,255,255,0.15)",
+                                borderRadius: "8px",
+                                padding: "0 10px",
+                                gap: "4px",
+                              }}>
+                              <FontAwesomeIcon
+                                icon={faHashtag}
+                                style={{
+                                  color: "#ff6600",
+                                  fontSize: "0.85rem",
+                                }}
+                              />
+                              <input
+                                type="text"
+                                className="publication-modal__edit-input"
+                                style={{
+                                  background: "transparent",
+                                  border: "none",
+                                  padding: "8px 4px",
+                                  flex: 1,
+                                }}
+                                value={hashtagInput}
+                                onChange={(e) =>
+                                  setHashtagInput(e.target.value)
+                                }
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    addTag();
+                                  }
+                                }}
+                                placeholder="Nuevo hashtag..."
+                                maxLength={30}
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              className="publication-modal__save-btn"
+                              style={{ padding: "8px 16px", minWidth: "auto" }}
+                              onClick={addTag}
+                              disabled={!hashtagInput.trim()}>
+                              <FontAwesomeIcon icon={faPlus} />
+                              Agregar
+                            </button>
+                          </div>
+                        )}
+
+                        <p
+                          style={{
+                            color: "rgba(255,255,255,0.35)",
+                            fontSize: "0.78rem",
+                            margin: "8px 0 0",
+                          }}>
+                          {currentTags.length}/10 hashtags
+                        </p>
+                      </>
+                    );
+                  })()}
                 </div>
               </AccordionSection>
 

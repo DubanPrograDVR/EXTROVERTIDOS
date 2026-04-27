@@ -30,6 +30,7 @@ export const getPendingEvents = async (adminUserId) => {
       comuna,
       provincia,
       imagenes,
+      hashtags,
       created_at,
       categories (
         id,
@@ -72,15 +73,7 @@ export const getInReviewEvents = async (adminUserId) => {
     .from("events")
     .select(
       `
-      id,
-      titulo,
-      descripcion,
-      fecha_evento,
-      comuna,
-      provincia,
-      imagenes,
-      created_at,
-      updated_at,
+      *,
       categories (
         id,
         nombre,

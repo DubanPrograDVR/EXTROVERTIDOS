@@ -53,6 +53,7 @@ export const INITIAL_EDIT_STATE = {
   mensaje_marketing: "",
   titulo_marketing_2: "",
   mensaje_marketing_2: "",
+  hashtags: "",
 };
 
 // Tabs disponibles

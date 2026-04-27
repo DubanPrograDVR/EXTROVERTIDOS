@@ -1112,7 +1112,9 @@
 
 .publication-modal__marketing-content p {
   margin: 0 0 12px 0;
+  white-space: pre-wrap;
   overflow-wrap: break-word;
+  word-break: break-word;
   font-size: 1rem;
 }
 

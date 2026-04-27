@@ -50,7 +50,10 @@ export default function Panoramas() {
             {/* Botón de acción */}
             <button
               className="panoramas__btn"
-              onClick={() => navigate("/panoramas")}>
+              onClick={() => {
+                navigate("/panoramas");
+                window.scrollTo({ top: 0, behavior: "auto" });
+              }}>
               Explorar Panoramas
             </button>
           </div>

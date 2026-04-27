@@ -1,0 +1,252 @@
+/* ===== Reset Button ===== */
+.form-reset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 8px;
+  color: rgba(239, 68, 68, 0.85);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.form-reset-btn:hover {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.6);
+  color: #ef4444;
+}
+
+.form-reset-btn:focus-visible {
+  outline: 2px solid rgba(239, 68, 68, 0.5);
+  outline-offset: 2px;
+}
+
+.form-reset-btn svg {
+  font-size: 0.85rem;
+}
+
+/* ===== Confirm Modal ===== */
+.form-reset-confirm__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+  animation: reset-overlay-fade-in 0.2s ease;
+}
+
+@keyframes reset-overlay-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.form-reset-confirm__modal {
+  position: relative;
+  background: #1a1a1a;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 14px;
+  padding: 28px 24px 24px;
+  max-width: 440px;
+  width: 100%;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+  text-align: center;
+  animation: reset-modal-pop-in 0.25s ease;
+}
+
+@keyframes reset-modal-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.form-reset-confirm__close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.form-reset-confirm__close:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.form-reset-confirm__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.14);
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  margin: 0 auto 14px;
+}
+
+.form-reset-confirm__title {
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0 0 10px;
+}
+
+.form-reset-confirm__message {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  margin: 0 0 22px;
+}
+
+.form-reset-confirm__actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.form-reset-confirm__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 20px;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  min-width: 130px;
+  justify-content: center;
+}
+
+.form-reset-confirm__btn--cancel {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.85);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.form-reset-confirm__btn--cancel:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.form-reset-confirm__btn--confirm {
+  background: #ef4444;
+  color: #fff;
+}
+
+.form-reset-confirm__btn--confirm:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.35);
+}
+
+@media (max-width: 480px) {
+  .form-reset-btn {
+    font-size: 0.78rem;
+    padding: 7px 12px;
+  }
+
+  .form-reset-confirm__modal {
+    padding: 24px 18px 20px;
+  }
+
+  .form-reset-confirm__title {
+    font-size: 1.08rem;
+  }
+
+  .form-reset-confirm__message {
+    font-size: 0.88rem;
+  }
+
+  .form-reset-confirm__btn {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* ===== Row contenedor para el botón dentro de los formularios ===== */
+.publicar-form__reset-row,
+.publicar-negocio__reset-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 480px) {
+  .publicar-form__reset-row,
+  .publicar-negocio__reset-row {
+    justify-content: center;
+    margin-top: 14px;
+  }
+}
+
+/* ===== Esquina superior derecha (solo paso 1) =====
+   CSS separado por formulario para no interferir entre ellos */
+
+/* --- NEGOCIO: absoluto dentro del card (tiene un header de sección) --- */
+.publicar-negocio__form .wizard-step-container {
+  position: relative;
+}
+
+.publicar-negocio__reset-corner {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 3;
+}
+
+@media (max-width: 480px) {
+  .publicar-negocio__reset-corner {
+    top: 10px;
+    right: 10px;
+  }
+}
+
+/* --- PANORAMA: inline arriba del primer campo (no tiene header) --- */
+.publicar-form__reset-corner {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 14px;
+}
+
+@media (max-width: 480px) {
+  .publicar-form__reset-corner {
+    margin-bottom: 10px;
+  }
+}

@@ -491,25 +491,57 @@
 /* ===== RESPONSIVE ===== */
 @media (max-width: 480px) {
   .business-card__content {
-    padding: 12px;
+    padding: 14px;
   }
 
   .business-card__title {
-    font-size: 0.95rem;
+    font-size: 1.6rem;
+    line-height: 1.2;
+  }
+
+  .business-card__subcategory {
+    font-size: 1.2rem;
+  }
+
+  .business-card__description {
+    font-size: 1.25rem;
+  }
+
+  .business-card__location {
+    font-size: 1.25rem;
+  }
+
+  .business-card__schedule {
+    font-size: 1.2rem;
+    gap: 6px;
+  }
+
+  .business-card__schedule svg {
+    font-size: 1.15rem;
   }
 
   .business-card__action {
-    width: 32px;
-    height: 32px;
-    font-size: 0.85rem;
+    width: 44px;
+    height: 44px;
+    font-size: 1.25rem;
+  }
+
+  .business-card__interaction-buttons {
+    gap: 0.6rem;
   }
 
   .business-card__interaction-btn {
-    padding: 0.4rem 0.5rem;
-    font-size: 0.75rem;
+    padding: 0.85rem 1.1rem;
+    font-size: 1.3rem;
+    gap: 0.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+
+  .business-card__interaction-btn svg {
+    font-size: 1.35rem;
   }
 }
-
 
 /* ===== HIGHLIGHT (cuando se llega con ?highlight=<id>) ===== */
 .business-card.is-highlighted {
@@ -523,15 +555,31 @@
 }
 
 @keyframes business-card-highlight-bounce {
-  0%, 100% { transform: translateY(0); }
-  15% { transform: translateY(-20px); }
-  30% { transform: translateY(0); }
-  45% { transform: translateY(-12px); }
-  60% { transform: translateY(0); }
-  75% { transform: translateY(-6px); }
-  90% { transform: translateY(0); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  15% {
+    transform: translateY(-20px);
+  }
+  30% {
+    transform: translateY(0);
+  }
+  45% {
+    transform: translateY(-12px);
+  }
+  60% {
+    transform: translateY(0);
+  }
+  75% {
+    transform: translateY(-6px);
+  }
+  90% {
+    transform: translateY(0);
+  }
 }
 
-
 /* Offset para que el header fijo no tape la card al hacer scrollIntoView */
-.business-card { scroll-margin-top: 100px; }
+.business-card {
+  scroll-margin-top: 100px;
+}

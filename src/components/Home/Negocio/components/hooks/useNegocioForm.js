@@ -640,5 +640,6 @@ export const useNegocioForm = () => {
     handleSubmit,
     handleSaveDraft,
     setShowAuthModal,
+    resetForm,
   };
 };

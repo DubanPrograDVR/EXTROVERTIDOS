@@ -1,14 +1,7 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faStore,
-  faPlus,
-  faSearch,
-  faFilter,
-  faSpinner,
-  faFire,
-} from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faSpinner, faFire } from "@fortawesome/free-solid-svg-icons";
 import Footer from "../Home/Footer";
 import Pagination from "./Pagination";
 import FilterPanel from "./FilterPanel";
@@ -27,6 +20,78 @@ import { LOCATIONS } from "./data";
 import "./styles/SuperguiaContainer.css";
 
 const ITEMS_PER_PAGE = 16;
+
+const parseLocalDate = (dateValue, endOfDay = false) => {
+  if (!dateValue) return null;
+
+  const parsedDate = new Date(`${dateValue}T00:00:00`);
+  if (Number.isNaN(parsedDate.getTime())) return null;
+
+  if (endOfDay) {
+    parsedDate.setHours(23, 59, 59, 999);
+  }
+
+  return parsedDate;
+};
+
+const getCurrentWeekBounds = (referenceDate = new Date()) => {
+  const weekStart = new Date(referenceDate);
+  const dayIndex = weekStart.getDay();
+  const daysToMonday = (dayIndex + 6) % 7;
+
+  weekStart.setDate(weekStart.getDate() - daysToMonday);
+  weekStart.setHours(0, 0, 0, 0);
+
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  weekEnd.setHours(23, 59, 59, 999);
+
+  return { weekStart, weekEnd };
+};
+
+const getWeekOffsetLabel = (weekOffset) => {
+  if (weekOffset === 0) return "esta semana";
+  if (weekOffset === 1) return "la próxima semana";
+
+  return `en ${weekOffset} semanas`;
+};
+
+const panoramaOccursThisWeek = (event, weekStart, weekEnd) => {
+  const startDate = parseLocalDate(event.fecha_evento);
+  if (!startDate) return false;
+
+  if (event.es_recurrente && Array.isArray(event.fechas_recurrencia)) {
+    const matchesRecurringDate = event.fechas_recurrencia.some((fecha) => {
+      const occurrenceDate = parseLocalDate(fecha);
+      return (
+        occurrenceDate &&
+        occurrenceDate >= weekStart &&
+        occurrenceDate <= weekEnd
+      );
+    });
+
+    if (matchesRecurringDate) return true;
+  }
+
+  const endDate = parseLocalDate(event.fecha_fin, true) || startDate;
+  return startDate <= weekEnd && endDate >= weekStart;
+};
+
+const getPanoramaDisplayDate = (event, weekStart, weekEnd) => {
+  if (event.es_recurrente && Array.isArray(event.fechas_recurrencia)) {
+    const matchingOccurrences = event.fechas_recurrencia
+      .map((fecha) => parseLocalDate(fecha))
+      .filter((date) => date && date >= weekStart && date <= weekEnd);
+
+    if (matchingOccurrences.length > 0) {
+      return matchingOccurrences.reduce((earliest, current) =>
+        current < earliest ? current : earliest,
+      );
+    }
+  }
+
+  return parseLocalDate(event.fecha_evento);
+};
 
 /**
  * SuperguiaContainer - Página para mostrar negocios publicados
@@ -47,8 +112,25 @@ export default function SuperguiaContainer() {
   const [selectedComuna, setSelectedComuna] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const filterRef = useRef(null);
+  const shouldScrollToFiltersRef = useRef(false);
 
-  // Estado del modal
+  const handlePageChange = useCallback(
+    (page) => {
+      if (page === currentPage) return;
+      shouldScrollToFiltersRef.current = true;
+      setCurrentPage(page);
+    },
+    [currentPage],
+  );
+
+  // Scroll a los filtros cuando la paginación cambia de página
+  useEffect(() => {
+    if (!shouldScrollToFiltersRef.current) return;
+
+    filterRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    shouldScrollToFiltersRef.current = false;
+  }, [currentPage]);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -57,8 +139,75 @@ export default function SuperguiaContainer() {
 
   // Estado para panoramas (carrusel cruzado)
   const [panoramas, setPanoramas] = useState([]);
+  const [weekRefreshKey, setWeekRefreshKey] = useState(0);
+
+  // Panoramas filtrados por ciudad activa
+  const featuredPanoramaWindow = useMemo(() => {
+    const { weekStart: currentWeekStart } = getCurrentWeekBounds();
+    const cityName = selectedCity ? LOCATIONS[selectedCity]?.nombre : null;
+
+    const cityFilteredPanoramas =
+      selectedCity && cityName
+        ? panoramas.filter(
+            (event) =>
+              event.provincia?.toLowerCase() === cityName.toLowerCase(),
+          )
+        : panoramas;
+
+    for (let weekOffset = 0; weekOffset < 6; weekOffset += 1) {
+      const weekStart = new Date(currentWeekStart);
+      weekStart.setDate(currentWeekStart.getDate() + weekOffset * 7);
+
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      weekEnd.setHours(23, 59, 59, 999);
+
+      const items = [...cityFilteredPanoramas]
+        .filter((event) => panoramaOccursThisWeek(event, weekStart, weekEnd))
+        .sort((a, b) => {
+          const aDate = getPanoramaDisplayDate(a, weekStart, weekEnd);
+          const bDate = getPanoramaDisplayDate(b, weekStart, weekEnd);
+
+          return (
+            (aDate?.getTime() || Number.MAX_SAFE_INTEGER) -
+            (bDate?.getTime() || Number.MAX_SAFE_INTEGER)
+          );
+        });
+
+      if (items.length > 0) {
+        return {
+          items,
+          weekLabel: getWeekOffsetLabel(weekOffset),
+        };
+      }
+    }
+
+    return {
+      items: [],
+      weekLabel: getWeekOffsetLabel(0),
+    };
+  }, [panoramas, selectedCity, weekRefreshKey]);
+  const filteredPanoramas = featuredPanoramaWindow.items;
   const [selectedPanorama, setSelectedPanorama] = useState(null);
   const [isPanoramaModalOpen, setIsPanoramaModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const now = new Date();
+    const nextMonday = new Date(now);
+    const daysUntilMonday = (8 - now.getDay()) % 7 || 7;
+
+    nextMonday.setDate(now.getDate() + daysUntilMonday);
+    nextMonday.setHours(0, 0, 5, 0);
+
+    const delay = Math.max(nextMonday.getTime() - now.getTime(), 60_000);
+    const timeoutId = window.setTimeout(() => {
+      setWeekRefreshKey((value) => value + 1);
+    }, delay);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [weekRefreshKey]);
 
   // Cargar datos
   const loadData = useCallback(async ({ silent = false } = {}) => {
@@ -242,9 +391,15 @@ export default function SuperguiaContainer() {
       );
     }
 
-    // Mezclar en orden aleatorio
+    // Mezclar en orden aleatorio estable hasta que cambie shuffleKey
+    let seed = shuffleKey + result.length * 9973;
+    const nextRandom = () => {
+      seed = (seed * 1664525 + 1013904223) % 4294967296;
+      return seed / 4294967296;
+    };
+
     for (let i = result.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+      const j = Math.floor(nextRandom() * (i + 1));
       [result[i], result[j]] = [result[j], result[i]];
     }
 
@@ -455,32 +610,34 @@ export default function SuperguiaContainer() {
           </div>
 
           {/* Panel de filtros */}
-          <FilterPanel
-            categories={categories}
-            subcategories={flatSubcategories}
-            locations={LOCATIONS}
-            selectedCategory={selectedCategory}
-            selectedSubcategory={selectedSubcategory}
-            onCategoryChange={handleCategoryChange}
-            onSubcategoryChange={handleSubcategoryChange}
-            selectedCity={selectedCity}
-            onCityChange={handleCityChange}
-            selectedComuna={selectedComuna}
-            onComunaChange={handleComunaChange}
-            availableComunas={availableComunas}
-            searchQuery={searchQuery}
-            onSearchChange={handleSearch}
-            onClearFilters={handleClearFilters}
-            totalResults={filteredBusinesses.length}
-            showDateFilter={false}
-            showPriceFilter={false}
-            showSubcategories={true}
-            showComunaFilter={true}
-            eventsCountByCategory={businessesCountByCategory}
-            eventsCountByCity={businessesCountByCity}
-            eventsCountByComuna={businessesCountByComuna}
-            eventsCountBySubcategory={businessesCountBySubcategory}
-          />
+          <div ref={filterRef}>
+            <FilterPanel
+              categories={categories}
+              subcategories={flatSubcategories}
+              locations={LOCATIONS}
+              selectedCategory={selectedCategory}
+              selectedSubcategory={selectedSubcategory}
+              onCategoryChange={handleCategoryChange}
+              onSubcategoryChange={handleSubcategoryChange}
+              selectedCity={selectedCity}
+              onCityChange={handleCityChange}
+              selectedComuna={selectedComuna}
+              onComunaChange={handleComunaChange}
+              availableComunas={availableComunas}
+              searchQuery={searchQuery}
+              onSearchChange={handleSearch}
+              onClearFilters={handleClearFilters}
+              totalResults={filteredBusinesses.length}
+              showDateFilter={false}
+              showPriceFilter={false}
+              showSubcategories={true}
+              showComunaFilter={true}
+              eventsCountByCategory={businessesCountByCategory}
+              eventsCountByCity={businessesCountByCity}
+              eventsCountByComuna={businessesCountByComuna}
+              eventsCountBySubcategory={businessesCountBySubcategory}
+            />
+          </div>
 
           {/* Estado de carga */}
           {loading && (
@@ -567,7 +724,7 @@ export default function SuperguiaContainer() {
                     <Pagination
                       currentPage={currentPage}
                       totalPages={totalPages}
-                      onPageChange={setCurrentPage}
+                      onPageChange={handlePageChange}
                     />
                   )}
                 </>
@@ -578,7 +735,7 @@ export default function SuperguiaContainer() {
       </section>
 
       {/* Carrusel de Panoramas */}
-      {panoramas.length > 0 && (
+      {filteredPanoramas.length > 0 && (
         <section className="superguia__featured">
           <div className="superguia__featured-header">
             <div className="superguia__featured-title">
@@ -589,12 +746,15 @@ export default function SuperguiaContainer() {
               <h2>Descubre panoramas</h2>
             </div>
             <p className="superguia__featured-subtitle">
-              Explora los eventos más populares de la región
+              {selectedCity
+                ? `Eventos de ${featuredPanoramaWindow.weekLabel} en ${LOCATIONS[selectedCity]?.nombre || selectedCity}`
+                : `Explora los eventos de ${featuredPanoramaWindow.weekLabel} en la región`}
             </p>
           </div>
           <Carousel
-            publications={panoramas.slice(0, 10)}
+            publications={filteredPanoramas}
             onPublicationClick={handlePanoramaClick}
+            autoPlayInterval={2000}
           />
         </section>
       )}
@@ -611,6 +771,7 @@ export default function SuperguiaContainer() {
         publication={selectedPanorama}
         isOpen={isPanoramaModalOpen}
         onClose={handleClosePanoramaModal}
+        modalVariant="panoramas"
       />
 
       <Footer />

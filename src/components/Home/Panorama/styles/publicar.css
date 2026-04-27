@@ -1278,15 +1278,27 @@
 
 .wizard-stepper__step--active .wizard-stepper__number {
   background: #ff6600;
-  color: #000;
+  color: #fff;
   border-color: #ff6600;
   box-shadow: 0 0 20px rgba(255, 102, 0, 0.4);
 }
 
 .wizard-stepper__step--completed .wizard-stepper__number {
   background: #222;
-  color: #ff6600;
-  border-color: #ff6600;
+  color: #fff;
+  border-color: #444;
+}
+
+/* Paso con todos los campos obligatorios completados → verde */
+.wizard-stepper__step--valid .wizard-stepper__number {
+  background: #16a34a;
+  color: #fff;
+  border-color: #16a34a;
+  box-shadow: 0 0 14px rgba(22, 163, 74, 0.45);
+}
+
+.wizard-stepper__step--valid .wizard-stepper__title {
+  color: #16a34a;
 }
 
 .wizard-stepper__title {

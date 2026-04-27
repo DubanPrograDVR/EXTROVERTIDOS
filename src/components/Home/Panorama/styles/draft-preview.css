@@ -22,9 +22,23 @@
 
 /* Variante del modal para Draft */
 .publication-modal.publication-modal--draft {
-  max-width: 1000px;
-  height: 85vh;
-  max-height: 750px;
+  width: 95%;
+  max-width: 1100px;
+  height: 86vh;
+  max-height: 800px;
+}
+
+@media (min-width: 901px) {
+  .publication-modal.publication-modal--business-draft
+    .publication-modal__left {
+    width: 46%;
+  }
+
+  .publication-modal.publication-modal--business-draft
+    .publication-modal__right {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
 }
 
 /* Estado sin imagen para el borrador */

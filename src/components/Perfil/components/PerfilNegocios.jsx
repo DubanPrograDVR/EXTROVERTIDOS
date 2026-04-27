@@ -108,7 +108,11 @@ export default function PerfilNegocios() {
       if (showToast) {
         showToast("¡Negocio actualizado exitosamente!", "success");
       }
-      setEditModal({ open: false, business: null });
+      // Mantener el modal abierto reflejando los cambios en vivo
+      setEditModal((prev) => ({
+        ...prev,
+        business: { ...prev.business, ...businessData },
+      }));
       await reloadBusinesses();
     } catch (err) {
       console.error("Error al actualizar negocio:", err);
@@ -402,7 +406,16 @@ export default function PerfilNegocios() {
         isOpen={editModal.open}
         onClose={() => setEditModal({ open: false, business: null })}
         startInEditMode={true}
-        onUpdate={() => reloadBusinesses()}
+        onUpdate={(updatedBusiness) => {
+          // Reflejar cambios en vivo sin cerrar el modal
+          if (updatedBusiness) {
+            setEditModal((prev) => ({
+              ...prev,
+              business: { ...prev.business, ...updatedBusiness },
+            }));
+          }
+          reloadBusinesses();
+        }}
       />
 
       {/* Modal de confirmación de eliminación */}

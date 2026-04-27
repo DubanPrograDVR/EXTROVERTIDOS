@@ -253,6 +253,91 @@
 @media (max-width: 768px) {
   .perfil-publications__grid {
     grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .perfil-publication-card__content {
+    padding: 16px;
+  }
+
+  .perfil-publication-card__title-row,
+  .perfil-business-card__title-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .perfil-publication-card__info {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    line-height: 1.5;
+  }
+
+  .perfil-publication-card__actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .perfil-publication-card__btn {
+    min-width: 0;
+    width: 100%;
+    padding: 10px 12px;
+    justify-content: center;
+  }
+
+  .perfil-publication-card__btn--resubmit {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .perfil-publication-card__goto,
+  .perfil-business-card__goto {
+    width: fit-content;
+  }
+}
+
+@media (max-width: 520px) {
+  .perfil-publications__grid {
+    gap: 16px;
+  }
+
+  .perfil-publication-card__image {
+    aspect-ratio: 16 / 9;
+  }
+
+  .perfil-publication-card__title {
+    font-size: 1rem;
+    line-height: 1.35;
+  }
+
+  .perfil-publication-card__actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .perfil-publication-card__btn {
+    padding: 9px 10px;
+    font-size: 0.8rem;
+  }
+
+  .perfil-publication-card__status {
+    top: 8px;
+    right: 8px;
+    padding: 4px 10px;
+    font-size: 0.68rem;
+  }
+
+  .perfil-publication-card__content {
+    padding: 14px;
+  }
+
+  .perfil-publication-card__info {
+    font-size: 0.8rem;
+    margin-bottom: 12px;
+  }
+
+  .perfil-publication-card__goto,
+  .perfil-business-card__goto {
+    padding: 5px 10px;
+    font-size: 0.74rem;
   }
 }
 
