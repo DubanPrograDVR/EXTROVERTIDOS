@@ -358,6 +358,10 @@ export default function BusinessModal({
     mensaje_marketing_2,
   } = business;
 
+  const shareUrl = business?.id
+    ? `${window.location.origin}/superguia?highlight=${encodeURIComponent(business.id)}`
+    : window.location.href;
+
   // Obtener array de imágenes válidas
   const getValidImages = () => {
     if (canManageBusinessMedia) {
@@ -1665,10 +1669,10 @@ export default function BusinessModal({
                     navigator.share({
                       title: nombre,
                       text: `¡Mira este negocio! ${nombre}`,
-                      url: window.location.href,
+                      url: shareUrl,
                     });
                   } else {
-                    navigator.clipboard.writeText(window.location.href);
+                    navigator.clipboard.writeText(shareUrl);
                     alert("¡Enlace copiado al portapapeles!");
                   }
                 }}>

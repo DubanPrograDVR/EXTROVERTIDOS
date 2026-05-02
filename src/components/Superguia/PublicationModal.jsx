@@ -404,6 +404,10 @@ export default function PublicationModal({
   // Usar telefono_contacto si existe, sino usar telefono
   const contactPhone = telefono_contacto || telefono;
 
+  const shareUrl = publication?.id
+    ? `${window.location.origin}/panoramas?highlight=${encodeURIComponent(publication.id)}`
+    : window.location.href;
+
   // Parsear hashtags
   const parseHashtags = () => {
     if (!hashtags) return [];
@@ -2301,10 +2305,10 @@ export default function PublicationModal({
                     navigator.share({
                       title: titulo,
                       text: `¡Mira este evento! ${titulo}`,
-                      url: window.location.href,
+                      url: shareUrl,
                     });
                   } else {
-                    navigator.clipboard.writeText(window.location.href);
+                    navigator.clipboard.writeText(shareUrl);
                     alert("¡Enlace copiado al portapapeles!");
                   }
                 }}>
