@@ -5,9 +5,23 @@ import "./styles/EmptyPanoramas.css";
  * Componente para mostrar cuando no hay panoramas disponibles
  * @param {Function} onClearFilters - Función para limpiar filtros
  * @param {boolean} hasFilters - Si hay filtros activos
+ * @param {Function} onPublishClick - Acción del botón publicar
  */
-export default function EmptyPanoramas({ onClearFilters, hasFilters = false }) {
+export default function EmptyPanoramas({
+  onClearFilters,
+  hasFilters = false,
+  onPublishClick,
+}) {
   const navigate = useNavigate();
+
+  const handlePublishClick = () => {
+    if (onPublishClick) {
+      onPublishClick();
+      return;
+    }
+
+    navigate("/publicar-panorama");
+  };
 
   return (
     <div className="empty-panoramas">
@@ -52,7 +66,7 @@ export default function EmptyPanoramas({ onClearFilters, hasFilters = false }) {
           )}
           <button
             className="empty-panoramas__btn empty-panoramas__btn--primary"
-            onClick={() => navigate("/publicar-panorama")}>
+            onClick={handlePublishClick}>
             Publicar Panorama
           </button>
         </div>

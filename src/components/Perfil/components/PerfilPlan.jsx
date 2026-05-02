@@ -23,6 +23,7 @@ import "./styles/plan.css";
 // Iconos del sitio
 const iconPanorama = "/img/P_Extro.png";
 const iconExtro = "/img/E_Extro.png";
+const logoExtrovertidos = "/img/Logo_extrovertidos.png";
 const iconSuperguia = "/img/SG_Extro.png";
 
 /**
@@ -37,7 +38,7 @@ const ALL_PLANS = [
   },
   {
     key: "superguia",
-    nombre: "¡Superguía Extrovertidos!",
+    nombre: "¡Superguia Extrovertidos!",
     icon: faStore,
     img: iconSuperguia,
   },
@@ -78,9 +79,7 @@ function hasRemainingQuota(subscription) {
     return true;
   }
   if (subscription.plan === "superguia") {
-    const total = Number(subscription.publicaciones_total ?? 0);
-    // Suscripciones antiguas con total=0 no tienen límite
-    if (total === 0) return true;
+    const total = Math.max(Number(subscription.publicaciones_total ?? 0), 1);
     const used = Number(subscription.publicaciones_usadas ?? 0);
     return used < total;
   }
@@ -329,18 +328,14 @@ export default function PerfilPlan() {
       {!hasActiveWithQuota && (
         <div className="perfil-plan__cta">
           <div className="perfil-plan__cta-icon">
-            <img src={iconExtro} alt="Extrovertidos" />
+            <img src={logoExtrovertidos} alt="Extrovertidos" />
           </div>
           <h3>
             {hasRenewablePlan
               ? "¡Ya puedes volver a suscribirte!"
-              : "Aún no tienes una suscripción activa"}
+              : "¡Suscríbete ahora!"}
           </h3>
-          <p>
-            {hasRenewablePlan
-              ? "Tu cupo ya fue utilizado. Puedes activar nuevamente el mismo plan o elegir una opción distinta."
-              : "¡Suscríbete a un plan para poder publicar en Extrovertidos!"}
-          </p>
+          <p>Elige tu mejor opción y publica ahora en Extrovertidos</p>
           <button
             className="perfil-plan__cta-btn"
             onClick={() => navigate("/activar-plan")}>

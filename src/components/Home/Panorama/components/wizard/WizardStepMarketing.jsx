@@ -66,7 +66,7 @@ const WizardStepMarketing = ({ formData, errors, onChange }) => {
           id="mensaje_marketing"
           name="mensaje_marketing"
           className="publicar-form__textarea publicar-form__textarea--marketing"
-          placeholder="Ej: ¡Las primeras 50 personas recibirán una bebida gratis! 🎉 Sorpresas exclusivas para quienes lleguen temprano..."
+          placeholder="Ej: ¡Las primeras 5 personas en visitarnos recibirán un descuento especial!"
           value={formData.mensaje_marketing}
           onChange={onChange}
           rows={3}
@@ -125,7 +125,7 @@ const WizardStepMarketing = ({ formData, errors, onChange }) => {
       </div>
 
       {/* Etiquetas Complementarias */}
-      <div className="publicar-form__group">
+      <div className="publicar-form__group publicar-form__group--tags">
         <label className="publicar-form__label">
           <FontAwesomeIcon icon={faTags} /> Etiquetas Complementarias (10 Max)
           <span
@@ -146,9 +146,6 @@ const WizardStepMarketing = ({ formData, errors, onChange }) => {
           <FontAwesomeIcon icon={faTags} />
           Ver Etiquetas
         </button>
-        <span className="publicar-form__hint">
-          Selecciona o crea tu etiqueta
-        </span>
         {getSelectedTags().length > 0 && (
           <div className="publicar-form__selected-tags">
             {getSelectedTags().map((tag) => (
@@ -171,7 +168,7 @@ const WizardStepMarketing = ({ formData, errors, onChange }) => {
           id="etiqueta_directa"
           name="etiqueta_directa"
           className={`publicar-form__input ${errors.etiqueta_directa ? "error" : ""}`}
-          placeholder="Ej: ¡Imperdible! o Entrada Liberada"
+          placeholder="Tu evento en una palabra (tenis) (concierto) (festival) (Expo)"
           value={formData.etiqueta_directa || ""}
           onChange={onChange}
           maxLength={50}

@@ -25,7 +25,7 @@ import { useAuth } from "../../context/AuthContext";
 
 const NAV_LINKS = [
   { href: "/panoramas", label: "Panoramas" },
-  { href: "/superguia", label: "Superguía Extrovertidos" },
+  { href: "/superguia", label: "Superguia Extrovertidos" },
   { href: "/publicar-panorama", label: "Publicar Panorama", userOnly: true },
   { href: "/publicar-negocio", label: "Publicar Negocio", userOnly: true },
   {

@@ -55,7 +55,7 @@ const MarketingSection = ({ formData, onChange, onFieldFocus }) => {
             value={formData.mensaje_marketing || ""}
             onChange={onChange}
             onFocus={onFieldFocus}
-            placeholder="Ej: ¡Las primeras 50 personas recibirán un descuento especial! 🎉"
+            placeholder="Ej: ¡Las primeras 5 personas en visitarnos recibirán un descuento especial!"
             rows={3}
             maxLength={1000}
           />

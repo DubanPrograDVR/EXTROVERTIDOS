@@ -201,15 +201,18 @@
 }
 
 .panoramas-page__hero-empty h1 {
-  font-size: 3rem;
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 900;
   color: #000;
   margin: 0 0 10px;
+  line-height: 1.05;
 }
 
 .panoramas-page__hero-empty p {
-  font-size: 1.2rem;
-  color: rgba(0, 0, 0, 0.7);
+  font-size: 1.3rem;
+  color: rgba(0, 0, 0, 0.75);
   margin: 0;
+  max-width: 900px;
 }
 
 /* ===== FILTROS ===== */
@@ -572,7 +575,6 @@
   font-weight: 800;
   color: #fff;
   margin: 0;
-  text-transform: uppercase;
   letter-spacing: 0.05em;
   background: linear-gradient(135deg, #fff 0%, #ccc 100%);
   -webkit-background-clip: text;

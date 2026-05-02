@@ -81,14 +81,20 @@ export default function AdminPriceManager() {
       // Recargar precios desde DB para verificar que se guardaron
       const reloadedPrices = await getPlanPrices();
       setPrices(reloadedPrices);
-      setSavedMessage("✓ Precios actualizados correctamente. Se aplicarán inmediatamente.");
+      setSavedMessage(
+        "✓ Precios actualizados correctamente. Se aplicarán inmediatamente.",
+      );
       // Limpiar mensaje después de 4 segundos
       setTimeout(() => setSavedMessage(""), 4000);
     } catch (err) {
       console.error("[AdminPriceManager] Error guardando precios:", err);
       let errorMsg = "No se pudo guardar la configuracion.";
-      if (err?.message?.includes("permission") || err?.message?.includes("denied")) {
-        errorMsg = "Permiso denegado. Verifica que tengas rol de administrador.";
+      if (
+        err?.message?.includes("permission") ||
+        err?.message?.includes("denied")
+      ) {
+        errorMsg =
+          "Permiso denegado. Verifica que tengas rol de administrador.";
       } else if (err?.message?.includes("not")) {
         errorMsg = "Hubo un problema al guardar. Intenta de nuevo.";
       }

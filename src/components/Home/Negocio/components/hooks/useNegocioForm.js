@@ -10,6 +10,7 @@ import {
   getBusinessCategories,
   getActiveSuperguiaSubscription,
   validateAndConsumeBusinessPublication,
+  refundBusinessPublication,
 } from "../../../../../lib/database";
 import { isPlanesEnabled } from "../../../../../lib/database/settings";
 import { canUserPublishBusiness } from "../../../../../lib/planRules";
@@ -21,7 +22,7 @@ const LOCAL_DRAFT_KEY = "negocio_local_draft_v1";
  * Hook personalizado para manejar el formulario de publicar negocio
  */
 export const useNegocioForm = () => {
-  const { user, isAuthenticated, isAdmin, showToast } = useAuth();
+  const { user, isAuthenticated, isAdmin, isModerator, showToast } = useAuth();
   const navigate = useNavigate();
 
   // Estados - Categorías cargadas desde BD
@@ -412,6 +413,9 @@ export const useNegocioForm = () => {
 
       setIsSubmitting(true);
 
+      let publishResult = null;
+      let createdBusiness = null;
+
       try {
         // NOTA: NO llamar getSession()/refreshSession() aquí.
         // Ver comentario en useEventSubmit.js — compite por el navigator.locks
@@ -419,12 +423,12 @@ export const useNegocioForm = () => {
 
         // 0. Consumir cupo de publicación ANTES de crear el negocio
         // (anti-bypass: validación + consumo atómico en backend)
-        let publishResult = null;
-        if (!isAdmin) {
+        if (!isAdmin && !isModerator) {
           const quickCheck = canUserPublishBusiness({
             subscription: superguiaSubscription,
             planesEnabled,
             isAdmin,
+            isModerator,
           });
 
           if (!quickCheck.canPublish) {
@@ -450,6 +454,21 @@ export const useNegocioForm = () => {
               setIsSubmitting(false);
               return;
             }
+
+            setSuperguiaSubscription((prev) => {
+              if (!prev || publishResult.subscription_id !== prev.id) {
+                return prev;
+              }
+
+              return {
+                ...prev,
+                publicaciones_usadas:
+                  publishResult.publications_used ?? prev.publicaciones_usadas,
+                publicaciones_total:
+                  publishResult.publications_total ?? prev.publicaciones_total,
+                fecha_fin: publishResult.plan_expires_at ?? prev.fecha_fin,
+              };
+            });
           } catch (rpcError) {
             console.error(
               "Error en validación de publicación de negocio:",
@@ -525,7 +544,7 @@ export const useNegocioForm = () => {
         };
 
         // 3. Crear negocio en la BD
-        const createdBusiness = await createBusiness(businessData);
+        createdBusiness = await createBusiness(businessData);
 
         // Crear notificación in-app de "en revisión" (solo usuarios normales)
         if (!isAdmin && createdBusiness?.id) {
@@ -594,6 +613,16 @@ export const useNegocioForm = () => {
         navigate(isAdmin ? "/admin" : "/perfil");
       } catch (error) {
         console.error("Error al crear negocio:", error);
+        if (publishResult?.subscription_id && !createdBusiness) {
+          try {
+            await refundBusinessPublication(user.id);
+          } catch (refundError) {
+            console.warn(
+              "No se pudo devolver el cupo de negocio tras fallar la creación:",
+              refundError,
+            );
+          }
+        }
         if (showToast) showToast("Error al crear el negocio", "error");
       } finally {
         setIsSubmitting(false);
@@ -602,6 +631,7 @@ export const useNegocioForm = () => {
     [
       isAuthenticated,
       isAdmin,
+      isModerator,
       formData,
       user,
       showToast,
@@ -610,6 +640,9 @@ export const useNegocioForm = () => {
       navigate,
       currentDraftId,
       clearLocalDraft,
+      categories,
+      planesEnabled,
+      superguiaSubscription,
     ],
   );
 

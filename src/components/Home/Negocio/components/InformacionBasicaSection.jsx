@@ -86,29 +86,7 @@ const InformacionBasicaSection = ({
           id="descripcion"
           name="descripcion"
           value={formData.descripcion}
-          onChange={(e) => {
-            const MAX = 70;
-            const lines = e.target.value.split("\n");
-            const wrapped = lines
-              .map((line) => {
-                if (line.length <= MAX) return line;
-                const words = line.split(" ");
-                let current = "";
-                const result = [];
-                for (const word of words) {
-                  if (current && (current + " " + word).length > MAX) {
-                    result.push(current);
-                    current = word;
-                  } else {
-                    current = current ? current + " " + word : word;
-                  }
-                }
-                if (current) result.push(current);
-                return result.join("\n");
-              })
-              .join("\n");
-            onChange({ target: { name: "descripcion", value: wrapped } });
-          }}
+          onChange={onChange}
           onFocus={onFieldFocus}
           placeholder="Describe tu negocio, servicios que ofreces, especialidades..."
           rows={4}

@@ -35,7 +35,6 @@
   font-size: 3rem;
   font-weight: 900;
   color: #ffffff;
-  text-transform: capitalize;
   margin: 0;
   text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
 }
@@ -198,7 +197,6 @@
   font-size: 3.2rem;
   font-weight: 900;
   color: #ffffff;
-  text-transform: capitalize;
   margin: 0;
   line-height: 1;
   text-shadow:
@@ -211,7 +209,6 @@
   font-size: 1.4rem;
   font-weight: 600;
   color: #ff6600;
-  text-transform: capitalize;
   margin: 0;
   white-space: nowrap;
   line-height: 1.4;
@@ -224,7 +221,6 @@
   padding: 12px 28px;
   font-size: 0.85rem;
   font-weight: 700;
-  text-transform: capitalize;
   color: #000;
   background: linear-gradient(135deg, #ff6600 0%, #ff8833 50%, #ffaa00 100%);
   border: none;

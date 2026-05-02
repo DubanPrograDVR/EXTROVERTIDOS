@@ -43,33 +43,6 @@ const ACCORDION_SECTIONS = {
   CONTACT: "contact",
 };
 
-const shouldPreserveLineBreaks = (lines) =>
-  lines.length > 1 &&
-  lines.every((line) => {
-    const trimmedLine = line.trim();
-    return /^[^\p{L}\p{N}]/u.test(trimmedLine) || /^\d+[.)-]/.test(trimmedLine);
-  });
-
-const getFormattedTextBlocks = (text) => {
-  if (!text) return [];
-
-  return text
-    .split(/\n\s*\n/)
-    .map((block) => {
-      const lines = block
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean);
-
-      if (lines.length === 0) return null;
-
-      return shouldPreserveLineBreaks(lines)
-        ? lines.join("\n")
-        : lines.join(" ");
-    })
-    .filter(Boolean);
-};
-
 /**
  * Componente AccordionSection reutilizable con icono
  */
@@ -111,6 +84,7 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
     ACCORDION_SECTIONS.DESCRIPTION,
   );
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isInfoExpanded, setIsInfoExpanded] = useState(false);
 
   // Función para alternar secciones del acordeón
   const toggleSection = useCallback((section) => {
@@ -249,22 +223,39 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
             />
             <span className="publication-modal__brand-text">panoramas</span>
           </div>
-          {formData.etiqueta && (
-            <span className="publication-modal__featured-tag">
+          {formData.etiqueta_directa && (
+            <span className="publication-modal__featured-tag publication-modal__featured-tag--desktop">
               <FontAwesomeIcon icon={faTag} />
-              {formData.etiqueta}
+              {formData.etiqueta_directa}
             </span>
           )}
-          <span className="publication-modal__draft-badge">Vista Previa</span>
           <button className="publication-modal__close" onClick={onClose}>
             <FontAwesomeIcon icon={faTimes} />
           </button>
         </div>
 
         {/* Cuerpo del modal */}
-        <div className="publication-modal__body">
+        <div
+          className={`publication-modal__body ${isInfoExpanded ? "publication-modal__body--expanded" : ""}`}>
           {/* SECCIÓN IZQUIERDA: IMAGEN */}
-          <div className="publication-modal__left">
+          <div
+            className={`publication-modal__left ${isInfoExpanded ? "publication-modal__left--hidden" : ""}`}>
+            {formData.etiqueta_directa && (
+              <span className="publication-modal__featured-tag publication-modal__featured-tag--mobile">
+                <FontAwesomeIcon icon={faTag} />
+                {formData.etiqueta_directa}
+              </span>
+            )}
+            <button
+              className="publication-modal__mobile-info-btn"
+              onClick={() => setIsInfoExpanded(true)}>
+              <FontAwesomeIcon icon={faInfoCircle} />
+              Más info
+              <FontAwesomeIcon
+                icon={faChevronUp}
+                className="publication-modal__mobile-info-btn-arrow"
+              />
+            </button>
             {previewImages && previewImages.length > 0 ? (
               <>
                 <div
@@ -327,7 +318,20 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
           </div>
 
           {/* SECCIÓN DERECHA: CONTENIDO */}
-          <div className="publication-modal__right">
+          <div
+            className={`publication-modal__right ${isInfoExpanded ? "publication-modal__right--expanded" : ""}`}>
+            {isInfoExpanded && (
+              <button
+                className="publication-modal__mobile-image-btn"
+                onClick={() => setIsInfoExpanded(false)}>
+                <FontAwesomeIcon icon={faImage} />
+                Ver imagen
+                <FontAwesomeIcon
+                  icon={faChevronDown}
+                  className="publication-modal__mobile-info-btn-arrow"
+                />
+              </button>
+            )}
             {/* Título */}
             <div className="publication-modal__title-section">
               <h2>{formData.titulo || "Título del evento"}</h2>
@@ -351,9 +355,7 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
                 onToggle={() => toggleSection(ACCORDION_SECTIONS.DESCRIPTION)}>
                 <div className="publication-modal__description-content">
                   {formData.descripcion ? (
-                    getFormattedTextBlocks(formData.descripcion).map(
-                      (paragraph, index) => <p key={index}>{paragraph}</p>,
-                    )
+                    <p>{formData.descripcion}</p>
                   ) : (
                     <p>Sin descripción agregada aún...</p>
                   )}
@@ -370,11 +372,7 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
                     toggleSection(ACCORDION_SECTIONS.MARKETING_1)
                   }>
                   <div className="publication-modal__marketing-content">
-                    {getFormattedTextBlocks(formData.mensaje_marketing).map(
-                      (paragraph, index) => (
-                        <p key={index}>{paragraph}</p>
-                      ),
-                    )}
+                    <p>{formData.mensaje_marketing}</p>
                   </div>
                 </AccordionSection>
               )}
@@ -389,11 +387,7 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
                     toggleSection(ACCORDION_SECTIONS.MARKETING_2)
                   }>
                   <div className="publication-modal__marketing-content">
-                    {getFormattedTextBlocks(formData.mensaje_marketing_2).map(
-                      (paragraph, index) => (
-                        <p key={index}>{paragraph}</p>
-                      ),
-                    )}
+                    <p>{formData.mensaje_marketing_2}</p>
                   </div>
                 </AccordionSection>
               )}
@@ -589,14 +583,6 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
                 </div>
               </div>
             )}
-
-            {/* Footer con nota */}
-            <div className="publication-modal__draft-footer">
-              <p>
-                <strong>Nota:</strong> Esta es una vista previa. Los cambios que
-                realices en el formulario se reflejarán aquí automáticamente.
-              </p>
-            </div>
           </div>
         </div>
       </div>

@@ -92,7 +92,7 @@ const BASE_PLANES_PANORAMAS = [
  */
 const BASE_PLAN_SUPERGUIA = {
   id: "superguia",
-  nombre: "Superguía Extrovertidos",
+  nombre: "Superguia Extrovertidos",
   descripcion: "¡Publica Tu Negocio!",
   duracion: "365 días",
   features: [
@@ -237,9 +237,9 @@ export default function ActivarPlan() {
 
           if (s.plan === "superguia") {
             // Solo bloquear si tiene cupo disponible
-            const sgTotal = Number(s.publicaciones_total ?? 0);
+            const sgTotal = Math.max(Number(s.publicaciones_total ?? 0), 1);
             const sgUsed = Number(s.publicaciones_usadas ?? 0);
-            const sgHasQuota = sgTotal === 0 || sgUsed < sgTotal;
+            const sgHasQuota = sgUsed < sgTotal;
             if (sgHasQuota) {
               superguiaActiva = true;
             }
@@ -544,7 +544,7 @@ export default function ActivarPlan() {
             className="activar-plan__section-icon"
           />
           <h2 className="activar-plan__section-title">
-            Superguía Extrovertidos
+            Superguia Extrovertidos
           </h2>
         </div>
 

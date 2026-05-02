@@ -43,7 +43,7 @@ const socialLinks = [
 const navLinks = [
   { to: "/", label: "Inicio" },
   { to: "/panoramas", label: "Panoramas" },
-  { to: "/superguia", label: "Superguía Extrovertidos" },
+  { to: "/superguia", label: "Superguia Extrovertidos" },
 ];
 
 const legalLinks = [
@@ -66,7 +66,7 @@ export default function Footer() {
               <img src={logo} alt="Extrovertidos" className="footer__logo" />
             </Link>
             <p className="footer__slogan">
-              Los Panoramas, Actividades y Eventos de tu Ciudad
+              Panoramas, Actividades y Eventos de tu ciudad
             </p>
           </div>
 

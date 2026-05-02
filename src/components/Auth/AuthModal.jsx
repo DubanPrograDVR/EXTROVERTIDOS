@@ -82,7 +82,7 @@ export default function AuthModal({ isOpen, onClose, persistent = false }) {
 
         <h2 className="auth-modal__title">¡Bienvenido a Extrovertidos!</h2>
         <p className="auth-modal__subtitle">
-          Inicia sesión para acceder a todas las funcionalidades
+          Inicia sesión para acceder a tu cuenta
         </p>
 
         <div className="auth-modal__google-wrapper">
@@ -106,14 +106,15 @@ export default function AuthModal({ isOpen, onClose, persistent = false }) {
         </div>
 
         <p className="auth-modal__terms">
-          Al continuar, aceptas nuestros{" "}
+          Al continuar, aceptas los{" "}
           <a href="/terminos" target="_blank" rel="noopener noreferrer">
-            Términos de Servicio
+            Términos y Condiciones
           </a>{" "}
-          y{" "}
+          y la{" "}
           <a href="/privacidad" target="_blank" rel="noopener noreferrer">
             Política de Privacidad
           </a>
+          .
         </p>
       </div>
     </div>

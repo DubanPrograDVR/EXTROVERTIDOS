@@ -246,9 +246,9 @@
 }
 
 .perfil-plan__cta-icon {
-  width: 70px;
-  height: 70px;
-  margin: 0 auto 20px;
+  width: min(220px, 70%);
+  height: 86px;
+  margin: 0 auto 18px;
 }
 
 .perfil-plan__cta-icon img {

@@ -16,8 +16,8 @@ import "./styles/ticket-modal.css";
 const TICKET_OPTIONS = [
   {
     value: "sin_entrada",
-    label: "No informar",
-    description: "No se informa tipo de entrada para este evento",
+    label: "Pronto más información",
+    description: "Informacion de entradas pronto",
     icon: faBan,
   },
   {

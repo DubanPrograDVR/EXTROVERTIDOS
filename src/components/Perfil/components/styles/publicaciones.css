@@ -157,6 +157,18 @@
   color: #ff6600;
 }
 
+.perfil-publication-card__btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.perfil-publication-card__btn--locked,
+.perfil-publication-card__btn--locked:hover {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.7);
+}
+
 .perfil-publication-card__btn--delete:hover {
   border-color: #ef4444;
   color: #ef4444;

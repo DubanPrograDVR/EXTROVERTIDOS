@@ -18,6 +18,7 @@ import PublicationGrid from "../Superguia/PublicationGrid";
 import Carousel from "../Superguia/Carousel";
 import BusinessModal from "../Superguia/BusinessModal";
 import EmptyPanoramas from "../Superguia/EmptyPanoramas";
+import AuthModal from "../Auth/AuthModal";
 import { formatDateKey } from "../Superguia/DateCalendar";
 import {
   getPublishedEvents,
@@ -25,6 +26,7 @@ import {
   getPublishedBusinesses,
 } from "../../lib/database";
 import { useCity } from "../../context/CityContext";
+import { useAuth } from "../../context/AuthContext";
 import { useRealtimeRefetch } from "../../hooks/useRealtimeRefetch";
 import { useHighlightCard } from "../../hooks/useHighlightCard";
 import { LOCATIONS, mapCategoriesToUI } from "../Superguia/data";
@@ -36,6 +38,7 @@ export default function PanoramasPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { selectCity } = useCity();
+  const { isAuthenticated } = useAuth();
 
   // Estados de datos
   const [events, setEvents] = useState([]);
@@ -80,11 +83,21 @@ export default function PanoramasPage() {
   // Estado del modal
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Estado para negocios (carrusel cruzado)
   const [businesses, setBusinesses] = useState([]);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [isBusinessModalOpen, setIsBusinessModalOpen] = useState(false);
+
+  const handlePublishPanoramaClick = useCallback(() => {
+    if (!isAuthenticated) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    navigate("/publicar-panorama");
+  }, [isAuthenticated, navigate]);
 
   // Leer query params al cargar y sincronizar con CityContext y filtros
   useEffect(() => {
@@ -926,9 +939,7 @@ export default function PanoramasPage() {
         ) : (
           <div className="panoramas-page__hero-empty">
             <h1>Panoramas</h1>
-            <p>
-              Descubre los mejores panoramas, actividades y eventos de tu ciudad
-            </p>
+            <p>Explora los mejores panoramas de tu ciudad</p>
           </div>
         )}
       </section>
@@ -944,6 +955,7 @@ export default function PanoramasPage() {
           selectedDate={selectedDate}
           selectedPrice={selectedPrice}
           searchQuery={searchQuery}
+          searchPlaceholder="Buscar eventos, actividades…"
           eventsPerDay={eventsPerDay}
           recurringDates={recurringDates}
           availableComunas={availableComunas}
@@ -973,7 +985,7 @@ export default function PanoramasPage() {
           </h2>
           <button
             className="panoramas-page__add-btn"
-            onClick={() => navigate("/publicar-panorama")}>
+            onClick={handlePublishPanoramaClick}>
             <FontAwesomeIcon icon={faPlus} />
             Publicar Panorama
           </button>
@@ -987,6 +999,7 @@ export default function PanoramasPage() {
           <EmptyPanoramas
             onClearFilters={handleClearFilters}
             hasFilters={hasActiveFilters}
+            onPublishClick={handlePublishPanoramaClick}
           />
         ) : (
           <>
@@ -1017,12 +1030,12 @@ export default function PanoramasPage() {
                 icon={faStore}
                 className="panoramas-page__featured-icon"
               />
-              <h2>Descubre negocios</h2>
+              <h2>Descubre Negocios</h2>
             </div>
             <p className="panoramas-page__featured-subtitle">
               {selectedCity
                 ? `Negocios en ${LOCATIONS[selectedCity]?.nombre || selectedCity}`
-                : "Explora los mejores negocios y servicios de la región"}
+                : "Explora los mejores Negocios y Servicios de tu Ciudad"}
             </p>
           </div>
           <Carousel
@@ -1036,11 +1049,8 @@ export default function PanoramasPage() {
       <section className="panoramas-page__cta">
         <div className="panoramas-page__cta-content">
           <h2>¿Tienes un evento?</h2>
-          <p>
-            Publica tu panorama y llega a miles de personas en la región del
-            Maule
-          </p>
-          <button onClick={() => navigate("/publicar-panorama")}>
+          <p>Publica tu panorama y llega a miles de personas</p>
+          <button onClick={handlePublishPanoramaClick}>
             <FontAwesomeIcon icon={faPlus} />
             Publicar Panorama
           </button>
@@ -1060,6 +1070,11 @@ export default function PanoramasPage() {
         business={selectedBusiness}
         isOpen={isBusinessModalOpen}
         onClose={handleCloseBusinessModal}
+      />
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
       />
 
       <Footer />

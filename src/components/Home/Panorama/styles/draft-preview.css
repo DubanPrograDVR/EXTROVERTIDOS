@@ -4,22 +4,6 @@
 
 /* ===== ESTILOS ESPECÍFICOS PARA EL BORRADOR ===== */
 
-/* Badge de Vista Previa - centrado */
-.publication-modal__draft-badge {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  background: rgba(255, 193, 7, 0.2);
-  color: #ffc107;
-  border: 1px solid rgba(255, 193, 7, 0.3);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
 /* Variante del modal para Draft */
 .publication-modal.publication-modal--draft {
   width: 95%;
@@ -38,6 +22,34 @@
     .publication-modal__right {
     padding-left: 24px;
     padding-right: 24px;
+  }
+}
+
+@media (max-width: 768px) and (orientation: portrait) {
+  .publication-modal.publication-modal--business-draft
+    .publication-modal__left {
+    min-height: 0;
+    max-height: none;
+    flex: 1;
+  }
+
+  .publication-modal.publication-modal--business-draft
+    .publication-modal__right {
+    display: none;
+  }
+
+  .publication-modal.publication-modal--business-draft
+    .publication-modal__left.publication-modal__left--hidden {
+    display: none;
+  }
+
+  .publication-modal.publication-modal--business-draft
+    .publication-modal__right.publication-modal__right--expanded {
+    display: flex;
+    flex: 1;
+    height: 100%;
+    max-height: none;
+    overflow-y: auto;
   }
 }
 
@@ -68,27 +80,6 @@
   font-size: 0.85rem;
   margin: 0;
   opacity: 0.7;
-}
-
-/* Footer del borrador */
-.publication-modal__draft-footer {
-  margin-top: auto;
-  padding: 12px 16px;
-  background: rgba(255, 193, 7, 0.1);
-  border-radius: 10px;
-  border: 1px solid rgba(255, 193, 7, 0.2);
-}
-
-.publication-modal__draft-footer p {
-  margin: 0;
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.7);
-  text-align: center;
-  line-height: 1.5;
-}
-
-.publication-modal__draft-footer strong {
-  color: #ffc107;
 }
 
 /* Estilos de horarios simplificados para borrador */
@@ -181,11 +172,6 @@
 }
 
 @media (max-width: 768px) {
-  .publication-modal__draft-badge {
-    font-size: 1.1rem;
-    padding: 8px 14px;
-  }
-
   .publication-modal__no-image svg {
     font-size: 3rem;
   }
@@ -202,13 +188,5 @@
 @media (max-width: 500px) {
   .publication-modal.publication-modal--draft {
     height: 95vh;
-  }
-
-  .publication-modal__draft-footer {
-    padding: 10px 12px;
-  }
-
-  .publication-modal__draft-footer p {
-    font-size: 1.2rem;
   }
 }

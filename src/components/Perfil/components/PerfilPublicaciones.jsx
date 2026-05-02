@@ -252,6 +252,8 @@ export default function PerfilPublicaciones({
               Array.isArray(pub.imagenes) && pub.imagenes.length > 0
                 ? pub.imagenes[0]
                 : "/img/Home1.png";
+            const isReviewLocked =
+              pub.estado === "en_revision" || pub.estado === "pendiente";
 
             return (
               <article key={pub.id} className="perfil-publication-card">
@@ -357,15 +359,15 @@ export default function PerfilPublicaciones({
                       {loadingView === pub.id ? "Cargando..." : "Ver"}
                     </button>
                     <button
-                      className="perfil-publication-card__btn"
+                      className={`perfil-publication-card__btn ${
+                        isReviewLocked
+                          ? "perfil-publication-card__btn--locked"
+                          : ""
+                      }`}
                       onClick={() => handleEdit(pub)}
-                      disabled={
-                        pub.estado === "en_revision" ||
-                        pub.estado === "pendiente"
-                      }
+                      disabled={isReviewLocked}
                       title={
-                        pub.estado === "en_revision" ||
-                        pub.estado === "pendiente"
+                        isReviewLocked
                           ? "No puedes editar mientras está en revisión"
                           : "Editar"
                       }>

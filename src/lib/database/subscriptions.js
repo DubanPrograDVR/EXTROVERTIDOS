@@ -20,10 +20,8 @@ function hasRemainingQuota(subscription) {
   if (!subscription) return false;
   if (subscription.plan === "panorama_ilimitado") return true;
 
-  // Superguía: suscripciones antiguas con total=0 no tienen límite
   if (subscription.plan === "superguia") {
-    const total = Number(subscription.publicaciones_total ?? 0);
-    if (total === 0) return true;
+    const total = Math.max(Number(subscription.publicaciones_total ?? 0), 1);
     const used = Number(subscription.publicaciones_usadas ?? 0);
     return used < total;
   }

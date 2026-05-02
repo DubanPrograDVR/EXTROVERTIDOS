@@ -55,7 +55,6 @@
   font-size: clamp(2.5rem, 6vw, 4.5rem);
   font-weight: 900;
   margin: 0;
-  text-transform: capitalize;
   letter-spacing: 2px;
   -webkit-text-fill-color: #fff;
 }
@@ -65,7 +64,6 @@
   font-size: 1.3rem;
   margin: 0.75rem 0 0;
   font-weight: 500;
-  text-transform: capitalize;
 }
 
 /* ===== CONTAINER PRINCIPAL ===== */
@@ -330,7 +328,6 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  text-transform: capitalize;
   letter-spacing: 0.5px;
 }
 
@@ -492,7 +489,6 @@
   font-weight: 800;
   color: #fff;
   margin: 0;
-  text-transform: uppercase;
   letter-spacing: 0.05em;
   background: linear-gradient(135deg, #fff 0%, #ccc 100%);
   -webkit-background-clip: text;

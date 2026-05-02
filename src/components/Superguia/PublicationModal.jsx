@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
@@ -11,6 +11,7 @@ import {
   getLikesCount,
   toggleFavorite,
   isFavorite,
+  uploadEventImage,
 } from "../../lib/database";
 import "./styles/PublicationModal.css";
 import "./styles/BusinessModal.css";
@@ -32,6 +33,7 @@ import {
   faChevronRight,
   faRoute,
   faExternalLinkAlt,
+  faPlus,
   faShareAlt,
   faHeart,
   faBookmark,
@@ -48,6 +50,7 @@ import {
   faInfoCircle,
   faFire,
   faImage,
+  faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faInstagram,
@@ -64,38 +67,13 @@ const ACCORDION_SECTIONS = {
   DESCRIPTION: "description",
   MARKETING_1: "marketing_1",
   MARKETING_2: "marketing_2",
+  HASHTAGS: "hashtags",
+  IMAGES: "images",
   INFORMATION: "information",
   LOCATION: "location",
   SCHEDULE: "schedule",
   CONTACT: "contact",
   MAP: "map",
-};
-
-const shouldPreserveLineBreaks = (lines) =>
-  lines.length > 1 &&
-  lines.every((line) => {
-    const trimmedLine = line.trim();
-    return /^[^\p{L}\p{N}]/u.test(trimmedLine) || /^\d+[.)-]/.test(trimmedLine);
-  });
-
-const getFormattedTextBlocks = (text) => {
-  if (!text) return [];
-
-  return text
-    .split(/\n\s*\n/)
-    .map((block) => {
-      const lines = block
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean);
-
-      if (lines.length === 0) return null;
-
-      return shouldPreserveLineBreaks(lines)
-        ? lines.join("\n")
-        : lines.join(" ");
-    })
-    .filter(Boolean);
 };
 
 /**
@@ -170,11 +148,30 @@ export default function PublicationModal({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isEditMode, setIsEditMode] = useState(startInEditMode);
   const [editData, setEditData] = useState({});
+  const [hashtagInput, setHashtagInput] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [newImageFiles, setNewImageFiles] = useState([]);
   const [categoriesList, setCategoriesList] = useState([]);
   const [isInfoExpanded, setIsInfoExpanded] = useState(false);
+  const fileInputRef = useRef(null);
 
   const canEdit = isAdmin || isModerator;
+  const canManageAdminMedia = isAdmin && isEditMode;
+
+  const newImagePreviews = useMemo(
+    () =>
+      newImageFiles.map((file) => ({
+        file,
+        url: URL.createObjectURL(file),
+      })),
+    [newImageFiles],
+  );
+
+  useEffect(() => {
+    return () => {
+      newImagePreviews.forEach(({ url }) => URL.revokeObjectURL(url));
+    };
+  }, [newImagePreviews]);
 
   // Provincias del Maule
   const PROVINCIAS = ["Talca", "Curicó", "Linares", "Cauquenes"];
@@ -296,6 +293,11 @@ export default function PublicationModal({
     setIsEditMode(startInEditMode);
     setIsInfoExpanded(false);
     setLiveOverrides(null);
+    setHashtagInput("");
+    setNewImageFiles([]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
     // Inicializar datos de edición
     if (publication) {
       setEditData({
@@ -303,6 +305,8 @@ export default function PublicationModal({
         subtitulo: publication.subtitulo || "",
         descripcion: publication.descripcion || "",
         organizador: publication.organizador || "",
+        hashtags: publication.hashtags || "",
+        imagenes: publication.imagenes || [],
         category_id: publication.category_id || "",
         fecha_evento: publication.fecha_evento || "",
         fecha_fin: publication.fecha_fin || "",
@@ -340,6 +344,14 @@ export default function PublicationModal({
       });
     }
   }, [publication?.id, isOpen]);
+
+  const validImagesLength = canManageAdminMedia
+    ? Math.max(editData.imagenes?.length || 0, 1)
+    : Math.max(publication?.imagenes?.length || 0, 1);
+
+  useEffect(() => {
+    setCurrentImageIndex((prev) => Math.min(prev, validImagesLength - 1));
+  }, [validImagesLength]);
 
   if (!isOpen || !publication) return null;
 
@@ -402,10 +414,25 @@ export default function PublicationModal({
       .map((tag) => `#${tag}`);
   };
 
+  const parseEditableHashtags = (value) => {
+    if (!value) return [];
+    return value
+      .split("#")
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.length > 0)
+      .map((tag) => `#${tag.toUpperCase()}`);
+  };
+
   const hashtagsList = parseHashtags();
 
   // Obtener array de imágenes válidas
   const getValidImages = () => {
+    if (canManageAdminMedia) {
+      if (Array.isArray(editData.imagenes) && editData.imagenes.length > 0) {
+        return editData.imagenes;
+      }
+      return ["/img/Home1.png"];
+    }
     if (Array.isArray(imagenes) && imagenes.length > 0) {
       return imagenes;
     }
@@ -425,6 +452,43 @@ export default function PublicationModal({
   const handleNextImage = () => {
     setCurrentImageIndex((prev) =>
       prev === validImages.length - 1 ? 0 : prev + 1,
+    );
+  };
+
+  const handleRemoveImage = (index) => {
+    setEditData((prev) => ({
+      ...prev,
+      imagenes: (prev.imagenes || []).filter(
+        (_, imageIndex) => imageIndex !== index,
+      ),
+    }));
+  };
+
+  const handleAddImages = (event) => {
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
+
+    const maxImages = 5;
+    const currentTotal =
+      (editData.imagenes?.length || 0) + newImageFiles.length;
+    const available = maxImages - currentTotal;
+
+    if (available <= 0) {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
+
+    setNewImageFiles((prev) => [...prev, ...files.slice(0, available)]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveNewImage = (index) => {
+    setNewImageFiles((prev) =>
+      prev.filter((_, imageIndex) => imageIndex !== index),
     );
   };
 
@@ -669,9 +733,34 @@ export default function PublicationModal({
         cleanedData.tipo_entrada = "venta_externa";
       }
 
+      if (isAdmin && newImageFiles.length > 0) {
+        const imageOwnerId = publication.user_id || user?.id;
+
+        if (!imageOwnerId) {
+          throw new Error(
+            "No se pudo determinar el propietario para subir las imágenes",
+          );
+        }
+
+        const uploadedUrls = [];
+        for (const file of newImageFiles) {
+          const imageUrl = await uploadEventImage(file, imageOwnerId);
+          uploadedUrls.push(imageUrl);
+        }
+
+        cleanedData.imagenes = [
+          ...(cleanedData.imagenes || []),
+          ...uploadedUrls,
+        ];
+      }
+
       await updateEvent(publication.id, cleanedData, { adminOverride: true });
       showToast("Cambios guardados exitosamente", "success");
       setIsEditMode(false);
+      setNewImageFiles([]);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
       // Aplicar los cambios en vivo sobre la vista previa del modal
       setLiveOverrides((prev) => ({ ...(prev || {}), ...cleanedData }));
       if (onUpdate) {
@@ -688,11 +777,18 @@ export default function PublicationModal({
   // Cancelar edición
   const handleCancelEdit = () => {
     setIsEditMode(false);
+    setHashtagInput("");
+    setNewImageFiles([]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
     setEditData({
       titulo: publication.titulo || "",
       subtitulo: publication.subtitulo || "",
       descripcion: publication.descripcion || "",
       organizador: publication.organizador || "",
+      hashtags: publication.hashtags || "",
+      imagenes: publication.imagenes || [],
       category_id: publication.category_id || "",
       fecha_evento: publication.fecha_evento || "",
       fecha_fin: publication.fecha_fin || "",
@@ -764,7 +860,7 @@ export default function PublicationModal({
               <span className="publication-modal__brand-text">panoramas</span>
             </div>
             {!isEditMode && etiqueta_directa && (
-              <span className="publication-modal__featured-tag">
+              <span className="publication-modal__featured-tag publication-modal__featured-tag--desktop">
                 <FontAwesomeIcon icon={faTag} />
                 {etiqueta_directa}
               </span>
@@ -784,7 +880,7 @@ export default function PublicationModal({
                     </option>
                   ))}
                 </select>
-                {modalVariant !== "negocio" && (
+                {modalVariant !== "negocio" && !isAdmin && (
                   <input
                     type="text"
                     className="publication-modal__category-select"
@@ -841,6 +937,12 @@ export default function PublicationModal({
           {/* ===== SECCIÓN IZQUIERDA: IMAGEN ===== */}
           <div
             className={`publication-modal__left ${isInfoExpanded ? "publication-modal__left--hidden" : ""}`}>
+            {!isEditMode && etiqueta_directa && (
+              <span className="publication-modal__featured-tag publication-modal__featured-tag--mobile">
+                <FontAwesomeIcon icon={faTag} />
+                {etiqueta_directa}
+              </span>
+            )}
             {/* Botón "Más info" flotante sobre la imagen (solo móvil) */}
             <button
               className="publication-modal__mobile-info-btn"
@@ -982,10 +1084,7 @@ export default function PublicationModal({
                     toggleSection(ACCORDION_SECTIONS.DESCRIPTION)
                   }>
                   <div className="publication-modal__description-content">
-                    {!isEditMode &&
-                      getFormattedTextBlocks(descripcion).map(
-                        (paragraph, index) => <p key={index}>{paragraph}</p>,
-                      )}
+                    {!isEditMode && <p>{descripcion}</p>}
                     {isEditMode && (
                       <textarea
                         className="publication-modal__edit-textarea"
@@ -1030,10 +1129,7 @@ export default function PublicationModal({
                     toggleSection(ACCORDION_SECTIONS.MARKETING_1)
                   }>
                   <div className="publication-modal__marketing-content">
-                    {!isEditMode &&
-                      getFormattedTextBlocks(mensaje_marketing).map(
-                        (paragraph, index) => <p key={index}>{paragraph}</p>,
-                      )}
+                    {!isEditMode && <p>{mensaje_marketing}</p>}
                     {isEditMode && (
                       <div className="publication-modal__edit-section">
                         <label className="publication-modal__edit-label">
@@ -1088,10 +1184,7 @@ export default function PublicationModal({
                     toggleSection(ACCORDION_SECTIONS.MARKETING_2)
                   }>
                   <div className="publication-modal__marketing-content">
-                    {!isEditMode &&
-                      getFormattedTextBlocks(mensaje_marketing_2).map(
-                        (paragraph, index) => <p key={index}>{paragraph}</p>,
-                      )}
+                    {!isEditMode && <p>{mensaje_marketing_2}</p>}
                     {isEditMode && (
                       <div className="publication-modal__edit-section">
                         <label className="publication-modal__edit-label">
@@ -1127,6 +1220,372 @@ export default function PublicationModal({
                           rows={3}
                         />
                       </div>
+                    )}
+                  </div>
+                </AccordionSection>
+              )}
+
+              {isAdmin && isEditMode && (
+                <AccordionSection
+                  title="Hashtags"
+                  icon={faHashtag}
+                  isOpen={activeSection === ACCORDION_SECTIONS.HASHTAGS}
+                  onToggle={() => toggleSection(ACCORDION_SECTIONS.HASHTAGS)}>
+                  <div className="publication-modal__edit-section">
+                    {(() => {
+                      const currentTags = parseEditableHashtags(
+                        editData.hashtags || "",
+                      );
+
+                      const removeTag = (tagToRemove) => {
+                        const updated = currentTags
+                          .filter((tag) => tag !== tagToRemove)
+                          .join(" ");
+                        setEditData({
+                          ...editData,
+                          hashtags: updated,
+                        });
+                      };
+
+                      const addTag = () => {
+                        const raw = hashtagInput.trim().toUpperCase();
+                        if (!raw) return;
+
+                        const formatted = raw.startsWith("#") ? raw : `#${raw}`;
+                        if (
+                          currentTags.includes(formatted) ||
+                          currentTags.length >= 10
+                        ) {
+                          return;
+                        }
+
+                        setEditData({
+                          ...editData,
+                          hashtags: [...currentTags, formatted].join(" "),
+                        });
+                        setHashtagInput("");
+                      };
+
+                      return (
+                        <>
+                          {currentTags.length > 0 && (
+                            <div
+                              style={{
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: "8px",
+                                marginBottom: "14px",
+                              }}>
+                              {currentTags.map((tag) => (
+                                <span
+                                  key={tag}
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "6px",
+                                    background: "rgba(255,102,0,0.15)",
+                                    border: "1px solid rgba(255,102,0,0.4)",
+                                    color: "#ff6600",
+                                    borderRadius: "20px",
+                                    padding: "4px 12px",
+                                    fontSize: "0.82rem",
+                                    fontWeight: 600,
+                                  }}>
+                                  {tag}
+                                  <button
+                                    type="button"
+                                    onClick={() => removeTag(tag)}
+                                    aria-label={`Eliminar ${tag}`}
+                                    style={{
+                                      background: "none",
+                                      border: "none",
+                                      cursor: "pointer",
+                                      color: "#ff6600",
+                                      padding: "0",
+                                      lineHeight: 1,
+                                      fontSize: "0.85rem",
+                                      display: "flex",
+                                      alignItems: "center",
+                                    }}>
+                                    <FontAwesomeIcon icon={faTimes} />
+                                  </button>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          {currentTags.length < 10 && (
+                            <div style={{ display: "flex", gap: "8px" }}>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  flex: 1,
+                                  background: "rgba(255,255,255,0.05)",
+                                  border: "1px solid rgba(255,255,255,0.15)",
+                                  borderRadius: "8px",
+                                  padding: "0 10px",
+                                  gap: "4px",
+                                }}>
+                                <FontAwesomeIcon
+                                  icon={faHashtag}
+                                  style={{
+                                    color: "#ff6600",
+                                    fontSize: "0.85rem",
+                                  }}
+                                />
+                                <input
+                                  type="text"
+                                  className="publication-modal__edit-input"
+                                  style={{
+                                    background: "transparent",
+                                    border: "none",
+                                    padding: "8px 4px",
+                                    flex: 1,
+                                  }}
+                                  value={hashtagInput}
+                                  onChange={(e) =>
+                                    setHashtagInput(e.target.value)
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault();
+                                      addTag();
+                                    }
+                                  }}
+                                  placeholder="Nuevo hashtag..."
+                                  maxLength={30}
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                className="publication-modal__save-btn"
+                                style={{
+                                  padding: "8px 16px",
+                                  minWidth: "auto",
+                                }}
+                                onClick={addTag}
+                                disabled={!hashtagInput.trim()}>
+                                <FontAwesomeIcon icon={faPlus} />
+                                Agregar
+                              </button>
+                            </div>
+                          )}
+
+                          <p
+                            style={{
+                              color: "rgba(255,255,255,0.35)",
+                              fontSize: "0.78rem",
+                              margin: "8px 0 0",
+                            }}>
+                            {currentTags.length}/10 hashtags
+                          </p>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </AccordionSection>
+              )}
+
+              {isAdmin && isEditMode && (
+                <AccordionSection
+                  title="Imágenes y etiqueta"
+                  icon={faImage}
+                  isOpen={activeSection === ACCORDION_SECTIONS.IMAGES}
+                  onToggle={() => toggleSection(ACCORDION_SECTIONS.IMAGES)}>
+                  <div className="publication-modal__edit-section">
+                    <label className="publication-modal__edit-label">
+                      <FontAwesomeIcon icon={faTag} /> Etiqueta destacada
+                    </label>
+                    <input
+                      type="text"
+                      className="publication-modal__edit-input"
+                      value={editData.etiqueta_directa || ""}
+                      onChange={(e) =>
+                        setEditData({
+                          ...editData,
+                          etiqueta_directa: e.target.value,
+                        })
+                      }
+                      placeholder="Imperdible, Gratis, Últimos cupos..."
+                      maxLength={50}
+                    />
+
+                    <p
+                      style={{
+                        color: "rgba(255,255,255,0.5)",
+                        fontSize: "0.85rem",
+                        margin: "12px 0",
+                      }}>
+                      <FontAwesomeIcon icon={faInfoCircle} /> Puedes eliminar
+                      imágenes existentes y agregar hasta 5 en total.
+                    </p>
+
+                    {editData.imagenes?.length > 0 ? (
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns:
+                            "repeat(auto-fill, minmax(100px, 1fr))",
+                          gap: "10px",
+                        }}>
+                        {editData.imagenes.map((imageUrl, index) => (
+                          <div
+                            key={imageUrl}
+                            style={{
+                              position: "relative",
+                              aspectRatio: "1",
+                              borderRadius: "8px",
+                              overflow: "hidden",
+                              border: "1px solid rgba(255,255,255,0.1)",
+                            }}>
+                            <img
+                              src={imageUrl}
+                              alt={`Imagen ${index + 1}`}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveImage(index)}
+                              style={{
+                                position: "absolute",
+                                top: "4px",
+                                right: "4px",
+                                width: "24px",
+                                height: "24px",
+                                borderRadius: "50%",
+                                background: "rgba(255,68,68,0.9)",
+                                border: "none",
+                                color: "#fff",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "0.65rem",
+                              }}>
+                              <FontAwesomeIcon icon={faTrash} />
+                            </button>
+                            {index === 0 && (
+                              <span
+                                style={{
+                                  position: "absolute",
+                                  bottom: "4px",
+                                  left: "4px",
+                                  padding: "2px 6px",
+                                  background: "#ff6600",
+                                  color: "#000",
+                                  fontSize: "0.6rem",
+                                  fontWeight: "700",
+                                  borderRadius: "4px",
+                                }}>
+                                Principal
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          textAlign: "center",
+                          padding: "20px",
+                          color: "rgba(255,255,255,0.4)",
+                        }}>
+                        <FontAwesomeIcon
+                          icon={faImage}
+                          style={{ fontSize: "2rem", marginBottom: "8px" }}
+                        />
+                        <p>No hay imágenes</p>
+                      </div>
+                    )}
+
+                    {newImagePreviews.length > 0 && (
+                      <>
+                        <p
+                          style={{
+                            color: "#ff6600",
+                            fontSize: "0.85rem",
+                            margin: "12px 0 8px",
+                            fontWeight: "600",
+                          }}>
+                          Nuevas imágenes a subir:
+                        </p>
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns:
+                              "repeat(auto-fill, minmax(100px, 1fr))",
+                            gap: "10px",
+                          }}>
+                          {newImagePreviews.map(({ file, url }, index) => (
+                            <div
+                              key={`${file.name}-${index}`}
+                              style={{
+                                position: "relative",
+                                aspectRatio: "1",
+                                borderRadius: "8px",
+                                overflow: "hidden",
+                                border: "2px solid #ff6600",
+                              }}>
+                              <img
+                                src={url}
+                                alt={`Nueva imagen ${index + 1}`}
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveNewImage(index)}
+                                style={{
+                                  position: "absolute",
+                                  top: "4px",
+                                  right: "4px",
+                                  width: "24px",
+                                  height: "24px",
+                                  borderRadius: "50%",
+                                  background: "rgba(255,68,68,0.9)",
+                                  border: "none",
+                                  color: "#fff",
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontSize: "0.65rem",
+                                }}>
+                                <FontAwesomeIcon icon={faTrash} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+
+                    {(editData.imagenes?.length || 0) + newImageFiles.length <
+                      5 && (
+                      <>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          multiple
+                          onChange={handleAddImages}
+                          style={{ display: "none" }}
+                        />
+                        <button
+                          type="button"
+                          className="publication-modal__save-btn"
+                          onClick={() => fileInputRef.current?.click()}
+                          style={{ marginTop: "12px", width: "100%" }}>
+                          <FontAwesomeIcon icon={faImage} /> Agregar imágenes
+                        </button>
+                      </>
                     )}
                   </div>
                 </AccordionSection>

@@ -116,8 +116,7 @@ export default function Perfil() {
             // Excluir suscripciones sin cupo restante (ilimitado siempre pasa)
             if (s.plan === "panorama_ilimitado") return true;
             if (s.plan === "superguia") {
-              const total = Number(s.publicaciones_total ?? 0);
-              if (total === 0) return true; // legacy sin límite
+              const total = Math.max(Number(s.publicaciones_total ?? 0), 1);
               return Number(s.publicaciones_usadas ?? 0) < total;
             }
             const total = Number(s.publicaciones_total ?? 0);

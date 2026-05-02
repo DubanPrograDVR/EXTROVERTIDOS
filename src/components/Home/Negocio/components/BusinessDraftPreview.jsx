@@ -34,33 +34,6 @@ const ACCORDION_SECTIONS = {
   CONTACT: "contact",
 };
 
-const shouldPreserveLineBreaks = (lines) =>
-  lines.length > 1 &&
-  lines.every((line) => {
-    const trimmedLine = line.trim();
-    return /^[^\p{L}\p{N}]/u.test(trimmedLine) || /^\d+[.)-]/.test(trimmedLine);
-  });
-
-const getFormattedTextBlocks = (text) => {
-  if (!text) return [];
-
-  return text
-    .split(/\n\s*\n/)
-    .map((block) => {
-      const lines = block
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean);
-
-      if (lines.length === 0) return null;
-
-      return shouldPreserveLineBreaks(lines)
-        ? lines.join("\n")
-        : lines.join(" ");
-    })
-    .filter(Boolean);
-};
-
 const AccordionSection = ({ title, icon, isOpen, onToggle, children }) => (
   <div
     className={`accordion-section ${isOpen ? "accordion-section--open" : ""}`}>
@@ -92,28 +65,18 @@ const AccordionSection = ({ title, icon, isOpen, onToggle, children }) => (
  * Vista previa del borrador de negocio
  * Mismo estilo que BusinessModal pero con datos del formulario en tiempo real
  */
-const BusinessDraftPreview = ({
-  isOpen,
-  onClose,
-  formData,
-  previewImages,
-  categories,
-}) => {
+const BusinessDraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
   const [activeSection, setActiveSection] = useState(
     ACCORDION_SECTIONS.DESCRIPTION,
   );
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isInfoExpanded, setIsInfoExpanded] = useState(false);
 
   const toggleSection = useCallback((section) => {
     setActiveSection((prev) => (prev === section ? null : section));
   }, []);
 
   if (!isOpen) return null;
-
-  // Categoría seleccionada
-  const selectedCategory = categories?.find(
-    (cat) => cat.id === parseInt(formData.category_id),
-  );
 
   // Imagen actual
   const getPreviewImage = () => {
@@ -199,45 +162,37 @@ const BusinessDraftPreview = ({
       <div
         className="publication-modal publication-modal--business-style publication-modal--business-draft publication-modal--draft"
         onClick={(e) => e.stopPropagation()}>
-        {/* Header con categoría */}
+        {/* Header con branding */}
         <div className="publication-modal__category-header">
-          <img
-            src="/img/SG_Extro.png"
-            alt="Superguía"
-            className="publication-modal__brand-logo"
-          />
-          {selectedCategory ? (
-            <span
-              className="publication-modal__category-badge"
-              style={{ backgroundColor: selectedCategory.color || "#ff6600" }}>
-              {selectedCategory.icono && (
-                <FontAwesomeIcon
-                  icon={selectedCategory.icono}
-                  style={{ marginRight: 6 }}
-                />
-              )}
-              {selectedCategory.nombre}
-              {formData.subcategoria && (
-                <span style={{ opacity: 0.85, marginLeft: 6 }}>
-                  · {formData.subcategoria}
-                </span>
-              )}
-            </span>
-          ) : (
-            <span className="publication-modal__category-badge">
-              Selecciona categoría
-            </span>
-          )}
-          <span className="publication-modal__draft-badge">Vista Previa</span>
+          <div className="publication-modal__brand-group">
+            <img
+              src="/img/SG_Extro.png"
+              alt="Superguia"
+              className="publication-modal__brand-logo"
+            />
+            <span className="publication-modal__brand-text">Superguia</span>
+          </div>
           <button className="publication-modal__close" onClick={onClose}>
             <FontAwesomeIcon icon={faTimes} />
           </button>
         </div>
 
         {/* Cuerpo */}
-        <div className="publication-modal__body">
+        <div
+          className={`publication-modal__body ${isInfoExpanded ? "publication-modal__body--expanded" : ""}`}>
           {/* IZQUIERDA: IMAGEN */}
-          <div className="publication-modal__left">
+          <div
+            className={`publication-modal__left ${isInfoExpanded ? "publication-modal__left--hidden" : ""}`}>
+            <button
+              className="publication-modal__mobile-info-btn"
+              onClick={() => setIsInfoExpanded(true)}>
+              <FontAwesomeIcon icon={faInfoCircle} />
+              Más info
+              <FontAwesomeIcon
+                icon={faChevronUp}
+                className="publication-modal__mobile-info-btn-arrow"
+              />
+            </button>
             {previewImages?.length > 0 ? (
               <>
                 <div
@@ -284,7 +239,20 @@ const BusinessDraftPreview = ({
           </div>
 
           {/* DERECHA: CONTENIDO */}
-          <div className="publication-modal__right">
+          <div
+            className={`publication-modal__right ${isInfoExpanded ? "publication-modal__right--expanded" : ""}`}>
+            {isInfoExpanded && (
+              <button
+                className="publication-modal__mobile-image-btn"
+                onClick={() => setIsInfoExpanded(false)}>
+                <FontAwesomeIcon icon={faImage} />
+                Ver imagen
+                <FontAwesomeIcon
+                  icon={faChevronDown}
+                  className="publication-modal__mobile-info-btn-arrow"
+                />
+              </button>
+            )}
             {/* Título */}
             <div className="publication-modal__title-section">
               <h2>{formData.nombre || "Nombre del negocio"}</h2>
@@ -300,9 +268,7 @@ const BusinessDraftPreview = ({
                 onToggle={() => toggleSection(ACCORDION_SECTIONS.DESCRIPTION)}>
                 <div className="publication-modal__description-content">
                   {formData.descripcion ? (
-                    getFormattedTextBlocks(formData.descripcion).map(
-                      (paragraph, index) => <p key={index}>{paragraph}</p>,
-                    )
+                    <p>{formData.descripcion}</p>
                   ) : (
                     <p>Sin descripción agregada aún...</p>
                   )}
@@ -333,11 +299,7 @@ const BusinessDraftPreview = ({
                     toggleSection(ACCORDION_SECTIONS.MARKETING_1)
                   }>
                   <div className="publication-modal__marketing-content">
-                    {getFormattedTextBlocks(formData.mensaje_marketing).map(
-                      (paragraph, index) => (
-                        <p key={index}>{paragraph}</p>
-                      ),
-                    )}
+                    <p>{formData.mensaje_marketing}</p>
                   </div>
                 </AccordionSection>
               )}
@@ -352,11 +314,7 @@ const BusinessDraftPreview = ({
                     toggleSection(ACCORDION_SECTIONS.MARKETING_2)
                   }>
                   <div className="publication-modal__marketing-content">
-                    {getFormattedTextBlocks(formData.mensaje_marketing_2).map(
-                      (paragraph, index) => (
-                        <p key={index}>{paragraph}</p>
-                      ),
-                    )}
+                    <p>{formData.mensaje_marketing_2}</p>
                   </div>
                 </AccordionSection>
               )}
@@ -481,14 +439,6 @@ const BusinessDraftPreview = ({
                   </div>
                 </div>
               </AccordionSection>
-            </div>
-
-            {/* Footer */}
-            <div className="publication-modal__draft-footer">
-              <p>
-                <strong>Nota:</strong> Esta es una vista previa. Los cambios que
-                realices en el formulario se reflejarán aquí automáticamente.
-              </p>
             </div>
           </div>
         </div>

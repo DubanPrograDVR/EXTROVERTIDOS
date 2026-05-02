@@ -1,6 +1,6 @@
 // Tipos de entrada disponibles para eventos
 export const TIPOS_ENTRADA = [
-  { value: "sin_entrada", label: "No informar" },
+  { value: "sin_entrada", label: "Pronto más información" },
   { value: "gratuito", label: "Entrada gratuita" },
   { value: "pagado", label: "Entrada General" },
   { value: "venta_externa", label: "Venta externa" },

@@ -11,10 +11,7 @@ export default function Panoramas() {
     <div className="panoramas-wrapper">
       {/* Texto destacado superior */}
       <div className="panoramas__header">
-        <h2 className="panoramas__header-text">
-          ¡Lo Mejor Está En{" "}
-          <span className="panoramas__highlight">Extrovertidos!</span>
-        </h2>
+        <h2 className="panoramas__header-text">Panoramas</h2>
       </div>
 
       <section className="panoramas">
@@ -44,7 +41,7 @@ export default function Panoramas() {
 
             {/* Subtítulo */}
             <p className="panoramas__subtitle">
-              ¡Elige Tu Ciudad Y Entérate De Lo Que Más Te Gusta!
+              ¡Descubre y Encuentra lo que más te gusta!
             </p>
 
             {/* Botón de acción */}

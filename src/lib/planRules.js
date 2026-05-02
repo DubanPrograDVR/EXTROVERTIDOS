@@ -462,7 +462,7 @@ export function canUserPublishBusiness({
 
   const { publicaciones_usadas, publicaciones_total, fecha_inicio, fecha_fin } =
     subscription;
-  const total = Number(publicaciones_total ?? 0);
+  const total = Math.max(Number(publicaciones_total ?? 0), 1);
   const used = Number(publicaciones_usadas ?? 0);
 
   // Verificar si está vencida
@@ -483,8 +483,8 @@ export function canUserPublishBusiness({
     }
   }
 
-  // Verificar cupo (solo si total > 0, las suscripciones antiguas con total=0 no tienen límite)
-  if (total > 0 && used >= total) {
+  // Superguía siempre usa 1 cupo por suscripción, incluso si una suscripción antigua quedó con total=0.
+  if (used >= total) {
     return {
       canPublish: false,
       reason: "quota_exceeded",

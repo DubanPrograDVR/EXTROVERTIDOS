@@ -27,9 +27,10 @@ const sectionsData = [
     id: 2,
     icon: null,
     customIcon: pExtroIcon,
-    title: "Superguía Extrovertidos",
-    subtitle: "¿Un Uber, Un Veterinario O Un Mecánico?",
-    btnLabel: "Explorar Superguía",
+    title: "Superguia Extrovertidos",
+    subtitle: "¿Un Uber, un Veterinario o un Mecánico?",
+    subtitleSecondary: "¡Encuéntralo aquí!",
+    btnLabel: "Explorar Superguia",
     btnPath: "/superguia",
     highlight: false,
     alignment: "left",
@@ -126,6 +127,11 @@ export default function Secciones({ customSections }) {
                 </h2>
 
                 <h3 className="secciones__subtitle">{section.subtitle}</h3>
+                {section.subtitleSecondary && (
+                  <h3 className="secciones__subtitle secciones__subtitle--secondary">
+                    {section.subtitleSecondary}
+                  </h3>
+                )}
 
                 {section.description && (
                   <p className="secciones__description">

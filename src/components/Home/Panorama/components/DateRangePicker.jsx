@@ -1031,9 +1031,7 @@ const DateRangePicker = ({
             <div className="drp-calendar__tip">
               <FontAwesomeIcon icon={faInfoCircle} />
               <p>
-                Tu evento se mostrará en la superguía en cada una de estas
-                fechas. También puedes agregar fechas haciendo clic en el
-                calendario.
+                Tu evento se mostrará en Panoramas en cada una de estas fechas.
               </p>
             </div>
           </div>

@@ -65,7 +65,7 @@ export default function Home() {
 
           {/* Selector de Ciudad */}
           <div className="city-selector">
-            <p className="city-question">¿En qué ciudad te encuentras?</p>
+            <p className="city-question">¿En qué Ciudad te Encuentras?</p>
             <div className="city-picker">
               <button
                 className="city-arrow"

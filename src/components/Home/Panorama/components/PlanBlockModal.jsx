@@ -1,13 +1,24 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faTimes,
-  faLock,
-  faCalendarXmark,
   faExclamationTriangle,
-  faRocket,
 } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
 import "./styles/plan-block-modal.css";
+
+const PLAN_USAGE_LABELS = {
+  panorama_unica: "plan publicación única",
+  panorama_pack4: "plan pack 4 publicaciones",
+  panorama_ilimitado: "plan ilimitado",
+};
+
+const getPlanUsageLabel = (plan) =>
+  PLAN_USAGE_LABELS[plan] || "plan contratado";
+
+const getFinishedPlanMessage = ({ plan }) => {
+  const planLabel = getPlanUsageLabel(plan);
+  return `Has utilizado el ${planLabel} con éxito\n\nTe invitamos a seguir publicando tus panoramas en ¡Extrovertidos!`;
+};
 
 /**
  * Configuración de escenarios de bloqueo de publicación.
@@ -28,28 +39,17 @@ const BLOCK_SCENARIOS = {
   plan_expired: {
     customImage: "/img/P_Extro.png",
     iconColor: "#e74c3c",
-    title: "¡Renueva tu plan ahora!",
-    getMessage: ({ planExpiresAt }) => {
-      const fecha = planExpiresAt
-        ? new Date(planExpiresAt).toLocaleDateString("es-CL", {
-            day: "2-digit",
-            month: "long",
-            year: "numeric",
-          })
-        : "N/A";
-      return `Tu plan venció el ${fecha}.\nTe invitamos a seguir publicando tus panoramas en Extrovertidos.`;
-    },
-    primaryLabel: "Renovar plan",
+    title: "¡Tu plan ha terminado!",
+    getMessage: getFinishedPlanMessage,
+    primaryLabel: "Volver a suscribirme",
   },
 
   // Cupos agotados
   quota_exceeded: {
-    icon: faLock,
+    customImage: "/img/P_Extro.png",
     iconColor: "#f39c12",
-    title: "Has usado todos tus cupos",
-    getMessage: ({ publicationsUsed, publicationsTotal }) => {
-      return `Has utilizado ${publicationsUsed || 0} de ${publicationsTotal || 0} publicaciones de tu plan.\n\n¡Pero no te preocupes! Puedes volver a suscribirte para seguir publicando tus panoramas.`;
-    },
+    title: "¡Tu plan ha terminado!",
+    getMessage: getFinishedPlanMessage,
     primaryLabel: "Volver a suscribirme",
   },
 
@@ -131,6 +131,7 @@ const PlanBlockModal = ({
 
   // Datos para el mensaje
   const messageData = {
+    plan: subscription?.plan,
     publicationsUsed: subscription?.publicaciones_usadas,
     publicationsTotal: subscription?.publicaciones_total,
     planExpiresAt: subscription?.fecha_fin,
@@ -147,7 +148,7 @@ const PlanBlockModal = ({
   };
 
   const handleGoBack = () => {
-    navigate(-1);
+    navigate("/");
   };
 
   return (
@@ -161,7 +162,7 @@ const PlanBlockModal = ({
         <button
           className="plan-block-modal__close"
           onClick={handleGoBack}
-          aria-label="Volver atrás">
+          aria-label="Cancelar">
           <FontAwesomeIcon icon={faTimes} />
         </button>
 
@@ -208,7 +209,7 @@ const PlanBlockModal = ({
           <button
             className="plan-block-modal__btn plan-block-modal__btn--secondary"
             onClick={handleGoBack}>
-            Volver atrás
+            Cancelar
           </button>
         </div>
       </div>

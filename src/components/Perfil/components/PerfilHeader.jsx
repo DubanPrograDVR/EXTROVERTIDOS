@@ -27,7 +27,7 @@ const PLAN_LABELS = {
   panorama_unica: "Publicación Única",
   panorama_pack4: "Pack 4 Publicaciones",
   panorama_ilimitado: "Publica Sin Límite",
-  superguia: "Superguía Extrovertidos",
+  superguia: "Superguia Extrovertidos",
 };
 
 export default function PerfilHeader({

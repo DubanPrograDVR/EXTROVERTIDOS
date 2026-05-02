@@ -405,13 +405,15 @@ const PublicarNegocio = () => {
       },
       plan_expired: {
         title: "¡Renueva tu plan ahora!",
-        message: `Tu plan venció el ${fechaFormateada}.\nTe invitamos a seguir publicando tu negocio en Extrovertidos.`,
+        message: `Tu plan venció el ${fechaFormateada}.\nTe invitamos a seguir publicando tu negocio en ¡Extrovertidos!`,
         btnLabel: "Renovar plan",
       },
       quota_exceeded: {
-        title: "Has usado tu cupo de publicación",
-        message: `Utilizaste ${businessPublishCheck.cuposUsados} de ${businessPublishCheck.cuposTotal} publicaciones.\nAdquiere una nueva suscripción a Superguía para publicar otro negocio.`,
+        title: "¡Negocio publicado!",
+        message:
+          "Ya utilizaste tu cupo para publicar en la Superguía\n\nTe invitamos a publicar todos tus negocios en\n¡Extrovertidos!",
         btnLabel: "Volver a suscribirme",
+        secondaryLabel: "Cancelar",
       },
       window_expired: {
         title: "Tu plazo de publicación ha vencido",
@@ -428,7 +430,7 @@ const PublicarNegocio = () => {
         <header className="publicar-negocio__header">
           <h1 className="publicar-negocio__title">Publicar Negocio</h1>
           <p className="publicar-negocio__subtitle">
-            Registra tu negocio y llega a más clientes en la región del Maule
+            Registra tu negocio y llega a más clientes con Extrovertidos
           </p>
         </header>
         <div
@@ -440,7 +442,7 @@ const PublicarNegocio = () => {
             <button
               className="plan-block-modal__close"
               onClick={() => navigate(-1)}
-              aria-label="Volver atrás">
+              aria-label={config.secondaryLabel || "Volver atrás"}>
               <FontAwesomeIcon icon={faTimes} />
             </button>
             <div className="plan-block-modal__icon">
@@ -470,7 +472,7 @@ const PublicarNegocio = () => {
               <button
                 className="plan-block-modal__btn plan-block-modal__btn--secondary"
                 onClick={() => navigate(-1)}>
-                Volver atrás
+                {config.secondaryLabel || "Volver atrás"}
               </button>
             </div>
           </div>
@@ -498,7 +500,7 @@ const PublicarNegocio = () => {
         />
         <h1 className="publicar-negocio__title">Publicar Negocio</h1>
         <p className="publicar-negocio__subtitle">
-          Registra tu negocio y llega a más clientes en la región del Maule
+          Registra tu negocio y llega a más clientes con Extrovertidos
         </p>
       </header>
 
@@ -649,7 +651,6 @@ const PublicarNegocio = () => {
         onClose={() => setIsDraftPreviewOpen(false)}
         formData={formData}
         previewImages={previewImages}
-        categories={categories}
       />
 
       {/* Modal de autenticación */}

@@ -9,6 +9,7 @@ import BusinessGrid from "./BusinessGrid";
 import BusinessModal from "./BusinessModal";
 import Carousel from "./Carousel";
 import PublicationModal from "./PublicationModal";
+import AuthModal from "../Auth/AuthModal";
 import {
   getPublishedBusinesses,
   getBusinessCategories,
@@ -16,6 +17,7 @@ import {
 } from "../../lib/database";
 import { useRealtimeRefetch } from "../../hooks/useRealtimeRefetch";
 import { useHighlightCard } from "../../hooks/useHighlightCard";
+import { useAuth } from "../../context/AuthContext";
 import { LOCATIONS } from "./data";
 import "./styles/SuperguiaContainer.css";
 
@@ -98,6 +100,7 @@ const getPanoramaDisplayDate = (event, weekStart, weekEnd) => {
  */
 export default function SuperguiaContainer() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   // Estados de datos
   const [businesses, setBusinesses] = useState([]);
@@ -190,6 +193,16 @@ export default function SuperguiaContainer() {
   const filteredPanoramas = featuredPanoramaWindow.items;
   const [selectedPanorama, setSelectedPanorama] = useState(null);
   const [isPanoramaModalOpen, setIsPanoramaModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  const handlePublishBusinessClick = useCallback(() => {
+    if (!isAuthenticated) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    navigate("/publicar-negocio");
+  }, [isAuthenticated, navigate]);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -583,9 +596,9 @@ export default function SuperguiaContainer() {
               alt="Extrovertidos"
               className="superguia__hero-logo"
             />
-            <h1 className="superguia__hero-title">superguía extrovertidos</h1>
+            <h1 className="superguia__hero-title">Superguia Extrovertidos</h1>
             <p className="superguia__hero-subtitle">
-              descubre los mejores negocios y servicios de la región
+              Explora los mejores Negocios y Servicios de tu Ciudad
             </p>
           </div>
         </div>
@@ -603,7 +616,7 @@ export default function SuperguiaContainer() {
             </div>
             <button
               className="superguia__new-btn"
-              onClick={() => navigate("/publicar-negocio")}>
+              onClick={handlePublishBusinessClick}>
               <FontAwesomeIcon icon={faPlus} />
               Publicar Negocio
             </button>
@@ -625,6 +638,7 @@ export default function SuperguiaContainer() {
               onComunaChange={handleComunaChange}
               availableComunas={availableComunas}
               searchQuery={searchQuery}
+              searchPlaceholder="Buscar negocios, servicios…"
               onSearchChange={handleSearch}
               onClearFilters={handleClearFilters}
               totalResults={filteredBusinesses.length}
@@ -706,7 +720,7 @@ export default function SuperguiaContainer() {
                     )}
                     <button
                       className="superguia__empty-btn superguia__empty-btn--primary"
-                      onClick={() => navigate("/publicar-negocio")}>
+                      onClick={handlePublishBusinessClick}>
                       Publicar Negocio
                     </button>
                   </div>
@@ -743,12 +757,12 @@ export default function SuperguiaContainer() {
                 icon={faFire}
                 className="superguia__featured-icon"
               />
-              <h2>Descubre panoramas</h2>
+              <h2>Descubre Panoramas</h2>
             </div>
             <p className="superguia__featured-subtitle">
               {selectedCity
                 ? `Eventos de ${featuredPanoramaWindow.weekLabel} en ${LOCATIONS[selectedCity]?.nombre || selectedCity}`
-                : `Explora los eventos de ${featuredPanoramaWindow.weekLabel} en la región`}
+                : `Explora los Eventos de ${featuredPanoramaWindow.weekLabel} en tu Ciudad`}
             </p>
           </div>
           <Carousel
@@ -772,6 +786,11 @@ export default function SuperguiaContainer() {
         isOpen={isPanoramaModalOpen}
         onClose={handleClosePanoramaModal}
         modalVariant="panoramas"
+      />
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
       />
 
       <Footer />

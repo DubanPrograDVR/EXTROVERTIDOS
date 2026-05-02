@@ -242,7 +242,7 @@ export default function PerfilNegocios() {
         <div className="perfil-section__empty">
           <FontAwesomeIcon icon={faStore} />
           <h3>No tienes negocios registrados</h3>
-          <p>Registra tu negocio y llega a más clientes en la región</p>
+          <p>Registra tu negocio y llega a más clientes con Extrovertidos</p>
           <button onClick={() => navigate("/publicar-negocio")}>
             Registrar Negocio
           </button>
@@ -315,8 +315,8 @@ export default function PerfilNegocios() {
                     <div className="perfil-publication-card__review">
                       <FontAwesomeIcon icon={faHourglassHalf} />
                       <span>
-                        Tus cambios están en revisión. Mientras tanto se
-                        mantiene visible la versión publicada.
+                        Tu publicación está en revisión. Un administrador la
+                        revisará pronto.
                       </span>
                     </div>
                   )}

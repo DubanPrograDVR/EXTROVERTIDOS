@@ -27,7 +27,6 @@
   font-weight: 900;
   color: #fff;
   margin: 0 0 10px;
-  text-transform: uppercase;
 }
 
 .publicar-negocio__subtitle {
@@ -366,11 +365,23 @@
 }
 
 .publicar-negocio__field textarea {
-  resize: vertical;
-  min-height: 120px;
+  width: calc(100% - 24px);
+  min-width: calc(100% - 24px);
+  max-width: 100%;
+  resize: horizontal;
+  min-height: 340px;
+  height: 340px;
+  max-height: 340px;
+  overflow-y: auto;
   overflow-wrap: anywhere;
   word-break: break-all;
   white-space: pre-wrap;
+}
+
+.publicar-negocio__field textarea:not(.publicar-negocio__textarea--marketing) {
+  width: calc(100% + 12px);
+  min-width: 100%;
+  max-width: calc(100% + 20px);
 }
 
 /* Badges - Obligatorio */
@@ -1404,8 +1415,10 @@
   font-weight: 500;
 }
 
-.publicar-negocio__textarea--marketing {
-  min-height: 80px;
+.publicar-negocio__field textarea.publicar-negocio__textarea--marketing {
+  min-height: 260px;
+  height: 260px;
+  max-height: 260px;
   background: rgba(0, 0, 0, 0.3) !important;
   border-color: rgba(255, 133, 51, 0.5) !important;
 }

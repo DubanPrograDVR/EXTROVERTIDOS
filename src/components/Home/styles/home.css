@@ -332,7 +332,6 @@
   font-size: var(--text-xl);
   font-weight: var(--font-bold);
   color: var(--color-bg-primary);
-  text-transform: capitalize;
   letter-spacing: var(--tracking-wide);
   min-width: 120px;
 }
@@ -397,7 +396,6 @@
   justify-content: center;
   text-align: center;
   gap: var(--space-2);
-  text-transform: capitalize;
   letter-spacing: normal;
   box-shadow:
     0 8px 25px rgba(255, 102, 0, 0.4),
@@ -468,7 +466,6 @@
   font-size: 3rem;
   font-weight: 900;
   color: #fff;
-  text-transform: capitalize;
   letter-spacing: 3px;
   text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
   line-height: 1.3;

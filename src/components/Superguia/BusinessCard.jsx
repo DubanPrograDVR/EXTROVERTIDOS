@@ -118,12 +118,12 @@ export default function BusinessCard({
 
   // Obtener array de imágenes válidas
   const getValidImages = () => {
-    // Prioridad: galeria > imagenes > imagen_portada_url > imagen_url > logo_url
-    if (Array.isArray(galeria) && galeria.length > 0) {
-      return galeria;
-    }
+    // Prioridad: imagenes editadas > galeria legacy > portada > imagen > logo
     if (Array.isArray(imagenes) && imagenes.length > 0) {
       return imagenes;
+    }
+    if (Array.isArray(galeria) && galeria.length > 0) {
+      return galeria;
     }
     if (imagen_portada_url) {
       return [imagen_portada_url];

@@ -27,7 +27,6 @@
   font-weight: 900;
   color: #fff;
   margin: 0 0 10px;
-  text-transform: uppercase;
 }
 
 .publicar-header__subtitle {
@@ -399,16 +398,30 @@
 }
 
 .publicar-form__textarea {
-  resize: vertical;
-  min-height: 120px;
+  width: calc(100% - 24px);
+  min-width: calc(100% - 24px);
+  max-width: 100%;
+  resize: horizontal;
+  min-height: 340px;
+  height: 340px;
+  max-height: 340px;
+  overflow-y: auto;
   overflow-wrap: anywhere;
   word-break: break-all;
   white-space: pre-wrap;
 }
 
+.publicar-form__textarea:not(.publicar-form__textarea--marketing) {
+  width: calc(100% + 12px);
+  min-width: 100%;
+  max-width: calc(100% + 20px);
+}
+
 /* Textarea especial para mensaje de marketing */
 .publicar-form__textarea--marketing {
-  min-height: 80px;
+  min-height: 260px;
+  height: 260px;
+  max-height: 260px;
   background: linear-gradient(135deg, #1a1a1a 0%, #1f1a15 100%);
   border-color: #ff8533;
 }
@@ -1199,6 +1212,30 @@
 
 .publicar-form__modal-trigger svg {
   font-size: 1.1rem;
+}
+
+.publicar-form__group--tags {
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .publicar-form__group--tags .publicar-form__label {
+    text-align: center;
+  }
+
+  .publicar-form__group--tags .publicar-form__label span {
+    display: block;
+    margin-left: 0;
+  }
+
+  .publicar-form__group--tags .publicar-form__label span:first-of-type {
+    margin-top: 8px;
+  }
+
+  .publicar-form__group--tags .publicar-form__modal-trigger {
+    display: inline-flex;
+    margin: 0 auto;
+  }
 }
 
 /* ===== SELECTED TAGS ===== */

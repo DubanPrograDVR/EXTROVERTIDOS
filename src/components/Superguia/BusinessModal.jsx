@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { useRealtimeRefetch } from "../../hooks/useRealtimeRefetch";
@@ -10,6 +10,7 @@ import {
   toggleBusinessLike,
   hasUserLikedBusiness,
   getBusinessLikesCount,
+  uploadBusinessImage,
 } from "../../lib/database";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -38,6 +39,7 @@ import {
   faSpinner,
   faInfoCircle,
   faImage,
+  faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faWhatsapp,
@@ -90,42 +92,17 @@ const serializeHorarios = (dias_atencion, horarios_detalle, abierto_24h) => {
 };
 
 const PLACEHOLDER_IMAGE = "/img/Home1.png";
+const PROVINCIAS = ["Talca", "Curicó", "Linares", "Cauquenes"];
 
 // Tipos de secciones del acordeón
 const ACCORDION_SECTIONS = {
   DESCRIPTION: "description",
   MARKETING_1: "marketing_1",
   MARKETING_2: "marketing_2",
+  IMAGES: "images",
   LOCATION: "location",
   SCHEDULE: "schedule",
   INFO: "info",
-};
-
-const shouldPreserveLineBreaks = (lines) =>
-  lines.length > 1 &&
-  lines.every((line) => {
-    const trimmedLine = line.trim();
-    return /^[^\p{L}\p{N}]/u.test(trimmedLine) || /^\d+[.)-]/.test(trimmedLine);
-  });
-
-const getFormattedTextBlocks = (text) => {
-  if (!text) return [];
-
-  return text
-    .split(/\n\s*\n/)
-    .map((block) => {
-      const lines = block
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean);
-
-      if (lines.length === 0) return null;
-
-      return shouldPreserveLineBreaks(lines)
-        ? lines.join("\n")
-        : lines.join(" ");
-    })
-    .filter(Boolean);
 };
 
 /**
@@ -178,6 +155,7 @@ export default function BusinessModal({
   const [isEditMode, setIsEditMode] = useState(startInEditMode);
   const [editData, setEditData] = useState({});
   const [isSaving, setIsSaving] = useState(false);
+  const [newImageFiles, setNewImageFiles] = useState([]);
   const [categoriesList, setCategoriesList] = useState([]);
   const [isInfoExpanded, setIsInfoExpanded] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -186,6 +164,7 @@ export default function BusinessModal({
   const [likeCount, setLikeCount] = useState(0);
   const [isTogglingLike, setIsTogglingLike] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const fileInputRef = useRef(null);
 
   // Overrides locales aplicados tras un guardado para reflejar los cambios
   // en vivo sin depender de que el padre recargue el negocio.
@@ -199,15 +178,32 @@ export default function BusinessModal({
   );
 
   const canEdit = isAdmin || isModerator;
+  const canManageBusinessMedia =
+    isEditMode && (isAdmin || business?.user_id === user?.id);
+
+  const newImagePreviews = useMemo(
+    () =>
+      newImageFiles.map((file) => ({
+        file,
+        url: URL.createObjectURL(file),
+      })),
+    [newImageFiles],
+  );
+
+  useEffect(() => {
+    return () => {
+      newImagePreviews.forEach(({ url }) => URL.revokeObjectURL(url));
+    };
+  }, [newImagePreviews]);
 
   // Cargar categorías para el selector de edición
   useEffect(() => {
-    if (canEdit) {
+    if (canEdit || isEditMode) {
       getBusinessCategories()
         .then((cats) => setCategoriesList(cats || []))
         .catch((err) => console.error("Error cargando categorías:", err));
     }
-  }, [canEdit]);
+  }, [canEdit, isEditMode]);
 
   // Cargar estado de favorito y like al montar
   const loadInteractions = useCallback(() => {
@@ -277,6 +273,10 @@ export default function BusinessModal({
     setIsEditMode(startInEditMode);
     setIsInfoExpanded(false);
     setLiveOverrides(null);
+    setNewImageFiles([]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
     // Inicializar datos de edición
     if (business) {
       setEditData({
@@ -284,6 +284,10 @@ export default function BusinessModal({
         descripcion: business.descripcion || "",
         categoria: business.categoria || "",
         subcategoria: business.subcategoria || "",
+        imagenes: business.imagenes || business.galeria || [],
+        provincia: business.provincia || "",
+        comuna: business.comuna || "",
+        direccion: business.direccion || "",
         telefono: business.telefono || "",
         email: business.email || "",
         whatsapp: business.whatsapp || "",
@@ -303,6 +307,18 @@ export default function BusinessModal({
       });
     }
   }, [business?.id, isOpen]);
+
+  const validImagesLength = canManageBusinessMedia
+    ? Math.max(editData.imagenes?.length || 0, 1)
+    : Array.isArray(business?.imagenes) && business.imagenes.length > 0
+      ? business.imagenes.length
+      : Array.isArray(business?.galeria) && business.galeria.length > 0
+        ? business.galeria.length
+        : 1;
+
+  useEffect(() => {
+    setCurrentImageIndex((prev) => Math.min(prev, validImagesLength - 1));
+  }, [validImagesLength]);
 
   if (!isOpen || !business) return null;
 
@@ -344,11 +360,17 @@ export default function BusinessModal({
 
   // Obtener array de imágenes válidas
   const getValidImages = () => {
-    if (Array.isArray(galeria) && galeria.length > 0) {
-      return galeria;
+    if (canManageBusinessMedia) {
+      if (Array.isArray(editData.imagenes) && editData.imagenes.length > 0) {
+        return editData.imagenes;
+      }
+      return [PLACEHOLDER_IMAGE];
     }
     if (Array.isArray(imagenes) && imagenes.length > 0) {
       return imagenes;
+    }
+    if (Array.isArray(galeria) && galeria.length > 0) {
+      return galeria;
     }
     if (imagen_portada_url) {
       return [imagen_portada_url];
@@ -380,6 +402,43 @@ export default function BusinessModal({
   const handleNextImage = () => {
     setCurrentImageIndex((prev) =>
       prev === validImages.length - 1 ? 0 : prev + 1,
+    );
+  };
+
+  const handleRemoveImage = (index) => {
+    setEditData((prev) => ({
+      ...prev,
+      imagenes: (prev.imagenes || []).filter(
+        (_, imageIndex) => imageIndex !== index,
+      ),
+    }));
+  };
+
+  const handleAddImages = (event) => {
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
+
+    const maxImages = 5;
+    const currentTotal =
+      (editData.imagenes?.length || 0) + newImageFiles.length;
+    const available = maxImages - currentTotal;
+
+    if (available <= 0) {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
+
+    setNewImageFiles((prev) => [...prev, ...files.slice(0, available)]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveNewImage = (index) => {
+    setNewImageFiles((prev) =>
+      prev.filter((_, imageIndex) => imageIndex !== index),
     );
   };
 
@@ -495,13 +554,41 @@ export default function BusinessModal({
           abierto_24h,
         ),
       };
+
+      if (canManageBusinessMedia && newImageFiles.length > 0) {
+        const imageOwnerId = business.user_id || user?.id;
+
+        if (!imageOwnerId) {
+          throw new Error(
+            "No se pudo determinar el propietario para subir las imágenes",
+          );
+        }
+
+        const uploadedUrls = [];
+        for (const file of newImageFiles) {
+          const imageUrl = await uploadBusinessImage(file, imageOwnerId);
+          uploadedUrls.push(imageUrl);
+        }
+
+        dataToSave.imagenes = [...(dataToSave.imagenes || []), ...uploadedUrls];
+      }
+
       await updateBusiness(business.id, dataToSave, undefined, {
         adminOverride: canEdit,
       });
       showToast("Cambios guardados exitosamente", "success");
       setIsEditMode(false);
+      setNewImageFiles([]);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
       // Aplicar los cambios en vivo sobre la vista previa del modal
-      setLiveOverrides((prev) => ({ ...(prev || {}), ...dataToSave }));
+      setLiveOverrides((prev) => ({
+        ...(prev || {}),
+        ...dataToSave,
+        galeria: dataToSave.imagenes,
+        imagenes: dataToSave.imagenes,
+      }));
       if (onUpdate) {
         onUpdate({ ...business, ...dataToSave });
       }
@@ -516,11 +603,19 @@ export default function BusinessModal({
   // Cancelar edición
   const handleCancelEdit = () => {
     setIsEditMode(false);
+    setNewImageFiles([]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
     setEditData({
       nombre: business.nombre || "",
       descripcion: business.descripcion || "",
       categoria: business.categoria || "",
       subcategoria: business.subcategoria || "",
+      imagenes: business.imagenes || business.galeria || [],
+      provincia: business.provincia || "",
+      comuna: business.comuna || "",
+      direccion: business.direccion || "",
       telefono: business.telefono || "",
       email: business.email || "",
       whatsapp: business.whatsapp || "",
@@ -745,11 +840,7 @@ export default function BusinessModal({
                   }>
                   {!isEditMode && (
                     <div className="publication-modal__description-content">
-                      {getFormattedTextBlocks(descripcion).map(
-                        (paragraph, index) => (
-                          <p key={index}>{paragraph}</p>
-                        ),
-                      )}
+                      <p>{descripcion}</p>
                     </div>
                   )}
                   {isEditMode && (
@@ -781,11 +872,7 @@ export default function BusinessModal({
                   }>
                   {!isEditMode && (
                     <div className="publication-modal__marketing-content">
-                      {getFormattedTextBlocks(mensaje_marketing).map(
-                        (paragraph, index) => (
-                          <p key={index}>{paragraph}</p>
-                        ),
-                      )}
+                      <p>{mensaje_marketing}</p>
                     </div>
                   )}
                   {isEditMode && (
@@ -836,11 +923,7 @@ export default function BusinessModal({
                   }>
                   {!isEditMode && (
                     <div className="publication-modal__marketing-content">
-                      {getFormattedTextBlocks(mensaje_marketing_2).map(
-                        (paragraph, index) => (
-                          <p key={index}>{paragraph}</p>
-                        ),
-                      )}
+                      <p>{mensaje_marketing_2}</p>
                     </div>
                   )}
                   {isEditMode && (
@@ -1145,6 +1228,52 @@ export default function BusinessModal({
                 {isEditMode && (
                   <div className="publication-modal__edit-section">
                     <div className="publication-modal__edit-field">
+                      <label>Provincia</label>
+                      <select
+                        value={editData.provincia || ""}
+                        onChange={(e) =>
+                          setEditData({
+                            ...editData,
+                            provincia: e.target.value,
+                          })
+                        }>
+                        <option value="">Seleccionar provincia</option>
+                        {PROVINCIAS.map((provinciaOption) => (
+                          <option key={provinciaOption} value={provinciaOption}>
+                            {provinciaOption}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="publication-modal__edit-field">
+                      <label>Comuna</label>
+                      <input
+                        type="text"
+                        value={editData.comuna || ""}
+                        onChange={(e) =>
+                          setEditData({
+                            ...editData,
+                            comuna: e.target.value,
+                          })
+                        }
+                        placeholder="Comuna"
+                      />
+                    </div>
+                    <div className="publication-modal__edit-field">
+                      <label>Dirección</label>
+                      <input
+                        type="text"
+                        value={editData.direccion || ""}
+                        onChange={(e) =>
+                          setEditData({
+                            ...editData,
+                            direccion: e.target.value,
+                          })
+                        }
+                        placeholder="Dirección del negocio"
+                      />
+                    </div>
+                    <div className="publication-modal__edit-field">
                       <label>URL de Ubicación (Google Maps)</label>
                       <input
                         type="url"
@@ -1286,6 +1415,193 @@ export default function BusinessModal({
                   </div>
                 )}
               </AccordionSection>
+
+              {canManageBusinessMedia && (
+                <AccordionSection
+                  title="Imágenes"
+                  icon={faImage}
+                  isOpen={activeSection === ACCORDION_SECTIONS.IMAGES}
+                  onToggle={() => toggleSection(ACCORDION_SECTIONS.IMAGES)}>
+                  <div className="publication-modal__edit-section">
+                    <p
+                      style={{
+                        color: "rgba(255,255,255,0.5)",
+                        fontSize: "0.85rem",
+                        margin: "0 0 12px",
+                      }}>
+                      <FontAwesomeIcon icon={faInfoCircle} /> Puedes eliminar
+                      imágenes existentes y agregar hasta 5 en total.
+                    </p>
+
+                    {editData.imagenes?.length > 0 ? (
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns:
+                            "repeat(auto-fill, minmax(100px, 1fr))",
+                          gap: "10px",
+                        }}>
+                        {editData.imagenes.map((imageUrl, index) => (
+                          <div
+                            key={imageUrl}
+                            style={{
+                              position: "relative",
+                              aspectRatio: "1",
+                              borderRadius: "8px",
+                              overflow: "hidden",
+                              border: "1px solid rgba(255,255,255,0.1)",
+                            }}>
+                            <img
+                              src={imageUrl}
+                              alt={`Imagen ${index + 1}`}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveImage(index)}
+                              style={{
+                                position: "absolute",
+                                top: "4px",
+                                right: "4px",
+                                width: "24px",
+                                height: "24px",
+                                borderRadius: "50%",
+                                background: "rgba(255,68,68,0.9)",
+                                border: "none",
+                                color: "#fff",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "0.65rem",
+                              }}>
+                              <FontAwesomeIcon icon={faTrash} />
+                            </button>
+                            {index === 0 && (
+                              <span
+                                style={{
+                                  position: "absolute",
+                                  bottom: "4px",
+                                  left: "4px",
+                                  padding: "2px 6px",
+                                  background: "#ff6600",
+                                  color: "#000",
+                                  fontSize: "0.6rem",
+                                  fontWeight: "700",
+                                  borderRadius: "4px",
+                                }}>
+                                Principal
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          textAlign: "center",
+                          padding: "20px",
+                          color: "rgba(255,255,255,0.4)",
+                        }}>
+                        <FontAwesomeIcon
+                          icon={faImage}
+                          style={{ fontSize: "2rem", marginBottom: "8px" }}
+                        />
+                        <p>No hay imágenes</p>
+                      </div>
+                    )}
+
+                    {newImagePreviews.length > 0 && (
+                      <>
+                        <p
+                          style={{
+                            color: "#ff6600",
+                            fontSize: "0.85rem",
+                            margin: "12px 0 8px",
+                            fontWeight: "600",
+                          }}>
+                          Nuevas imágenes a subir:
+                        </p>
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns:
+                              "repeat(auto-fill, minmax(100px, 1fr))",
+                            gap: "10px",
+                          }}>
+                          {newImagePreviews.map(({ file, url }, index) => (
+                            <div
+                              key={`${file.name}-${index}`}
+                              style={{
+                                position: "relative",
+                                aspectRatio: "1",
+                                borderRadius: "8px",
+                                overflow: "hidden",
+                                border: "2px solid #ff6600",
+                              }}>
+                              <img
+                                src={url}
+                                alt={`Nueva imagen ${index + 1}`}
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveNewImage(index)}
+                                style={{
+                                  position: "absolute",
+                                  top: "4px",
+                                  right: "4px",
+                                  width: "24px",
+                                  height: "24px",
+                                  borderRadius: "50%",
+                                  background: "rgba(255,68,68,0.9)",
+                                  border: "none",
+                                  color: "#fff",
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontSize: "0.65rem",
+                                }}>
+                                <FontAwesomeIcon icon={faTrash} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+
+                    {(editData.imagenes?.length || 0) + newImageFiles.length <
+                      5 && (
+                      <>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          multiple
+                          onChange={handleAddImages}
+                          style={{ display: "none" }}
+                        />
+                        <button
+                          type="button"
+                          className="publication-modal__save-btn"
+                          onClick={() => fileInputRef.current?.click()}
+                          style={{ marginTop: "12px", width: "100%" }}>
+                          <FontAwesomeIcon icon={faImage} /> Agregar imágenes
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </AccordionSection>
+              )}
             </div>
 
             {/* Publicado por */}

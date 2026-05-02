@@ -52,6 +52,7 @@ export default function FilterPanel({
   eventsCountByComuna = {},
   eventsCountByCategory = {},
   eventsCountBySubcategory = {},
+  searchPlaceholder = "Buscar eventos, lugares, actividades...",
 }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const panelRef = useRef(null);
@@ -146,7 +147,7 @@ export default function FilterPanel({
           />
           <input
             type="text"
-            placeholder="Buscar eventos, lugares, actividades..."
+            placeholder={searchPlaceholder}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             className="filter-panel__search-input"
