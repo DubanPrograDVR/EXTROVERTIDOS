@@ -646,14 +646,31 @@ export default function ActivarPlan() {
           </label>
           <ul className="activar-plan__terms-list">
             <li>
-              En caso de que mi publicación sea rechazada por incumplir las
-              normas del sitio, cuento con un máximo de 3 intentos de edición
-              para corregir y obtener su aprobación.
+              En caso de que mi publicación sea{" "}
+              <span className="activar-plan__terms-highlight">
+                RECHAZADA POR INCUMPLIR LAS NORMAS DEL SITIO
+              </span>
+              , cuento con un máximo de 3 intentos de edición para corregir y
+              obtener su aprobación.
             </li>
             <li>
-              Si tras el tercer rechazo consecutivo el contenido persiste en su
-              incumplimiento, el cupo se considerará utilizado y el servicio
-              prestado, sin derecho a nuevos intentos ni reembolsos.
+              Si tras el{" "}
+              <span className="activar-plan__terms-highlight">
+                TECER RECHAZO CONSECUTIVO
+              </span>{" "}
+              el contenido persiste en su incumplimiento, el cupo se considerará
+              utilizado y el servicio prestado, sin derecho a nuevos intentos ni
+              reembolsos.
+            </li>
+            <li>
+              En caso de que tu publicación sea{" "}
+              <span className="activar-plan__terms-highlight">APROBADA</span>{" "}
+              siempre podrás editarla para tu mayor conveniencia y exposicion
+              cumpliendo en cada nueva edición con las{" "}
+              <span className="activar-plan__terms-highlight">
+                NORMAS DEL SITIO
+              </span>
+              .
             </li>
             <li>
               Según el Art. 3 bis de la Ley 19.496, no aplica derecho a retracto

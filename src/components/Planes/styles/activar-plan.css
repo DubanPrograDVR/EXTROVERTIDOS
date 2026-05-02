@@ -694,6 +694,11 @@
   text-decoration: underline;
 }
 
+.activar-plan__terms-highlight {
+  color: #ff6600;
+  font-weight: 700;
+}
+
 .activar-plan__terms-list {
   list-style: none;
   padding: 0;
