@@ -28,7 +28,13 @@
 /* Responsive */
 @media (max-width: 768px) {
   .perfil-stats {
-    gap: 30px;
+    justify-content: space-around;
+    gap: 12px;
+    padding: 28px 14px;
+  }
+
+  .perfil-stats__item {
+    flex: 1 1 0;
   }
 
   .perfil-stats__number {

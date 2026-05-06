@@ -23,15 +23,7 @@ export const getPendingEvents = async (adminUserId) => {
     .from("events")
     .select(
       `
-      id,
-      titulo,
-      descripcion,
-      fecha_evento,
-      comuna,
-      provincia,
-      imagenes,
-      hashtags,
-      created_at,
+      *,
       categories (
         id,
         nombre,

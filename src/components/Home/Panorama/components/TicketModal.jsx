@@ -7,6 +7,7 @@ import {
   faGift,
   faDollarSign,
   faExternalLinkAlt,
+  faInfoCircle,
 } from "@fortawesome/free-solid-svg-icons";
 import "./styles/ticket-modal.css";
 
@@ -21,6 +22,12 @@ const TICKET_OPTIONS = [
     icon: faBan,
   },
   {
+    value: "info_descripcion",
+    label: "Info en descripción",
+    description: "La información de entradas estará dentro de la descripción",
+    icon: faInfoCircle,
+  },
+  {
     value: "gratuito",
     label: "Entrada gratuita",
     description: "Los asistentes pueden entrar sin costo",
@@ -28,7 +35,7 @@ const TICKET_OPTIONS = [
   },
   {
     value: "pagado",
-    label: "Entrada General",
+    label: "Entrada general",
     description: "Entrada con precio fijo",
     icon: faDollarSign,
     hasPrice: true,

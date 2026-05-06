@@ -132,15 +132,15 @@
 
 /* Logo decorativo inferior */
 .empty-panoramas__footer-logo {
-  width: 60px;
-  height: 60px;
-  margin-top: 30px;
-  opacity: 0.4;
+  width: 180px;
+  height: auto;
+  margin: 10px 0 4px;
+  opacity: 0.75;
 }
 
 .empty-panoramas__footer-logo img {
   width: 100%;
-  height: 100%;
+  height: auto;
   object-fit: contain;
 }
 
@@ -148,66 +148,84 @@
 
 @media (max-width: 768px) {
   .empty-panoramas {
-    padding: 40px 15px;
+    padding: 50px 20px;
   }
 
+  .empty-panoramas__content {
+    gap: 16px;
+  }
+
+  /* Logo principal más grande en móvil, igual que Superguía */
   .empty-panoramas__image {
-    width: 100px;
-    height: 100px;
+    width: 160px;
+    height: 220px;
+    margin-bottom: -60px;
   }
 
   .empty-panoramas__title {
-    font-size: 1.5rem;
-    letter-spacing: 1px;
+    font-size: 2rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
   }
 
   .empty-panoramas__subtitle {
-    font-size: 0.8rem;
+    font-size: 0.95rem;
+    text-transform: uppercase;
   }
 
   .empty-panoramas__cta-text {
-    font-size: 0.95rem;
+    font-size: 1.15rem;
     padding: 0 10px;
+    text-transform: uppercase;
   }
 
   .empty-panoramas__actions {
     flex-direction: column;
     width: 100%;
-    max-width: 300px;
+    max-width: 320px;
   }
 
   .empty-panoramas__btn {
     width: 100%;
-    padding: 12px 20px;
-    font-size: 0.85rem;
+    padding: 14px 20px;
+    font-size: 1rem;
+    text-align: center;
   }
 
+  /* Logo de marca inferior más grande y visible */
   .empty-panoramas__footer-logo {
-    width: 50px;
-    height: 50px;
-    margin-top: 20px;
+    width: 160px;
+    height: auto;
+    margin: 6px 0 2px;
+    opacity: 0.85;
+  }
+
+  .empty-panoramas__footer-logo img {
+    width: 100%;
+    height: auto;
   }
 }
 
 @media (max-width: 480px) {
   .empty-panoramas {
-    padding: 30px 10px;
+    padding: 40px 16px;
   }
 
   .empty-panoramas__image {
-    width: 80px;
-    height: 80px;
+    width: 130px;
+    height: 180px;
+    margin-bottom: -40px;
   }
 
   .empty-panoramas__title {
-    font-size: 1.2rem;
+    font-size: 1.7rem;
   }
 
   .empty-panoramas__subtitle {
-    font-size: 0.75rem;
+    font-size: 0.85rem;
   }
 
   .empty-panoramas__cta-text {
-    font-size: 0.85rem;
+    font-size: 1rem;
   }
 }

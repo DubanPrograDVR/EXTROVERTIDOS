@@ -25,6 +25,7 @@ export default function PerfilBorradores() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(null);
   const [previewDraft, setPreviewDraft] = useState(null);
+  const [imageLoadErrors, setImageLoadErrors] = useState({});
 
   // Cargar borradores al montar
   useEffect(() => {
@@ -134,17 +135,24 @@ export default function PerfilBorradores() {
               draft.imagen_preview ||
               (draftData.imagenes_preview && draftData.imagenes_preview[0]) ||
               null;
+            const hasPreviewImage =
+              Boolean(imagenPreview) &&
+              !imageLoadErrors[draft.id] &&
+              !String(imagenPreview).includes("/img/Home1.png");
 
             return (
               <article key={draft.id} className="perfil-borrador-card">
                 <div className="perfil-borrador-card__image">
-                  {imagenPreview ? (
+                  {hasPreviewImage ? (
                     <img
                       src={imagenPreview}
                       alt={titulo}
-                      onError={(e) => {
-                        e.target.src = "/img/Home1.png";
-                      }}
+                      onError={() =>
+                        setImageLoadErrors((prev) => ({
+                          ...prev,
+                          [draft.id]: true,
+                        }))
+                      }
                     />
                   ) : (
                     <div className="perfil-borrador-card__placeholder">
@@ -214,6 +222,7 @@ export default function PerfilBorradores() {
           }}
           isOpen={!!previewDraft}
           onClose={() => setPreviewDraft(null)}
+          disablePlaceholderImage
         />
       ) : previewDraft ? (
         <PublicationModal
@@ -231,6 +240,7 @@ export default function PerfilBorradores() {
           }}
           isOpen={!!previewDraft}
           onClose={() => setPreviewDraft(null)}
+          disablePlaceholderImage
         />
       ) : null}
     </div>

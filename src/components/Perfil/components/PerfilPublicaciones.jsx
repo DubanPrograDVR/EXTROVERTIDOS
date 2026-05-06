@@ -221,7 +221,7 @@ export default function PerfilPublicaciones({
   return (
     <div className="perfil-section">
       <div className="perfil-section__header">
-        <h2>Mis Publicaciones</h2>
+        <h2>Mis Panoramas</h2>
         <button
           className="perfil-section__btn"
           onClick={() => navigate("/publicar-panorama")}>

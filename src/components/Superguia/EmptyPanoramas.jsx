@@ -55,6 +55,11 @@ export default function EmptyPanoramas({
           extrovertidos
         </h3>
 
+        {/* Logo decorativo sobre acciones */}
+        <div className="empty-panoramas__footer-logo">
+          <img src="/img/Logo_con_r.png" alt="Extrovertidos" />
+        </div>
+
         {/* Botones */}
         <div className="empty-panoramas__actions">
           {hasFilters && (
@@ -69,11 +74,6 @@ export default function EmptyPanoramas({
             onClick={handlePublishClick}>
             Publicar Panorama
           </button>
-        </div>
-
-        {/* Logo decorativo inferior */}
-        <div className="empty-panoramas__footer-logo">
-          <img src="/img/P_Extro.png" alt="" />
         </div>
       </div>
     </div>

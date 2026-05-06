@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import "./styles/BusinessCard.css";
+import { buildSocialUrl } from "../../lib/textWrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faMapMarkerAlt,
@@ -38,6 +39,17 @@ import { resolveIcon } from "./iconMap";
 
 // Imagen placeholder por defecto
 const PLACEHOLDER_IMAGE = "/img/Home1.png";
+
+const normalizeExternalUrl = (url) => {
+  if (typeof url !== "string") return "";
+
+  const trimmedUrl = url.trim();
+  if (!trimmedUrl) return "";
+
+  return /^[a-z][a-z\d+.-]*:\/\//i.test(trimmedUrl)
+    ? trimmedUrl
+    : `https://${trimmedUrl}`;
+};
 
 export default function BusinessCard({
   business,
@@ -252,6 +264,7 @@ export default function BusinessCard({
   const resolvedWhatsapp = whatsapp || redes_sociales?.whatsapp || null;
   const resolvedInstagram = instagram || redes_sociales?.instagram || null;
   const resolvedFacebook = facebook || redes_sociales?.facebook || null;
+  const normalizedWebsiteUrl = normalizeExternalUrl(sitio_web);
 
   // Obtener info de categoría desde BD (por nombre)
   const localCategory = categoria
@@ -480,9 +493,10 @@ export default function BusinessCard({
               onClick={(e) =>
                 handleSocialClick(
                   e,
-                  resolvedInstagram.startsWith("http")
-                    ? resolvedInstagram
-                    : `https://instagram.com/${resolvedInstagram.replace("@", "")}`,
+                  buildSocialUrl(
+                    resolvedInstagram.replace("@", ""),
+                    "https://instagram.com/",
+                  ),
                 )
               }
               title="Instagram">
@@ -496,9 +510,7 @@ export default function BusinessCard({
               onClick={(e) =>
                 handleSocialClick(
                   e,
-                  resolvedFacebook.startsWith("http")
-                    ? resolvedFacebook
-                    : `https://facebook.com/${resolvedFacebook}`,
+                  buildSocialUrl(resolvedFacebook, "https://facebook.com/"),
                 )
               }
               title="Facebook">
@@ -506,10 +518,10 @@ export default function BusinessCard({
             </button>
           )}
 
-          {sitio_web && (
+          {normalizedWebsiteUrl && (
             <button
               className="business-card__action business-card__action--web"
-              onClick={(e) => handleSocialClick(e, sitio_web)}
+              onClick={(e) => handleSocialClick(e, normalizedWebsiteUrl)}
               title="Sitio web">
               <FontAwesomeIcon icon={faGlobe} />
             </button>

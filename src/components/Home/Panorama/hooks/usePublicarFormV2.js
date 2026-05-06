@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../../../context/AuthContext";
+import { applyWrapToInputEvent } from "../../../../lib/textWrap";
 import {
   getCategories,
   getActivePublishSubscription,
@@ -496,7 +497,8 @@ const usePublicarFormV2 = () => {
    */
   const handleChange = useCallback(
     (e) => {
-      const { name, value, type } = e.target;
+      // Aplica word-wrap (76 chars) a campos largos preservando el caret.
+      const { name, value, type } = applyWrapToInputEvent(e);
 
       // Manejar checkboxes
       if (type === "checkbox") {

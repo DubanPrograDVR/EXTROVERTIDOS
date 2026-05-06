@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   getEventsByUser,
   getUserNotifications,
@@ -29,13 +29,31 @@ import {
 } from "./components";
 import "./styles/perfil.css";
 
+const DEFAULT_PROFILE_SECTION = "publicaciones";
+const VALID_PROFILE_SECTIONS = new Set([
+  "publicaciones",
+  "borradores",
+  "notificaciones",
+  "favoritos",
+  "negocios-guardados",
+  "plan",
+  "negocios",
+  "configuracion",
+]);
+
+const resolveProfileSection = (section) =>
+  VALID_PROFILE_SECTIONS.has(section) ? section : DEFAULT_PROFILE_SECTION;
+
 export default function Perfil() {
   const { user, signOut, isAuthenticated, loading, isModerator, userRole } =
     useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
 
   // Estados principales
-  const [activeSection, setActiveSection] = useState("publicaciones");
+  const [activeSection, setActiveSection] = useState(() =>
+    resolveProfileSection(location.state?.activeSection),
+  );
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userPublications, setUserPublications] = useState([]);
   const [loadingPublications, setLoadingPublications] = useState(false);
@@ -60,6 +78,35 @@ export default function Perfil() {
       navigate("/");
     }
   }, [isAuthenticated, loading, navigate]);
+
+  useEffect(() => {
+    const requestedSection = location.state?.activeSection;
+    if (!requestedSection) return;
+
+    const nextSection = resolveProfileSection(requestedSection);
+    if (nextSection !== activeSection) {
+      setActiveSection(nextSection);
+    }
+
+    navigate(
+      {
+        pathname: location.pathname,
+        search: location.search,
+        hash: location.hash,
+      },
+      {
+        replace: true,
+        state: null,
+      },
+    );
+  }, [
+    activeSection,
+    location.hash,
+    location.pathname,
+    location.search,
+    location.state,
+    navigate,
+  ]);
 
   // Cargar publicaciones del usuario
   const loadUserPublications = async ({ silent = false } = {}) => {

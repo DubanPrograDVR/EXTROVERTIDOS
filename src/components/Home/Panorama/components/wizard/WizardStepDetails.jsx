@@ -14,6 +14,7 @@ const WizardStepDetails = ({ formData, errors, onChange }) => {
   const getTicketDisplayText = () => {
     const tipos = {
       sin_entrada: "Pronto más información",
+      info_descripcion: "Info en Descripción",
       gratuito: "Entrada gratuita",
       pagado: formData.precio
         ? `Entrada General - $${formData.precio} CLP`

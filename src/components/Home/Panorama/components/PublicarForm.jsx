@@ -18,6 +18,7 @@ import {
 } from "./wizard";
 import DraftPreview from "./DraftPreview";
 import FormResetButton from "../../../UI/FormResetButton";
+import { useScrollOnFocus } from "../../../../hooks/useScrollOnFocus";
 import "../styles/draft-preview.css";
 
 const WIZARD_STEPS = [
@@ -55,6 +56,8 @@ const PublicarForm = ({
   const [stepError, setStepError] = useState("");
   const [missingFields, setMissingFields] = useState([]);
   const [errorKey, setErrorKey] = useState(0);
+  const [passedSteps, setPassedSteps] = useState(() => new Set());
+  const scrollOnFocus = useScrollOnFocus();
 
   // Detectar campos obligatorios faltantes por paso
   const getMissingFields = useCallback(() => {
@@ -188,12 +191,20 @@ const PublicarForm = ({
     return () => window.clearTimeout(timeoutId);
   }, [errorKey, stepError]);
 
-  const goToStep = useCallback((step) => {
-    setStepError("");
-    setMissingFields([]);
-    setCurrentStep(step);
-    window.scrollTo({ top: 300, behavior: "smooth" });
-  }, []);
+  const goToStep = useCallback(
+    (step) => {
+      setStepError("");
+      setMissingFields([]);
+
+      if (step !== currentStep) {
+        setPassedSteps((prev) => new Set(prev).add(currentStep));
+      }
+
+      setCurrentStep(step);
+      window.scrollTo({ top: 300, behavior: "smooth" });
+    },
+    [currentStep],
+  );
 
   const scrollToField = useCallback((fieldName) => {
     const el =
@@ -226,6 +237,22 @@ const PublicarForm = ({
       goToStep(currentStep - 1);
     }
   }, [currentStep, goToStep]);
+
+  const isStepCompleted = useCallback(
+    (stepId) =>
+      stepId < currentStep && (stepId !== 3 || passedSteps.has(stepId)),
+    [currentStep, passedSteps],
+  );
+
+  const shouldMarkStepValid = useCallback(
+    (stepId) => {
+      if (!isStepValid(stepId)) return false;
+      if (stepId === 3)
+        return passedSteps.has(stepId) && stepId !== currentStep;
+      return true;
+    },
+    [currentStep, isStepValid, passedSteps],
+  );
 
   const renderStep = () => {
     switch (currentStep) {
@@ -286,29 +313,30 @@ const PublicarForm = ({
     <section className="publicar-form-section">
       {/* Stepper / Progress Bar */}
       <div className="wizard-stepper">
-        {WIZARD_STEPS.map((step) => (
-          <button
-            key={step.id}
-            type="button"
-            className={`wizard-stepper__step ${
-              step.id === currentStep ? "wizard-stepper__step--active" : ""
-            } ${step.id < currentStep ? "wizard-stepper__step--completed" : ""} ${
-              isStepValid(step.id) ? "wizard-stepper__step--valid" : ""
-            }`}
-            onClick={() => goToStep(step.id)}>
-            <span className="wizard-stepper__number">
-              {step.id < currentStep ? (
-                <FontAwesomeIcon icon={faCheck} />
-              ) : (
-                step.id
-              )}
-            </span>
-            <span className="wizard-stepper__title">{step.title}</span>
-            <span className="wizard-stepper__short-title">
-              {step.shortTitle}
-            </span>
-          </button>
-        ))}
+        {WIZARD_STEPS.map((step) => {
+          const stepCompleted = isStepCompleted(step.id);
+          const stepValid = shouldMarkStepValid(step.id);
+
+          return (
+            <button
+              key={step.id}
+              type="button"
+              className={`wizard-stepper__step ${
+                step.id === currentStep ? "wizard-stepper__step--active" : ""
+              } ${stepCompleted ? "wizard-stepper__step--completed" : ""} ${
+                stepValid ? "wizard-stepper__step--valid" : ""
+              }`}
+              onClick={() => goToStep(step.id)}>
+              <span className="wizard-stepper__number">
+                {stepCompleted ? <FontAwesomeIcon icon={faCheck} /> : step.id}
+              </span>
+              <span className="wizard-stepper__title">{step.title}</span>
+              <span className="wizard-stepper__short-title">
+                {step.shortTitle}
+              </span>
+            </button>
+          );
+        })}
         <div
           className="wizard-stepper__progress"
           style={{
@@ -320,7 +348,10 @@ const PublicarForm = ({
       <form
         className="publicar-form"
         onSubmit={onSubmit}
-        onFocus={onFieldFocus}>
+        onFocus={(e) => {
+          onFieldFocus(e);
+          scrollOnFocus(e);
+        }}>
         {/* Contenido del paso actual */}
         <div className="wizard-step-container">
           {/* Reset discreto en esquina superior derecha: solo paso 1 */}

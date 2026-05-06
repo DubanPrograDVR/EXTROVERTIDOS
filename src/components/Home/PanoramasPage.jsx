@@ -24,6 +24,7 @@ import {
   getPublishedEvents,
   getCategories,
   getPublishedBusinesses,
+  getEventById,
 } from "../../lib/database";
 import { useCity } from "../../context/CityContext";
 import { useAuth } from "../../context/AuthContext";
@@ -125,29 +126,42 @@ export default function PanoramasPage() {
     }
   }, [searchParams, selectCity]);
 
-  // Cargar todos los datos (el filtro de ciudad es client-side)
-  const loadData = useCallback(async ({ silent = false } = {}) => {
+  // Cargar panoramas primero: esta consulta define cuándo la página puede mostrarse.
+  const loadEvents = useCallback(async ({ silent = false } = {}) => {
     if (!silent) setLoading(true);
     try {
-      const [eventsData, categoriesData, businessesData] = await Promise.all([
-        getPublishedEvents(),
-        getCategories(),
-        getPublishedBusinesses(),
-      ]);
-
+      const eventsData = await getPublishedEvents();
       setEvents(eventsData || []);
-      setCategories(mapCategoriesToUI(categoriesData || []));
-      setBusinesses(businessesData || []);
     } catch (error) {
-      console.error("Error cargando datos:", error);
+      console.error("Error cargando panoramas:", error);
     } finally {
       if (!silent) setLoading(false);
     }
   }, []);
 
+  const loadCategories = useCallback(async () => {
+    try {
+      const categoriesData = await getCategories();
+      setCategories(mapCategoriesToUI(categoriesData || []));
+    } catch (error) {
+      console.error("Error cargando categorías:", error);
+    }
+  }, []);
+
+  const loadBusinesses = useCallback(async () => {
+    try {
+      const businessesData = await getPublishedBusinesses();
+      setBusinesses(businessesData || []);
+    } catch (error) {
+      console.error("Error cargando negocios destacados:", error);
+    }
+  }, []);
+
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    loadEvents();
+    loadCategories();
+    loadBusinesses();
+  }, [loadEvents, loadCategories, loadBusinesses]);
 
   // Reset de filtros (reutilizable)
   const resetAllFilters = useCallback(() => {
@@ -163,12 +177,12 @@ export default function PanoramasPage() {
   useRealtimeRefetch({
     table: "events",
     event: "*",
-    onChange: () => loadData({ silent: true }),
+    onChange: () => loadEvents({ silent: true }),
   });
   useRealtimeRefetch({
     table: "businesses",
     event: "*",
-    onChange: () => loadData({ silent: true }),
+    onChange: () => loadBusinesses(),
   });
 
   // Handlers para filtros
@@ -229,8 +243,16 @@ export default function PanoramasPage() {
   }, [setSearchParams]);
 
   // Handlers para el modal
-  const handleEventClick = useCallback((event) => {
+  const handleEventClick = useCallback(async (event) => {
     setSelectedEvent(event);
+    if (event?.id) {
+      try {
+        const fullEvent = await getEventById(event.id);
+        setSelectedEvent(fullEvent || event);
+      } catch (error) {
+        console.error("Error cargando detalle del panorama:", error);
+      }
+    }
     setIsModalOpen(true);
   }, []);
 
@@ -334,6 +356,7 @@ export default function PanoramasPage() {
         const precio = event.precio || 0;
         switch (selectedPrice) {
           case "gratis":
+            if (event.tipo_entrada === "info_descripcion") return false;
             return (
               precio === 0 ||
               event.tipo_entrada === "gratis" ||
@@ -862,6 +885,7 @@ export default function PanoramasPage() {
     <div className="panoramas-page">
       {/* Hero Banner con Carrusel */}
       <section className="panoramas-page__hero">
+        <h2 className="panoramas-page__hero-period">Los proximos 7 dias</h2>
         {featuredEvents.length > 0 ? (
           <>
             <div className="panoramas-page__hero-slides">
@@ -983,6 +1007,13 @@ export default function PanoramasPage() {
             {filteredEvents.length}{" "}
             {filteredEvents.length === 1 ? "Panorama" : "Panoramas"} disponibles
           </h2>
+          {!loading && filteredEvents.length > 0 && totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          )}
           <button
             className="panoramas-page__add-btn"
             onClick={handlePublishPanoramaClick}>

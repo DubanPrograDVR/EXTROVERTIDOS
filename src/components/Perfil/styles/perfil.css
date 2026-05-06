@@ -58,13 +58,16 @@
   }
 
   .perfil-content {
-    padding: 20px;
-    padding-top: 70px;
+    padding: 28px 20px 56px;
   }
 }
 
 @media (max-width: 480px) {
   .perfil-main {
-    padding: 15px;
+    padding: 0;
+  }
+
+  .perfil-content {
+    padding: 20px 16px 36px;
   }
 }

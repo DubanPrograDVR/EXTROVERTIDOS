@@ -1785,7 +1785,8 @@
 
 /* Tabla */
 .admin-publications__table-wrapper {
-  overflow-x: auto;
+  max-height: calc(100vh - 260px);
+  overflow: auto;
   background: #111;
   border-radius: 12px;
   border: 1px solid #222;
@@ -1804,12 +1805,16 @@
 }
 
 .admin-publications__table th {
+  position: sticky;
+  top: 0;
+  z-index: 5;
   background: #0a0a0a;
   color: #888;
   font-weight: 600;
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  box-shadow: 0 1px 0 #222;
 }
 
 .admin-publications__table td {
@@ -2158,7 +2163,8 @@
 
 /* ===== ADMIN TABLE ===== */
 .admin-table-wrapper {
-  overflow-x: auto;
+  max-height: calc(100vh - 260px);
+  overflow: auto;
   background: #111;
   border-radius: 12px;
   border: 1px solid rgba(255, 102, 0, 0.2);
@@ -2175,14 +2181,19 @@
 }
 
 .admin-table th {
+  position: sticky;
+  top: 0;
+  z-index: 5;
   padding: 14px 16px;
   text-align: left;
+  background: #1a0f08;
   color: #ff6600;
   font-size: 0.85rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-bottom: 1px solid rgba(255, 102, 0, 0.2);
+  box-shadow: 0 1px 0 rgba(255, 102, 0, 0.2);
 }
 
 .admin-table td {

@@ -370,11 +370,11 @@
   max-width: 100%;
   resize: horizontal;
   min-height: 340px;
-  height: 340px;
-  max-height: 340px;
+  field-sizing: content;
+  max-height: 600px;
   overflow-y: auto;
-  overflow-wrap: anywhere;
-  word-break: break-all;
+  overflow-wrap: break-word;
+  word-break: normal;
   white-space: pre-wrap;
 }
 
@@ -410,6 +410,22 @@
   letter-spacing: 0.3px;
   text-transform: uppercase;
   vertical-align: middle;
+}
+
+.publicar-negocio__label-note {
+  display: inline;
+  margin-left: 10px;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.78rem;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.publicar-negocio__label-note strong {
+  color: #ff8533;
+  font-style: normal;
 }
 
 /* Row (dos columnas) */
@@ -1043,6 +1059,29 @@
   color: #666;
 }
 
+.publicar-negocio__upload-note {
+  margin: 10px 0 0;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  font-style: italic;
+}
+
+.publicar-negocio__upload-note-action,
+.publicar-negocio__upload-note-emphasis {
+  color: #ff8533;
+  font-style: normal;
+}
+
+.publicar-negocio__upload-note-emphasis {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  margin: 2px auto 0;
+  text-align: center;
+  white-space: nowrap;
+}
+
 /* Botones de acción */
 .publicar-negocio__actions {
   display: flex;
@@ -1417,8 +1456,7 @@
 
 .publicar-negocio__field textarea.publicar-negocio__textarea--marketing {
   min-height: 260px;
-  height: 260px;
-  max-height: 260px;
+  max-height: 480px;
   background: rgba(0, 0, 0, 0.3) !important;
   border-color: rgba(255, 133, 51, 0.5) !important;
 }
@@ -1438,6 +1476,20 @@
   font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.4);
   margin-top: 4px;
+}
+
+/* Hint bajo descripción/marketing del flujo de negocio. */
+.publicar-negocio__hint {
+  display: block;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.78rem;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.publicar-negocio__hint strong {
+  color: #ff8533;
+  font-style: normal;
 }
 
 /* ============================================

@@ -7,6 +7,7 @@ import {
   faUser,
   faClock,
   faTicketAlt,
+  faCalendarDay,
   faCalendarWeek,
   faHeart as faHeartSolid,
   faChevronLeft,
@@ -34,6 +35,64 @@ import {
 
 // Imagen placeholder por defecto
 const PLACEHOLDER_IMAGE = "/img/Home1.png";
+
+const parseLocalDate = (dateString) => {
+  if (!dateString) return null;
+  const [year, month, day] = dateString.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+};
+
+const isSameLocalDay = (dateA, dateB) =>
+  dateA.getFullYear() === dateB.getFullYear() &&
+  dateA.getMonth() === dateB.getMonth() &&
+  dateA.getDate() === dateB.getDate();
+
+const addLocalDays = (date, days) => {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + days);
+  nextDate.setHours(0, 0, 0, 0);
+  return nextDate;
+};
+
+const isPublicationOnDate = (publication, targetDate) => {
+  if (
+    publication.es_recurrente &&
+    Array.isArray(publication.fechas_recurrencia) &&
+    publication.fechas_recurrencia.some((fecha) => {
+      const recurringDate = parseLocalDate(fecha);
+      return recurringDate && isSameLocalDay(recurringDate, targetDate);
+    })
+  ) {
+    return true;
+  }
+
+  const startDate = parseLocalDate(publication.fecha_evento);
+  if (!startDate) return false;
+
+  const endDate = parseLocalDate(publication.fecha_fin);
+  const spansMultipleDays =
+    publication.es_multidia ||
+    (endDate &&
+      !isSameLocalDay(startDate, endDate) &&
+      !publication.es_recurrente);
+
+  if (spansMultipleDays && endDate) {
+    return targetDate >= startDate && targetDate <= endDate;
+  }
+
+  return isSameLocalDay(startDate, targetDate);
+};
+
+const getPublicationDayLabel = (publication) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = addLocalDays(today, 1);
+
+  if (isPublicationOnDate(publication, today)) return "Hoy";
+  if (isPublicationOnDate(publication, tomorrow)) return "Mañana";
+  return null;
+};
 
 export default function PublicationCard({
   publication,
@@ -149,6 +208,7 @@ export default function PublicationCard({
 
   // Determinar si es evento recurrente
   const isRecurring = es_recurrente && cantidad_repeticiones > 1;
+  const publicationDayLabel = getPublicationDayLabel(publication);
 
   // Obtener texto inteligente de recurrencia
   const getRecurrenciaText = () => {
@@ -267,6 +327,9 @@ export default function PublicationCard({
   const getEntradaText = () => {
     if (tipo_entrada === "sin_entrada") {
       return "Pronto más información";
+    }
+    if (tipo_entrada === "info_descripcion") {
+      return "Info en Descripción";
     }
     if (
       tipo_entrada === "gratis" ||
@@ -388,9 +451,17 @@ export default function PublicationCard({
         )}
 
         <div className="publication-card__overlay">
-          <span className="publication-card__category">
-            {categories?.nombre || "Sin categoría"}
-          </span>
+          <div className="publication-card__badges">
+            <span className="publication-card__category">
+              {categories?.nombre || "Sin categoría"}
+            </span>
+            {publicationDayLabel && (
+              <span className="publication-card__day-badge">
+                <FontAwesomeIcon icon={faCalendarDay} />
+                {publicationDayLabel}
+              </span>
+            )}
+          </div>
           {/* Botón de favorito */}
           <button
             className={`publication-card__favorite ${

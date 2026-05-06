@@ -22,8 +22,14 @@ import {
   faWhatsapp,
   faInstagram,
   faFacebook,
+  faTiktok,
+  faXTwitter,
+  faYoutube,
+  faLinkedin,
 } from "@fortawesome/free-brands-svg-icons";
+import "../../../Superguia/styles/BusinessModal.css";
 import "../../Panorama/styles/draft-preview.css";
+import { renderRichText } from "../../../../lib/textRender";
 
 // Secciones del modal (igual que BusinessModal)
 const ACCORDION_SECTIONS = {
@@ -34,7 +40,14 @@ const ACCORDION_SECTIONS = {
   CONTACT: "contact",
 };
 
-const AccordionSection = ({ title, icon, isOpen, onToggle, children }) => (
+const AccordionSection = ({
+  title,
+  icon,
+  isOpen,
+  onToggle,
+  bodyClassName,
+  children,
+}) => (
   <div
     className={`accordion-section ${isOpen ? "accordion-section--open" : ""}`}>
     <button
@@ -56,7 +69,10 @@ const AccordionSection = ({ title, icon, isOpen, onToggle, children }) => (
       />
     </button>
     <div className={`accordion-section__content ${isOpen ? "open" : ""}`}>
-      <div className="accordion-section__body">{children}</div>
+      <div
+        className={`accordion-section__body${bodyClassName ? ` ${bodyClassName}` : ""}`}>
+        {children}
+      </div>
     </div>
   </div>
 );
@@ -147,20 +163,24 @@ const BusinessDraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
   const horarioResumen = getHorarioResumen();
 
   // Contacto
-  const hasContacto =
-    formData.telefono ||
-    formData.email ||
+  const hasSocialLinks =
     formData.sitio_web ||
     formData.redes_sociales?.whatsapp ||
     formData.redes_sociales?.instagram ||
-    formData.redes_sociales?.facebook;
+    formData.redes_sociales?.facebook ||
+    formData.redes_sociales?.tiktok ||
+    formData.redes_sociales?.twitter ||
+    formData.redes_sociales?.youtube ||
+    formData.redes_sociales?.linkedin;
+
+  const hasContacto = formData.telefono || formData.email || hasSocialLinks;
 
   return (
     <div
       className="publication-modal-overlay draft-preview-overlay"
       onClick={onClose}>
       <div
-        className="publication-modal publication-modal--business-style publication-modal--business-draft publication-modal--draft"
+        className="publication-modal publication-modal--business publication-modal--business-style publication-modal--business-draft publication-modal--draft"
         onClick={(e) => e.stopPropagation()}>
         {/* Header con branding */}
         <div className="publication-modal__category-header">
@@ -170,8 +190,15 @@ const BusinessDraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
               alt="Superguia"
               className="publication-modal__brand-logo"
             />
-            <span className="publication-modal__brand-text">Superguia</span>
+            <span className="publication-modal__brand-text">
+              Superguia Extrovertidos
+            </span>
           </div>
+          {formData.subcategoria && (
+            <span className="publication-modal__subcategory-tag publication-modal__subcategory-tag--desktop">
+              {formData.subcategoria}
+            </span>
+          )}
           <button className="publication-modal__close" onClick={onClose}>
             <FontAwesomeIcon icon={faTimes} />
           </button>
@@ -183,6 +210,11 @@ const BusinessDraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
           {/* IZQUIERDA: IMAGEN */}
           <div
             className={`publication-modal__left ${isInfoExpanded ? "publication-modal__left--hidden" : ""}`}>
+            {formData.subcategoria && (
+              <span className="publication-modal__subcategory-tag publication-modal__subcategory-tag--mobile">
+                {formData.subcategoria}
+              </span>
+            )}
             <button
               className="publication-modal__mobile-info-btn"
               onClick={() => setIsInfoExpanded(true)}>
@@ -265,26 +297,15 @@ const BusinessDraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
                 title="Descripción"
                 icon={faAlignLeft}
                 isOpen={activeSection === ACCORDION_SECTIONS.DESCRIPTION}
+                bodyClassName="accordion-section__body--description"
                 onToggle={() => toggleSection(ACCORDION_SECTIONS.DESCRIPTION)}>
-                <div className="publication-modal__description-content">
+                <div className="publication-modal__description-content rich-text">
                   {formData.descripcion ? (
-                    <p>{formData.descripcion}</p>
+                    renderRichText(formData.descripcion, {
+                      keyPrefix: "bdraft-desc",
+                    })
                   ) : (
                     <p>Sin descripción agregada aún...</p>
-                  )}
-                  {formData.subcategoria && (
-                    <p
-                      style={{
-                        marginTop: 10,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        color: "#ff6600",
-                        fontSize: "0.9rem",
-                      }}>
-                      <FontAwesomeIcon icon={faLayerGroup} />
-                      Subcategoría: <strong>{formData.subcategoria}</strong>
-                    </p>
                   )}
                 </div>
               </AccordionSection>
@@ -298,8 +319,10 @@ const BusinessDraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
                   onToggle={() =>
                     toggleSection(ACCORDION_SECTIONS.MARKETING_1)
                   }>
-                  <div className="publication-modal__marketing-content">
-                    <p>{formData.mensaje_marketing}</p>
+                  <div className="publication-modal__marketing-content rich-text">
+                    {renderRichText(formData.mensaje_marketing, {
+                      keyPrefix: "bdraft-mkt1",
+                    })}
                   </div>
                 </AccordionSection>
               )}
@@ -313,8 +336,10 @@ const BusinessDraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
                   onToggle={() =>
                     toggleSection(ACCORDION_SECTIONS.MARKETING_2)
                   }>
-                  <div className="publication-modal__marketing-content">
-                    <p>{formData.mensaje_marketing_2}</p>
+                  <div className="publication-modal__marketing-content rich-text">
+                    {renderRichText(formData.mensaje_marketing_2, {
+                      keyPrefix: "bdraft-mkt2",
+                    })}
                   </div>
                 </AccordionSection>
               )}
@@ -401,34 +426,59 @@ const BusinessDraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
                           <span>{formData.email}</span>
                         </span>
                       )}
-                      {formData.sitio_web && (
-                        <span className="publication-modal__contact-item">
-                          <FontAwesomeIcon icon={faGlobe} />
-                          <span>Sitio Web</span>
-                        </span>
-                      )}
 
                       {/* Redes sociales */}
-                      <div className="publication-modal__social">
-                        {formData.redes_sociales?.whatsapp && (
-                          <span className="publication-modal__social-btn publication-modal__social-btn--whatsapp">
-                            <FontAwesomeIcon icon={faWhatsapp} />
-                            WhatsApp
-                          </span>
-                        )}
-                        {formData.redes_sociales?.instagram && (
-                          <span className="publication-modal__social-btn publication-modal__social-btn--instagram">
-                            <FontAwesomeIcon icon={faInstagram} />
-                            Instagram
-                          </span>
-                        )}
-                        {formData.redes_sociales?.facebook && (
-                          <span className="publication-modal__social-btn publication-modal__social-btn--facebook">
-                            <FontAwesomeIcon icon={faFacebook} />
-                            Facebook
-                          </span>
-                        )}
-                      </div>
+                      {hasSocialLinks && (
+                        <div className="publication-modal__social">
+                          {formData.sitio_web && (
+                            <span className="publication-modal__social-btn publication-modal__social-btn--website">
+                              <FontAwesomeIcon icon={faGlobe} />
+                              Sitio web
+                            </span>
+                          )}
+                          {formData.redes_sociales?.whatsapp && (
+                            <span className="publication-modal__social-btn publication-modal__social-btn--whatsapp">
+                              <FontAwesomeIcon icon={faWhatsapp} />
+                              WhatsApp
+                            </span>
+                          )}
+                          {formData.redes_sociales?.instagram && (
+                            <span className="publication-modal__social-btn publication-modal__social-btn--instagram">
+                              <FontAwesomeIcon icon={faInstagram} />
+                              Instagram
+                            </span>
+                          )}
+                          {formData.redes_sociales?.facebook && (
+                            <span className="publication-modal__social-btn publication-modal__social-btn--facebook">
+                              <FontAwesomeIcon icon={faFacebook} />
+                              Facebook
+                            </span>
+                          )}
+                          {formData.redes_sociales?.tiktok && (
+                            <span className="publication-modal__social-btn publication-modal__social-btn--tiktok">
+                              <FontAwesomeIcon icon={faTiktok} />
+                              TikTok
+                            </span>
+                          )}
+                          {formData.redes_sociales?.twitter && (
+                            <span className="publication-modal__social-btn publication-modal__social-btn--twitter">
+                              <FontAwesomeIcon icon={faXTwitter} />X
+                            </span>
+                          )}
+                          {formData.redes_sociales?.youtube && (
+                            <span className="publication-modal__social-btn publication-modal__social-btn--youtube">
+                              <FontAwesomeIcon icon={faYoutube} />
+                              YouTube
+                            </span>
+                          )}
+                          {formData.redes_sociales?.linkedin && (
+                            <span className="publication-modal__social-btn publication-modal__social-btn--linkedin">
+                              <FontAwesomeIcon icon={faLinkedin} />
+                              LinkedIn
+                            </span>
+                          )}
+                        </div>
+                      )}
 
                       {!hasContacto && (
                         <p className="publication-modal__no-data">

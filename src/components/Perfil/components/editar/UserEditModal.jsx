@@ -38,7 +38,7 @@ import {
 
 // Hook
 import { useEditForm } from "./useEditForm";
-import { PROVINCIAS, TIPOS_ENTRADA } from "./constants";
+import { PROVINCIAS, COMUNAS_POR_PROVINCIA, TIPOS_ENTRADA } from "./constants";
 import { uploadEventImage } from "../../../../lib/database/images";
 
 // Estilos - Reutilizar los estilos de PublicationModal para diseño idéntico
@@ -58,6 +58,12 @@ const ACCORDION_SECTIONS = {
   HASHTAGS: "hashtags",
   IMAGES: "images",
 };
+
+const isRealPublicationImage = (imageUrl) =>
+  Boolean(imageUrl) && !String(imageUrl).includes("/img/Home1.png");
+
+const getRealPublicationImages = (images) =>
+  Array.isArray(images) ? images.filter(isRealPublicationImage) : [];
 
 /**
  * Componente AccordionSection reutilizable
@@ -124,6 +130,8 @@ export default function UserEditModal({
   const [newImageFiles, setNewImageFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [hashtagInput, setHashtagInput] = useState("");
+  const [isInfoExpanded, setIsInfoExpanded] = useState(false);
+  const [imageError, setImageError] = useState("");
   const fileInputRef = useRef(null);
 
   const toggleSection = useCallback((section) => {
@@ -136,6 +144,8 @@ export default function UserEditModal({
       setActiveSection(ACCORDION_SECTIONS.DESCRIPTION);
       setCurrentImageIndex(0);
       setNewImageFiles([]);
+      setIsInfoExpanded(false);
+      setImageError("");
     }
   }, [isOpen, event?.id]);
 
@@ -164,6 +174,7 @@ export default function UserEditModal({
       const available = maxTotal - currentTotal;
       if (available <= 0) return;
       setNewImageFiles((prev) => [...prev, ...files.slice(0, available)]);
+      setImageError("");
       if (fileInputRef.current) fileInputRef.current.value = "";
     },
     [formData.imagenes, newImageFiles],
@@ -178,6 +189,16 @@ export default function UserEditModal({
     if (!validateForm()) return;
 
     const dataToSave = prepareDataToSave();
+    const realExistingImages = getRealPublicationImages(dataToSave.imagenes);
+
+    if (realExistingImages.length + newImageFiles.length === 0) {
+      setActiveSection(ACCORDION_SECTIONS.IMAGES);
+      setIsInfoExpanded(true);
+      setImageError("Debes agregar al menos una imagen real para guardar.");
+      return;
+    }
+
+    dataToSave.imagenes = realExistingImages;
 
     // Subir nuevas imágenes si hay
     if (newImageFiles.length > 0 && userId) {
@@ -203,10 +224,8 @@ export default function UserEditModal({
   if (!isOpen || !event) return null;
 
   // Imágenes
-  const validImages =
-    Array.isArray(formData.imagenes) && formData.imagenes.length > 0
-      ? formData.imagenes
-      : ["/img/Home1.png"];
+  const validImages = getRealPublicationImages(formData.imagenes);
+  const currentImageUrl = validImages[currentImageIndex] || null;
   const hasMultipleImages = validImages.length > 1;
 
   const handlePrevImage = () => {
@@ -224,6 +243,9 @@ export default function UserEditModal({
   const currentCategory = categories.find(
     (c) => String(c.id) === String(formData.category_id),
   );
+  const comunas = formData.provincia
+    ? COMUNAS_POR_PROVINCIA[formData.provincia] || []
+    : [];
 
   return (
     <div
@@ -232,7 +254,7 @@ export default function UserEditModal({
         if (e.target === e.currentTarget && !loading) onClose();
       }}>
       <form
-        className="publication-modal publication-modal--business-style"
+        className="publication-modal publication-modal--business-style publication-modal--user-edit"
         role="dialog"
         aria-modal="true"
         aria-label="Editar publicación"
@@ -253,7 +275,7 @@ export default function UserEditModal({
               <option value="">Seleccionar categoría</option>
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
-                  {cat.icono} {cat.nombre}
+                  {cat.nombre}
                 </option>
               ))}
             </select>
@@ -300,23 +322,45 @@ export default function UserEditModal({
         </button>
 
         {/* Cuerpo del modal (imagen + contenido) */}
-        <div className="publication-modal__body">
+        <div
+          className={`publication-modal__body ${isInfoExpanded ? "publication-modal__body--expanded" : ""}`}>
           {/* ===== SECCIÓN IZQUIERDA: IMAGEN ===== */}
-          <div className="publication-modal__left">
+          <div
+            className={`publication-modal__left ${isInfoExpanded ? "publication-modal__left--hidden" : ""}`}>
+            <button
+              type="button"
+              className="publication-modal__mobile-info-btn"
+              onClick={() => setIsInfoExpanded(true)}>
+              <FontAwesomeIcon icon={faInfoCircle} />
+              Más info
+              <FontAwesomeIcon
+                icon={faChevronUp}
+                className="publication-modal__mobile-info-btn-arrow"
+              />
+            </button>
             <div
               className="publication-modal__image-bg"
               style={{
-                backgroundImage: `url(${validImages[currentImageIndex]})`,
+                backgroundImage: currentImageUrl
+                  ? `url(${currentImageUrl})`
+                  : "none",
               }}
             />
-            <img
-              src={validImages[currentImageIndex]}
-              alt={formData.titulo || "Imagen"}
-              className="publication-modal__main-image"
-              onError={(e) => {
-                e.target.src = "/img/Home1.png";
-              }}
-            />
+            {currentImageUrl ? (
+              <img
+                src={currentImageUrl}
+                alt={formData.titulo || "Imagen"}
+                className="publication-modal__main-image"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            ) : (
+              <div className="publication-modal__image-empty">
+                <FontAwesomeIcon icon={faImage} />
+                <span>Agrega una imagen para publicar</span>
+              </div>
+            )}
             {hasMultipleImages && (
               <>
                 <button
@@ -347,7 +391,21 @@ export default function UserEditModal({
           </div>
 
           {/* ===== SECCIÓN DERECHA: CONTENIDO ===== */}
-          <div className="publication-modal__right">
+          <div
+            className={`publication-modal__right ${isInfoExpanded ? "publication-modal__right--expanded" : ""}`}>
+            {isInfoExpanded && (
+              <button
+                type="button"
+                className="publication-modal__mobile-image-btn"
+                onClick={() => setIsInfoExpanded(false)}>
+                <FontAwesomeIcon icon={faImage} />
+                Ver imagen
+                <FontAwesomeIcon
+                  icon={faChevronDown}
+                  className="publication-modal__mobile-info-btn-arrow"
+                />
+              </button>
+            )}
             {/* Título editable */}
             <div className="publication-modal__title-section">
               <input
@@ -625,14 +683,23 @@ export default function UserEditModal({
                   <label className="publication-modal__edit-label">
                     Comuna *
                   </label>
-                  <input
-                    type="text"
-                    className="publication-modal__edit-input"
+                  <select
+                    className="publication-modal__edit-select"
                     name="comuna"
                     value={formData.comuna}
                     onChange={handleChange}
-                    placeholder="Comuna"
-                  />
+                    disabled={!formData.provincia}>
+                    <option value="">
+                      {formData.provincia
+                        ? "Seleccionar comuna"
+                        : "Primero selecciona provincia"}
+                    </option>
+                    {comunas.map((comuna) => (
+                      <option key={comuna} value={comuna}>
+                        {comuna}
+                      </option>
+                    ))}
+                  </select>
                   {errors.comuna && (
                     <span style={{ color: "#ff4444", fontSize: "0.8rem" }}>
                       {errors.comuna}
@@ -945,6 +1012,17 @@ export default function UserEditModal({
                     <FontAwesomeIcon icon={faInfoCircle} /> Puedes eliminar o
                     agregar imágenes (máximo 5).
                   </p>
+                  {imageError && (
+                    <p
+                      style={{
+                        color: "#ff4444",
+                        fontSize: "0.85rem",
+                        margin: "0 0 12px",
+                        fontWeight: "700",
+                      }}>
+                      {imageError}
+                    </p>
+                  )}
                   {formData.imagenes && formData.imagenes.length > 0 ? (
                     <div
                       style={{

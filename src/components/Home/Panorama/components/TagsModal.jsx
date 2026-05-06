@@ -89,7 +89,13 @@ const saveCustomTagsToStorage = (tags) => {
 /**
  * Modal para seleccionar etiquetas complementarias
  */
-const TagsModal = ({ isOpen, onClose, selectedTags = [], onSave }) => {
+const TagsModal = ({
+  isOpen,
+  onClose,
+  selectedTags = [],
+  onSelectionChange,
+  onSave,
+}) => {
   const [internalSelected, setInternalSelected] = useState([]);
   const [dbTags, setDbTags] = useState([]);
   const [loadingDbTags, setLoadingDbTags] = useState(false);
@@ -98,6 +104,9 @@ const TagsModal = ({ isOpen, onClose, selectedTags = [], onSave }) => {
   const [savedCustomTags, setSavedCustomTags] = useState([]);
   const customInputRef = useRef(null);
   const isMountedRef = useRef(true);
+  const isOpenRef = useRef(false);
+  const initialSelectedRef = useRef([]);
+  const internalSelectedRef = useRef([]);
   const contentRef = useRef(null);
   const tagRefsMap = useRef({});
   const [highlightedTag, setHighlightedTag] = useState(null);
@@ -109,15 +118,28 @@ const TagsModal = ({ isOpen, onClose, selectedTags = [], onSave }) => {
     };
   }, []);
 
-  // Sincronizar con tags externos cuando se abre
+  const applySelection = (tags, { notify = false } = {}) => {
+    internalSelectedRef.current = tags;
+    setInternalSelected(tags);
+    if (notify) onSelectionChange?.(tags);
+  };
+
+  // Sincronizar con tags externos solo al abrir el modal.
   useEffect(() => {
-    if (isOpen) {
-      setInternalSelected(selectedTags || []);
-      setCustomTag("");
-      setCustomTagError("");
-      setSavedCustomTags(loadCustomTagsFromStorage());
-      loadDbTags();
+    if (!isOpen) {
+      isOpenRef.current = false;
+      return;
     }
+
+    if (isOpenRef.current) return;
+
+    isOpenRef.current = true;
+    initialSelectedRef.current = selectedTags || [];
+    applySelection(selectedTags || []);
+    setCustomTag("");
+    setCustomTagError("");
+    setSavedCustomTags(loadCustomTagsFromStorage());
+    loadDbTags();
   }, [isOpen, selectedTags]);
 
   // Cargar tags de la base de datos (opcional, complementa las predefinidas)
@@ -138,15 +160,16 @@ const TagsModal = ({ isOpen, onClose, selectedTags = [], onSave }) => {
 
   // Toggle selección de tag
   const handleToggleTag = (tag) => {
-    setInternalSelected((prev) => {
-      if (prev.includes(tag)) {
-        return prev.filter((t) => t !== tag);
-      }
-      if (prev.length >= MAX_TAGS) {
-        return prev; // No agregar más si ya hay 10
-      }
-      return [...prev, tag];
-    });
+    const currentSelection = internalSelectedRef.current;
+    if (currentSelection.includes(tag)) {
+      applySelection(
+        currentSelection.filter((t) => t !== tag),
+        { notify: true },
+      );
+      return;
+    }
+    if (currentSelection.length >= MAX_TAGS) return;
+    applySelection([...currentSelection, tag], { notify: true });
   };
 
   // Agregar hashtag personalizado
@@ -167,8 +190,9 @@ const TagsModal = ({ isOpen, onClose, selectedTags = [], onSave }) => {
       setCustomTagError("El hashtag es demasiado largo (máx. 30)");
       return;
     }
+    const currentSelection = internalSelectedRef.current;
     if (
-      internalSelected.includes(formatted) ||
+      currentSelection.includes(formatted) ||
       ETIQUETAS_PREDEFINIDAS.includes(formatted)
     ) {
       setCustomTagError("Esta etiqueta ya existe");
@@ -181,12 +205,12 @@ const TagsModal = ({ isOpen, onClose, selectedTags = [], onSave }) => {
       }
       return;
     }
-    if (internalSelected.length >= MAX_TAGS) {
+    if (currentSelection.length >= MAX_TAGS) {
       setCustomTagError(`Máximo ${MAX_TAGS} etiquetas`);
       return;
     }
 
-    setInternalSelected((prev) => [...prev, formatted]);
+    applySelection([...currentSelection, formatted], { notify: true });
 
     // Guardar en localStorage si no es predefinida
     if (!ETIQUETAS_PREDEFINIDAS.includes(formatted)) {
@@ -204,7 +228,10 @@ const TagsModal = ({ isOpen, onClose, selectedTags = [], onSave }) => {
     const updated = savedCustomTags.filter((t) => t !== tagToDelete);
     setSavedCustomTags(updated);
     saveCustomTagsToStorage(updated);
-    setInternalSelected((prev) => prev.filter((t) => t !== tagToDelete));
+    applySelection(
+      internalSelectedRef.current.filter((t) => t !== tagToDelete),
+      { notify: true },
+    );
   };
 
   // Handler para Enter en el input
@@ -217,13 +244,13 @@ const TagsModal = ({ isOpen, onClose, selectedTags = [], onSave }) => {
 
   // Guardar y cerrar
   const handleSave = () => {
-    onSave(internalSelected);
+    onSave(internalSelectedRef.current);
     onClose();
   };
 
   // Cancelar
   const handleCancel = () => {
-    setInternalSelected(selectedTags || []);
+    applySelection(initialSelectedRef.current, { notify: true });
     onClose();
   };
 

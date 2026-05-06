@@ -1,4 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
+import {
+  applyWrapToInputEvent,
+  wrapPersistedFields,
+} from "../../../../lib/textWrap";
 
 const DIAS_SEMANA_KEYS = [
   "Lunes",
@@ -102,8 +106,15 @@ export const useBusinessEditForm = (business, isOpen) => {
   }, [business, isOpen]);
 
   const handleChange = useCallback((e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    // Aplica word-wrap (76 chars) a descripcion / mensaje_marketing*.
+    const { name, value } = applyWrapToInputEvent(e);
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+      ...(name === "provincia" && prev.provincia !== value
+        ? { comuna: "" }
+        : {}),
+    }));
     setErrors((prev) => ({ ...prev, [name]: null }));
   }, []);
 
@@ -163,7 +174,7 @@ export const useBusinessEditForm = (business, isOpen) => {
       ];
     });
 
-    return {
+    return wrapPersistedFields({
       nombre: formData.nombre,
       descripcion: formData.descripcion,
       categoria: formData.categoria,
@@ -184,7 +195,7 @@ export const useBusinessEditForm = (business, isOpen) => {
       imagenes: formData.imagenes,
       horarios: Object.keys(horarios).length > 0 ? horarios : {},
       dias_atencion: formData.dias_atencion,
-    };
+    });
   }, [formData]);
 
   return {

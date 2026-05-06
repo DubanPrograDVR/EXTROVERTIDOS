@@ -2,16 +2,13 @@
  * Constantes para el modal de edición de publicaciones
  */
 
-// Provincias del Maule
-export const PROVINCIAS = ["Talca", "Curicó", "Linares", "Cauquenes"];
+import {
+  PROVINCIAS,
+  COMUNAS_POR_PROVINCIA,
+  TIPOS_ENTRADA,
+} from "../../../Home/Panorama/constants";
 
-// Tipos de entrada
-export const TIPOS_ENTRADA = [
-  { value: "sin_entrada", label: "Pronto más información" },
-  { value: "gratuito", label: "Entrada gratuita" },
-  { value: "pagado", label: "Entrada pagada" },
-  { value: "venta_externa", label: "Venta externa" },
-];
+export { PROVINCIAS, COMUNAS_POR_PROVINCIA, TIPOS_ENTRADA };
 
 // Estado inicial del formulario de edición
 export const INITIAL_EDIT_STATE = {

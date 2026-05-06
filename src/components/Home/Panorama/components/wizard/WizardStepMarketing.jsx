@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBullhorn,
@@ -7,6 +7,15 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import TagsModal from "../TagsModal";
 
+const parseSelectedTags = (hashtags) => {
+  if (!hashtags) return [];
+  return hashtags
+    .split("#")
+    .map((tag) => tag.trim())
+    .filter((tag) => tag.length > 0)
+    .map((tag) => `#${tag.toUpperCase()}`);
+};
+
 /**
  * Wizard Step 4: Marketing y Etiquetas
  * Marketing 1, Marketing 2, Etiquetas complementarias, Etiqueta destacada
@@ -14,18 +23,22 @@ import TagsModal from "../TagsModal";
 const WizardStepMarketing = ({ formData, errors, onChange }) => {
   const [isTagsModalOpen, setIsTagsModalOpen] = useState(false);
 
+  const selectedTags = useMemo(
+    () => parseSelectedTags(formData.hashtags),
+    [formData.hashtags],
+  );
+
+  const handleTagsChange = useCallback(
+    (tags) => {
+      const tagsString = tags.join(" ");
+      onChange({ target: { name: "hashtags", value: tagsString } });
+    },
+    [onChange],
+  );
+
   const handleTagsSave = (tags) => {
     const tagsString = tags.join(" ");
     onChange({ target: { name: "hashtags", value: tagsString } });
-  };
-
-  const getSelectedTags = () => {
-    if (!formData.hashtags) return [];
-    return formData.hashtags
-      .split("#")
-      .map((tag) => tag.trim())
-      .filter((tag) => tag.length > 0)
-      .map((tag) => `#${tag.toUpperCase()}`);
   };
 
   return (
@@ -35,14 +48,9 @@ const WizardStepMarketing = ({ formData, errors, onChange }) => {
         <label className="publicar-form__label">
           <FontAwesomeIcon icon={faBullhorn} /> Mensaje de Marketing N° 1
           <span className="publicar-form__label-hint"> (Opcional)</span>
-          <span
-            style={{
-              color: "gray",
-              fontSize: "12px",
-              marginTop: "5px",
-              marginLeft: "10px",
-            }}>
-            Engancha a tu público
+          <span className="publicar-form__label-note">
+            (Presiona <strong>Ver Borrador</strong> para ver el orden final de
+            este texto)
           </span>
         </label>
         <div className="publicar-form__marketing-title">
@@ -82,14 +90,9 @@ const WizardStepMarketing = ({ formData, errors, onChange }) => {
         <label className="publicar-form__label">
           <FontAwesomeIcon icon={faBullhorn} /> Mensaje de Marketing N° 2
           <span className="publicar-form__label-hint"> (Opcional)</span>
-          <span
-            style={{
-              color: "gray",
-              fontSize: "12px",
-              marginTop: "5px",
-              marginLeft: "10px",
-            }}>
-            Mensaje adicional
+          <span className="publicar-form__label-note">
+            (Presiona <strong>Ver Borrador</strong> para ver el orden final de
+            este texto)
           </span>
         </label>
         <div className="publicar-form__marketing-title">
@@ -146,9 +149,9 @@ const WizardStepMarketing = ({ formData, errors, onChange }) => {
           <FontAwesomeIcon icon={faTags} />
           Ver Etiquetas
         </button>
-        {getSelectedTags().length > 0 && (
+        {selectedTags.length > 0 && (
           <div className="publicar-form__selected-tags">
-            {getSelectedTags().map((tag) => (
+            {selectedTags.map((tag) => (
               <span key={tag} className="publicar-form__tag">
                 {tag}
               </span>
@@ -187,7 +190,8 @@ const WizardStepMarketing = ({ formData, errors, onChange }) => {
       <TagsModal
         isOpen={isTagsModalOpen}
         onClose={() => setIsTagsModalOpen(false)}
-        selectedTags={getSelectedTags()}
+        selectedTags={selectedTags}
+        onSelectionChange={handleTagsChange}
         onSave={handleTagsSave}
       />
     </div>

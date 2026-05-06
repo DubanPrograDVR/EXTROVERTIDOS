@@ -19,6 +19,7 @@ import {
   faSpinner,
   faLocationArrow,
 } from "@fortawesome/free-solid-svg-icons";
+import AdminDeleteConfirmModal from "./AdminDeleteConfirmModal";
 
 /**
  * Lista de negocios para el panel de administración
@@ -40,6 +41,7 @@ export default function AdminBusinessList({
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
@@ -118,6 +120,20 @@ export default function AdminBusinessList({
     } else {
       setSelectedIds(new Set(filteredBusinesses.map((b) => b.id)));
     }
+  };
+
+  const handleDeleteClick = (business) => {
+    setDeleteConfirm(business);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirm || !onDelete) return;
+    await onDelete(deleteConfirm.id);
+    setDeleteConfirm(null);
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirm(null);
   };
 
   // Eliminar seleccionados
@@ -392,15 +408,7 @@ export default function AdminBusinessList({
                         {onDelete && (
                           <button
                             className="admin-table__action admin-table__action--delete"
-                            onClick={() => {
-                              if (
-                                window.confirm(
-                                  `¿Eliminar el negocio "${business.nombre}"?`,
-                                )
-                              ) {
-                                onDelete(business.id);
-                              }
-                            }}
+                            onClick={() => handleDeleteClick(business)}
                             disabled={actionLoading === business.id}
                             title="Eliminar negocio">
                             <FontAwesomeIcon icon={faTrash} />
@@ -583,15 +591,7 @@ export default function AdminBusinessList({
                       {onDelete && (
                         <button
                           className="admin-pub-btn admin-pub-btn--delete"
-                          onClick={() => {
-                            if (
-                              window.confirm(
-                                `¿Eliminar el negocio "${business.nombre}"?`,
-                              )
-                            ) {
-                              onDelete(business.id);
-                            }
-                          }}
+                          onClick={() => handleDeleteClick(business)}
                           disabled={actionLoading === business.id}
                           title="Eliminar">
                           <FontAwesomeIcon icon={faTrash} />
@@ -621,6 +621,18 @@ export default function AdminBusinessList({
             ))}
           </div>
         </>
+      )}
+
+      {/* Modal de confirmación de eliminación */}
+      {deleteConfirm && (
+        <AdminDeleteConfirmModal
+          title="¿Eliminar negocio?"
+          itemName={deleteConfirm.nombre}
+          itemType="negocio"
+          loading={actionLoading === deleteConfirm.id}
+          onCancel={handleDeleteCancel}
+          onConfirm={handleDeleteConfirm}
+        />
       )}
 
       {/* Modal de confirmación de eliminación masiva */}

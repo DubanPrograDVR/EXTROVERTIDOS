@@ -150,6 +150,22 @@
   vertical-align: middle;
 }
 
+.publicar-form__label-note {
+  display: inline;
+  margin-left: 10px;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.78rem;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.publicar-form__label-note strong {
+  color: #ff8533;
+  font-style: normal;
+}
+
 .publicar-form__label-required {
   font-weight: 600;
   font-size: 0.7rem;
@@ -403,11 +419,13 @@
   max-width: 100%;
   resize: horizontal;
   min-height: 340px;
-  height: 340px;
-  max-height: 340px;
+  /* `field-sizing: content` permite auto-resize en navegadores modernos
+   * (Chromium 123+, Edge 123+). En Firefox cae al min-height fijo. */
+  field-sizing: content;
+  max-height: 600px;
   overflow-y: auto;
-  overflow-wrap: anywhere;
-  word-break: break-all;
+  overflow-wrap: break-word;
+  word-break: normal;
   white-space: pre-wrap;
 }
 
@@ -420,8 +438,7 @@
 /* Textarea especial para mensaje de marketing */
 .publicar-form__textarea--marketing {
   min-height: 260px;
-  height: 260px;
-  max-height: 260px;
+  max-height: 480px;
   background: linear-gradient(135deg, #1a1a1a 0%, #1f1a15 100%);
   border-color: #ff8533;
 }
@@ -483,6 +500,21 @@
   color: rgba(255, 255, 255, 0.4);
   font-size: 0.8rem;
   margin-top: 5px;
+}
+
+/* Hint de ayuda bajo descripción/marketing.
+ * Recordatorio de que el orden final del texto se ve en "Ver Borrador". */
+.publicar-form__hint {
+  display: block;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.78rem;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.publicar-form__hint strong {
+  color: #ff8533;
+  font-style: normal;
 }
 
 /* Social inputs */
@@ -580,6 +612,33 @@
   color: rgba(255, 255, 255, 0.4) !important;
   font-size: 0.85rem !important;
   margin-top: 5px;
+}
+
+.publicar-form__upload-note {
+  margin: 10px 0 0;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  font-style: italic;
+}
+
+.publicar-form__upload-note-action,
+.publicar-form__upload-note-emphasis {
+  color: #ff8533;
+  font-style: normal;
+}
+
+.publicar-form__upload-note-emphasis {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  margin: 2px auto 0;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.publicar-form__upload-note-emphasis {
+  white-space: nowrap;
 }
 
 .publicar-form__preview {

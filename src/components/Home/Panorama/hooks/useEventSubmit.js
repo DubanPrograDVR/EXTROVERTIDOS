@@ -12,6 +12,7 @@ import {
   canUserPublish,
   interpretPublishResult,
 } from "../../../../lib/planRules";
+import { wrapPersistedFields } from "../../../../lib/textWrap";
 
 /**
  * Hook especializado para manejar el proceso de envío de eventos
@@ -135,7 +136,7 @@ const useEventSubmit = ({
         }
       });
 
-      return {
+      return wrapPersistedFields({
         titulo: formData.titulo.trim(),
         descripcion: formData.descripcion.trim(),
         titulo_marketing: formData.titulo_marketing?.trim() || null,
@@ -173,14 +174,17 @@ const useEventSubmit = ({
         tipo_entrada: formData.tipo_entrada || "sin_entrada",
         precio:
           formData.tipo_entrada === "pagado" ? parseInt(formData.precio) : null,
-        url_venta: formData.url_venta?.trim() || null,
+        url_venta:
+          formData.tipo_entrada === "venta_externa"
+            ? formData.url_venta?.trim() || null
+            : null,
         telefono_contacto: formData.telefono_contacto?.trim() || null,
         sitio_web: formData.sitio_web?.trim() || null,
         hashtags: formData.hashtags?.trim() || null,
         etiqueta_directa: formData.etiqueta_directa?.trim() || null,
         redes_sociales: redesLimpias,
         imagenes: allImageUrls,
-      };
+      });
     },
     [user],
   );
@@ -407,9 +411,13 @@ const useEventSubmit = ({
 
         // 7. REDIRECCIÓN
         if (isMountedRef.current) {
-          const redirectPath =
-            currentIsAdmin || currentIsModerator ? "/admin" : "/perfil";
-          navigate(redirectPath);
+          if (currentIsAdmin || currentIsModerator) {
+            navigate("/admin");
+          } else {
+            navigate("/perfil", {
+              state: { activeSection: "publicaciones" },
+            });
+          }
         }
 
         return true;

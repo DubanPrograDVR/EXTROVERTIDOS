@@ -3,6 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../../../context/AuthContext";
 import { supabase } from "../../../../../lib/supabase";
 import {
+  applyWrapToInputEvent,
+  wrapPersistedFields,
+} from "../../../../../lib/textWrap";
+import {
   createBusiness,
   uploadBusinessImage,
   saveDraft,
@@ -199,7 +203,8 @@ export const useNegocioForm = () => {
 
   // Manejar cambios en inputs
   const handleChange = useCallback((e) => {
-    const { name, value } = e.target;
+    // Aplica word-wrap (76 chars) a descripcion / mensaje_marketing*.
+    const { name, value } = applyWrapToInputEvent(e);
 
     // Manejar campos anidados (redes_sociales)
     if (name.startsWith("redes_")) {
@@ -511,7 +516,7 @@ export const useNegocioForm = () => {
           (c) => c.id === parseInt(formData.category_id),
         );
 
-        const businessData = {
+        const businessData = wrapPersistedFields({
           user_id: user.id,
           nombre: formData.nombre.trim(),
           descripcion: formData.descripcion.trim(),
@@ -541,7 +546,7 @@ export const useNegocioForm = () => {
           mensaje_marketing: formData.mensaje_marketing?.trim() || null,
           titulo_marketing_2: formData.titulo_marketing_2?.trim() || null,
           mensaje_marketing_2: formData.mensaje_marketing_2?.trim() || null,
-        };
+        });
 
         // 3. Crear negocio en la BD
         createdBusiness = await createBusiness(businessData);
@@ -609,8 +614,14 @@ export const useNegocioForm = () => {
         // Resetear formulario
         resetForm();
 
-        // Redirigir: admin siempre vuelve al panel, usuarios normales al perfil
-        navigate(isAdmin ? "/admin" : "/perfil");
+        // Redirigir al destino coherente según tipo de publicación
+        if (isAdmin || isModerator) {
+          navigate("/admin");
+        } else {
+          navigate("/perfil", {
+            state: { activeSection: "negocios" },
+          });
+        }
       } catch (error) {
         console.error("Error al crear negocio:", error);
         if (publishResult?.subscription_id && !createdBusiness) {

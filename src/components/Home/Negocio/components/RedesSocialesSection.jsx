@@ -60,13 +60,13 @@ const RedesSocialesSection = ({ formData, onChange, onFieldFocus }) => {
           WhatsApp
         </label>
         <input
-          type="url"
+          type="tel"
           id="redes_whatsapp"
           name="redes_whatsapp"
           value={formData.redes_sociales.whatsapp}
           onChange={onChange}
           onFocus={onFieldFocus}
-          placeholder="https://wa.me/56912345678"
+          placeholder="+56 9 1234 5678"
         />
       </div>
 

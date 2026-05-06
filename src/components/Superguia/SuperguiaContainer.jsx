@@ -14,6 +14,7 @@ import {
   getPublishedBusinesses,
   getBusinessCategories,
   getPublishedEvents,
+  getEventById,
 } from "../../lib/database";
 import { useRealtimeRefetch } from "../../hooks/useRealtimeRefetch";
 import { useHighlightCard } from "../../hooks/useHighlightCard";
@@ -117,6 +118,13 @@ export default function SuperguiaContainer() {
   const [currentPage, setCurrentPage] = useState(1);
   const filterRef = useRef(null);
   const shouldScrollToFiltersRef = useRef(false);
+
+  // Scroll al tope al montar la página (necesario en iOS)
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, []);
 
   const handlePageChange = useCallback(
     (page) => {
@@ -222,43 +230,56 @@ export default function SuperguiaContainer() {
     return () => window.clearTimeout(timeoutId);
   }, [weekRefreshKey]);
 
-  // Cargar datos
-  const loadData = useCallback(async ({ silent = false } = {}) => {
+  // Cargar negocios primero: esta consulta define cuándo Superguía puede mostrarse.
+  const loadBusinesses = useCallback(async ({ silent = false } = {}) => {
     if (!silent) setLoading(true);
     setError(null);
     try {
-      const [businessesData, categoriesData, eventsData] = await Promise.all([
-        getPublishedBusinesses(),
-        getBusinessCategories(),
-        getPublishedEvents(),
-      ]);
-      // Mezclar negocios en orden aleatorio cada vez que se carga
+      const businessesData = await getPublishedBusinesses();
       const shuffled = (businessesData || []).sort(() => Math.random() - 0.5);
       setBusinesses(shuffled);
-      setCategories(categoriesData || []);
-      setPanoramas(eventsData || []);
     } catch (err) {
-      console.error("Error cargando datos:", err);
+      console.error("Error cargando negocios:", err);
       if (!silent) setError("No se pudieron cargar los negocios");
     } finally {
       if (!silent) setLoading(false);
     }
   }, []);
 
+  const loadCategories = useCallback(async () => {
+    try {
+      const categoriesData = await getBusinessCategories();
+      setCategories(categoriesData || []);
+    } catch (err) {
+      console.error("Error cargando categorías de negocios:", err);
+    }
+  }, []);
+
+  const loadPanoramas = useCallback(async () => {
+    try {
+      const eventsData = await getPublishedEvents();
+      setPanoramas(eventsData || []);
+    } catch (err) {
+      console.error("Error cargando panoramas destacados:", err);
+    }
+  }, []);
+
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    loadBusinesses();
+    loadCategories();
+    loadPanoramas();
+  }, [loadBusinesses, loadCategories, loadPanoramas]);
 
   // Tiempo real: actualizar cuando se publica/actualiza un negocio o evento
   useRealtimeRefetch({
     table: "businesses",
     event: "*",
-    onChange: () => loadData({ silent: true }),
+    onChange: () => loadBusinesses({ silent: true }),
   });
   useRealtimeRefetch({
     table: "events",
     event: "*",
-    onChange: () => loadData({ silent: true }),
+    onChange: () => loadPanoramas(),
   });
 
   // Construir subcategorías planas para el FilterPanel
@@ -330,8 +351,16 @@ export default function SuperguiaContainer() {
   }, []);
 
   // Handlers para carrusel de panoramas
-  const handlePanoramaClick = useCallback((panorama) => {
+  const handlePanoramaClick = useCallback(async (panorama) => {
     setSelectedPanorama(panorama);
+    if (panorama?.id) {
+      try {
+        const fullPanorama = await getEventById(panorama.id);
+        setSelectedPanorama(fullPanorama || panorama);
+      } catch (error) {
+        console.error("Error cargando detalle del panorama:", error);
+      }
+    }
     setIsPanoramaModalOpen(true);
   }, []);
 
@@ -596,7 +625,7 @@ export default function SuperguiaContainer() {
               alt="Extrovertidos"
               className="superguia__hero-logo"
             />
-            <h1 className="superguia__hero-title">Superguia Extrovertidos</h1>
+            <h1 className="superguia__hero-title">Superguia extrovertidos</h1>
             <p className="superguia__hero-subtitle">
               Explora los mejores Negocios y Servicios de tu Ciudad
             </p>
@@ -605,23 +634,6 @@ export default function SuperguiaContainer() {
 
         {/* Contenido principal */}
         <div className="superguia__container">
-          {/* Header con título y botón */}
-          <div className="superguia__header">
-            <div className="superguia__header-left">
-              <h2>Negocios</h2>
-              <span className="superguia__count">
-                {filteredBusinesses.length} resultado
-                {filteredBusinesses.length !== 1 ? "s" : ""}
-              </span>
-            </div>
-            <button
-              className="superguia__new-btn"
-              onClick={handlePublishBusinessClick}>
-              <FontAwesomeIcon icon={faPlus} />
-              Publicar Negocio
-            </button>
-          </div>
-
           {/* Panel de filtros */}
           <div ref={filterRef}>
             <FilterPanel
@@ -651,6 +663,33 @@ export default function SuperguiaContainer() {
               eventsCountByComuna={businessesCountByComuna}
               eventsCountBySubcategory={businessesCountBySubcategory}
             />
+          </div>
+
+          {/* Header con título, paginación y botón */}
+          <div className="superguia__header">
+            <div className="superguia__header-left">
+              <h2>Negocios</h2>
+              <span className="superguia__count">
+                {filteredBusinesses.length} resultado
+                {filteredBusinesses.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+            {!loading &&
+              !error &&
+              filteredBusinesses.length > 0 &&
+              totalPages > 1 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
+              )}
+            <button
+              className="superguia__new-btn"
+              onClick={handlePublishBusinessClick}>
+              <FontAwesomeIcon icon={faPlus} />
+              Publicar Negocio
+            </button>
           </div>
 
           {/* Estado de carga */}

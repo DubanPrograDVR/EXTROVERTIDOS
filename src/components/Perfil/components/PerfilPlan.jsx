@@ -16,6 +16,7 @@ import {
   getUserSubscriptions,
   cancelSubscription,
 } from "../../../lib/database";
+import { MAX_DIAS_CREACION } from "../../../lib/planRules";
 import { useToast } from "../../../context/ToastContext";
 import "./styles/section.css";
 import "./styles/plan.css";
@@ -25,6 +26,7 @@ const iconPanorama = "/img/P_Extro.png";
 const iconExtro = "/img/E_Extro.png";
 const logoExtrovertidos = "/img/Logo_extrovertidos.png";
 const iconSuperguia = "/img/SG_Extro.png";
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 /**
  * Todos los planes disponibles con sus datos visuales
@@ -87,6 +89,45 @@ function hasRemainingQuota(subscription) {
   const total = Number(subscription.publicaciones_total ?? 0);
   const used = Number(subscription.publicaciones_usadas ?? 0);
   return used < total;
+}
+
+function getPublishWindowDaysLeft(subscription) {
+  if (!subscription) return null;
+
+  const startDate = subscription.fecha_inicio
+    ? new Date(subscription.fecha_inicio)
+    : null;
+
+  if (startDate && !Number.isNaN(startDate.getTime())) {
+    const daysElapsed = Math.floor((new Date() - startDate) / MS_PER_DAY);
+    return Math.max(MAX_DIAS_CREACION - daysElapsed, 0);
+  }
+
+  const endDate = subscription.fecha_fin
+    ? new Date(subscription.fecha_fin)
+    : null;
+  if (endDate && !Number.isNaN(endDate.getTime())) {
+    return Math.max(Math.ceil((endDate - new Date()) / MS_PER_DAY), 0);
+  }
+
+  return null;
+}
+
+function getPublishWindowInfo(subscription) {
+  const daysLeft = getPublishWindowDaysLeft(subscription);
+  if (daysLeft === null) return null;
+
+  const isSuperguia = subscription.plan === "superguia";
+
+  return {
+    daysLeft,
+    type: isSuperguia ? "superguia" : "panorama",
+    label: isSuperguia ? "Superguía" : "Panoramas",
+    unit: daysLeft === 1 ? "día restante" : "días restantes",
+    description: isSuperguia
+      ? "Para publicar tu negocio en la Superguía."
+      : "Para publicar tus panoramas.",
+  };
 }
 
 function isRenewablePanorama(subscription) {
@@ -247,6 +288,9 @@ export default function PerfilPlan() {
           const activeSub = planStatus.subscription;
           const isContracted = planStatus.type === "active";
           const isRenewable = planStatus.type === "renewable";
+          const publishWindowInfo = isContracted
+            ? getPublishWindowInfo(activeSub)
+            : null;
 
           return (
             <div
@@ -273,6 +317,24 @@ export default function PerfilPlan() {
                       {formatDateShort(activeSub.fecha_fin)}
                     </p>
                   </div>
+
+                  {publishWindowInfo && (
+                    <div
+                      className={`perfil-plan__publish-window perfil-plan__publish-window--${publishWindowInfo.type}`}>
+                      <strong className="perfil-plan__publish-window-number">
+                        {publishWindowInfo.daysLeft}
+                      </strong>
+                      <span className="perfil-plan__publish-window-unit">
+                        {publishWindowInfo.unit}
+                      </span>
+                      <span className="perfil-plan__publish-window-label">
+                        {publishWindowInfo.label}
+                      </span>
+                      <p className="perfil-plan__publish-window-description">
+                        {publishWindowInfo.description}
+                      </p>
+                    </div>
+                  )}
 
                   {/* Mostrar cupos utilizados para planes limitados */}
                   {["panorama_unica", "panorama_pack4"].includes(plan.key) && (

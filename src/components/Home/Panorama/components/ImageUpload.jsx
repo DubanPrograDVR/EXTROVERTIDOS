@@ -31,8 +31,7 @@ const ImageUpload = ({
               <button
                 type="button"
                 className="publicar-form__preview-remove"
-                onClick={() => onRemoveImage(index)}
-              >
+                onClick={() => onRemoveImage(index)}>
                 <FontAwesomeIcon icon={faTimes} />
               </button>
             </div>
@@ -42,24 +41,37 @@ const ImageUpload = ({
 
       {/* Input de imagen */}
       {previewImages.length < maxFiles && (
-        <div className="publicar-form__image-upload">
-          <input
-            type="file"
-            id="imagenes"
-            name="imagenes"
-            accept="image/*"
-            onChange={onImageChange}
-            className="publicar-form__file-input"
-            multiple
-          />
-          <label htmlFor="imagenes" className="publicar-form__file-label">
-            <FontAwesomeIcon icon={faImage} />
-            <span>Haz clic para subir imágenes</span>
-            <span className="publicar-form__file-hint">
-              {previewImages.length}/{maxFiles} imágenes
+        <>
+          <div className="publicar-form__image-upload">
+            <input
+              type="file"
+              id="imagenes"
+              name="imagenes"
+              accept="image/*"
+              onChange={onImageChange}
+              className="publicar-form__file-input"
+              multiple
+            />
+            <label htmlFor="imagenes" className="publicar-form__file-label">
+              <FontAwesomeIcon icon={faImage} />
+              <span>Haz clic para subir imágenes</span>
+              <span className="publicar-form__file-hint">
+                {previewImages.length}/{maxFiles} imágenes
+              </span>
+            </label>
+          </div>
+          <p className="publicar-form__upload-note">
+            Recomendación: Selecciona el botón{" "}
+            <span className="publicar-form__upload-note-action">
+              "Ver Borrador"
+            </span>{" "}
+            para que previamente veas como será tu publicación final en
+            Extrovertidos{" "}
+            <span className="publicar-form__upload-note-emphasis">
+              (Lee atentamente tu publicación)
             </span>
-          </label>
-        </div>
+          </p>
+        </>
       )}
 
       {error && <span className="publicar-form__error">{error}</span>}

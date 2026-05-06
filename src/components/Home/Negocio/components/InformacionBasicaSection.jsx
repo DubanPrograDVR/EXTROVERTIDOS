@@ -81,6 +81,10 @@ const InformacionBasicaSection = ({
         <label htmlFor="descripcion">
           Descripción
           <span className="publicar-negocio__label-hint">(Opcional)</span>
+          <span className="publicar-negocio__label-note">
+            (Presiona <strong>Ver Borrador</strong> para ver el orden final de
+            este texto)
+          </span>
         </label>
         <textarea
           id="descripcion"

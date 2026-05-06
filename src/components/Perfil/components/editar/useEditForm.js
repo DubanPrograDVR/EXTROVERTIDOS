@@ -1,5 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { INITIAL_EDIT_STATE } from "./constants";
+import {
+  applyWrapToInputEvent,
+  wrapPersistedFields,
+} from "../../../../lib/textWrap";
+
+const isRealPublicationImage = (imageUrl) =>
+  Boolean(imageUrl) && !String(imageUrl).includes("/img/Home1.png");
+
+const getRealPublicationImages = (images) =>
+  Array.isArray(images) ? images.filter(isRealPublicationImage) : [];
 
 /**
  * Hook personalizado para manejar el formulario de edición
@@ -49,7 +59,7 @@ export const useEditForm = (event, isOpen) => {
           twitter: event.redes_sociales?.twitter || "",
           linkedin: event.redes_sociales?.linkedin || "",
         },
-        imagenes: event.imagenes || [],
+        imagenes: getRealPublicationImages(event.imagenes),
         ubicacion_url: event.ubicacion_url || "",
         sitio_web: event.sitio_web || "",
         telefono_contacto: event.telefono_contacto || event.telefono || "",
@@ -68,7 +78,9 @@ export const useEditForm = (event, isOpen) => {
 
   // Manejar cambios en inputs
   const handleChange = useCallback((e) => {
-    const { name, value, type, checked } = e.target;
+    // Aplica word-wrap (76 chars) a descripcion / mensaje_marketing*.
+    const { name, value, type } = applyWrapToInputEvent(e);
+    const checked = e?.target?.checked;
 
     if (name.startsWith("redes_sociales.")) {
       const socialKey = name.split(".")[1];
@@ -78,6 +90,12 @@ export const useEditForm = (event, isOpen) => {
           ...prev.redes_sociales,
           [socialKey]: value,
         },
+      }));
+    } else if (name === "provincia") {
+      setFormData((prev) => ({
+        ...prev,
+        provincia: value,
+        comuna: prev.provincia === value ? prev.comuna : "",
       }));
     } else {
       setFormData((prev) => ({
@@ -124,11 +142,15 @@ export const useEditForm = (event, isOpen) => {
 
   // Preparar datos para guardar
   const prepareDataToSave = useCallback(() => {
-    return {
+    return wrapPersistedFields({
       ...formData,
       precio:
         formData.tipo_entrada === "pagado"
           ? parseInt(formData.precio) || null
+          : null,
+      url_venta:
+        formData.tipo_entrada === "venta_externa"
+          ? formData.url_venta || null
           : null,
       hora_inicio: formData.hora_inicio || null,
       hora_fin: formData.hora_fin || null,
@@ -145,7 +167,7 @@ export const useEditForm = (event, isOpen) => {
       fechas_recurrencia: formData.es_recurrente
         ? formData.fechas_recurrencia
         : [],
-    };
+    });
   }, [formData]);
 
   return {

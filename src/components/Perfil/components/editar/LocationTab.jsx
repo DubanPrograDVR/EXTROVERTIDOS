@@ -1,11 +1,15 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faLink } from "@fortawesome/free-solid-svg-icons";
-import { PROVINCIAS } from "./constants";
+import { PROVINCIAS, COMUNAS_POR_PROVINCIA } from "./constants";
 
 /**
  * Tab de ubicación del evento
  */
 export default function LocationTab({ formData, errors, onChange }) {
+  const comunas = formData.provincia
+    ? COMUNAS_POR_PROVINCIA[formData.provincia] || []
+    : [];
+
   return (
     <div className="user-edit-modal__content">
       <div className="user-edit-modal__row">
@@ -35,15 +39,24 @@ export default function LocationTab({ formData, errors, onChange }) {
           <label htmlFor="comuna">
             Comuna <span className="required">*</span>
           </label>
-          <input
-            type="text"
+          <select
             id="comuna"
             name="comuna"
             value={formData.comuna}
             onChange={onChange}
-            placeholder="Comuna"
-            className={errors.comuna ? "error" : ""}
-          />
+            disabled={!formData.provincia}
+            className={errors.comuna ? "error" : ""}>
+            <option value="">
+              {formData.provincia
+                ? "Selecciona una comuna"
+                : "Primero selecciona provincia"}
+            </option>
+            {comunas.map((comuna) => (
+              <option key={comuna} value={comuna}>
+                {comuna}
+              </option>
+            ))}
+          </select>
           {errors.comuna && (
             <span className="user-edit-modal__error">{errors.comuna}</span>
           )}

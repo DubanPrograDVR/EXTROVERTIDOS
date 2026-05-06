@@ -22,6 +22,10 @@ const MarketingSection = ({ formData, onChange, onFieldFocus }) => {
             {" "}
             (Engancha a tu público)
           </span>
+          <span className="publicar-negocio__label-note">
+            (Presiona <strong>Ver Borrador</strong> para ver el orden final de
+            este texto)
+          </span>
         </label>
 
         <div className="publicar-negocio__field">
@@ -72,6 +76,10 @@ const MarketingSection = ({ formData, onChange, onFieldFocus }) => {
           <span className="publicar-negocio__label-hint">
             {" "}
             (Mensaje adicional)
+          </span>
+          <span className="publicar-negocio__label-note">
+            (Presiona <strong>Ver Borrador</strong> para ver el orden final de
+            este texto)
           </span>
         </label>
 

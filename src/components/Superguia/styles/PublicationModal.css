@@ -177,6 +177,31 @@
   max-height: 100%;
 }
 
+.publication-modal__image-empty {
+  position: relative;
+  z-index: 1;
+  width: min(82%, 360px);
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  border: 2px dashed rgba(255, 102, 0, 0.45);
+  border-radius: 14px;
+  color: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 102, 0, 0.08);
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.publication-modal__image-empty svg {
+  color: #ff6600;
+  font-size: 2.2rem;
+}
+
 /* Botón cerrar */
 .publication-modal__close {
   position: absolute;
@@ -356,6 +381,11 @@
   text-transform: capitalize;
   letter-spacing: 0.5px;
   white-space: nowrap;
+}
+
+/* En desktop el tag móvil está oculto. */
+.publication-modal__subcategory-tag--mobile {
+  display: none;
 }
 
 /* ===== BOTONES MÓVILES: "Más info" / "Ver imagen" ===== */
@@ -866,6 +896,17 @@
   border: none;
 }
 
+.publication-modal__social-btn--website {
+  background: rgba(255, 102, 0, 0.15);
+  color: #ff8a33;
+  border: 1px solid rgba(255, 102, 0, 0.4);
+}
+
+.publication-modal__social-btn--website:hover {
+  background: #ff6600;
+  color: #fff;
+}
+
 .publication-modal__social-btn--whatsapp {
   background: rgba(37, 211, 102, 0.15);
   color: #25d366;
@@ -920,6 +961,29 @@
   background: #000;
   border-color: #ff0050;
   color: #ff0050;
+}
+
+.publication-modal__social-btn--twitter {
+  background: rgba(148, 163, 184, 0.14);
+  color: #e5e7eb;
+  border: 1px solid rgba(148, 163, 184, 0.34);
+}
+
+.publication-modal__social-btn--twitter:hover {
+  background: #111827;
+  border-color: rgba(229, 231, 235, 0.75);
+  color: #fff;
+}
+
+.publication-modal__social-btn--linkedin {
+  background: rgba(10, 102, 194, 0.16);
+  color: #4ea1ff;
+  border: 1px solid rgba(10, 102, 194, 0.45);
+}
+
+.publication-modal__social-btn--linkedin:hover {
+  background: #0a66c2;
+  color: #fff;
 }
 
 /* ===== ACCORDION SECTION - Sistema unificado de acordeón ===== */
@@ -1051,6 +1115,10 @@
   border-radius: 0 0 10px 10px;
 }
 
+.accordion-section__body.accordion-section__body--description {
+  padding: 12px 14px 10px;
+}
+
 /* Info sections within "Información" (flat, always visible) */
 .publication-modal__info-nested {
   display: flex;
@@ -1083,21 +1151,49 @@
 /* Descripción */
 .publication-modal__description-content {
   color: rgba(255, 255, 255, 0.85);
-  line-height: 1.6;
-  font-size: 1.1rem;
+  line-height: 1.5;
+  font-size: 1rem;
 }
 
 .publication-modal__description-content p {
-  margin: 0 0 12px 0;
+  margin: 0;
   white-space: pre-wrap;
   overflow-wrap: break-word;
-  word-break: break-word;
+  word-break: normal;
 }
 
 .publication-modal__description-content .publication-modal__hashtags {
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ===== Rich text (descripción + marketing) =====
+ * Render con párrafos (`<p>`) y enlaces clicables. Mantiene compatibilidad
+ * con el viejo `<p>` único: ambos se ven igual. La separación entre
+ * párrafos es controlada y constante.
+ */
+.rich-text p {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.rich-text p + p {
+  margin-top: 0.6em;
+}
+
+.rich-text__link {
+  color: #ff8a3d;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  word-break: break-all;
+}
+
+.rich-text__link:hover,
+.rich-text__link:focus-visible {
+  color: #ffaa66;
 }
 
 /* Marketing Content - Acordeón */
@@ -1119,7 +1215,7 @@
   margin: 0 0 12px 0;
   white-space: pre-wrap;
   overflow-wrap: break-word;
-  word-break: break-word;
+  word-break: normal;
   font-size: 1rem;
 }
 
@@ -1548,6 +1644,66 @@
     margin-left: auto;
   }
 
+  .publication-modal.publication-modal--panoramas.publication-modal--editing
+    .publication-modal__category-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px 10px;
+  }
+
+  .publication-modal.publication-modal--panoramas.publication-modal--editing
+    .publication-modal__brand-group {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .publication-modal.publication-modal--panoramas.publication-modal--editing
+    .publication-modal__brand-logo {
+    width: 44px;
+    height: 44px;
+  }
+
+  .publication-modal.publication-modal--panoramas.publication-modal--editing
+    .publication-modal__brand-text {
+    font-size: 2rem;
+    line-height: 1;
+  }
+
+  .publication-modal.publication-modal--panoramas.publication-modal--editing
+    .publication-modal__category-edit {
+    grid-column: 1 / -1;
+    width: 100%;
+    max-width: none;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 7px;
+  }
+
+  .publication-modal.publication-modal--panoramas.publication-modal--editing
+    .publication-modal__category-select {
+    width: 100%;
+    min-width: 0;
+    height: 34px;
+    padding: 7px 9px;
+    font-size: 0.78rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .publication-modal.publication-modal--panoramas.publication-modal--editing
+    .publication-modal__category-header
+    .publication-modal__close {
+    grid-column: 2;
+    grid-row: 1;
+    position: static;
+    justify-self: end;
+    margin-left: 0;
+    width: 34px;
+    height: 34px;
+  }
+
   .publication-modal__left {
     min-height: 250px;
     max-height: 40vh;
@@ -1631,14 +1787,18 @@
     padding: 14px;
   }
 
+  .accordion-section__body.accordion-section__body--description {
+    padding: 11px 12px 9px;
+  }
+
   /* Descripción */
   .publication-modal__description-content {
     font-size: 1.8rem;
-    line-height: 1.7;
+    line-height: 1.55;
   }
 
   .publication-modal__description-content p {
-    margin: 0 0 14px 0;
+    margin: 0;
     font-size: 1.3rem;
     white-space: pre-wrap;
   }
@@ -1880,6 +2040,42 @@
     margin-top: 1px;
   }
 
+  /* === Subcategory tag: ocultar desktop, mostrar mobile sobre la imagen === */
+  .publication-modal__subcategory-tag--desktop {
+    display: none;
+  }
+
+  .publication-modal__subcategory-tag--mobile {
+    display: inline-flex;
+    position: absolute;
+    left: auto;
+    right: 14px;
+    top: 16px;
+    bottom: auto;
+    transform: none;
+    z-index: 12;
+    align-items: center;
+    gap: 8px;
+    max-width: min(58%, 230px);
+    padding: 10px 14px;
+    border-radius: 18px 18px 8px 18px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.3px;
+    text-transform: none;
+    color: #1c1200;
+    background: linear-gradient(135deg, #ffd54a 0%, #ffb300 100%);
+    border: 1px solid rgba(255, 248, 220, 0.55);
+    box-shadow:
+      0 12px 30px rgba(0, 0, 0, 0.3),
+      0 4px 14px rgba(255, 179, 0, 0.3);
+    white-space: normal;
+    overflow-wrap: anywhere;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
   /* ===== BOTÓN "Más info" (flotante sobre la imagen) ===== */
   .publication-modal__mobile-info-btn {
     display: flex;
@@ -1982,6 +2178,7 @@
 
   .publication-modal__description-content {
     font-size: 1.5rem;
+    line-height: 1.5;
   }
 
   .publication-modal__marketing-content {

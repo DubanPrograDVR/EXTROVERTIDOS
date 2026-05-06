@@ -33,6 +33,7 @@ import {
   faLinkedin,
 } from "@fortawesome/free-brands-svg-icons";
 import "../styles/draft-preview.css";
+import { renderRichText } from "../../../../lib/textRender";
 
 // Tipos de secciones del acordeón (igual que PublicationModal)
 const ACCORDION_SECTIONS = {
@@ -46,7 +47,14 @@ const ACCORDION_SECTIONS = {
 /**
  * Componente AccordionSection reutilizable con icono
  */
-const AccordionSection = ({ title, icon, isOpen, onToggle, children }) => {
+const AccordionSection = ({
+  title,
+  icon,
+  isOpen,
+  onToggle,
+  bodyClassName,
+  children,
+}) => {
   return (
     <div
       className={`accordion-section ${isOpen ? "accordion-section--open" : ""}`}>
@@ -69,7 +77,10 @@ const AccordionSection = ({ title, icon, isOpen, onToggle, children }) => {
         />
       </button>
       <div className={`accordion-section__content ${isOpen ? "open" : ""}`}>
-        <div className="accordion-section__body">{children}</div>
+        <div
+          className={`accordion-section__body${bodyClassName ? ` ${bodyClassName}` : ""}`}>
+          {children}
+        </div>
       </div>
     </div>
   );
@@ -134,6 +145,7 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
   const getEntradaText = () => {
     const tipos = {
       sin_entrada: "Pronto más información",
+      info_descripcion: "Info en Descripción",
       gratuito: "Entrada gratuita",
       pagado: formData.precio
         ? `$${formData.precio} CLP`
@@ -311,8 +323,7 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
             ) : (
               <div className="publication-modal__no-image">
                 <FontAwesomeIcon icon={faImage} />
-                <span>Sin imágenes</span>
-                <p>Agrega imágenes a tu publicación</p>
+                <span>Agrega una imagen para completar tu publicación</span>
               </div>
             )}
           </div>
@@ -352,10 +363,13 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
                 title="Descripción"
                 icon={faAlignLeft}
                 isOpen={activeSection === ACCORDION_SECTIONS.DESCRIPTION}
+                bodyClassName="accordion-section__body--description"
                 onToggle={() => toggleSection(ACCORDION_SECTIONS.DESCRIPTION)}>
-                <div className="publication-modal__description-content">
+                <div className="publication-modal__description-content rich-text">
                   {formData.descripcion ? (
-                    <p>{formData.descripcion}</p>
+                    renderRichText(formData.descripcion, {
+                      keyPrefix: "draft-desc",
+                    })
                   ) : (
                     <p>Sin descripción agregada aún...</p>
                   )}
@@ -371,8 +385,10 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
                   onToggle={() =>
                     toggleSection(ACCORDION_SECTIONS.MARKETING_1)
                   }>
-                  <div className="publication-modal__marketing-content">
-                    <p>{formData.mensaje_marketing}</p>
+                  <div className="publication-modal__marketing-content rich-text">
+                    {renderRichText(formData.mensaje_marketing, {
+                      keyPrefix: "draft-mkt1",
+                    })}
                   </div>
                 </AccordionSection>
               )}
@@ -386,8 +402,10 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
                   onToggle={() =>
                     toggleSection(ACCORDION_SECTIONS.MARKETING_2)
                   }>
-                  <div className="publication-modal__marketing-content">
-                    <p>{formData.mensaje_marketing_2}</p>
+                  <div className="publication-modal__marketing-content rich-text">
+                    {renderRichText(formData.mensaje_marketing_2, {
+                      keyPrefix: "draft-mkt2",
+                    })}
                   </div>
                 </AccordionSection>
               )}

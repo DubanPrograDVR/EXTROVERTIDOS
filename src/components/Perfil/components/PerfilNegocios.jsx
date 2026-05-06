@@ -13,6 +13,8 @@ import {
   faEye,
   faEdit,
   faTrash,
+  faPause,
+  faPlay,
   faExclamationTriangle,
   faRedoAlt,
   faLocationArrow,
@@ -23,6 +25,7 @@ import {
   getBusinessCategories,
   updateBusiness,
   deleteOwnBusiness,
+  pauseBusiness,
 } from "../../../lib/database";
 import { resubmitBusiness } from "../../../lib/database/businesses";
 import { useToast } from "../../../context/ToastContext";
@@ -43,6 +46,7 @@ export default function PerfilNegocios() {
   const [categories, setCategories] = useState([]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(null);
+  const [pausing, setPausing] = useState(null);
   const [resubmitting, setResubmitting] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
@@ -164,8 +168,45 @@ export default function PerfilNegocios() {
     }
   };
 
+  const handlePauseBusiness = async (business) => {
+    const willPause = !business.is_paused;
+    setPausing(business.id);
+    try {
+      await pauseBusiness(business.id, willPause);
+      setBusinesses((prev) =>
+        prev.map((item) =>
+          item.id === business.id ? { ...item, is_paused: willPause } : item,
+        ),
+      );
+      if (showToast) {
+        showToast(
+          willPause
+            ? "Negocio pausado. Ya no es visible en Superguía."
+            : "Negocio reactivado y visible nuevamente.",
+          "success",
+        );
+      }
+    } catch (err) {
+      console.error("Error al pausar negocio:", err);
+      if (showToast) {
+        showToast("Error al cambiar el estado del negocio", "error");
+      }
+    } finally {
+      setPausing(null);
+    }
+  };
+
   // Renderizar badge de estado
-  const renderStatusBadge = (estado) => {
+  const renderStatusBadge = (business) => {
+    if (business.estado === "publicado" && business.is_paused) {
+      return (
+        <span className="status-badge status-badge--paused">
+          <FontAwesomeIcon icon={faPause} />
+          Pausado
+        </span>
+      );
+    }
+
     const statusConfig = {
       pendiente: {
         icon: faClock,
@@ -189,7 +230,7 @@ export default function PerfilNegocios() {
       },
     };
 
-    const config = statusConfig[estado] || statusConfig.pendiente;
+    const config = statusConfig[business.estado] || statusConfig.pendiente;
 
     return (
       <span className={`status-badge ${config.className}`}>
@@ -272,7 +313,7 @@ export default function PerfilNegocios() {
                       <FontAwesomeIcon icon={faStore} />
                     </div>
                   )}
-                  {renderStatusBadge(business.estado)}
+                  {renderStatusBadge(business)}
                 </div>
                 <div className="perfil-business-card__content">
                   {business.categoria && (
@@ -284,7 +325,7 @@ export default function PerfilNegocios() {
                     <h3 className="perfil-business-card__title">
                       {business.nombre}
                     </h3>
-                    {business.estado === "publicado" && (
+                    {business.estado === "publicado" && !business.is_paused && (
                       <button
                         type="button"
                         className="perfil-business-card__goto"
@@ -375,6 +416,32 @@ export default function PerfilNegocios() {
                       <FontAwesomeIcon icon={faEdit} />
                       Editar
                     </button>
+                    {business.estado === "publicado" && (
+                      <button
+                        className={`perfil-business-card__btn ${
+                          business.is_paused
+                            ? "perfil-publication-card__btn--unpause"
+                            : "perfil-publication-card__btn--pause"
+                        }`}
+                        onClick={() => handlePauseBusiness(business)}
+                        disabled={pausing === business.id}>
+                        <FontAwesomeIcon
+                          icon={
+                            pausing === business.id
+                              ? faSpinner
+                              : business.is_paused
+                                ? faPlay
+                                : faPause
+                          }
+                          spin={pausing === business.id}
+                        />
+                        {pausing === business.id
+                          ? "..."
+                          : business.is_paused
+                            ? "Reactivar"
+                            : "Pausar"}
+                      </button>
+                    )}
                     <button
                       className="perfil-business-card__btn perfil-business-card__btn--delete"
                       onClick={() => setDeleteConfirm(business)}

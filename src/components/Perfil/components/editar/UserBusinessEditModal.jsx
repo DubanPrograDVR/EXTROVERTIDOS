@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useScrollOnFocus } from "../../../../hooks/useScrollOnFocus";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faTimes,
@@ -30,7 +31,7 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 
 import { useBusinessEditForm } from "./useBusinessEditForm";
-import { PROVINCIAS } from "./constants";
+import { PROVINCIAS, COMUNAS_POR_PROVINCIA } from "./constants";
 import HorariosModal from "../../../Home/Negocio/components/HorariosModal";
 import {
   DIAS_SEMANA,
@@ -104,6 +105,7 @@ export default function UserBusinessEditModal({
   const [activeSection, setActiveSection] = useState(SECTIONS.DESCRIPTION);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [horariosModalOpen, setHorariosModalOpen] = useState(false);
+  const scrollOnFocus = useScrollOnFocus({ block: "nearest" });
 
   const toggleSection = useCallback((section) => {
     setActiveSection((prev) => (prev === section ? null : section));
@@ -163,6 +165,9 @@ export default function UserBusinessEditModal({
     (c) => String(c.id) === String(formData.category_id),
   );
   const subcategorias = currentCategory?.subcategorias || [];
+  const comunas = formData.provincia
+    ? COMUNAS_POR_PROVINCIA[formData.provincia] || []
+    : [];
 
   return (
     <div
@@ -171,11 +176,12 @@ export default function UserBusinessEditModal({
         if (e.target === e.currentTarget && !loading) onClose();
       }}>
       <form
-        className="publication-modal publication-modal--business-style"
+        className="publication-modal publication-modal--business-style publication-modal--user-business-edit publication-modal--editing"
         role="dialog"
         aria-modal="true"
         aria-label="Editar negocio"
-        onSubmit={handleSubmit}>
+        onSubmit={handleSubmit}
+        onFocus={scrollOnFocus}>
         {/* Header de categoría */}
         <div className="publication-modal__category-header">
           <img
@@ -184,33 +190,56 @@ export default function UserBusinessEditModal({
             className="publication-modal__brand-logo"
           />
           <div className="publication-modal__category-edit">
-            <select
-              className="publication-modal__category-select"
-              name="category_id"
-              value={formData.category_id}
-              onChange={(e) => {
-                handleChange(e);
-                // Reset subcategoria when category changes
-                handleChange({
-                  target: { name: "subcategoria", value: "" },
-                });
-                // Update categoria name
-                const cat = categories.find(
-                  (c) => String(c.id) === e.target.value,
-                );
-                if (cat) {
+            <label className="publication-modal__category-field">
+              <span className="publication-modal__category-field-label">
+                Categoría
+              </span>
+              <select
+                className="publication-modal__category-select"
+                name="category_id"
+                value={formData.category_id}
+                onChange={(e) => {
+                  handleChange(e);
                   handleChange({
-                    target: { name: "categoria", value: cat.nombre },
+                    target: { name: "subcategoria", value: "" },
                   });
-                }
-              }}>
-              <option value="">Seleccionar categoría</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.icono} {cat.nombre}
+                  const cat = categories.find(
+                    (c) => String(c.id) === e.target.value,
+                  );
+                  handleChange({
+                    target: { name: "categoria", value: cat?.nombre || "" },
+                  });
+                }}>
+                <option value="">Seleccionar categoría</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.nombre}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="publication-modal__category-field">
+              <span className="publication-modal__category-field-label">
+                Subcategoría
+              </span>
+              <select
+                className="publication-modal__category-select"
+                name="subcategoria"
+                value={formData.subcategoria}
+                onChange={handleChange}
+                disabled={!formData.category_id || subcategorias.length === 0}>
+                <option value="">
+                  {formData.category_id
+                    ? "Seleccionar subcategoría"
+                    : "Primero selecciona categoría"}
                 </option>
-              ))}
-            </select>
+                {subcategorias.map((sub) => (
+                  <option key={sub} value={sub}>
+                    {sub}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
         </div>
 
@@ -310,27 +339,6 @@ export default function UserBusinessEditModal({
               )}
             </div>
 
-            {/* Subcategoría */}
-            {subcategorias.length > 0 && (
-              <div className="publication-modal__edit-section">
-                <label className="publication-modal__edit-label">
-                  Subcategoría
-                </label>
-                <select
-                  className="publication-modal__edit-select"
-                  name="subcategoria"
-                  value={formData.subcategoria}
-                  onChange={handleChange}>
-                  <option value="">Seleccionar subcategoría</option>
-                  {subcategorias.map((sub) => (
-                    <option key={sub} value={sub}>
-                      {sub}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
             {/* Acordeón */}
             <div className="publication-modal__accordion-container">
               {/* Descripción */}
@@ -413,14 +421,23 @@ export default function UserBusinessEditModal({
                   <label className="publication-modal__edit-label">
                     Comuna *
                   </label>
-                  <input
-                    type="text"
-                    className="publication-modal__edit-input"
+                  <select
+                    className="publication-modal__edit-select"
                     name="comuna"
                     value={formData.comuna}
                     onChange={handleChange}
-                    placeholder="Comuna"
-                  />
+                    disabled={!formData.provincia}>
+                    <option value="">
+                      {formData.provincia
+                        ? "Seleccionar comuna"
+                        : "Primero selecciona provincia"}
+                    </option>
+                    {comunas.map((comuna) => (
+                      <option key={comuna} value={comuna}>
+                        {comuna}
+                      </option>
+                    ))}
+                  </select>
                   {errors.comuna && (
                     <span style={{ color: "#ff4444", fontSize: "0.8rem" }}>
                       {errors.comuna}

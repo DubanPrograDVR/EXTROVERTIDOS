@@ -94,14 +94,9 @@ const WizardStepBasicInfo = ({
         <label className="publicar-form__label" htmlFor="descripcion">
           Descripción
           <span className="publicar-form__label-hint"> (Opcional)</span>
-          <span
-            style={{
-              color: "gray",
-              fontSize: "12px",
-              marginTop: "5px",
-              marginLeft: "10px",
-            }}>
-            Detalla tu evento
+          <span className="publicar-form__label-note">
+            (Presiona <strong>Ver Borrador</strong> para ver el orden final de
+            este texto)Ver Borrador
           </span>
         </label>
         <textarea

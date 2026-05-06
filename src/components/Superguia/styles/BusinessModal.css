@@ -210,6 +210,69 @@
     width: 100%;
   }
 
+  .publication-modal.publication-modal--business
+    .publication-modal__brand-group {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: calc(100% - 44px);
+    align-items: center;
+  }
+
+  .publication-modal.publication-modal--business
+    .publication-modal__brand-logo {
+    width: 62px;
+    height: 62px;
+    margin-top: 0;
+  }
+
+  .publication-modal.publication-modal--business
+    .publication-modal__brand-text {
+    min-width: 0;
+    margin-left: -6px;
+    font-size: 1.8rem;
+    line-height: 1;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .publication-modal.publication-modal--business
+    .publication-modal__subcategory-tag--desktop {
+    display: none;
+  }
+
+  .publication-modal.publication-modal--business
+    .publication-modal__subcategory-tag--mobile {
+    display: inline-flex;
+    position: absolute;
+    left: auto;
+    right: 14px;
+    top: 16px;
+    bottom: auto;
+    transform: none;
+    z-index: 12;
+    align-items: center;
+    max-width: min(58%, 230px);
+    padding: 10px 14px;
+    border-radius: 18px 18px 8px 18px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.3px;
+    text-transform: none;
+    color: #1c1200;
+    background: linear-gradient(135deg, #ffd54a 0%, #ffb300 100%);
+    border: 1px solid rgba(255, 248, 220, 0.55);
+    box-shadow:
+      0 12px 30px rgba(0, 0, 0, 0.3),
+      0 4px 14px rgba(255, 179, 0, 0.3);
+    white-space: normal;
+    overflow-wrap: anywhere;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
   /* Imagen ocupa TODO el modal por defecto en móvil */
   .publication-modal.publication-modal--business .publication-modal__left {
     min-height: 0;
@@ -245,6 +308,30 @@
   flex: 1;
 }
 
+.publication-modal.publication-modal--business.publication-modal--editing
+  .publication-modal__category-header {
+  padding-right: 64px;
+}
+
+.publication-modal.publication-modal--business.publication-modal--editing
+  .publication-modal__category-edit {
+  flex: 1 1 420px;
+  min-width: 0;
+  max-width: 560px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.publication-modal__category-field {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.publication-modal__category-field-label {
+  display: none;
+}
+
 .publication-modal__category-select {
   padding: 6px 10px;
   background: rgba(255, 255, 255, 0.1);
@@ -254,7 +341,16 @@
   font-size: 0.85rem;
   cursor: pointer;
   min-width: 140px;
+  max-width: 100%;
   appearance: auto;
+}
+
+.publication-modal.publication-modal--business.publication-modal--editing
+  .publication-modal__category-select {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .publication-modal__category-select:focus {
@@ -271,6 +367,61 @@
 .publication-modal__category-select:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .publication-modal.publication-modal--business.publication-modal--editing
+    .publication-modal__category-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: 8px;
+    padding: 8px 52px 10px 12px;
+  }
+
+  .publication-modal.publication-modal--business.publication-modal--editing
+    .publication-modal__category-edit {
+    width: 100%;
+    max-width: none;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 7px;
+  }
+
+  .publication-modal.publication-modal--business.publication-modal--editing
+    .publication-modal__brand-group {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .publication-modal.publication-modal--business.publication-modal--editing
+    .publication-modal__brand-logo {
+    width: 44px;
+    height: 44px;
+  }
+
+  .publication-modal.publication-modal--business.publication-modal--editing
+    .publication-modal__category-field {
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .publication-modal.publication-modal--business.publication-modal--editing
+    .publication-modal__category-field-label {
+    display: block;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.62rem;
+    font-weight: 800;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .publication-modal.publication-modal--business.publication-modal--editing
+    .publication-modal__category-select {
+    height: 34px;
+    padding: 7px 9px;
+    font-size: 0.78rem;
+  }
 }
 
 /* ===== ESTILOS PARA MODO EDICIÓN ===== */
@@ -296,6 +447,7 @@
 }
 
 .publication-modal__edit-field input,
+.publication-modal__edit-field select,
 .publication-modal__edit-field textarea {
   padding: 10px 12px;
   background: rgba(255, 255, 255, 0.08);
@@ -307,17 +459,45 @@
   transition: all 0.2s ease;
 }
 
+.publication-modal__edit-field textarea {
+  white-space: pre-wrap;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
 .publication-modal__edit-field input::placeholder,
 .publication-modal__edit-field textarea::placeholder {
   color: rgba(255, 255, 255, 0.4);
 }
 
 .publication-modal__edit-field input:focus,
+.publication-modal__edit-field select:focus,
 .publication-modal__edit-field textarea:focus {
   outline: none;
   background: rgba(255, 255, 255, 0.12);
   border-color: #ff6600;
   box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.1);
+}
+
+.publication-modal__edit-field select {
+  appearance: none;
+  cursor: pointer;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #ff6600 50%),
+    linear-gradient(135deg, #ff6600 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% - 3px),
+    calc(100% - 12px) calc(50% - 3px);
+  background-size:
+    6px 6px,
+    6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 40px;
+}
+
+.publication-modal__edit-field select option {
+  background: #161616;
+  color: #fff;
 }
 
 .publication-modal__edit-field textarea {
@@ -497,6 +677,9 @@
   resize: vertical;
   min-height: 80px;
   font-family: inherit;
+  white-space: pre-wrap;
+  word-break: normal;
+  overflow-wrap: break-word;
 }
 
 .publication-modal__edit-input--title {

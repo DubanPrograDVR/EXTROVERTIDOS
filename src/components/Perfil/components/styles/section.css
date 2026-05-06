@@ -282,6 +282,11 @@
   color: #4caf50;
 }
 
+.status-badge--paused {
+  background: rgba(245, 158, 11, 0.16);
+  color: #f59e0b;
+}
+
 .status-badge--rejected {
   background: rgba(244, 67, 54, 0.15);
   color: #f44336;

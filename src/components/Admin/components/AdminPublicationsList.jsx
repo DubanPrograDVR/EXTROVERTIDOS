@@ -22,6 +22,7 @@ import {
   faLocationArrow,
 } from "@fortawesome/free-solid-svg-icons";
 import { formatDate } from "../utils/formatters";
+import AdminDeleteConfirmModal from "./AdminDeleteConfirmModal";
 
 /**
  * Lista de todas las publicaciones para administración
@@ -521,41 +522,14 @@ export default function AdminPublicationsList({
 
       {/* Modal de confirmación de eliminación */}
       {deleteConfirm && (
-        <div
-          className="admin-delete-modal-overlay"
-          onClick={handleDeleteCancel}>
-          <div
-            className="admin-delete-modal"
-            onClick={(e) => e.stopPropagation()}>
-            <h3>¿Eliminar publicación?</h3>
-            <p>
-              Estás a punto de eliminar{" "}
-              <strong>"{deleteConfirm.titulo}"</strong>. Esta acción no se puede
-              deshacer.
-            </p>
-            <div className="admin-delete-modal__actions">
-              <button
-                className="admin-delete-modal__btn admin-delete-modal__btn--cancel"
-                onClick={handleDeleteCancel}>
-                Cancelar
-              </button>
-              <button
-                className="admin-delete-modal__btn admin-delete-modal__btn--confirm"
-                onClick={handleDeleteConfirm}
-                disabled={actionLoading === deleteConfirm.id}>
-                {actionLoading === deleteConfirm.id ? (
-                  <>
-                    <FontAwesomeIcon icon={faSpinner} spin /> Eliminando...
-                  </>
-                ) : (
-                  <>
-                    <FontAwesomeIcon icon={faTrash} /> Eliminar
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+        <AdminDeleteConfirmModal
+          title="¿Eliminar publicación?"
+          itemName={deleteConfirm.titulo}
+          itemType="publicación"
+          loading={actionLoading === deleteConfirm.id}
+          onCancel={handleDeleteCancel}
+          onConfirm={handleDeleteConfirm}
+        />
       )}
       {/* Modal de confirmación de eliminación masiva */}
       {bulkDeleteConfirm && (

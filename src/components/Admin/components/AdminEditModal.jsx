@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useScrollOnFocus } from "../../../hooks/useScrollOnFocus";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faTimes,
@@ -21,18 +22,12 @@ import {
   faWhatsapp,
 } from "@fortawesome/free-brands-svg-icons";
 import { uploadEventImage } from "../../../lib/database/images";
+import {
+  PROVINCIAS,
+  COMUNAS_POR_PROVINCIA,
+  TIPOS_ENTRADA,
+} from "../../Home/Panorama/constants";
 import "./AdminEditModal.css";
-
-// Provincias del Maule
-const PROVINCIAS = ["Talca", "Curicó", "Linares", "Cauquenes"];
-
-// Tipos de entrada
-const TIPOS_ENTRADA = [
-  { value: "sin_entrada", label: "Pronto más información" },
-  { value: "gratuito", label: "Entrada gratuita" },
-  { value: "pagado", label: "Entrada pagada" },
-  { value: "venta_externa", label: "Venta externa" },
-];
 
 // Estados de publicación
 const ESTADOS = [
@@ -40,6 +35,12 @@ const ESTADOS = [
   { value: "publicado", label: "Publicado", color: "#28a745" },
   { value: "rechazado", label: "Rechazado", color: "#dc3545" },
 ];
+
+const isRealPublicationImage = (imageUrl) =>
+  Boolean(imageUrl) && !String(imageUrl).includes("/img/Home1.png");
+
+const getRealPublicationImages = (images) =>
+  Array.isArray(images) ? images.filter(isRealPublicationImage) : [];
 
 /**
  * Modal para editar publicaciones desde el panel de administración
@@ -87,6 +88,7 @@ export default function AdminEditModal({
   const [activeTab, setActiveTab] = useState("info");
   const [newImageFiles, setNewImageFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const scrollOnFocus = useScrollOnFocus({ block: "nearest" });
   const fileInputRef = useRef(null);
 
   // Cargar datos del evento cuando se abre el modal
@@ -126,7 +128,7 @@ export default function AdminEditModal({
           facebook: event.redes_sociales?.facebook || "",
           whatsapp: event.redes_sociales?.whatsapp || "",
         },
-        imagenes: event.imagenes || [],
+        imagenes: getRealPublicationImages(event.imagenes),
         titulo_marketing: event.titulo_marketing || "",
         mensaje_marketing: event.mensaje_marketing || "",
         titulo_marketing_2: event.titulo_marketing_2 || "",
@@ -171,6 +173,9 @@ export default function AdminEditModal({
       setFormData((prev) => ({
         ...prev,
         [name]: type === "checkbox" ? checked : value,
+        ...(name === "provincia" && prev.provincia !== value
+          ? { comuna: "" }
+          : {}),
       }));
     }
 
@@ -205,6 +210,13 @@ export default function AdminEditModal({
     if (!formData.comuna.trim()) {
       newErrors.comuna = "La comuna es obligatoria";
     }
+    if (
+      getRealPublicationImages(formData.imagenes).length +
+        newImageFiles.length ===
+      0
+    ) {
+      newErrors.imagenes = "Debes agregar al menos una imagen real";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -230,7 +242,11 @@ export default function AdminEditModal({
     e.preventDefault();
 
     if (!validateForm()) {
-      setActiveTab("info");
+      const hasNoRealImages =
+        getRealPublicationImages(formData.imagenes).length +
+          newImageFiles.length ===
+        0;
+      setActiveTab(hasNoRealImages ? "media" : "info");
       return;
     }
 
@@ -241,11 +257,16 @@ export default function AdminEditModal({
         formData.tipo_entrada === "pagado"
           ? parseInt(formData.precio) || null
           : null,
+      url_venta:
+        formData.tipo_entrada === "venta_externa"
+          ? formData.url_venta || null
+          : null,
       hora_inicio: formData.hora_inicio || null,
       hora_fin: formData.hora_fin || null,
       fecha_fin: formData.es_multidia
         ? formData.fecha_fin
         : formData.fecha_evento,
+      imagenes: getRealPublicationImages(formData.imagenes),
     };
 
     // Subir nuevas imágenes si hay
@@ -276,6 +297,10 @@ export default function AdminEditModal({
   };
 
   if (!isOpen || !event) return null;
+
+  const comunas = formData.provincia
+    ? COMUNAS_POR_PROVINCIA[formData.provincia] || []
+    : [];
 
   return (
     <div className="admin-edit-overlay" onClick={handleOverlayClick}>
@@ -331,7 +356,10 @@ export default function AdminEditModal({
         </div>
 
         {/* Content */}
-        <form onSubmit={handleSubmit} className="admin-edit-modal__content">
+        <form
+          onSubmit={handleSubmit}
+          className="admin-edit-modal__content"
+          onFocus={scrollOnFocus}>
           {/* Tab: Información */}
           {activeTab === "info" && (
             <div className="admin-edit-section">
@@ -528,15 +556,24 @@ export default function AdminEditModal({
                   <label htmlFor="comuna">
                     Comuna <span className="required">*</span>
                   </label>
-                  <input
-                    type="text"
+                  <select
                     id="comuna"
                     name="comuna"
                     value={formData.comuna}
                     onChange={handleChange}
-                    placeholder="Ej: Talca, Curicó..."
-                    className={errors.comuna ? "error" : ""}
-                  />
+                    disabled={!formData.provincia}
+                    className={errors.comuna ? "error" : ""}>
+                    <option value="">
+                      {formData.provincia
+                        ? "Seleccionar comuna"
+                        : "Primero selecciona provincia"}
+                    </option>
+                    {comunas.map((comuna) => (
+                      <option key={comuna} value={comuna}>
+                        {comuna}
+                      </option>
+                    ))}
+                  </select>
                   {errors.comuna && (
                     <span className="field-error">{errors.comuna}</span>
                   )}
@@ -636,6 +673,9 @@ export default function AdminEditModal({
                     <FontAwesomeIcon icon={faImage} />
                     <p>No hay imágenes</p>
                   </div>
+                )}
+                {errors.imagenes && (
+                  <span className="field-error">{errors.imagenes}</span>
                 )}
 
                 {/* Nuevas imágenes seleccionadas */}

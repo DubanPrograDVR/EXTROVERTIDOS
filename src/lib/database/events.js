@@ -19,6 +19,13 @@ const sanitizeFilterValue = (value) => {
   return value.replace(/[.,()\\%_]/g, "").trim();
 };
 
+const getLocalDateKey = (date = new Date()) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 /**
  * Detecta si un error de Supabase es de autenticación
  * @param {Object} error - Error de Supabase
@@ -217,13 +224,31 @@ export const createEvent = async (eventData, options = {}) => {
  */
 export const getPublishedEvents = async () => {
   // Obtener fecha actual en formato ISO (solo fecha, sin hora)
-  const today = new Date().toISOString().split("T")[0];
+  const today = getLocalDateKey();
 
   const { data, error } = await supabase
     .from("events")
     .select(
       `
-      *,
+      id,
+      user_id,
+      category_id,
+      titulo,
+      imagenes,
+      comuna,
+      provincia,
+      organizador,
+      fecha_evento,
+      fecha_fin,
+      es_multidia,
+      es_recurrente,
+      dia_recurrencia,
+      cantidad_repeticiones,
+      fechas_recurrencia,
+      hora_inicio,
+      hora_fin,
+      tipo_entrada,
+      precio,
       categories (
         id,
         nombre,
@@ -234,12 +259,6 @@ export const getPublishedEvents = async () => {
         id,
         nombre,
         avatar_url
-      ),
-      event_tags (
-        tags (
-          id,
-          nombre
-        )
       )
     `,
     )
@@ -265,7 +284,7 @@ export const getPublishedEvents = async () => {
  */
 export const getEventsByCity = async (ciudad, provincia = null) => {
   // Obtener fecha actual en formato ISO (solo fecha, sin hora)
-  const today = new Date().toISOString().split("T")[0];
+  const today = getLocalDateKey();
 
   let query = supabase
     .from("events")
@@ -406,7 +425,7 @@ export const getEventById = async (eventId) => {
  */
 export const getFilteredEvents = async (filters = {}) => {
   // Obtener fecha actual en formato ISO (solo fecha, sin hora)
-  const today = new Date().toISOString().split("T")[0];
+  const today = getLocalDateKey();
 
   let query = supabase
     .from("events")

@@ -1,5 +1,9 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faImage, faInfoCircle, faTimes } from "@fortawesome/free-solid-svg-icons";
+import {
+  faImage,
+  faInfoCircle,
+  faTimes,
+} from "@fortawesome/free-solid-svg-icons";
 import { IMAGE_CONFIG } from "./constants";
 
 /**
@@ -26,7 +30,8 @@ const ImagenesSection = ({
         </label>
         <p className="publicar-negocio__hint">
           <FontAwesomeIcon icon={faInfoCircle} />
-          Sube hasta {IMAGE_CONFIG.maxFiles} imágenes. La primera será la imagen principal.
+          Sube hasta {IMAGE_CONFIG.maxFiles} imágenes. La primera será la imagen
+          principal.
         </p>
 
         <div className="publicar-negocio__images-grid">
@@ -36,8 +41,7 @@ const ImagenesSection = ({
               <button
                 type="button"
                 className="publicar-negocio__image-remove"
-                onClick={() => onRemoveImage(index)}
-              >
+                onClick={() => onRemoveImage(index)}>
                 <FontAwesomeIcon icon={faTimes} />
               </button>
               {index === 0 && (
@@ -60,6 +64,20 @@ const ImagenesSection = ({
             </label>
           )}
         </div>
+
+        {previewImages.length < IMAGE_CONFIG.maxFiles && (
+          <p className="publicar-negocio__upload-note">
+            Recomendación: Selecciona el botón{" "}
+            <span className="publicar-negocio__upload-note-action">
+              "Ver Borrador"
+            </span>{" "}
+            para que previamente veas como será tu publicación final en
+            Extrovertidos{" "}
+            <span className="publicar-negocio__upload-note-emphasis">
+              (Lee atentamente tu publicación)
+            </span>
+          </p>
+        )}
 
         {errors.imagenes && (
           <span className="publicar-negocio__error">{errors.imagenes}</span>

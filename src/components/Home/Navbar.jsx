@@ -189,6 +189,7 @@ export default function Navbar() {
       <div className="navbar-container">
         <Link to="/" className="navbar-logo">
           <img src={logo} alt="Extrovertidos" className="logo" />
+          <span className="navbar-slogan">¡Somos tu panorama!</span>
         </Link>
 
         {/* Overlay para cerrar el menú */}
