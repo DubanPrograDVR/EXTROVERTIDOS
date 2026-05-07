@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTicket, faPhone } from "@fortawesome/free-solid-svg-icons";
+import { faTicket, faPhone, faXmark } from "@fortawesome/free-solid-svg-icons";
 import SocialInputs from "../SocialInputs";
 import TicketModal from "../TicketModal";
+import { formatChileanPhone } from "../../../../../lib/textWrap";
 
 /**
  * Wizard Step 3: Detalles del Evento
@@ -10,6 +11,7 @@ import TicketModal from "../TicketModal";
  */
 const WizardStepDetails = ({ formData, errors, onChange }) => {
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
+  const hasSelectedTicketType = Boolean(formData.tipo_entrada);
 
   const getTicketDisplayText = () => {
     const tipos = {
@@ -21,7 +23,7 @@ const WizardStepDetails = ({ formData, errors, onChange }) => {
         : "Entrada General",
       venta_externa: "Venta externa",
     };
-    return tipos[formData.tipo_entrada] || "Configurar entradas";
+    return tipos[formData.tipo_entrada] || "Selecciona un tipo de entrada";
   };
 
   const handleTicketSave = (ticketData) => {
@@ -32,6 +34,12 @@ const WizardStepDetails = ({ formData, errors, onChange }) => {
     onChange({ target: { name: "url_venta", value: ticketData.url_venta } });
   };
 
+  const handleTicketClear = () => {
+    onChange({ target: { name: "tipo_entrada", value: "" } });
+    onChange({ target: { name: "precio", value: "" } });
+    onChange({ target: { name: "url_venta", value: "" } });
+  };
+
   return (
     <div className="wizard-step">
       {/* Opciones de Entrada */}
@@ -40,13 +48,25 @@ const WizardStepDetails = ({ formData, errors, onChange }) => {
           <FontAwesomeIcon icon={faTicket} /> Opciones de Entrada
           <span className="publicar-form__label-required">Obligatorio</span>
         </label>
-        <button
-          type="button"
-          className="publicar-form__ticket-btn"
-          onClick={() => setIsTicketModalOpen(true)}>
-          <FontAwesomeIcon icon={faTicket} />
-          {getTicketDisplayText()}
-        </button>
+        <div className="publicar-form__ticket-actions">
+          <button
+            type="button"
+            className={`publicar-form__ticket-btn ${!hasSelectedTicketType ? "publicar-form__ticket-btn--placeholder" : ""}`}
+            onClick={() => setIsTicketModalOpen(true)}>
+            <FontAwesomeIcon icon={faTicket} />
+            {getTicketDisplayText()}
+          </button>
+          {hasSelectedTicketType && (
+            <button
+              type="button"
+              className="publicar-form__ticket-clear"
+              onClick={handleTicketClear}
+              aria-label="Quitar tipo de entrada"
+              title="Quitar tipo de entrada">
+              <FontAwesomeIcon icon={faXmark} />
+            </button>
+          )}
+        </div>
         {errors.tipo_entrada && (
           <span className="publicar-form__error">{errors.tipo_entrada}</span>
         )}
@@ -80,8 +100,15 @@ const WizardStepDetails = ({ formData, errors, onChange }) => {
           name="telefono_contacto"
           className="publicar-form__input"
           placeholder="Ej: +56 9 1234 5678"
-          value={formData.telefono_contacto || ""}
-          onChange={onChange}
+          value={formatChileanPhone(formData.telefono_contacto || "")}
+          onChange={(e) =>
+            onChange({
+              target: {
+                name: e.target.name,
+                value: formatChileanPhone(e.target.value),
+              },
+            })
+          }
           maxLength={20}
         />
       </div>

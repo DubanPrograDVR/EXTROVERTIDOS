@@ -491,13 +491,16 @@
 
 /* In Range */
 .drp-calendar__day--in-range {
-  background: rgba(255, 102, 0, 0.18) !important;
-  color: #ffad66 !important;
+  background: #c6c4c2 !important;
+  color: #000 !important;
   border-radius: 4px;
+  font-weight: 700;
+  opacity: 0.75;
 }
 
 .drp-calendar__day--in-range:hover:not(:disabled) {
-  background: rgba(255, 102, 0, 0.28) !important;
+  opacity: 1;
+  background: #ff6600 !important;
 }
 
 /* Recurring */

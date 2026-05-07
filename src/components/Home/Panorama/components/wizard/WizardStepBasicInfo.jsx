@@ -66,7 +66,7 @@ const WizardStepBasicInfo = ({
       <div className="publicar-form__group">
         <label className="publicar-form__label" htmlFor="organizador">
           <FontAwesomeIcon icon={faBuilding} /> Organizador
-          <span className="publicar-form__label-hint"> (Opcional)</span>
+          <span className="publicar-form__label-required">Obligatorio</span>
           <span
             style={{
               color: "gray",
@@ -81,12 +81,15 @@ const WizardStepBasicInfo = ({
           type="text"
           id="organizador"
           name="organizador"
-          className="publicar-form__input"
-          placeholder="Nombre del organizador (opcional)"
+          className={`publicar-form__input ${errors.organizador ? "error" : ""}`}
+          placeholder="Nombre del organizador"
           value={formData.organizador}
           onChange={onChange}
           maxLength={100}
         />
+        {errors.organizador && (
+          <span className="publicar-form__error">{errors.organizador}</span>
+        )}
       </div>
 
       {/* Descripción */}
@@ -96,7 +99,7 @@ const WizardStepBasicInfo = ({
           <span className="publicar-form__label-hint"> (Opcional)</span>
           <span className="publicar-form__label-note">
             (Presiona <strong>Ver Borrador</strong> para ver el orden final de
-            este texto)Ver Borrador
+            este texto)
           </span>
         </label>
         <textarea

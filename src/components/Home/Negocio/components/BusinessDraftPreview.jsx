@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faTimes,
@@ -14,7 +14,6 @@ import {
   faAlignLeft,
   faAddressCard,
   faImage,
-  faLayerGroup,
   faBullhorn,
   faInfoCircle,
 } from "@fortawesome/free-solid-svg-icons";
@@ -92,6 +91,44 @@ const BusinessDraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
     setActiveSection((prev) => (prev === section ? null : section));
   }, []);
 
+  const hasText = (value) => Boolean(String(value ?? "").trim());
+  const hasName = hasText(formData?.nombre);
+  const hasDescription = hasText(formData?.descripcion);
+  const hasMarketingOne = hasText(formData?.mensaje_marketing);
+  const hasMarketingTwo = hasText(formData?.mensaje_marketing_2);
+  const hasSubcategory = hasText(formData?.subcategoria);
+  const hasLocationInfo =
+    hasText(formData?.direccion) || hasText(formData?.ubicacion_url);
+  const hasHorarioInfo =
+    Boolean(formData?.abierto_24h) || formData?.dias_atencion?.length > 0;
+  const hasSocialLinks =
+    hasText(formData?.sitio_web) ||
+    Object.values(formData?.redes_sociales || {}).some(hasText);
+  const hasContacto =
+    hasText(formData?.telefono) || hasText(formData?.email) || hasSocialLinks;
+  const hasInformation = hasLocationInfo || hasHorarioInfo || hasContacto;
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const visibleSections = [
+      hasDescription && ACCORDION_SECTIONS.DESCRIPTION,
+      hasMarketingOne && ACCORDION_SECTIONS.MARKETING_1,
+      hasMarketingTwo && ACCORDION_SECTIONS.MARKETING_2,
+      hasInformation && ACCORDION_SECTIONS.INFORMATION,
+    ].filter(Boolean);
+
+    setActiveSection((prev) =>
+      visibleSections.includes(prev) ? prev : visibleSections[0] || null,
+    );
+  }, [
+    isOpen,
+    hasDescription,
+    hasMarketingOne,
+    hasMarketingTwo,
+    hasInformation,
+  ]);
+
   if (!isOpen) return null;
 
   // Imagen actual
@@ -162,19 +199,6 @@ const BusinessDraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
 
   const horarioResumen = getHorarioResumen();
 
-  // Contacto
-  const hasSocialLinks =
-    formData.sitio_web ||
-    formData.redes_sociales?.whatsapp ||
-    formData.redes_sociales?.instagram ||
-    formData.redes_sociales?.facebook ||
-    formData.redes_sociales?.tiktok ||
-    formData.redes_sociales?.twitter ||
-    formData.redes_sociales?.youtube ||
-    formData.redes_sociales?.linkedin;
-
-  const hasContacto = formData.telefono || formData.email || hasSocialLinks;
-
   return (
     <div
       className="publication-modal-overlay draft-preview-overlay"
@@ -194,9 +218,9 @@ const BusinessDraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
               Superguia Extrovertidos
             </span>
           </div>
-          {formData.subcategoria && (
+          {hasSubcategory && (
             <span className="publication-modal__subcategory-tag publication-modal__subcategory-tag--desktop">
-              {formData.subcategoria}
+              {formData.subcategoria.trim()}
             </span>
           )}
           <button className="publication-modal__close" onClick={onClose}>
@@ -210,9 +234,9 @@ const BusinessDraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
           {/* IZQUIERDA: IMAGEN */}
           <div
             className={`publication-modal__left ${isInfoExpanded ? "publication-modal__left--hidden" : ""}`}>
-            {formData.subcategoria && (
+            {hasSubcategory && (
               <span className="publication-modal__subcategory-tag publication-modal__subcategory-tag--mobile">
-                {formData.subcategoria}
+                {formData.subcategoria.trim()}
               </span>
             )}
             <button
@@ -286,41 +310,47 @@ const BusinessDraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
               </button>
             )}
             {/* Título */}
-            <div className="publication-modal__title-section">
-              <h2>{formData.nombre || "Nombre del negocio"}</h2>
-            </div>
+            {hasName && (
+              <div className="publication-modal__title-section">
+                <h2>{formData.nombre.trim()}</h2>
+              </div>
+            )}
 
             {/* Acordeón */}
             <div className="publication-modal__accordion-container">
               {/* Descripción */}
-              <AccordionSection
-                title="Descripción"
-                icon={faAlignLeft}
-                isOpen={activeSection === ACCORDION_SECTIONS.DESCRIPTION}
-                bodyClassName="accordion-section__body--description"
-                onToggle={() => toggleSection(ACCORDION_SECTIONS.DESCRIPTION)}>
-                <div className="publication-modal__description-content rich-text">
-                  {formData.descripcion ? (
-                    renderRichText(formData.descripcion, {
+              {hasDescription && (
+                <AccordionSection
+                  title="Descripción"
+                  icon={faAlignLeft}
+                  isOpen={activeSection === ACCORDION_SECTIONS.DESCRIPTION}
+                  bodyClassName="accordion-section__body--description"
+                  onToggle={() =>
+                    toggleSection(ACCORDION_SECTIONS.DESCRIPTION)
+                  }>
+                  <div className="publication-modal__description-content rich-text">
+                    {renderRichText(formData.descripcion.trim(), {
                       keyPrefix: "bdraft-desc",
-                    })
-                  ) : (
-                    <p>Sin descripción agregada aún...</p>
-                  )}
-                </div>
-              </AccordionSection>
+                    })}
+                  </div>
+                </AccordionSection>
+              )}
 
               {/* Mensaje de Marketing 1 */}
-              {formData.mensaje_marketing && (
+              {hasMarketingOne && (
                 <AccordionSection
-                  title={formData.titulo_marketing || "¡Información Destacada!"}
+                  title={
+                    hasText(formData.titulo_marketing)
+                      ? formData.titulo_marketing.trim()
+                      : "¡Información Destacada!"
+                  }
                   icon={faBullhorn}
                   isOpen={activeSection === ACCORDION_SECTIONS.MARKETING_1}
                   onToggle={() =>
                     toggleSection(ACCORDION_SECTIONS.MARKETING_1)
                   }>
                   <div className="publication-modal__marketing-content rich-text">
-                    {renderRichText(formData.mensaje_marketing, {
+                    {renderRichText(formData.mensaje_marketing.trim(), {
                       keyPrefix: "bdraft-mkt1",
                     })}
                   </div>
@@ -328,16 +358,20 @@ const BusinessDraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
               )}
 
               {/* Mensaje de Marketing 2 */}
-              {formData.mensaje_marketing_2 && (
+              {hasMarketingTwo && (
                 <AccordionSection
-                  title={formData.titulo_marketing_2 || "¡No te lo pierdas!"}
+                  title={
+                    hasText(formData.titulo_marketing_2)
+                      ? formData.titulo_marketing_2.trim()
+                      : "¡No te lo pierdas!"
+                  }
                   icon={faBullhorn}
                   isOpen={activeSection === ACCORDION_SECTIONS.MARKETING_2}
                   onToggle={() =>
                     toggleSection(ACCORDION_SECTIONS.MARKETING_2)
                   }>
                   <div className="publication-modal__marketing-content rich-text">
-                    {renderRichText(formData.mensaje_marketing_2, {
+                    {renderRichText(formData.mensaje_marketing_2.trim(), {
                       keyPrefix: "bdraft-mkt2",
                     })}
                   </div>
@@ -345,44 +379,50 @@ const BusinessDraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
               )}
 
               {/* Sección: Información (Ubicación + Horarios + Contacto anidados, igual que BusinessModal) */}
-              <AccordionSection
-                title="Información"
-                icon={faInfoCircle}
-                isOpen={activeSection === ACCORDION_SECTIONS.INFORMATION}
-                onToggle={() => toggleSection(ACCORDION_SECTIONS.INFORMATION)}>
-                <div className="publication-modal__info-combined">
-                  {/* Ubicación */}
-                  <div className="publication-modal__info-section">
-                    <h4 className="publication-modal__info-subtitle">
-                      <FontAwesomeIcon icon={faMapMarkerAlt} /> Dirección
-                    </h4>
-                    <p className="publication-modal__location-address">
-                      {formData.direccion || "Sin dirección"}
-                    </p>
-                    {formData.ubicacion_url && (
-                      <button
-                        className="publication-modal__directions-btn publication-modal__directions-btn--full"
-                        onClick={() =>
-                          window.open(
-                            formData.ubicacion_url,
-                            "_blank",
-                            "noopener,noreferrer",
-                          )
-                        }>
-                        <FontAwesomeIcon icon={faMapMarkerAlt} />
-                        Ir a la ubicación
-                      </button>
+              {hasInformation && (
+                <AccordionSection
+                  title="Información"
+                  icon={faInfoCircle}
+                  isOpen={activeSection === ACCORDION_SECTIONS.INFORMATION}
+                  onToggle={() =>
+                    toggleSection(ACCORDION_SECTIONS.INFORMATION)
+                  }>
+                  <div className="publication-modal__info-combined">
+                    {/* Ubicación */}
+                    {hasLocationInfo && (
+                      <div className="publication-modal__info-section">
+                        <h4 className="publication-modal__info-subtitle">
+                          <FontAwesomeIcon icon={faMapMarkerAlt} /> Dirección
+                        </h4>
+                        {hasText(formData.direccion) && (
+                          <p className="publication-modal__location-address">
+                            {formData.direccion.trim()}
+                          </p>
+                        )}
+                        {hasText(formData.ubicacion_url) && (
+                          <button
+                            className="publication-modal__directions-btn publication-modal__directions-btn--full"
+                            onClick={() =>
+                              window.open(
+                                formData.ubicacion_url,
+                                "_blank",
+                                "noopener,noreferrer",
+                              )
+                            }>
+                            <FontAwesomeIcon icon={faMapMarkerAlt} />
+                            Ir a la ubicación
+                          </button>
+                        )}
+                      </div>
                     )}
-                  </div>
 
-                  {/* Horarios */}
-                  <div className="publication-modal__info-section">
-                    <h4 className="publication-modal__info-subtitle">
-                      <FontAwesomeIcon icon={faClock} /> Horario de atención
-                    </h4>
-                    <div className="publication-modal__schedule-simple">
-                      {horarioResumen ? (
-                        <>
+                    {/* Horarios */}
+                    {hasHorarioInfo && horarioResumen && (
+                      <div className="publication-modal__info-section">
+                        <h4 className="publication-modal__info-subtitle">
+                          <FontAwesomeIcon icon={faClock} /> Horario de atención
+                        </h4>
+                        <div className="publication-modal__schedule-simple">
                           <div className="publication-modal__schedule-row">
                             <span className="publication-modal__schedule-day">
                               Días de atención
@@ -399,96 +439,88 @@ const BusinessDraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
                               {horarioResumen.horarioAtencion}
                             </span>
                           </div>
-                        </>
-                      ) : (
-                        <p className="publication-modal__no-data">
-                          Horarios no configurados
-                        </p>
-                      )}
-                    </div>
-                  </div>
+                        </div>
+                      </div>
+                    )}
 
-                  {/* Contacto */}
-                  <div className="publication-modal__info-section">
-                    <h4 className="publication-modal__info-subtitle">
-                      <FontAwesomeIcon icon={faAddressCard} /> Contacto
-                    </h4>
-                    <div className="publication-modal__contact-content">
-                      {formData.telefono && (
-                        <span className="publication-modal__contact-item">
-                          <FontAwesomeIcon icon={faPhone} />
-                          <span>{formData.telefono}</span>
-                        </span>
-                      )}
-                      {formData.email && (
-                        <span className="publication-modal__contact-item">
-                          <FontAwesomeIcon icon={faEnvelope} />
-                          <span>{formData.email}</span>
-                        </span>
-                      )}
+                    {/* Contacto */}
+                    {hasContacto && (
+                      <div className="publication-modal__info-section">
+                        <h4 className="publication-modal__info-subtitle">
+                          <FontAwesomeIcon icon={faAddressCard} /> Contacto
+                        </h4>
+                        <div className="publication-modal__contact-content">
+                          {hasText(formData.telefono) && (
+                            <span className="publication-modal__contact-item">
+                              <FontAwesomeIcon icon={faPhone} />
+                              <span>{formData.telefono.trim()}</span>
+                            </span>
+                          )}
+                          {hasText(formData.email) && (
+                            <span className="publication-modal__contact-item">
+                              <FontAwesomeIcon icon={faEnvelope} />
+                              <span>{formData.email.trim()}</span>
+                            </span>
+                          )}
 
-                      {/* Redes sociales */}
-                      {hasSocialLinks && (
-                        <div className="publication-modal__social">
-                          {formData.sitio_web && (
-                            <span className="publication-modal__social-btn publication-modal__social-btn--website">
-                              <FontAwesomeIcon icon={faGlobe} />
-                              Sitio web
-                            </span>
-                          )}
-                          {formData.redes_sociales?.whatsapp && (
-                            <span className="publication-modal__social-btn publication-modal__social-btn--whatsapp">
-                              <FontAwesomeIcon icon={faWhatsapp} />
-                              WhatsApp
-                            </span>
-                          )}
-                          {formData.redes_sociales?.instagram && (
-                            <span className="publication-modal__social-btn publication-modal__social-btn--instagram">
-                              <FontAwesomeIcon icon={faInstagram} />
-                              Instagram
-                            </span>
-                          )}
-                          {formData.redes_sociales?.facebook && (
-                            <span className="publication-modal__social-btn publication-modal__social-btn--facebook">
-                              <FontAwesomeIcon icon={faFacebook} />
-                              Facebook
-                            </span>
-                          )}
-                          {formData.redes_sociales?.tiktok && (
-                            <span className="publication-modal__social-btn publication-modal__social-btn--tiktok">
-                              <FontAwesomeIcon icon={faTiktok} />
-                              TikTok
-                            </span>
-                          )}
-                          {formData.redes_sociales?.twitter && (
-                            <span className="publication-modal__social-btn publication-modal__social-btn--twitter">
-                              <FontAwesomeIcon icon={faXTwitter} />X
-                            </span>
-                          )}
-                          {formData.redes_sociales?.youtube && (
-                            <span className="publication-modal__social-btn publication-modal__social-btn--youtube">
-                              <FontAwesomeIcon icon={faYoutube} />
-                              YouTube
-                            </span>
-                          )}
-                          {formData.redes_sociales?.linkedin && (
-                            <span className="publication-modal__social-btn publication-modal__social-btn--linkedin">
-                              <FontAwesomeIcon icon={faLinkedin} />
-                              LinkedIn
-                            </span>
+                          {/* Redes sociales */}
+                          {hasSocialLinks && (
+                            <div className="publication-modal__social">
+                              {hasText(formData.sitio_web) && (
+                                <span className="publication-modal__social-btn publication-modal__social-btn--website">
+                                  <FontAwesomeIcon icon={faGlobe} />
+                                  Sitio web
+                                </span>
+                              )}
+                              {hasText(formData.redes_sociales?.whatsapp) && (
+                                <span className="publication-modal__social-btn publication-modal__social-btn--whatsapp">
+                                  <FontAwesomeIcon icon={faWhatsapp} />
+                                  WhatsApp
+                                </span>
+                              )}
+                              {hasText(formData.redes_sociales?.instagram) && (
+                                <span className="publication-modal__social-btn publication-modal__social-btn--instagram">
+                                  <FontAwesomeIcon icon={faInstagram} />
+                                  Instagram
+                                </span>
+                              )}
+                              {hasText(formData.redes_sociales?.facebook) && (
+                                <span className="publication-modal__social-btn publication-modal__social-btn--facebook">
+                                  <FontAwesomeIcon icon={faFacebook} />
+                                  Facebook
+                                </span>
+                              )}
+                              {hasText(formData.redes_sociales?.tiktok) && (
+                                <span className="publication-modal__social-btn publication-modal__social-btn--tiktok">
+                                  <FontAwesomeIcon icon={faTiktok} />
+                                  TikTok
+                                </span>
+                              )}
+                              {hasText(formData.redes_sociales?.twitter) && (
+                                <span className="publication-modal__social-btn publication-modal__social-btn--twitter">
+                                  <FontAwesomeIcon icon={faXTwitter} />X
+                                </span>
+                              )}
+                              {hasText(formData.redes_sociales?.youtube) && (
+                                <span className="publication-modal__social-btn publication-modal__social-btn--youtube">
+                                  <FontAwesomeIcon icon={faYoutube} />
+                                  YouTube
+                                </span>
+                              )}
+                              {hasText(formData.redes_sociales?.linkedin) && (
+                                <span className="publication-modal__social-btn publication-modal__social-btn--linkedin">
+                                  <FontAwesomeIcon icon={faLinkedin} />
+                                  LinkedIn
+                                </span>
+                              )}
+                            </div>
                           )}
                         </div>
-                      )}
-
-                      {!hasContacto && (
-                        <p className="publication-modal__no-data">
-                          Sin información de contacto aún
-                        </p>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              </AccordionSection>
+                </AccordionSection>
+              )}
             </div>
           </div>
         </div>

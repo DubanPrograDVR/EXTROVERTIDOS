@@ -8,6 +8,69 @@ import cache from "./cache";
 import { isModerator, ESTADOS_PUBLICACION } from "./roles";
 import { refundPublication } from "./subscriptions";
 
+const ADMIN_PANORAMA_DELETE_GRACE_DAYS = 10;
+
+const getChileDateKey = (date = new Date()) => {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Santiago",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  const values = Object.fromEntries(
+    parts.map((part) => [part.type, part.value]),
+  );
+  return `${values.year}-${values.month}-${values.day}`;
+};
+
+const subtractDaysFromDateKey = (dateKey, days) => {
+  const date = new Date(`${dateKey}T00:00:00`);
+  date.setDate(date.getDate() - days);
+  return date.toISOString().slice(0, 10);
+};
+
+const isExpiredAutoDeletedEvent = (
+  event,
+  today = getChileDateKey(),
+  graceDays = ADMIN_PANORAMA_DELETE_GRACE_DAYS,
+) => {
+  const endDate = event?.fecha_fin || event?.fecha_evento;
+  const cutoffDate = subtractDaysFromDateKey(today, graceDays);
+  return Boolean(endDate && endDate < cutoffDate);
+};
+
+/**
+ * Ejecuta la limpieza de panoramas vencidos en la base de datos.
+ * @param {string} adminUserId - ID del usuario admin/moderador
+ * @param {number} graceDays - Días de gracia antes de borrar
+ * @returns {Promise<number>} Cantidad de eventos eliminados
+ */
+export const deletePastPanoramas = async (
+  adminUserId,
+  graceDays = ADMIN_PANORAMA_DELETE_GRACE_DAYS,
+) => {
+  const canModerate = await isModerator(adminUserId);
+  if (!canModerate) {
+    throw new Error("No tienes permisos para limpiar publicaciones vencidas");
+  }
+
+  const { data, error } = await supabase.rpc("delete_past_panoramas", {
+    p_grace_days: graceDays,
+  });
+
+  if (error) {
+    console.error("Error al limpiar panoramas vencidos:", error);
+    throw error;
+  }
+
+  if (data > 0) {
+    cache.invalidate("adminStats");
+  }
+
+  return data || 0;
+};
+
 /**
  * Obtiene todas las publicaciones pendientes de aprobación
  * @param {string} adminUserId - ID del usuario admin/moderador
@@ -129,7 +192,10 @@ export const getAllEvents = async (adminUserId) => {
     throw error;
   }
 
-  return data;
+  const today = getChileDateKey();
+  return (data || []).filter(
+    (event) => !isExpiredAutoDeletedEvent(event, today),
+  );
 };
 
 /**

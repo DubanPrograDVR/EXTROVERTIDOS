@@ -745,6 +745,11 @@
   padding: 8px 0;
 }
 
+.publication-modal__hashtags--standalone {
+  margin: 8px 0 14px;
+  padding: 0;
+}
+
 .publication-modal__hashtag {
   background: rgba(255, 102, 0, 0.15);
   color: #ff6600;

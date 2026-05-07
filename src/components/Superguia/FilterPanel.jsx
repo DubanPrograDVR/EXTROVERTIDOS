@@ -74,7 +74,8 @@ export default function FilterPanel({
     selectedCity ||
     selectedComuna ||
     selectedDate ||
-    selectedPrice;
+    selectedPrice ||
+    searchQuery?.trim();
 
   const priceOptions = useMemo(
     () => [
@@ -135,6 +136,8 @@ export default function FilterPanel({
       month: "short",
     });
   }, [selectedDate]);
+
+  const shouldShowCountBadge = useCallback((count) => Number(count) > 0, []);
 
   return (
     <div className="filter-panel" ref={panelRef}>
@@ -213,7 +216,7 @@ export default function FilterPanel({
                         />
                       )}
                       <span>{cat.nombre}</span>
-                      {eventsCountByCategory[cat.id] != null && (
+                      {shouldShowCountBadge(eventsCountByCategory[cat.id]) && (
                         <span className="filter-panel__count-badge">
                           {eventsCountByCategory[cat.id] >= 100
                             ? "+99"
@@ -269,7 +272,7 @@ export default function FilterPanel({
                         if (showComunaFilter) setActiveDropdown(null);
                       }}>
                       <span>{city.nombre}</span>
-                      {eventsCountByCity[key] != null && (
+                      {shouldShowCountBadge(eventsCountByCity[key]) && (
                         <span className="filter-panel__count-badge">
                           {eventsCountByCity[key] >= 100
                             ? "+99"
@@ -347,7 +350,7 @@ export default function FilterPanel({
                           setActiveDropdown(null);
                         }}>
                         <span>{comuna}</span>
-                        {eventsCountByComuna[comuna] != null && (
+                        {shouldShowCountBadge(eventsCountByComuna[comuna]) && (
                           <span className="filter-panel__count-badge">
                             {eventsCountByComuna[comuna] >= 100
                               ? "+99"
@@ -481,7 +484,9 @@ export default function FilterPanel({
                     )
                   }>
                   <span>{subcat.nombre}</span>
-                  {eventsCountBySubcategory[subcat.id] != null && (
+                  {shouldShowCountBadge(
+                    eventsCountBySubcategory[subcat.id],
+                  ) && (
                     <span className="filter-panel__count-badge">
                       {eventsCountBySubcategory[subcat.id] >= 100
                         ? "+99"

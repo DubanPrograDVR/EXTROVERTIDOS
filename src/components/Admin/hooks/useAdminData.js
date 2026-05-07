@@ -12,6 +12,7 @@ import {
   getEventsPerDay,
   getUsersPerDay,
   getAllUsersWithBanStatus,
+  deletePastPanoramas,
   banUser,
   unbanUser,
   getAllEvents,
@@ -83,6 +84,12 @@ export const useAdminData = (user, isAdmin, isModerator) => {
     setError(null);
 
     try {
+      try {
+        await deletePastPanoramas(currentUser.id, 10);
+      } catch (cleanupError) {
+        console.warn("No se pudo limpiar panoramas vencidos:", cleanupError);
+      }
+
       // ✅ OPTIMIZADO: Ejecutar todas las consultas en paralelo
       const defaultStats = {
         eventos: { pendientes: 0, publicados: 0, rechazados: 0 },

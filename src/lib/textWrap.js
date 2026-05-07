@@ -289,25 +289,132 @@ export function maybeWrapFieldValue(name, value, maxLen = MAX_LINE_LENGTH) {
  * @param {number} [maxLen=MAX_LINE_LENGTH]
  * @returns {T}
  */
+const SOCIAL_BASE_URLS = {
+  instagram: "https://instagram.com/",
+  facebook: "https://facebook.com/",
+  tiktok: "https://tiktok.com/@",
+  youtube: "https://youtube.com/",
+  twitter: "https://x.com/",
+  linkedin: "https://linkedin.com/company/",
+};
+
+const SOCIAL_PROFILE_KEYS = new Set([
+  "instagram",
+  "facebook",
+  "tiktok",
+  "youtube",
+  "twitter",
+  "linkedin",
+]);
+
+const SOCIAL_DOMAIN_PATTERN = /^[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:[/:?#]|$)/i;
+
+const normalizeHostname = (hostname) =>
+  String(hostname || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^www\./, "");
+
+const looksLikeUrlWithoutProtocol = (value) =>
+  SOCIAL_DOMAIN_PATTERN.test(value);
+
+const buildAbsoluteUrlCandidate = (value) => {
+  if (/^https?:\/\//i.test(value)) return value;
+  if (/^\/\//.test(value)) return `https:${value}`;
+  if (looksLikeUrlWithoutProtocol(value)) return `https://${value}`;
+  return null;
+};
+
+const removeDuplicateHostSegments = (url) => {
+  const host = normalizeHostname(url.hostname);
+  const segments = url.pathname.split("/").filter(Boolean);
+
+  while (segments.length > 0 && normalizeHostname(segments[0]) === host) {
+    segments.shift();
+  }
+
+  url.pathname = segments.length > 0 ? `/${segments.join("/")}` : "/";
+  return url;
+};
+
+const normalizeAbsoluteSocialUrl = (value) => {
+  const candidate = buildAbsoluteUrlCandidate(value);
+  if (!candidate) return "";
+
+  try {
+    const url = removeDuplicateHostSegments(new URL(candidate));
+    url.hash = "";
+    return url.toString();
+  } catch {
+    return candidate;
+  }
+};
+
+const normalizeSocialHandle = (value) =>
+  value.trim().replace(/^@+/, "").replace(/^\/+/, "");
+
+const isPhonePrefixOnly = (value) => {
+  let digits = value.replace(/\D/g, "");
+  if (digits.startsWith("0056")) digits = digits.slice(4);
+  else if (digits.startsWith("56")) digits = digits.slice(2);
+  return digits === "" || digits === "9";
+};
+
 /**
  * Construye una URL completa para un perfil de red social.
  *
- * - Si ya empieza con "http://" o "https://" → se usa tal cual.
- * - Si empieza con "www." → se le antepone "https://".
+ * - Si ya es URL absoluta, la normaliza y la usa tal cual.
+ * - Si es URL sin protocolo, por ejemplo "facebook.com/pagina", antepone
+ *   "https://" sin volver a agregar el dominio base.
+ * - Si ya viene duplicada como "facebook.com/facebook.com/pagina", elimina el
+ *   segmento repetido del host.
  * - En caso contrario se trata como handle/username y se combina con baseUrl.
- *
- * Esto evita el problema de "www.facebook.com/www.facebook.com" cuando el
- * usuario guarda la URL completa en lugar de solo el handle.
  *
  * @param {string} value   - Valor almacenado (handle o URL completa).
  * @param {string} baseUrl - URL base para handles, ej. "https://facebook.com/".
  * @returns {string}
  */
 export function buildSocialUrl(value, baseUrl) {
-  if (!value) return "";
-  if (value.startsWith("http://") || value.startsWith("https://")) return value;
-  if (value.startsWith("www.")) return `https://${value}`;
-  return `${baseUrl}${value}`;
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  const absoluteUrl = normalizeAbsoluteSocialUrl(trimmed);
+  if (absoluteUrl) return absoluteUrl;
+
+  return `${baseUrl}${normalizeSocialHandle(trimmed)}`;
+}
+
+/**
+ * Normaliza un valor de red social antes de persistirlo.
+ * Acepta handles, URLs completas y URLs sin protocolo, evitando dominios
+ * duplicados como "facebook.com/facebook.com".
+ */
+export function normalizeSocialProfileValue(value, network) {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  if (network === "whatsapp") {
+    if (isPhonePrefixOnly(trimmed)) return "";
+    return formatChileanPhone(trimmed);
+  }
+
+  if (!SOCIAL_PROFILE_KEYS.has(network)) return trimmed;
+
+  const absoluteUrl = normalizeAbsoluteSocialUrl(trimmed);
+  if (absoluteUrl) return absoluteUrl;
+
+  return normalizeSocialHandle(trimmed);
+}
+
+export function normalizeSocialLinks(links, { preserveEmpty = false } = {}) {
+  if (!links || typeof links !== "object") return {};
+  return Object.entries(links).reduce((acc, [network, value]) => {
+    const normalized = normalizeSocialProfileValue(value, network);
+    if (normalized || preserveEmpty) acc[network] = normalized;
+    return acc;
+  }, {});
 }
 
 export function wrapPersistedFields(
@@ -324,4 +431,39 @@ export function wrapPersistedFields(
     }
   }
   return out;
+}
+
+/**
+ * Formatea un número de teléfono como número móvil chileno: +56 9 XXXX XXXX
+ *
+ * - Extrae solo dígitos del valor ingresado.
+ * - Elimina el prefijo de país si el usuario lo escribió (56 o 0056).
+ * - Limita a 9 dígitos (prefijo 9 + 8 dígitos del número).
+ * - Retorna el número formateado en tiempo real conforme el usuario escribe.
+ *
+ * Ejemplos:
+ *   ""            → ""
+ *   "9"           → "+56 9"
+ *   "912345"      → "+56 9 1234 5"
+ *   "912345678"   → "+56 9 1234 5678"
+ *
+ * @param {string} raw - Valor tal cual viene del input.
+ * @returns {string}
+ */
+export function formatChileanPhone(raw) {
+  if (typeof raw !== "string") return "";
+  let digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("0056")) digits = digits.slice(4);
+  else if (digits.startsWith("56")) digits = digits.slice(2);
+  digits = digits.slice(0, 9);
+  if (digits.length === 0) return "+56 9";
+  let result = "+56 ";
+  if (digits.length <= 1) {
+    result += digits;
+  } else if (digits.length <= 5) {
+    result += digits[0] + " " + digits.slice(1);
+  } else {
+    result += digits[0] + " " + digits.slice(1, 5) + " " + digits.slice(5);
+  }
+  return result;
 }

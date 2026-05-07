@@ -40,6 +40,7 @@ import {
 import { useEditForm } from "./useEditForm";
 import { PROVINCIAS, COMUNAS_POR_PROVINCIA, TIPOS_ENTRADA } from "./constants";
 import { uploadEventImage } from "../../../../lib/database/images";
+import { formatChileanPhone } from "../../../../lib/textWrap";
 
 // Estilos - Reutilizar los estilos de PublicationModal para diseño idéntico
 import "../../../Superguia/styles/PublicationModal.css";
@@ -744,8 +745,15 @@ export default function UserEditModal({
                     type="tel"
                     className="publication-modal__edit-input"
                     name="telefono_contacto"
-                    value={formData.telefono_contacto}
-                    onChange={handleChange}
+                    value={formatChileanPhone(formData.telefono_contacto || "")}
+                    onChange={(e) =>
+                      handleChange({
+                        target: {
+                          name: e.target.name,
+                          value: formatChileanPhone(e.target.value),
+                        },
+                      })
+                    }
                     placeholder="+56 9 1234 5678"
                   />
                   <label className="publication-modal__edit-label">
@@ -777,8 +785,17 @@ export default function UserEditModal({
                     type="text"
                     className="publication-modal__edit-input"
                     name="redes_sociales.whatsapp"
-                    value={formData.redes_sociales.whatsapp}
-                    onChange={handleChange}
+                    value={formatChileanPhone(
+                      formData.redes_sociales.whatsapp || "",
+                    )}
+                    onChange={(e) =>
+                      handleChange({
+                        target: {
+                          name: e.target.name,
+                          value: formatChileanPhone(e.target.value),
+                        },
+                      })
+                    }
                     placeholder="+56 9 1234 5678"
                   />
                   <label className="publication-modal__edit-label">

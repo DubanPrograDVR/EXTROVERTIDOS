@@ -23,6 +23,10 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 import { uploadEventImage } from "../../../lib/database/images";
 import {
+  formatChileanPhone,
+  normalizeSocialLinks,
+} from "../../../lib/textWrap";
+import {
   PROVINCIAS,
   COMUNAS_POR_PROVINCIA,
   TIPOS_ENTRADA,
@@ -35,6 +39,47 @@ const ESTADOS = [
   { value: "publicado", label: "Publicado", color: "#28a745" },
   { value: "rechazado", label: "Rechazado", color: "#dc3545" },
 ];
+
+const SCHEDULE_MODES = [
+  { value: "single", label: "Un solo día" },
+  { value: "range", label: "Varios días" },
+  { value: "specific", label: "Fechas específicas" },
+];
+
+const DAY_NAMES = [
+  "domingo",
+  "lunes",
+  "martes",
+  "miércoles",
+  "jueves",
+  "viernes",
+  "sábado",
+];
+
+const normalizeDateList = (dates) =>
+  Array.from(
+    new Set((Array.isArray(dates) ? dates : []).filter(Boolean)),
+  ).sort();
+
+const addDaysToDateKey = (dateKey, days) => {
+  if (!dateKey) return "";
+  const date = new Date(`${dateKey}T00:00:00`);
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
+};
+
+const getInclusiveDays = (startDate, endDate) => {
+  if (!startDate || !endDate) return null;
+  const start = new Date(`${startDate}T00:00:00`);
+  const end = new Date(`${endDate}T00:00:00`);
+  return Math.max(1, Math.round((end - start) / 86400000) + 1);
+};
+
+const getMainWeekday = (dates) => {
+  const [firstDate] = normalizeDateList(dates);
+  if (!firstDate) return "";
+  return DAY_NAMES[new Date(`${firstDate}T00:00:00`).getDay()];
+};
 
 const isRealPublicationImage = (imageUrl) =>
   Boolean(imageUrl) && !String(imageUrl).includes("/img/Home1.png");
@@ -65,6 +110,7 @@ export default function AdminEditModal({
     dia_recurrencia: "",
     cantidad_repeticiones: 2,
     fechas_recurrencia: [],
+    mismo_horario: true,
     hora_inicio: "",
     hora_fin: "",
     provincia: "",
@@ -111,6 +157,7 @@ export default function AdminEditModal({
         dia_recurrencia: event.dia_recurrencia || "",
         cantidad_repeticiones: event.cantidad_repeticiones || 2,
         fechas_recurrencia: event.fechas_recurrencia || [],
+        mismo_horario: event.mismo_horario ?? true,
         hora_inicio: event.hora_inicio?.slice(0, 5) || "",
         hora_fin: event.hora_fin?.slice(0, 5) || "",
         provincia: event.provincia || "",
@@ -159,24 +206,53 @@ export default function AdminEditModal({
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    const nextValue =
+      type === "checkbox"
+        ? typeof checked === "boolean"
+          ? checked
+          : Boolean(value)
+        : value;
 
     if (name.startsWith("redes_sociales.")) {
       const socialKey = name.split(".")[1];
+      const socialValue =
+        socialKey === "whatsapp" ? formatChileanPhone(value) : value;
       setFormData((prev) => ({
         ...prev,
         redes_sociales: {
           ...prev.redes_sociales,
-          [socialKey]: value,
+          [socialKey]: socialValue,
         },
       }));
     } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: type === "checkbox" ? checked : value,
-        ...(name === "provincia" && prev.provincia !== value
-          ? { comuna: "" }
-          : {}),
-      }));
+      setFormData((prev) => {
+        if (name === "fecha_evento" && prev.es_recurrente) {
+          const dates = normalizeDateList(prev.fechas_recurrencia);
+          const nextDates = normalizeDateList(
+            dates.length > 0 ? [nextValue, ...dates.slice(1)] : [nextValue],
+          );
+          return {
+            ...prev,
+            fecha_evento: nextDates[0] || nextValue,
+            fechas_recurrencia: nextDates,
+            cantidad_repeticiones: nextDates.length || 1,
+            dia_recurrencia: getMainWeekday(nextDates),
+          };
+        }
+
+        return {
+          ...prev,
+          [name]: nextValue,
+          ...(name === "provincia" && prev.provincia !== value
+            ? { comuna: "" }
+            : {}),
+          ...(name === "fecha_evento" &&
+          prev.es_multidia &&
+          prev.fecha_fin < value
+            ? { fecha_fin: value }
+            : {}),
+        };
+      });
     }
 
     // Limpiar error del campo
@@ -194,6 +270,7 @@ export default function AdminEditModal({
 
   const validateForm = () => {
     const newErrors = {};
+    const recurrenceDates = normalizeDateList(formData.fechas_recurrencia);
 
     if (!formData.titulo.trim()) {
       newErrors.titulo = "El título es obligatorio";
@@ -203,6 +280,21 @@ export default function AdminEditModal({
     }
     if (!formData.fecha_evento) {
       newErrors.fecha_evento = "La fecha es obligatoria";
+    }
+    if (formData.es_multidia && !formData.fecha_fin) {
+      newErrors.fecha_fin = "Selecciona la fecha de término";
+    }
+    if (
+      formData.es_multidia &&
+      formData.fecha_evento &&
+      formData.fecha_fin &&
+      formData.fecha_fin < formData.fecha_evento
+    ) {
+      newErrors.fecha_fin =
+        "La fecha de término no puede ser anterior al inicio";
+    }
+    if (formData.es_recurrente && recurrenceDates.length < 2) {
+      newErrors.fechas_recurrencia = "Agrega al menos dos fechas de repetición";
     }
     if (!formData.provincia) {
       newErrors.provincia = "Selecciona una provincia";
@@ -220,6 +312,89 @@ export default function AdminEditModal({
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleScheduleModeChange = (mode) => {
+    setFormData((prev) => {
+      if (mode === "range") {
+        return {
+          ...prev,
+          es_multidia: true,
+          es_recurrente: false,
+          fecha_fin: prev.fecha_fin || prev.fecha_evento,
+          fechas_recurrencia: [],
+          dia_recurrencia: "",
+          cantidad_repeticiones: 1,
+        };
+      }
+
+      if (mode === "specific") {
+        const dates = normalizeDateList(
+          prev.fechas_recurrencia?.length
+            ? prev.fechas_recurrencia
+            : prev.fecha_evento
+              ? [prev.fecha_evento, addDaysToDateKey(prev.fecha_evento, 7)]
+              : [],
+        );
+        return {
+          ...prev,
+          es_multidia: false,
+          es_recurrente: true,
+          fecha_fin: "",
+          fechas_recurrencia: dates,
+          cantidad_repeticiones: dates.length || 2,
+          dia_recurrencia: getMainWeekday(dates),
+        };
+      }
+
+      return {
+        ...prev,
+        es_multidia: false,
+        es_recurrente: false,
+        fecha_fin: "",
+        fechas_recurrencia: [],
+        dia_recurrencia: "",
+        cantidad_repeticiones: 1,
+      };
+    });
+    setErrors((prev) => ({
+      ...prev,
+      fecha_fin: null,
+      fechas_recurrencia: null,
+    }));
+  };
+
+  const updateRecurrenceDates = (dates) => {
+    const nextDates = normalizeDateList(dates);
+    setFormData((prev) => ({
+      ...prev,
+      fechas_recurrencia: nextDates,
+      fecha_evento: nextDates[0] || prev.fecha_evento,
+      cantidad_repeticiones: nextDates.length || 1,
+      dia_recurrencia: getMainWeekday(nextDates),
+    }));
+    if (errors.fechas_recurrencia) {
+      setErrors((prev) => ({ ...prev, fechas_recurrencia: null }));
+    }
+  };
+
+  const handleRecurrenceDateChange = (index, value) => {
+    const dates = normalizeDateList(formData.fechas_recurrencia);
+    dates[index] = value;
+    updateRecurrenceDates(dates);
+  };
+
+  const handleAddRecurrenceDate = () => {
+    const dates = normalizeDateList(formData.fechas_recurrencia);
+    const nextDate = dates.length
+      ? addDaysToDateKey(dates[dates.length - 1], 7)
+      : formData.fecha_evento || new Date().toISOString().slice(0, 10);
+    updateRecurrenceDates([...dates, nextDate]);
+  };
+
+  const handleRemoveRecurrenceDate = (index) => {
+    const dates = normalizeDateList(formData.fechas_recurrencia);
+    updateRecurrenceDates(dates.filter((_, dateIndex) => dateIndex !== index));
   };
 
   const handleAddImages = (e) => {
@@ -246,13 +421,34 @@ export default function AdminEditModal({
         getRealPublicationImages(formData.imagenes).length +
           newImageFiles.length ===
         0;
-      setActiveTab(hasNoRealImages ? "media" : "info");
+      const hasDateErrors =
+        !formData.fecha_evento ||
+        (formData.es_multidia &&
+          (!formData.fecha_fin ||
+            formData.fecha_fin < formData.fecha_evento)) ||
+        (formData.es_recurrente &&
+          normalizeDateList(formData.fechas_recurrencia).length < 2);
+      setActiveTab(
+        hasNoRealImages ? "media" : hasDateErrors ? "dates" : "info",
+      );
       return;
     }
+
+    const recurrenceDates = normalizeDateList(formData.fechas_recurrencia);
+    const isRecurring = Boolean(formData.es_recurrente);
+    const isMultiDay = Boolean(formData.es_multidia && !isRecurring);
+    const scheduleEndDate = isRecurring
+      ? recurrenceDates[recurrenceDates.length - 1] || formData.fecha_evento
+      : isMultiDay
+        ? formData.fecha_fin || formData.fecha_evento
+        : formData.fecha_evento;
 
     // Preparar datos para guardar
     const dataToSave = {
       ...formData,
+      redes_sociales: normalizeSocialLinks(formData.redes_sociales, {
+        preserveEmpty: true,
+      }),
       precio:
         formData.tipo_entrada === "pagado"
           ? parseInt(formData.precio) || null
@@ -263,9 +459,13 @@ export default function AdminEditModal({
           : null,
       hora_inicio: formData.hora_inicio || null,
       hora_fin: formData.hora_fin || null,
-      fecha_fin: formData.es_multidia
-        ? formData.fecha_fin
-        : formData.fecha_evento,
+      fecha_fin: scheduleEndDate,
+      es_multidia: isMultiDay,
+      es_recurrente: isRecurring,
+      dia_recurrencia: isRecurring ? getMainWeekday(recurrenceDates) : "",
+      cantidad_repeticiones: isRecurring ? recurrenceDates.length : 1,
+      fechas_recurrencia: isRecurring ? recurrenceDates : [],
+      mismo_horario: formData.mismo_horario !== false,
       imagenes: getRealPublicationImages(formData.imagenes),
     };
 
@@ -301,6 +501,16 @@ export default function AdminEditModal({
   const comunas = formData.provincia
     ? COMUNAS_POR_PROVINCIA[formData.provincia] || []
     : [];
+  const scheduleMode = formData.es_recurrente
+    ? "specific"
+    : formData.es_multidia
+      ? "range"
+      : "single";
+  const recurrenceDates = normalizeDateList(formData.fechas_recurrencia);
+  const durationDays = getInclusiveDays(
+    formData.fecha_evento,
+    formData.fecha_fin,
+  );
 
   return (
     <div className="admin-edit-overlay" onClick={handleOverlayClick}>
@@ -327,6 +537,15 @@ export default function AdminEditModal({
             onClick={() => setActiveTab("info")}>
             <FontAwesomeIcon icon={faInfoCircle} />
             <span>Información</span>
+          </button>
+
+          <button
+            className={`admin-edit-tab ${
+              activeTab === "dates" ? "active" : ""
+            }`}
+            onClick={() => setActiveTab("dates")}>
+            <FontAwesomeIcon icon={faCalendarAlt} />
+            <span>Fechas</span>
           </button>
 
           <button
@@ -504,7 +723,9 @@ export default function AdminEditModal({
                     <input
                       type="text"
                       name="redes_sociales.whatsapp"
-                      value={formData.redes_sociales.whatsapp}
+                      value={formatChileanPhone(
+                        formData.redes_sociales.whatsapp || "",
+                      )}
                       onChange={handleChange}
                       placeholder="+56 9 1234 5678"
                     />
@@ -523,6 +744,166 @@ export default function AdminEditModal({
                   />
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Tab: Fechas */}
+          {activeTab === "dates" && (
+            <div className="admin-edit-section">
+              <div className="admin-edit-field">
+                <label>Tipo de calendario</label>
+                <div className="admin-edit-schedule-options">
+                  {SCHEDULE_MODES.map((mode) => (
+                    <button
+                      key={mode.value}
+                      type="button"
+                      className={`admin-edit-schedule-option ${
+                        scheduleMode === mode.value ? "selected" : ""
+                      }`}
+                      onClick={() => handleScheduleModeChange(mode.value)}>
+                      {mode.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="admin-edit-row">
+                <div className="admin-edit-field">
+                  <label htmlFor="fecha_evento">
+                    Fecha de inicio <span className="required">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    id="fecha_evento"
+                    name="fecha_evento"
+                    value={formData.fecha_evento}
+                    onChange={handleChange}
+                    className={errors.fecha_evento ? "error" : ""}
+                  />
+                  {errors.fecha_evento && (
+                    <span className="field-error">{errors.fecha_evento}</span>
+                  )}
+                </div>
+
+                {scheduleMode === "range" && (
+                  <div className="admin-edit-field">
+                    <label htmlFor="fecha_fin">
+                      Fecha de término <span className="required">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      id="fecha_fin"
+                      name="fecha_fin"
+                      value={formData.fecha_fin}
+                      onChange={handleChange}
+                      className={errors.fecha_fin ? "error" : ""}
+                    />
+                    {errors.fecha_fin && (
+                      <span className="field-error">{errors.fecha_fin}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {scheduleMode === "range" && durationDays && (
+                <div className="admin-edit-schedule-summary">
+                  Dura {durationDays} día{durationDays > 1 ? "s" : ""}{" "}
+                  consecutivo
+                  {durationDays > 1 ? "s" : ""}.
+                </div>
+              )}
+
+              {scheduleMode === "specific" && (
+                <div className="admin-edit-subsection admin-edit-subsection--schedule">
+                  <h4>
+                    <FontAwesomeIcon icon={faCalendarAlt} /> Fechas de
+                    repetición
+                  </h4>
+                  <div className="admin-edit-recurring-list">
+                    {recurrenceDates.map((date, index) => (
+                      <div
+                        key={`${date}-${index}`}
+                        className="admin-edit-recurring-row">
+                        <span className="admin-edit-recurring-index">
+                          {index + 1}
+                        </span>
+                        <input
+                          type="date"
+                          value={date}
+                          onChange={(e) =>
+                            handleRecurrenceDateChange(index, e.target.value)
+                          }
+                        />
+                        <button
+                          type="button"
+                          className="admin-edit-recurring-remove"
+                          onClick={() => handleRemoveRecurrenceDate(index)}
+                          disabled={recurrenceDates.length <= 1}
+                          aria-label="Quitar fecha">
+                          <FontAwesomeIcon icon={faTrash} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  {errors.fechas_recurrencia && (
+                    <span className="field-error">
+                      {errors.fechas_recurrencia}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    className="admin-edit-btn admin-edit-btn--ghost"
+                    onClick={handleAddRecurrenceDate}>
+                    <FontAwesomeIcon icon={faPlus} /> Agregar otra fecha
+                  </button>
+                  {recurrenceDates.length > 0 && (
+                    <div className="admin-edit-schedule-summary">
+                      Se repite {recurrenceDates.length} vez
+                      {recurrenceDates.length > 1 ? "es" : ""}
+                      {formData.dia_recurrencia
+                        ? `; día principal: ${formData.dia_recurrencia}`
+                        : ""}
+                      .
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="admin-edit-row">
+                <div className="admin-edit-field">
+                  <label htmlFor="hora_inicio">Hora de inicio</label>
+                  <input
+                    type="time"
+                    id="hora_inicio"
+                    name="hora_inicio"
+                    value={formData.hora_inicio}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="admin-edit-field">
+                  <label htmlFor="hora_fin">Hora de término</label>
+                  <input
+                    type="time"
+                    id="hora_fin"
+                    name="hora_fin"
+                    value={formData.hora_fin}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+
+              {(scheduleMode === "range" || scheduleMode === "specific") && (
+                <label className="admin-edit-checkbox admin-edit-checkbox--boxed">
+                  <input
+                    type="checkbox"
+                    name="mismo_horario"
+                    checked={formData.mismo_horario !== false}
+                    onChange={handleChange}
+                  />
+                  Usar el mismo horario todos los días
+                </label>
+              )}
             </div>
           )}
 

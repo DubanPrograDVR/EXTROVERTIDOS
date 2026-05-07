@@ -384,7 +384,15 @@ export default function SuperguiaContainer() {
           business.categoria?.toLowerCase().includes(query) ||
           business.subcategoria?.toLowerCase().includes(query) ||
           business.slogan?.toLowerCase().includes(query) ||
-          business.descripcion?.toLowerCase().includes(query),
+          business.descripcion?.toLowerCase().includes(query) ||
+          categories
+            .find((c) => c.id === business.category_id)
+            ?.nombre?.toLowerCase()
+            .includes(query) ||
+          flatSubcategories
+            .find((s) => s.id === business.subcategory_id)
+            ?.nombre?.toLowerCase()
+            .includes(query),
       );
     }
 
@@ -721,26 +729,26 @@ export default function SuperguiaContainer() {
                   </div>
 
                   <h2 className="superguia__empty-title">
-                    UPS.... AUN NO HAY UNA PUBLICACIÓN
+                    Ups.... Aún no hay una publicación
                   </h2>
                   <p className="superguia__empty-subtitle">
                     {hasActiveFilters
-                      ? "TE INVITAMOS A SEGUIR TU BÚSQUEDA EN OTRA CATEGORÍA"
-                      : "TE INVITAMOS A SEGUIR TU BÚSQUEDA EN OTRA CATEGORÍA"}
+                      ? "Te invitamos a seguir tu búsqueda en otra categoría"
+                      : "Te invitamos a seguir tu búsqueda en otra categoría"}
                   </p>
 
                   <h3 className="superguia__empty-cta">
-                    ¡PUBLICA AHORA TU NEGOCIO!
+                    ¡Publica ahora tu negocio!
                   </h3>
 
                   <p className="superguia__empty-description">
-                    EXPERIMENTA UNA NUEVA FORMA PARA QUE LOS CLIENTES
+                    Experimenta una nueva forma para que los clientes
                     <br />
-                    TE ENCUENTREN
+                    te encuentren
                   </p>
 
                   <p className="superguia__empty-tagline">
-                    SE PARTE DE EXTROVERTIDOS
+                    Sé parte de Extrovertidos
                   </p>
 
                   {/* Logo Extrovertidos */}

@@ -37,7 +37,7 @@ export default function EmptyPanoramas({
 
         {/* Texto principal */}
         <h2 className="empty-panoramas__title">
-          ups.... aun no se publica
+          Ups.... Aún no se publica
           <br />
           un panorama
         </h2>
@@ -45,14 +45,14 @@ export default function EmptyPanoramas({
         {/* Subtítulo */}
         <p className="empty-panoramas__subtitle">
           {hasFilters
-            ? "te invitamos a seguir tu búsqueda en otra categoría"
-            : "te invitamos a explorar otras opciones"}
+            ? "Te invitamos a seguir tu búsqueda en otra categoría"
+            : "Te invitamos a explorar otras opciones"}
         </p>
 
         {/* CTA */}
         <h3 className="empty-panoramas__cta-text">
-          publica ahora tu panorama, actividad o evento y se parte de
-          extrovertidos
+          Publica ahora tu panorama, actividad o evento y sé parte de
+          Extrovertidos
         </h3>
 
         {/* Logo decorativo sobre acciones */}

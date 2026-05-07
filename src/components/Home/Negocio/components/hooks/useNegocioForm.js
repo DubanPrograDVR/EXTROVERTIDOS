@@ -4,6 +4,7 @@ import { useAuth } from "../../../../../context/AuthContext";
 import { supabase } from "../../../../../lib/supabase";
 import {
   applyWrapToInputEvent,
+  normalizeSocialLinks,
   wrapPersistedFields,
 } from "../../../../../lib/textWrap";
 import {
@@ -516,6 +517,11 @@ export const useNegocioForm = () => {
           (c) => c.id === parseInt(formData.category_id),
         );
 
+        const normalizedSocialLinks = normalizeSocialLinks(
+          formData.redes_sociales,
+          { preserveEmpty: true },
+        );
+
         const businessData = wrapPersistedFields({
           user_id: user.id,
           nombre: formData.nombre.trim(),
@@ -529,15 +535,15 @@ export const useNegocioForm = () => {
           email: formData.email.trim() || null,
           sitio_web: formData.sitio_web.trim() || null,
           horarios: Object.keys(horarios).length > 0 ? horarios : {},
-          redes_sociales: formData.redes_sociales,
+          redes_sociales: normalizedSocialLinks,
           // Mapear redes sociales a columnas individuales de la BD
-          instagram: formData.redes_sociales.instagram?.trim() || null,
-          facebook: formData.redes_sociales.facebook?.trim() || null,
-          whatsapp: formData.redes_sociales.whatsapp?.trim() || null,
-          tiktok: formData.redes_sociales.tiktok?.trim() || null,
-          twitter: formData.redes_sociales.twitter?.trim() || null,
-          youtube: formData.redes_sociales.youtube?.trim() || null,
-          linkedin: formData.redes_sociales.linkedin?.trim() || null,
+          instagram: normalizedSocialLinks.instagram || null,
+          facebook: normalizedSocialLinks.facebook || null,
+          whatsapp: normalizedSocialLinks.whatsapp || null,
+          tiktok: normalizedSocialLinks.tiktok || null,
+          twitter: normalizedSocialLinks.twitter || null,
+          youtube: normalizedSocialLinks.youtube || null,
+          linkedin: normalizedSocialLinks.linkedin || null,
           ubicacion_url: formData.ubicacion_url.trim() || null,
           imagen_url: imageUrls[0] || null,
           imagenes: imageUrls,

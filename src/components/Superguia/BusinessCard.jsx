@@ -493,10 +493,7 @@ export default function BusinessCard({
               onClick={(e) =>
                 handleSocialClick(
                   e,
-                  buildSocialUrl(
-                    resolvedInstagram.replace("@", ""),
-                    "https://instagram.com/",
-                  ),
+                  buildSocialUrl(resolvedInstagram, "https://instagram.com/"),
                 )
               }
               title="Instagram">

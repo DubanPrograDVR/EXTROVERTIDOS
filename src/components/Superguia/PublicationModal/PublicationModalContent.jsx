@@ -6,6 +6,8 @@ import {
   wrapPersistedFields,
   normalizeLineEndings,
   buildSocialUrl,
+  formatChileanPhone,
+  normalizeSocialLinks,
 } from "../../../lib/textWrap";
 import { renderRichText } from "../../../lib/textRender";
 import { useScrollOnFocus } from "../../../hooks/useScrollOnFocus";
@@ -326,6 +328,7 @@ export default function PublicationModal({
   };
 
   const hashtagsList = parseHashtags();
+  const hasDescription = Boolean(descripcion?.trim());
 
   // Obtener array de imágenes válidas
   const validImages = useMemo(() => {
@@ -626,6 +629,10 @@ export default function PublicationModal({
       cleanedData.imagenes = realExistingImages;
       // subtitulo no es una columna de BD, removerla del payload
       delete cleanedData.subtitulo;
+      cleanedData.redes_sociales = normalizeSocialLinks(
+        cleanedData.redes_sociales,
+        { preserveEmpty: true },
+      );
       const nullableFields = [
         "hora_inicio",
         "hora_fin",
@@ -1025,9 +1032,19 @@ export default function PublicationModal({
             )}
 
             {/* ===== ACORDEÓN DE INFORMACIÓN ===== */}
+            {!isEditMode && !hasDescription && hashtagsList.length > 0 && (
+              <div className="publication-modal__hashtags publication-modal__hashtags--standalone">
+                {hashtagsList.map((tag, index) => (
+                  <span key={index} className="publication-modal__hashtag">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
             <div className="publication-modal__accordion-container">
               {/* Sección: Descripción */}
-              {(descripcion || isEditMode) && (
+              {(hasDescription || isEditMode) && (
                 <AccordionSection
                   title="Descripción"
                   icon={faAlignLeft}
@@ -1947,11 +1964,15 @@ export default function PublicationModal({
                         <input
                           type="tel"
                           className="publication-modal__edit-input"
-                          value={editData.telefono_contacto}
+                          value={formatChileanPhone(
+                            editData.telefono_contacto || "",
+                          )}
                           onChange={(e) =>
                             setEditData({
                               ...editData,
-                              telefono_contacto: e.target.value,
+                              telefono_contacto: formatChileanPhone(
+                                e.target.value,
+                              ),
                             })
                           }
                           placeholder="+56 9 1234 5678"
@@ -2019,7 +2040,7 @@ export default function PublicationModal({
                     {instagram && (
                       <a
                         href={buildSocialUrl(
-                          instagram.replace("@", ""),
+                          instagram,
                           "https://instagram.com/",
                         )}
                         target="_blank"
@@ -2051,10 +2072,7 @@ export default function PublicationModal({
                     )}
                     {tiktok && (
                       <a
-                        href={buildSocialUrl(
-                          tiktok.replace("@", ""),
-                          "https://tiktok.com/@",
-                        )}
+                        href={buildSocialUrl(tiktok, "https://tiktok.com/@")}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="publication-modal__social-icon publication-modal__social-icon--tiktok"
@@ -2064,10 +2082,7 @@ export default function PublicationModal({
                     )}
                     {twitter && (
                       <a
-                        href={buildSocialUrl(
-                          twitter.replace("@", ""),
-                          "https://x.com/",
-                        )}
+                        href={buildSocialUrl(twitter, "https://x.com/")}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="publication-modal__social-icon publication-modal__social-icon--twitter"
@@ -2140,13 +2155,15 @@ export default function PublicationModal({
                   <input
                     type="text"
                     className="publication-modal__edit-input"
-                    value={editData.redes_sociales?.whatsapp || ""}
+                    value={formatChileanPhone(
+                      editData.redes_sociales?.whatsapp || "",
+                    )}
                     onChange={(e) =>
                       setEditData({
                         ...editData,
                         redes_sociales: {
                           ...editData.redes_sociales,
-                          whatsapp: e.target.value,
+                          whatsapp: formatChileanPhone(e.target.value),
                         },
                       })
                     }

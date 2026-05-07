@@ -1795,13 +1795,35 @@
 .admin-publications__table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: auto;
+  min-width: 1100px;
 }
 
 .admin-publications__table th,
 .admin-publications__table td {
-  padding: 14px 16px;
+  padding: 12px 12px;
   text-align: left;
   border-bottom: 1px solid #222;
+  vertical-align: middle;
+}
+
+.admin-publications__table td.admin-cell--date,
+.admin-publications__table th.admin-cell--date {
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.82rem;
+}
+
+.admin-publications__table td.admin-cell--location {
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-publications__table td.admin-cell--status,
+.admin-publications__table td.admin-cell--schedule {
+  white-space: nowrap;
 }
 
 .admin-publications__table th {
@@ -1844,7 +1866,7 @@
   display: block;
   color: #fff;
   font-weight: 500;
-  max-width: 200px;
+  max-width: 220px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1855,6 +1877,52 @@
   font-size: 0.75rem;
   color: #ff6600;
   margin-top: 2px;
+}
+
+.admin-schedule-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.admin-schedule-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.admin-schedule-badge--single {
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+}
+
+.admin-schedule-badge--range {
+  background: rgba(255, 102, 0, 0.15);
+  color: #ff9f5f;
+  border: 1px solid rgba(255, 102, 0, 0.28);
+}
+
+.admin-schedule-badge--recurring {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.28);
+}
+
+.admin-schedule-cell__detail {
+  max-width: 200px;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.7rem;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Celda de autor */
@@ -1913,12 +1981,13 @@
 /* Acciones */
 .admin-publications__actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
+  flex-wrap: nowrap;
 }
 
 .admin-pub-btn {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -1926,6 +1995,7 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 .admin-pub-btn--view {
@@ -2862,6 +2932,18 @@
   gap: 6px;
 }
 
+.admin-pub-mobile-card__schedule {
+  width: 100%;
+}
+
+.admin-pub-mobile-card__schedule .admin-schedule-cell {
+  min-width: 0;
+}
+
+.admin-pub-mobile-card__schedule .admin-schedule-cell__detail {
+  max-width: none;
+}
+
 .admin-pub-mobile-card__author {
   display: flex;
   align-items: center;
@@ -2919,16 +3001,40 @@
 /* ===== RESPONSIVE BREAKPOINTS ===== */
 
 /* Tablets y pantallas medianas */
+@media (max-width: 1180px) {
+  .admin-publications__table th,
+  .admin-publications__table td {
+    padding: 10px 9px;
+    font-size: 0.82rem;
+  }
+
+  .admin-publications__table {
+    min-width: 1040px;
+  }
+
+  .admin-pub-cell img {
+    width: 42px;
+    height: 42px;
+  }
+
+  .admin-pub-cell__title {
+    max-width: 170px;
+  }
+
+  .admin-pub-author span {
+    max-width: 90px;
+  }
+
+  .admin-pub-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 0.8rem;
+  }
+}
+
 @media (max-width: 992px) {
   .admin-users__table th:nth-child(3),
   .admin-users__table td:nth-child(3) {
-    display: none;
-  }
-
-  .admin-publications__table th:nth-child(4),
-  .admin-publications__table td:nth-child(4),
-  .admin-publications__table th:nth-child(6),
-  .admin-publications__table td:nth-child(6) {
     display: none;
   }
 

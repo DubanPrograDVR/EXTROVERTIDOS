@@ -93,6 +93,7 @@ export {
 
 // ============ ADMINISTRACIÓN ============
 export {
+  deletePastPanoramas,
   getPendingEvents,
   getAllEvents,
   approveEvent,

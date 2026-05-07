@@ -3,6 +3,8 @@ import {
   wrapPersistedFields,
   normalizeLineEndings,
   buildSocialUrl,
+  formatChileanPhone,
+  normalizeSocialLinks,
 } from "../../../lib/textWrap";
 import { renderRichText } from "../../../lib/textRender";
 import { useScrollOnFocus } from "../../../hooks/useScrollOnFocus";
@@ -616,17 +618,24 @@ export default function BusinessModal({
     try {
       const { dias_atencion, horarios_detalle, abierto_24h, ...rest } =
         editData;
+      const normalizedSocialLinks = normalizeSocialLinks(
+        {
+          whatsapp: rest.whatsapp,
+          instagram: rest.instagram,
+          facebook: rest.facebook,
+          tiktok: rest.tiktok,
+          twitter: rest.twitter,
+          youtube: rest.youtube,
+          linkedin: rest.linkedin,
+        },
+        { preserveEmpty: true },
+      );
       const dataToSave = {
         ...rest,
+        ...normalizedSocialLinks,
         redes_sociales: {
           ...(business.redes_sociales || {}),
-          whatsapp: rest.whatsapp || "",
-          instagram: rest.instagram || "",
-          facebook: rest.facebook || "",
-          tiktok: rest.tiktok || "",
-          twitter: rest.twitter || "",
-          youtube: rest.youtube || "",
-          linkedin: rest.linkedin || "",
+          ...normalizedSocialLinks,
         },
         horarios: serializeHorarios(
           dias_atencion,
@@ -1243,7 +1252,7 @@ export default function BusinessModal({
                               {socialLinks.instagram && (
                                 <a
                                   href={buildSocialUrl(
-                                    socialLinks.instagram.replace("@", ""),
+                                    socialLinks.instagram,
                                     "https://instagram.com/",
                                   )}
                                   target="_blank"
@@ -1269,7 +1278,7 @@ export default function BusinessModal({
                               {socialLinks.tiktok && (
                                 <a
                                   href={buildSocialUrl(
-                                    socialLinks.tiktok.replace("@", ""),
+                                    socialLinks.tiktok,
                                     "https://tiktok.com/@",
                                   )}
                                   target="_blank"
@@ -1282,7 +1291,7 @@ export default function BusinessModal({
                               {socialLinks.twitter && (
                                 <a
                                   href={buildSocialUrl(
-                                    socialLinks.twitter.replace("@", ""),
+                                    socialLinks.twitter,
                                     "https://x.com/",
                                   )}
                                   target="_blank"
@@ -1294,7 +1303,7 @@ export default function BusinessModal({
                               {socialLinks.youtube && (
                                 <a
                                   href={buildSocialUrl(
-                                    socialLinks.youtube.replace("@", ""),
+                                    socialLinks.youtube,
                                     "https://youtube.com/@",
                                   )}
                                   target="_blank"
@@ -1406,14 +1415,14 @@ export default function BusinessModal({
                       <label>Teléfono</label>
                       <input
                         type="tel"
-                        value={editData.telefono}
+                        value={formatChileanPhone(editData.telefono || "")}
                         onChange={(e) =>
                           setEditData({
                             ...editData,
-                            telefono: e.target.value,
+                            telefono: formatChileanPhone(e.target.value),
                           })
                         }
-                        placeholder="Número de teléfono"
+                        placeholder="+56 9 1234 5678"
                       />
                     </div>
                     <div className="publication-modal__edit-field">
@@ -1431,11 +1440,11 @@ export default function BusinessModal({
                       <label>WhatsApp</label>
                       <input
                         type="tel"
-                        value={editData.whatsapp}
+                        value={formatChileanPhone(editData.whatsapp || "")}
                         onChange={(e) =>
                           setEditData({
                             ...editData,
-                            whatsapp: e.target.value,
+                            whatsapp: formatChileanPhone(e.target.value),
                           })
                         }
                         placeholder="+56 9 1234 5678"

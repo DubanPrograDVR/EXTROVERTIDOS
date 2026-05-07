@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { INITIAL_EDIT_STATE } from "./constants";
 import {
   applyWrapToInputEvent,
+  normalizeSocialLinks,
   wrapPersistedFields,
 } from "../../../../lib/textWrap";
 
@@ -167,6 +168,9 @@ export const useEditForm = (event, isOpen) => {
       fechas_recurrencia: formData.es_recurrente
         ? formData.fechas_recurrencia
         : [],
+      redes_sociales: normalizeSocialLinks(formData.redes_sociales, {
+        preserveEmpty: true,
+      }),
     });
   }, [formData]);
 

@@ -32,6 +32,7 @@ import {
 
 import { useBusinessEditForm } from "./useBusinessEditForm";
 import { PROVINCIAS, COMUNAS_POR_PROVINCIA } from "./constants";
+import { formatChileanPhone } from "../../../../lib/textWrap";
 import HorariosModal from "../../../Home/Negocio/components/HorariosModal";
 import {
   DIAS_SEMANA,
@@ -482,8 +483,15 @@ export default function UserBusinessEditModal({
                     type="tel"
                     className="publication-modal__edit-input"
                     name="telefono"
-                    value={formData.telefono}
-                    onChange={handleChange}
+                    value={formatChileanPhone(formData.telefono || "")}
+                    onChange={(e) =>
+                      handleChange({
+                        target: {
+                          name: e.target.name,
+                          value: formatChileanPhone(e.target.value),
+                        },
+                      })
+                    }
                     placeholder="+56 9 1234 5678"
                   />
                   <label className="publication-modal__edit-label">
@@ -537,8 +545,15 @@ export default function UserBusinessEditModal({
                     type="text"
                     className="publication-modal__edit-input"
                     name="whatsapp"
-                    value={formData.whatsapp}
-                    onChange={handleChange}
+                    value={formatChileanPhone(formData.whatsapp || "")}
+                    onChange={(e) =>
+                      handleChange({
+                        target: {
+                          name: e.target.name,
+                          value: formatChileanPhone(e.target.value),
+                        },
+                      })
+                    }
                     placeholder="+56 9 1234 5678"
                   />
                   <label className="publication-modal__edit-label">

@@ -12,7 +12,10 @@ import {
   canUserPublish,
   interpretPublishResult,
 } from "../../../../lib/planRules";
-import { wrapPersistedFields } from "../../../../lib/textWrap";
+import {
+  normalizeSocialLinks,
+  wrapPersistedFields,
+} from "../../../../lib/textWrap";
 
 /**
  * Hook especializado para manejar el proceso de envío de eventos
@@ -128,13 +131,7 @@ const useEventSubmit = ({
    */
   const prepareEventData = useCallback(
     (formData, allImageUrls) => {
-      // Limpiar redes sociales (eliminar valores vacíos)
-      const redesLimpias = {};
-      Object.entries(formData.redes_sociales || {}).forEach(([key, value]) => {
-        if (value && value.trim()) {
-          redesLimpias[key] = value.trim();
-        }
-      });
+      const redesLimpias = normalizeSocialLinks(formData.redes_sociales || {});
 
       return wrapPersistedFields({
         titulo: formData.titulo.trim(),

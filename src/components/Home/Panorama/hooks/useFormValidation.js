@@ -32,6 +32,12 @@ export const EVENT_VALIDATION_SCHEMA = {
     validateMessage:
       "La descripción debe tener al menos 10 caracteres si se proporciona",
   },
+  organizador: {
+    required: true,
+    message: "El organizador es obligatorio",
+    validate: (value) => value?.trim()?.length >= 3,
+    validateMessage: "El organizador debe tener al menos 3 caracteres",
+  },
   category_id: {
     required: true,
     message: "Selecciona una categoría",
@@ -84,6 +90,10 @@ export const EVENT_VALIDATION_SCHEMA = {
     required: true,
     message: "La dirección es obligatoria",
     validate: (value) => value?.trim()?.length > 0,
+  },
+  tipo_entrada: {
+    required: true,
+    message: "Selecciona un tipo de entrada",
   },
   precio: {
     required: false,

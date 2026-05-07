@@ -9,6 +9,7 @@ import {
   faXTwitter,
   faLinkedin,
 } from "@fortawesome/free-brands-svg-icons";
+import { formatChileanPhone } from "../../../../lib/textWrap";
 
 /**
  * Componente para inputs de redes sociales
@@ -47,7 +48,7 @@ const SocialInputs = ({ redes_sociales, sitio_web, onChange }) => {
       name: "redes_whatsapp",
       icon: faWhatsapp,
       placeholder: "+56 9 1234 5678",
-      value: redes_sociales.whatsapp,
+      value: formatChileanPhone(redes_sociales.whatsapp || ""),
       type: "text",
     },
     {
@@ -78,7 +79,17 @@ const SocialInputs = ({ redes_sociales, sitio_web, onChange }) => {
               name={network.name}
               placeholder={network.placeholder}
               value={network.value}
-              onChange={onChange}
+              onChange={
+                network.name === "redes_whatsapp"
+                  ? (e) =>
+                      onChange({
+                        target: {
+                          name: e.target.name,
+                          value: formatChileanPhone(e.target.value),
+                        },
+                      })
+                  : onChange
+              }
             />
           </div>
         ))}

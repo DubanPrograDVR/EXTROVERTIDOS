@@ -66,6 +66,11 @@ const PublicarForm = ({
       case 1:
         if (!formData.titulo?.trim() || formData.titulo.trim().length < 3)
           missing.push({ field: "titulo", label: "Título" });
+        if (
+          !formData.organizador?.trim() ||
+          formData.organizador.trim().length < 3
+        )
+          missing.push({ field: "organizador", label: "Organizador" });
         if (!formData.category_id)
           missing.push({ field: "category_id", label: "Categoría" });
         break;
@@ -99,6 +104,11 @@ const PublicarForm = ({
         }
         break;
       case 3:
+        if (!formData.tipo_entrada)
+          missing.push({
+            field: "tipo_entrada",
+            label: "Tipo de entrada",
+          });
         if (formData.tipo_entrada === "pagado") {
           const precio = Number(formData.precio);
           if (!precio || precio <= 0)
@@ -134,6 +144,8 @@ const PublicarForm = ({
           return (
             !!formData.titulo?.trim() &&
             formData.titulo.trim().length >= 3 &&
+            !!formData.organizador?.trim() &&
+            formData.organizador.trim().length >= 3 &&
             !!formData.category_id
           );
         case 2: {
@@ -154,6 +166,7 @@ const PublicarForm = ({
         case 3: {
           // Validación por tipo de entrada
           return (
+            !!formData.tipo_entrada &&
             !(
               formData.tipo_entrada === "pagado" &&
               !(Number(formData.precio) > 0)

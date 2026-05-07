@@ -142,9 +142,7 @@ const useEventEditor = ({ user, isAuthenticated, isAdmin, showToast }) => {
           externo: "venta_externa",
         };
         const tipoEntradaForm =
-          tipoEntradaReverseMap[event.tipo_entrada] ||
-          event.tipo_entrada ||
-          "sin_entrada";
+          tipoEntradaReverseMap[event.tipo_entrada] || event.tipo_entrada || "";
 
         const mappedFormData = {
           titulo: event.titulo || "",

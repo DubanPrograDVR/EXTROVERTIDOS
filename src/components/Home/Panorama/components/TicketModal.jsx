@@ -54,7 +54,7 @@ const TICKET_OPTIONS = [
  */
 const TicketModal = ({ isOpen, onClose, currentValues, onSave }) => {
   const [selectedType, setSelectedType] = useState(
-    currentValues?.tipo_entrada || "sin_entrada",
+    currentValues?.tipo_entrada || "",
   );
   const [precio, setPrecio] = useState(currentValues?.precio || "");
   const [urlVenta, setUrlVenta] = useState(currentValues?.url_venta || "");
@@ -62,7 +62,7 @@ const TicketModal = ({ isOpen, onClose, currentValues, onSave }) => {
   // Sincronizar con valores externos cuando cambian
   useEffect(() => {
     if (isOpen) {
-      setSelectedType(currentValues?.tipo_entrada || "sin_entrada");
+      setSelectedType(currentValues?.tipo_entrada || "");
       setPrecio(currentValues?.precio || "");
       setUrlVenta(currentValues?.url_venta || "");
     }
@@ -79,7 +79,7 @@ const TicketModal = ({ isOpen, onClose, currentValues, onSave }) => {
 
   const handleCancel = () => {
     // Restaurar valores originales
-    setSelectedType(currentValues?.tipo_entrada || "sin_entrada");
+    setSelectedType(currentValues?.tipo_entrada || "");
     setPrecio(currentValues?.precio || "");
     setUrlVenta(currentValues?.url_venta || "");
     onClose();

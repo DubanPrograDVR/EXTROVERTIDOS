@@ -249,6 +249,8 @@ export const getPublishedEvents = async () => {
       hora_fin,
       tipo_entrada,
       precio,
+      etiqueta_directa,
+      hashtags,
       categories (
         id,
         nombre,
@@ -520,6 +522,8 @@ const ALLOWED_EVENT_UPDATE_FIELDS = [
   "sitio_web",
   "ubicacion_url",
   "es_recurrente",
+  "dia_recurrencia",
+  "cantidad_repeticiones",
   "tipo_recurrencia",
   "dias_recurrencia",
   "fechas_recurrencia",

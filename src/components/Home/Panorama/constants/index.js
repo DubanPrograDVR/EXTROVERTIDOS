@@ -73,7 +73,7 @@ export const INITIAL_FORM_STATE = {
   direccion: "",
   ubicacion_url: "", // URL de Google Maps con coordenadas
   // Entrada
-  tipo_entrada: "sin_entrada",
+  tipo_entrada: "",
   precio: "",
   url_venta: "",
   // Redes sociales

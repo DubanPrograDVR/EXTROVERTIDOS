@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   applyWrapToInputEvent,
+  normalizeSocialLinks,
   wrapPersistedFields,
 } from "../../../../lib/textWrap";
 
@@ -174,6 +175,16 @@ export const useBusinessEditForm = (business, isOpen) => {
       ];
     });
 
+    const normalizedSocialLinks = normalizeSocialLinks(
+      {
+        instagram: formData.instagram,
+        facebook: formData.facebook,
+        whatsapp: formData.whatsapp,
+        tiktok: formData.tiktok,
+      },
+      { preserveEmpty: true },
+    );
+
     return wrapPersistedFields({
       nombre: formData.nombre,
       descripcion: formData.descripcion,
@@ -186,10 +197,11 @@ export const useBusinessEditForm = (business, isOpen) => {
       email: formData.email,
       sitio_web: formData.sitio_web,
       ubicacion_url: formData.ubicacion_url,
-      instagram: formData.instagram,
-      facebook: formData.facebook,
-      whatsapp: formData.whatsapp,
-      tiktok: formData.tiktok,
+      instagram: normalizedSocialLinks.instagram,
+      facebook: normalizedSocialLinks.facebook,
+      whatsapp: normalizedSocialLinks.whatsapp,
+      tiktok: normalizedSocialLinks.tiktok,
+      redes_sociales: normalizedSocialLinks,
       titulo_marketing: formData.titulo_marketing,
       mensaje_marketing: formData.mensaje_marketing,
       imagenes: formData.imagenes,

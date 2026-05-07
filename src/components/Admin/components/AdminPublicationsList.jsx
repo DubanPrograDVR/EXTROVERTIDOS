@@ -24,6 +24,59 @@ import {
 import { formatDate } from "../utils/formatters";
 import AdminDeleteConfirmModal from "./AdminDeleteConfirmModal";
 
+const normalizeDateList = (dates) =>
+  Array.from(
+    new Set((Array.isArray(dates) ? dates : []).filter(Boolean)),
+  ).sort();
+
+const getInclusiveDays = (startDate, endDate) => {
+  if (!startDate || !endDate) return null;
+  const start = new Date(`${startDate}T00:00:00`);
+  const end = new Date(`${endDate}T00:00:00`);
+  return Math.max(1, Math.round((end - start) / 86400000) + 1);
+};
+
+const getScheduleInfo = (event) => {
+  const recurrenceDates = normalizeDateList(event.fechas_recurrencia);
+
+  if (event.es_recurrente && recurrenceDates.length > 0) {
+    const firstDate = recurrenceDates[0];
+    const lastDate = recurrenceDates[recurrenceDates.length - 1];
+    return {
+      type: "recurring",
+      title: "Se repite",
+      detail:
+        firstDate && lastDate && firstDate !== lastDate
+          ? `${recurrenceDates.length} fechas · ${formatDate(firstDate)} - ${formatDate(lastDate)}`
+          : `${recurrenceDates.length} fecha${recurrenceDates.length > 1 ? "s" : ""}`,
+    };
+  }
+
+  const startDate = event.fecha_evento;
+  const endDate = event.fecha_fin;
+  const isMultiDay = Boolean(
+    startDate &&
+    endDate &&
+    endDate !== startDate &&
+    (event.es_multidia || endDate > startDate),
+  );
+
+  if (isMultiDay) {
+    const durationDays = getInclusiveDays(startDate, endDate);
+    return {
+      type: "range",
+      title: `Dura ${durationDays} día${durationDays > 1 ? "s" : ""}`,
+      detail: `${formatDate(startDate)} - ${formatDate(endDate)}`,
+    };
+  }
+
+  return {
+    type: "single",
+    title: "Un día",
+    detail: startDate ? formatDate(startDate) : "Sin fecha definida",
+  };
+};
+
 /**
  * Lista de todas las publicaciones para administración
  */
@@ -145,6 +198,21 @@ export default function AdminPublicationsList({
     );
   };
 
+  const renderScheduleCell = (event) => {
+    const schedule = getScheduleInfo(event);
+
+    return (
+      <div className="admin-schedule-cell">
+        <span
+          className={`admin-schedule-badge admin-schedule-badge--${schedule.type}`}>
+          <FontAwesomeIcon icon={faCalendarAlt} />
+          {schedule.title}
+        </span>
+        <span className="admin-schedule-cell__detail">{schedule.detail}</span>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="admin-publications">
@@ -249,6 +317,7 @@ export default function AdminPublicationsList({
                   <th>Ubicación</th>
                   <th>Estado</th>
                   <th>Fecha Evento</th>
+                  <th>Duración</th>
                   <th>Creado</th>
                   <th>Acciones</th>
                 </tr>
@@ -306,13 +375,22 @@ export default function AdminPublicationsList({
                         <span>{event.profiles?.nombre || "Sin autor"}</span>
                       </div>
                     </td>
-                    <td>
+                    <td className="admin-cell--location">
                       {event.comuna}
                       {event.provincia ? `, ${event.provincia}` : ""}
                     </td>
-                    <td>{getStatusBadge(event.estado)}</td>
-                    <td>{formatDate(event.fecha_evento)}</td>
-                    <td>{formatDate(event.created_at)}</td>
+                    <td className="admin-cell--status">
+                      {getStatusBadge(event.estado)}
+                    </td>
+                    <td className="admin-cell--date">
+                      {formatDate(event.fecha_evento)}
+                    </td>
+                    <td className="admin-cell--schedule">
+                      {renderScheduleCell(event)}
+                    </td>
+                    <td className="admin-cell--date">
+                      {formatDate(event.created_at)}
+                    </td>
                     <td>
                       <div className="admin-publications__actions">
                         {event.estado === "publicado" && (
@@ -441,6 +519,9 @@ export default function AdminPublicationsList({
                       <FontAwesomeIcon icon={faCalendarAlt} />
                       {formatDate(event.fecha_evento)}
                     </span>
+                    <div className="admin-pub-mobile-card__schedule">
+                      {renderScheduleCell(event)}
+                    </div>
                   </div>
 
                   <div className="admin-pub-mobile-card__author">

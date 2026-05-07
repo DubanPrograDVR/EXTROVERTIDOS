@@ -130,7 +130,7 @@ const WizardStepMarketing = ({ formData, errors, onChange }) => {
       {/* Etiquetas Complementarias */}
       <div className="publicar-form__group publicar-form__group--tags">
         <label className="publicar-form__label">
-          <FontAwesomeIcon icon={faTags} /> Etiquetas Complementarias (10 Max)
+          <FontAwesomeIcon icon={faTags} /> Crea o Selecciona Hashtags para tu publicación (10 Max)
           <span
             style={{
               color: "gray",

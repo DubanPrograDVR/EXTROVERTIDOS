@@ -295,7 +295,10 @@ export default function PanoramasPage() {
           event.titulo?.toLowerCase().includes(query) ||
           event.comuna?.toLowerCase().includes(query) ||
           event.provincia?.toLowerCase().includes(query) ||
-          event.categories?.nombre?.toLowerCase().includes(query),
+          event.categories?.nombre?.toLowerCase().includes(query) ||
+          event.etiqueta_directa?.toLowerCase().includes(query) ||
+          event.hashtags?.toLowerCase().includes(query) ||
+          event.organizador?.toLowerCase().includes(query),
       );
     }
 

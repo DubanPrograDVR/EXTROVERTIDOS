@@ -1,5 +1,6 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPhone } from "@fortawesome/free-solid-svg-icons";
+import { formatChileanPhone } from "../../../../lib/textWrap";
 
 /**
  * Sección de contacto del negocio
@@ -22,8 +23,15 @@ const ContactoSection = ({ formData, errors, onChange, onFieldFocus }) => {
             type="tel"
             id="telefono"
             name="telefono"
-            value={formData.telefono}
-            onChange={onChange}
+            value={formatChileanPhone(formData.telefono || "")}
+            onChange={(e) =>
+              onChange({
+                target: {
+                  name: e.target.name,
+                  value: formatChileanPhone(e.target.value),
+                },
+              })
+            }
             onFocus={onFieldFocus}
             placeholder="+56 9 1234 5678"
             className={errors.telefono ? "error" : ""}

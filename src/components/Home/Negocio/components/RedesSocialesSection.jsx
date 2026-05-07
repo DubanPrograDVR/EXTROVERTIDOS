@@ -9,6 +9,7 @@ import {
   faYoutube,
   faLinkedin,
 } from "@fortawesome/free-brands-svg-icons";
+import { formatChileanPhone } from "../../../../lib/textWrap";
 
 /**
  * Sección de redes sociales del negocio
@@ -63,8 +64,15 @@ const RedesSocialesSection = ({ formData, onChange, onFieldFocus }) => {
           type="tel"
           id="redes_whatsapp"
           name="redes_whatsapp"
-          value={formData.redes_sociales.whatsapp}
-          onChange={onChange}
+          value={formatChileanPhone(formData.redes_sociales.whatsapp || "")}
+          onChange={(e) =>
+            onChange({
+              target: {
+                name: e.target.name,
+                value: formatChileanPhone(e.target.value),
+              },
+            })
+          }
           onFocus={onFieldFocus}
           placeholder="+56 9 1234 5678"
         />

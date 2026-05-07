@@ -272,6 +272,13 @@
   cursor: pointer;
 }
 
+.admin-edit-checkbox--boxed {
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+}
+
 /* Status Options */
 .admin-edit-status-options {
   display: flex;
@@ -348,6 +355,109 @@
 
 .admin-edit-ticket-option input {
   display: none;
+}
+
+/* Schedule Options */
+.admin-edit-schedule-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.admin-edit-schedule-option {
+  min-height: 44px;
+  padding: 10px 12px;
+  background: #1a1a1a;
+  border: 2px solid #333;
+  border-radius: 10px;
+  color: #ccc;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-edit-schedule-option:hover,
+.admin-edit-schedule-option.selected {
+  border-color: #ff6600;
+  background: rgba(255, 102, 0, 0.12);
+  color: #ff6600;
+}
+
+.admin-edit-schedule-summary {
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 102, 0, 0.28);
+  border-radius: 10px;
+  background: rgba(255, 102, 0, 0.08);
+  color: #ffd6bd;
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.admin-edit-subsection--schedule {
+  margin-top: 0;
+}
+
+.admin-edit-recurring-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-edit-recurring-row {
+  display: grid;
+  grid-template-columns: 32px 1fr 38px;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-edit-recurring-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 102, 0, 0.14);
+  color: #ff6600;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.admin-edit-recurring-row input {
+  min-width: 0;
+}
+
+.admin-edit-recurring-remove {
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.16);
+  color: #ef4444;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-edit-recurring-remove:hover:not(:disabled) {
+  background: #ef4444;
+  color: #fff;
+}
+
+.admin-edit-recurring-remove:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.admin-edit-btn--ghost {
+  justify-content: center;
+  background: rgba(255, 102, 0, 0.1);
+  border: 1px dashed rgba(255, 102, 0, 0.45);
+  color: #ff6600;
+}
+
+.admin-edit-btn--ghost:hover:not(:disabled) {
+  background: rgba(255, 102, 0, 0.16);
 }
 
 /* Images */
@@ -518,6 +628,10 @@
   }
 
   .admin-edit-row--three {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-edit-schedule-options {
     grid-template-columns: 1fr;
   }
 
