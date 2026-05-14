@@ -233,9 +233,13 @@ export default function PublicationCard({
       "Viernes",
       "Sábado",
     ];
+    const fechasOrdenadas = [...fechas_recurrencia]
+      .filter(Boolean)
+      .sort((a, b) => new Date(a + "T00:00:00") - new Date(b + "T00:00:00"));
+
     const diasUnicos = [
       ...new Set(
-        fechas_recurrencia.map((f) => new Date(f + "T00:00:00").getDay()),
+        fechasOrdenadas.map((f) => new Date(f + "T00:00:00").getDay()),
       ),
     ];
 
@@ -244,9 +248,8 @@ export default function PublicationCard({
       return `${fechas_recurrencia.length} ${diasNombres[diasUnicos[0]]}s`;
     }
 
-    // Días variados: mostrar lista de días abreviados
-    const diasOrdenados = diasUnicos.sort((a, b) => a - b);
-    const diasTexto = diasOrdenados.map((d) => diasSemana[d]);
+    // Días variados: respetar el orden cronológico de las fechas seleccionadas
+    const diasTexto = diasUnicos.map((d) => diasSemana[d]);
 
     if (diasTexto.length <= 3) {
       return diasTexto.join(", ");
