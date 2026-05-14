@@ -2,7 +2,10 @@
 
 .panoramas-page {
   min-height: 100vh;
+  width: 100%;
+  min-width: 0;
   background: #000;
+  overflow-x: hidden;
 }
 
 /* ===== HERO BANNER ===== */
@@ -367,6 +370,20 @@
   flex-wrap: wrap;
 }
 
+/* En tablet y abajo el header se apila: si dejamos space-between con wrap,
+   el título queda contra el borde izquierdo y la paginación cae debajo,
+   lo que se percibe como “todo a la izquierda”. Forzamos centrado al envolver. */
+@media (max-width: 1024px) {
+  .panoramas-page__events-header {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .panoramas-page__events-header > * {
+    flex: 0 1 auto;
+  }
+}
+
 .panoramas-page__events-header h2 {
   font-size: 1.5rem;
   color: #fff;
@@ -536,6 +553,7 @@
 /* ===== CTA ===== */
 .panoramas-page__cta {
   background: linear-gradient(135deg, #ff6600 0%, #ff8533 100%);
+  width: 100%;
   padding: 60px 20px;
 }
 
@@ -582,6 +600,7 @@
 /* ===== SECCIÓN EVENTOS DESTACADOS ===== */
 .panoramas-page__featured {
   background: linear-gradient(180deg, #0a0a0a 0%, #111 50%, #0a0a0a 100%);
+  width: 100%;
   padding: 60px 20px 40px;
   position: relative;
   overflow: hidden;
@@ -660,6 +679,7 @@
 
 /* Contenedor del carrusel en esta sección */
 .panoramas-page__featured .carousel {
+  width: 100%;
   max-width: 1400px;
   margin: 0 auto;
 }

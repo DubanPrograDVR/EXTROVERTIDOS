@@ -67,6 +67,7 @@ const WizardStepDateTime = ({
           onChange={onChange}
           errors={errors}
           enabledModes={enabledCalendarModes}
+          showSubmissionDateWarning
         />
       </div>
 

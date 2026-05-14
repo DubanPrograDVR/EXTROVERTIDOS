@@ -1985,6 +1985,63 @@
     .publication-modal__right {
     display: none;
   }
+}
+
+/* ===== DateRangePicker dentro del modal de edición (admin) ===== */
+.publication-modal__edit-section .drp-calendar {
+  padding: 14px;
+  border-radius: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.publication-modal__edit-section .drp-calendar__season-bar,
+.publication-modal__edit-section .drp-calendar__quick-bar {
+  flex-wrap: wrap;
+}
+
+/* Forzar grids apilados verticalmente para que quepan en el modal */
+.publication-modal__edit-section .drp-calendar__grids-container--dual {
+  flex-direction: column;
+  gap: 14px;
+}
+
+.publication-modal__edit-section
+  .drp-calendar__grids-container--dual
+  .drp-calendar__month-block {
+  width: 100%;
+  min-width: 0;
+}
+
+.publication-modal__edit-section .drp-calendar__day {
+  min-height: 36px;
+  font-size: 0.85rem;
+}
+
+.publication-modal__edit-section .drp-calendar__mode-options {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.publication-modal__edit-section .drp-calendar__mode-btn {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+@media (max-width: 600px) {
+  .publication-modal__edit-section .drp-calendar {
+    padding: 10px;
+  }
+
+  .publication-modal__edit-section .drp-calendar__day {
+    min-height: 32px;
+    font-size: 0.8rem;
+  }
+
+  .publication-modal__edit-section .drp-calendar__day-header {
+    font-size: 0.65rem;
+    padding: 4px 0;
+  }
 
   /* Panoramas EXPANDIDO: ocultar imagen, mostrar contenido */
   .publication-modal.publication-modal--business-style.publication-modal--panoramas
@@ -2236,4 +2293,68 @@
     width: 55%;
     overflow-y: auto;
   }
+}
+
+/* ===== Edit Recurrence (Admin) ===== */
+.publication-modal__edit-recurrence {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.publication-modal__edit-recurrence-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.publication-modal__edit-recurrence-row .publication-modal__edit-input {
+  flex: 1;
+  padding-right: 36px;
+}
+
+.publication-modal__edit-recurrence-row .publication-modal__edit-time-clear {
+  position: absolute;
+  right: 8px;
+}
+
+.publication-modal__edit-add-btn {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 119, 0, 0.5);
+  background: rgba(255, 119, 0, 0.12);
+  color: #ff7700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.publication-modal__edit-add-btn:hover {
+  background: rgba(255, 119, 0, 0.25);
+}
+
+.publication-modal__edit-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.publication-modal__edit-checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #ff7700;
+  cursor: pointer;
 }

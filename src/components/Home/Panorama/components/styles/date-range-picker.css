@@ -11,6 +11,24 @@
   backdrop-filter: blur(8px);
 }
 
+.drp-calendar__submission-warning {
+  margin-bottom: 18px;
+  padding: 18px 22px;
+  border: 1px solid rgba(255, 102, 0, 0.38);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 102, 0, 0.22), rgba(255, 153, 0, 0.12)),
+    rgba(255, 255, 255, 0.03);
+  box-shadow: 0 14px 32px rgba(255, 102, 0, 0.16);
+  color: #fff4e8;
+  font-size: clamp(1rem, 0.9vw + 0.85rem, 1.45rem);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
 /* ===== HEADER ===== */
 .drp-calendar__header {
   display: flex;
@@ -1232,6 +1250,13 @@
     padding: 16px;
   }
 
+  .drp-calendar__submission-warning {
+    margin-bottom: 16px;
+    padding: 16px 18px;
+    border-radius: 16px;
+    font-size: 1rem;
+  }
+
   .drp-calendar__quick-bar,
   .drp-calendar__season-bar {
     gap: 6px;
@@ -1317,6 +1342,14 @@
   .drp-calendar {
     padding: 14px;
     border-radius: 12px;
+  }
+
+  .drp-calendar__submission-warning {
+    margin-bottom: 14px;
+    padding: 14px 12px;
+    border-radius: 14px;
+    font-size: 0.92rem;
+    line-height: 1.25;
   }
 
   .drp-calendar__header-title {

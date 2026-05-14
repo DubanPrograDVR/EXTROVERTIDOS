@@ -3,7 +3,10 @@
 .superguia {
   background: #0a0a0a;
   min-height: 100vh;
+  width: 100%;
+  min-width: 0;
   padding-top: 60px;
+  overflow-x: hidden;
 }
 
 /* ===== HERO BANNER ===== */
@@ -82,6 +85,20 @@
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
   gap: 1rem;
+}
+
+/* En tablet y abajo: si dejamos space-between con wrap, los items quedan
+   contra el borde izquierdo (look “todo a la izquierda”). Forzar centrado. */
+@media (max-width: 1024px) {
+  .superguia__header {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .superguia__header-left {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
 }
 
 .superguia__header-left {
@@ -453,6 +470,7 @@
 /* ===== FEATURED CAROUSEL SECTION ===== */
 .superguia__featured {
   background: linear-gradient(180deg, #0a0a0a 0%, #111 50%, #0a0a0a 100%);
+  width: 100%;
   padding: 60px 20px 40px;
   position: relative;
   overflow: hidden;

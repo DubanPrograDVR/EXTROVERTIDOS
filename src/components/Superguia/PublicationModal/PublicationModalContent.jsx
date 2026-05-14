@@ -21,6 +21,7 @@ import "../styles/PublicationModal.css";
 import "../styles/BusinessModal.css";
 import AuthModal from "../../Auth/AuthModal";
 import AccordionSection from "./components/AccordionSection";
+import DateRangePicker from "../../Home/Panorama/components/DateRangePicker";
 import {
   ACCORDION_SECTIONS,
   getRealPublicationImages,
@@ -239,6 +240,17 @@ export default function PublicationModal({
         titulo_marketing_2: publication.titulo_marketing_2 || "",
         mensaje_marketing_2: publication.mensaje_marketing_2 || "",
         etiqueta_directa: publication.etiqueta_directa || "",
+        es_recurrente: publication.es_recurrente || false,
+        es_multidia: publication.es_multidia || false,
+        mismo_horario:
+          publication.mismo_horario === undefined
+            ? true
+            : !!publication.mismo_horario,
+        dia_recurrencia: publication.dia_recurrencia || "",
+        cantidad_repeticiones: publication.cantidad_repeticiones || 1,
+        fechas_recurrencia: Array.isArray(publication.fechas_recurrencia)
+          ? [...publication.fechas_recurrencia].filter(Boolean).sort()
+          : [],
       });
     }
   }, [publication?.id, isOpen]);
@@ -414,9 +426,13 @@ export default function PublicationModal({
 
   // Determinar si es evento recurrente
   const isRecurring = es_recurrente && cantidad_repeticiones > 1;
+  // Fechas recurrentes normalizadas y ordenadas cronológicamente
+  const fechasRecurrenciaOrdenadas = Array.isArray(fechas_recurrencia)
+    ? [...fechas_recurrencia].filter(Boolean).sort()
+    : [];
   // Obtener texto inteligente de recurrencia
   const getRecurrenciaText = () => {
-    if (!fechas_recurrencia || fechas_recurrencia.length === 0) {
+    if (fechasRecurrenciaOrdenadas.length === 0) {
       if (dia_recurrencia) {
         const cap =
           dia_recurrencia.charAt(0).toUpperCase() + dia_recurrencia.slice(1);
@@ -436,12 +452,14 @@ export default function PublicationModal({
     ];
     const diasUnicos = [
       ...new Set(
-        fechas_recurrencia.map((f) => new Date(f + "T00:00:00").getDay()),
+        fechasRecurrenciaOrdenadas.map((f) =>
+          new Date(f + "T00:00:00").getDay(),
+        ),
       ),
     ];
 
     if (diasUnicos.length === 1) {
-      return `Se repite ${fechas_recurrencia.length} ${diasNombres[diasUnicos[0]]}s`;
+      return `Se repite ${fechasRecurrenciaOrdenadas.length} ${diasNombres[diasUnicos[0]]}s`;
     }
 
     // Días variados
@@ -474,10 +492,12 @@ export default function PublicationModal({
     if (!fecha) return null;
     const date = new Date(fecha + "T00:00:00");
     if (formato === "corto") {
-      return date.toLocaleDateString("es-CL", {
-        day: "numeric",
-        month: "short",
-      });
+      return date
+        .toLocaleDateString("es-CL", {
+          day: "numeric",
+          month: "short",
+        })
+        .replace(/\./g, "");
     }
     return date.toLocaleDateString("es-CL", {
       weekday: "long",
@@ -489,20 +509,22 @@ export default function PublicationModal({
 
   // Obtener display de fecha (simple, rango o recurrente)
   const getFechaDisplay = () => {
-    if (isRecurring && fechas_recurrencia?.length > 0) {
-      const primera = formatearFecha(fechas_recurrencia[0], "corto");
+    if (isRecurring && fechasRecurrenciaOrdenadas.length > 0) {
+      const primera = formatearFecha(fechasRecurrenciaOrdenadas[0], "corto");
       const ultima = formatearFecha(
-        fechas_recurrencia[fechas_recurrencia.length - 1],
+        fechasRecurrenciaOrdenadas[fechasRecurrenciaOrdenadas.length - 1],
         "corto",
       );
-      const anio = new Date(fechas_recurrencia[0] + "T00:00:00").getFullYear();
-      return `${primera} al ${ultima}, ${anio}`;
+      const anio = new Date(
+        fechasRecurrenciaOrdenadas[0] + "T00:00:00",
+      ).getFullYear();
+      return `${primera} - ${ultima}, ${anio}`;
     }
     if (isMultiDay && fecha_fin) {
       const inicioCorto = formatearFecha(fecha_evento, "corto");
       const finCorto = formatearFecha(fecha_fin, "corto");
       const anio = new Date(fecha_evento + "T00:00:00").getFullYear();
-      return `${inicioCorto} al ${finCorto}, ${anio}`;
+      return `${inicioCorto} - ${finCorto}, ${anio}`;
     }
     return formatearFecha(fecha_evento);
   };
@@ -660,6 +682,49 @@ export default function PublicationModal({
         cleanedData.precio = Number(cleanedData.precio) || null;
       }
 
+      // Normalizar fechas de recurrencia: filtrar vacíos, deduplicar y ordenar
+      if (cleanedData.es_recurrente) {
+        const cleanRecurrence = Array.from(
+          new Set(
+            (Array.isArray(cleanedData.fechas_recurrencia)
+              ? cleanedData.fechas_recurrencia
+              : []
+            ).filter(Boolean),
+          ),
+        ).sort();
+        cleanedData.fechas_recurrencia = cleanRecurrence;
+        cleanedData.cantidad_repeticiones = cleanRecurrence.length || 1;
+        if (cleanRecurrence.length > 0) {
+          cleanedData.fecha_evento = cleanRecurrence[0];
+          // Sincronizar dia_recurrencia con la primera fecha
+          const diasNombres = [
+            "domingo",
+            "lunes",
+            "martes",
+            "miércoles",
+            "jueves",
+            "viernes",
+            "sábado",
+          ];
+          cleanedData.dia_recurrencia =
+            diasNombres[new Date(cleanRecurrence[0] + "T00:00:00").getDay()];
+        }
+        // Recurrente no puede ser multi-día simultáneamente
+        cleanedData.es_multidia = false;
+        // La columna fecha_fin en BD tiene NOT NULL: en recurrentes usamos la primera fecha.
+        cleanedData.fecha_fin =
+          cleanedData.fecha_evento || cleanedData.fecha_fin;
+      } else {
+        cleanedData.fechas_recurrencia = [];
+        cleanedData.dia_recurrencia = null;
+        cleanedData.cantidad_repeticiones = 1;
+      }
+
+      // Fallback defensivo para cumplir constraint NOT NULL de fecha_fin.
+      if (!cleanedData.fecha_fin) {
+        cleanedData.fecha_fin = cleanedData.fecha_evento;
+      }
+
       // tipo_entrada ya se guarda con el valor del formulario
       if (cleanedData.tipo_entrada && cleanedData.tipo_entrada === "gratis") {
         cleanedData.tipo_entrada = "gratuito";
@@ -769,6 +834,17 @@ export default function PublicationModal({
       titulo_marketing_2: publication.titulo_marketing_2 || "",
       mensaje_marketing_2: publication.mensaje_marketing_2 || "",
       etiqueta_directa: publication.etiqueta_directa || "",
+      es_recurrente: publication.es_recurrente || false,
+      es_multidia: publication.es_multidia || false,
+      mismo_horario:
+        publication.mismo_horario === undefined
+          ? true
+          : !!publication.mismo_horario,
+      dia_recurrencia: publication.dia_recurrencia || "",
+      cantidad_repeticiones: publication.cantidad_repeticiones || 1,
+      fechas_recurrencia: Array.isArray(publication.fechas_recurrencia)
+        ? [...publication.fechas_recurrencia].filter(Boolean).sort()
+        : [],
     });
   };
 
@@ -963,14 +1039,6 @@ export default function PublicationModal({
             {isMultiDay && duracionDias && (
               <span className="publication-modal__duration-badge">
                 🎉 {duracionDias} días
-              </span>
-            )}
-
-            {/* Badge de recurrencia */}
-            {isRecurring && recurrenciaText && (
-              <span className="publication-modal__recurrence-badge">
-                <FontAwesomeIcon icon={faRepeat} />
-                {recurrenciaText}
               </span>
             )}
           </div>
@@ -1723,19 +1791,22 @@ export default function PublicationModal({
                                 {recurrenciaText}
                               </span>
                               <div className="publication-modal__recurrence-chips">
-                                {fechas_recurrencia.map((fecha, index) => (
-                                  <span
-                                    key={index}
-                                    className="publication-modal__recurrence-chip">
-                                    {new Date(
-                                      fecha + "T00:00:00",
-                                    ).toLocaleDateString("es-CL", {
-                                      weekday: "short",
-                                      day: "numeric",
-                                      month: "short",
-                                    })}
-                                  </span>
-                                ))}
+                                {[...fechas_recurrencia]
+                                  .filter(Boolean)
+                                  .sort()
+                                  .map((fecha, index) => (
+                                    <span
+                                      key={index}
+                                      className="publication-modal__recurrence-chip">
+                                      {new Date(fecha + "T00:00:00")
+                                        .toLocaleDateString("es-CL", {
+                                          weekday: "short",
+                                          day: "numeric",
+                                          month: "short",
+                                        })
+                                        .replace(/\./g, "")}
+                                    </span>
+                                  ))}
                               </div>
                             </div>
                           )}
@@ -1774,103 +1845,36 @@ export default function PublicationModal({
                       )}
                       {isEditMode && (
                         <div className="publication-modal__edit-section">
-                          <div className="publication-modal__edit-row">
-                            <div className="publication-modal__edit-field">
-                              <label className="publication-modal__edit-label">
-                                Fecha inicio
-                              </label>
-                              <input
-                                type="date"
-                                className="publication-modal__edit-input"
-                                value={editData.fecha_evento}
-                                onChange={(e) =>
-                                  setEditData({
-                                    ...editData,
-                                    fecha_evento: e.target.value,
-                                  })
-                                }
-                              />
-                            </div>
-                            <div className="publication-modal__edit-field">
-                              <label className="publication-modal__edit-label">
-                                Fecha fin
-                              </label>
-                              <input
-                                type="date"
-                                className="publication-modal__edit-input"
-                                value={editData.fecha_fin}
-                                onChange={(e) =>
-                                  setEditData({
-                                    ...editData,
-                                    fecha_fin: e.target.value,
-                                  })
-                                }
-                              />
-                            </div>
-                          </div>
-                          <div className="publication-modal__edit-row">
-                            <div className="publication-modal__edit-field">
-                              <label className="publication-modal__edit-label">
-                                Hora inicio
-                              </label>
-                              <div className="publication-modal__edit-time-wrap">
-                                <input
-                                  type="time"
-                                  className="publication-modal__edit-input"
-                                  value={editData.hora_inicio}
-                                  onChange={(e) =>
-                                    setEditData({
-                                      ...editData,
-                                      hora_inicio: e.target.value,
-                                    })
-                                  }
-                                />
-                                {editData.hora_inicio && (
-                                  <button
-                                    type="button"
-                                    className="publication-modal__edit-time-clear"
-                                    onClick={() =>
-                                      setEditData({
-                                        ...editData,
-                                        hora_inicio: "",
-                                      })
-                                    }
-                                    aria-label="Limpiar hora inicio">
-                                    <FontAwesomeIcon icon={faTimes} />
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                            <div className="publication-modal__edit-field">
-                              <label className="publication-modal__edit-label">
-                                Hora fin
-                              </label>
-                              <div className="publication-modal__edit-time-wrap">
-                                <input
-                                  type="time"
-                                  className="publication-modal__edit-input"
-                                  value={editData.hora_fin}
-                                  onChange={(e) =>
-                                    setEditData({
-                                      ...editData,
-                                      hora_fin: e.target.value,
-                                    })
-                                  }
-                                />
-                                {editData.hora_fin && (
-                                  <button
-                                    type="button"
-                                    className="publication-modal__edit-time-clear"
-                                    onClick={() =>
-                                      setEditData({ ...editData, hora_fin: "" })
-                                    }
-                                    aria-label="Limpiar hora fin">
-                                    <FontAwesomeIcon icon={faTimes} />
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
+                          {isAdmin && (
+                            <DateRangePicker
+                              fechaEvento={editData.fecha_evento || ""}
+                              fechaFin={editData.fecha_fin || ""}
+                              esMultidia={!!editData.es_multidia}
+                              esRecurrente={!!editData.es_recurrente}
+                              cantidadRepeticiones={
+                                editData.cantidad_repeticiones || 1
+                              }
+                              fechasRecurrencia={
+                                editData.fechas_recurrencia || []
+                              }
+                              mismoHorario={
+                                editData.mismo_horario !== undefined
+                                  ? !!editData.mismo_horario
+                                  : true
+                              }
+                              horaInicio={editData.hora_inicio || ""}
+                              horaFin={editData.hora_fin || ""}
+                              onChange={(e) => {
+                                const { name, value, type } = e.target;
+                                setEditData((prev) => ({
+                                  ...prev,
+                                  [name]: type === "checkbox" ? !!value : value,
+                                }));
+                              }}
+                              errors={{}}
+                              enabledModes={["single", "range", "specific"]}
+                            />
+                          )}
                           <label className="publication-modal__edit-label">
                             Tipo de entrada
                           </label>

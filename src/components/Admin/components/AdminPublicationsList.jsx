@@ -319,7 +319,7 @@ export default function AdminPublicationsList({
                   <th>Fecha Evento</th>
                   <th>Duración</th>
                   <th>Creado</th>
-                  <th>Acciones</th>
+                  <th className="admin-cell--actions">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -391,7 +391,7 @@ export default function AdminPublicationsList({
                     <td className="admin-cell--date">
                       {formatDate(event.created_at)}
                     </td>
-                    <td>
+                    <td className="admin-cell--actions">
                       <div className="admin-publications__actions">
                         {event.estado === "publicado" && (
                           <button

@@ -162,10 +162,12 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
     if (!fecha) return "Sin fecha";
     const date = new Date(fecha + "T00:00:00");
     if (formato === "corto") {
-      return date.toLocaleDateString("es-CL", {
-        day: "numeric",
-        month: "short",
-      });
+      return date
+        .toLocaleDateString("es-CL", {
+          day: "numeric",
+          month: "short",
+        })
+        .replace(/\./g, "");
     }
     return date.toLocaleDateString("es-CL", {
       weekday: "long",
@@ -181,8 +183,27 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
     return hora.substring(0, 5);
   };
 
+  // Lista de fechas recurrentes ordenada cronológicamente
+  const fechasRecurrenciaOrdenadas =
+    formData.es_recurrente && Array.isArray(formData.fechas_recurrencia)
+      ? [...formData.fechas_recurrencia].filter(Boolean).sort()
+      : [];
+
   // Obtener display de fecha
   const getFechaDisplay = () => {
+    // Recurrente: mostrar rango "13 may - 14 may, 2026"
+    if (formData.es_recurrente && fechasRecurrenciaOrdenadas.length > 0) {
+      const primera = formatearFecha(fechasRecurrenciaOrdenadas[0], "corto");
+      const ultima = formatearFecha(
+        fechasRecurrenciaOrdenadas[fechasRecurrenciaOrdenadas.length - 1],
+        "corto",
+      );
+      const anio = new Date(
+        fechasRecurrenciaOrdenadas[0] + "T00:00:00",
+      ).getFullYear();
+      return `${primera} - ${ultima}, ${anio}`;
+    }
+
     if (!formData.fecha_evento) return "Fecha no especificada";
 
     if (formData.es_multidia && formData.fecha_fin) {
@@ -555,18 +576,18 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
                                   {recurrenciaText}
                                 </span>
                                 <div className="publication-modal__recurrence-chips">
-                                  {formData.fechas_recurrencia.map(
+                                  {fechasRecurrenciaOrdenadas.map(
                                     (fecha, index) => (
                                       <span
                                         key={index}
                                         className="publication-modal__recurrence-chip">
-                                        {new Date(
-                                          fecha + "T00:00:00",
-                                        ).toLocaleDateString("es-CL", {
-                                          weekday: "short",
-                                          day: "numeric",
-                                          month: "short",
-                                        })}
+                                        {new Date(fecha + "T00:00:00")
+                                          .toLocaleDateString("es-CL", {
+                                            weekday: "short",
+                                            day: "numeric",
+                                            month: "short",
+                                          })
+                                          .replace(/\./g, "")}
                                       </span>
                                     ),
                                   )}

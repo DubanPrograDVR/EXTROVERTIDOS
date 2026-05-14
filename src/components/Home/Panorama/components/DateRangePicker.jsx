@@ -136,6 +136,12 @@ const getCalendarDays = (year, month) => {
 
 const isWeekendCol = (colIndex) => colIndex === 5 || colIndex === 6;
 
+const clampDate = (date, minDate, maxDate) => {
+  if (date < minDate) return new Date(minDate);
+  if (date > maxDate) return new Date(maxDate);
+  return date;
+};
+
 // ===== COMPONENTE =====
 const DateRangePicker = ({
   fechaEvento,
@@ -150,10 +156,22 @@ const DateRangePicker = ({
   onChange,
   errors,
   enabledModes,
+  showSubmissionDateWarning = false,
 }) => {
   const today = new Date();
   const todayISO = toISO(today);
-  const initialDate = fechaEvento ? new Date(fechaEvento + "T00:00:00") : today;
+  const todayDate = new Date(todayISO + "T00:00:00");
+  const maxSelectableDate = new Date(todayDate);
+  maxSelectableDate.setMonth(maxSelectableDate.getMonth() + 12);
+  const maxSelectableISO = toISO(maxSelectableDate);
+  const initialDateCandidate = fechaEvento
+    ? new Date(fechaEvento + "T00:00:00")
+    : todayDate;
+  const initialDate = clampDate(
+    initialDateCandidate,
+    todayDate,
+    maxSelectableDate,
+  );
 
   // === Selection mode: "single" | "range" | "specific" ===
   const [selectionMode, setSelectionMode] = useState(() => {
@@ -171,6 +189,22 @@ const DateRangePicker = ({
   const [hoverDate, setHoverDate] = useState(null);
   const [editingIndex, setEditingIndex] = useState(null);
   const dateInputRefs = useRef({});
+
+  const minViewDate = useMemo(
+    () => new Date(todayDate.getFullYear(), todayDate.getMonth(), 1),
+    [todayDate],
+  );
+  const maxViewDate = useMemo(() => {
+    const max = new Date(
+      maxSelectableDate.getFullYear(),
+      maxSelectableDate.getMonth(),
+      1,
+    );
+    if (selectionMode === "range") {
+      max.setMonth(max.getMonth() - 1);
+    }
+    return max;
+  }, [maxSelectableDate, selectionMode]);
 
   // Feriados
   const feriados = useMemo(
@@ -283,22 +317,16 @@ const DateRangePicker = ({
 
   // ===== NAVIGATION =====
   const goToPrevMonth = () => {
-    setViewMonth((m) => {
-      if (m === 0) {
-        setViewYear((y) => y - 1);
-        return 11;
-      }
-      return m - 1;
-    });
+    const prev = new Date(viewYear, viewMonth - 1, 1);
+    if (prev < minViewDate) return;
+    setViewYear(prev.getFullYear());
+    setViewMonth(prev.getMonth());
   };
   const goToNextMonth = () => {
-    setViewMonth((m) => {
-      if (m === 11) {
-        setViewYear((y) => y + 1);
-        return 0;
-      }
-      return m + 1;
-    });
+    const next = new Date(viewYear, viewMonth + 1, 1);
+    if (next > maxViewDate) return;
+    setViewYear(next.getFullYear());
+    setViewMonth(next.getMonth());
   };
   const jumpToMonth = (monthIdx) => {
     setViewMonth(monthIdx);
@@ -310,7 +338,7 @@ const DateRangePicker = ({
 
   // ===== DAY CLICK HANDLER =====
   const handleDayClick = (dateStr) => {
-    if (dateStr < todayISO) return;
+    if (dateStr < todayISO || dateStr > maxSelectableISO) return;
 
     if (selectionMode === "specific") {
       const currentDates = [...(fechasRecurrencia || [])];
@@ -547,7 +575,7 @@ const DateRangePicker = ({
 
   const handleFechaChange = useCallback(
     (index, newDate) => {
-      if (!newDate) return;
+      if (!newDate || newDate < todayISO || newDate > maxSelectableISO) return;
       const updated = [...(fechasRecurrencia || [])];
       updated[index] = newDate;
       updated.sort();
@@ -555,7 +583,7 @@ const DateRangePicker = ({
       onChange({ target: { name: "fecha_evento", value: updated[0] } });
       setEditingIndex(null);
     },
-    [fechasRecurrencia, onChange],
+    [fechasRecurrencia, maxSelectableISO, onChange, todayISO],
   );
 
   const handleRemoveFecha = useCallback(
@@ -605,9 +633,9 @@ const DateRangePicker = ({
   };
 
   const duracion = calcularDuracion();
-  const isPrevDisabled =
-    viewYear < today.getFullYear() ||
-    (viewYear === today.getFullYear() && viewMonth <= today.getMonth());
+  const currentViewDate = new Date(viewYear, viewMonth, 1);
+  const isPrevDisabled = currentViewDate <= minViewDate;
+  const isNextDisabled = currentViewDate >= maxViewDate;
 
   // ===== RENDER GRID =====
   const renderCalendarGrid = (days, monthLabel) => (
@@ -626,6 +654,8 @@ const DateRangePicker = ({
         {days.map((dayObj, idx) => {
           const colIndex = idx % 7;
           const holidayName = feriados[dayObj.date];
+          const isOutOfAvailability =
+            dayObj.date < todayISO || dayObj.date > maxSelectableISO;
           return (
             <button
               key={dayObj.date}
@@ -634,7 +664,7 @@ const DateRangePicker = ({
               onClick={() => handleDayClick(dayObj.date)}
               onMouseEnter={() => handleDayHover(dayObj.date)}
               onMouseLeave={() => setHoverDate(null)}
-              disabled={dayObj.date < todayISO}
+              disabled={isOutOfAvailability}
               title={
                 holidayName
                   ? `${formatearFechaLarga(dayObj.date)}  ${holidayName}`
@@ -658,13 +688,19 @@ const DateRangePicker = ({
   );
 
   const yearOptions = [];
-  for (let y = today.getFullYear(); y <= today.getFullYear() + 3; y++)
+  for (let y = todayDate.getFullYear(); y <= maxViewDate.getFullYear(); y++)
     yearOptions.push(y);
 
   const specificDates = fechasRecurrencia || [];
 
   return (
     <div className="drp-calendar" id="fecha_evento">
+      {showSubmissionDateWarning && (
+        <div className="drp-calendar__submission-warning" role="note">
+          ¡Una vez que hagas tu publicacion no podras cambiar la fecha!
+        </div>
+      )}
+
       {/* HEADER */}
       <div className="drp-calendar__header">
         <div className="drp-calendar__header-left">
@@ -829,7 +865,8 @@ const DateRangePicker = ({
         <button
           type="button"
           className="drp-calendar__nav-btn"
-          onClick={goToNextMonth}>
+          onClick={goToNextMonth}
+          disabled={isNextDisabled}>
           <FontAwesomeIcon icon={faChevronRight} />
         </button>
       </div>
@@ -851,14 +888,20 @@ const DateRangePicker = ({
           <div className="drp-calendar__month-grid">
             {MESES_CORTOS.map((m, i) => {
               const isPast =
-                viewYear === today.getFullYear() && i < today.getMonth();
+                viewYear === todayDate.getFullYear() &&
+                i < todayDate.getMonth();
+              const isFuture =
+                viewYear > maxViewDate.getFullYear() ||
+                (viewYear === maxViewDate.getFullYear() &&
+                  i > maxViewDate.getMonth());
+              const isDisabled = isPast || isFuture;
               return (
                 <button
                   key={m}
                   type="button"
-                  className={`drp-calendar__month-cell ${i === viewMonth ? "active" : ""} ${isPast ? "past" : ""}`}
+                  className={`drp-calendar__month-cell ${i === viewMonth ? "active" : ""} ${isDisabled ? "past" : ""}`}
                   onClick={() => jumpToMonth(i)}
-                  disabled={isPast}>
+                  disabled={isDisabled}>
                   {m}
                 </button>
               );
@@ -996,6 +1039,7 @@ const DateRangePicker = ({
                       className="drp-calendar__date-edit-input"
                       value={fecha}
                       min={todayISO}
+                      max={maxSelectableISO}
                       onChange={(e) => handleFechaChange(index, e.target.value)}
                       onBlur={() => setEditingIndex(null)}
                     />

@@ -524,8 +524,6 @@ const ALLOWED_EVENT_UPDATE_FIELDS = [
   "es_recurrente",
   "dia_recurrencia",
   "cantidad_repeticiones",
-  "tipo_recurrencia",
-  "dias_recurrencia",
   "fechas_recurrencia",
   "es_multidia",
   "mismo_horario",

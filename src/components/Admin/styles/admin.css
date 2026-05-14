@@ -248,8 +248,12 @@
 .admin-main {
   flex: 1;
   margin-left: 260px;
+  width: calc(100% - 260px);
+  max-width: calc(100vw - 260px);
+  min-width: 0;
   padding: 30px;
   min-height: calc(100vh - 70px);
+  overflow-x: hidden;
 }
 
 /* ===== MOBILE TOGGLE ===== */
@@ -1796,7 +1800,7 @@
   width: 100%;
   border-collapse: collapse;
   table-layout: auto;
-  min-width: 1100px;
+  min-width: 1160px;
 }
 
 .admin-publications__table th,
@@ -1824,6 +1828,18 @@
 .admin-publications__table td.admin-cell--status,
 .admin-publications__table td.admin-cell--schedule {
   white-space: nowrap;
+}
+
+.admin-publications__table th.admin-cell--actions,
+.admin-publications__table td.admin-cell--actions {
+  width: 190px;
+  min-width: 190px;
+  text-align: center;
+}
+
+.admin-publications__table td.admin-cell--actions {
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
 .admin-publications__table th {
@@ -1981,8 +1997,12 @@
 /* Acciones */
 .admin-publications__actions {
   display: flex;
+  justify-content: center;
+  align-items: center;
   gap: 6px;
   flex-wrap: nowrap;
+  width: max-content;
+  margin: 0 auto;
 }
 
 .admin-pub-btn {
@@ -2404,7 +2424,12 @@
 /* Table Actions */
 .admin-table__actions {
   display: flex;
+  justify-content: center;
+  align-items: center;
   gap: 8px;
+  flex-wrap: nowrap;
+  width: max-content;
+  margin: 0 auto;
 }
 
 .admin-table__action {
@@ -3009,7 +3034,7 @@
   }
 
   .admin-publications__table {
-    min-width: 1040px;
+    min-width: 1100px;
   }
 
   .admin-pub-cell img {

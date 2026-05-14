@@ -454,7 +454,10 @@
 
   .filter-panel__dropdown-wrapper {
     max-width: none;
-    flex: 1 1 calc(50% - 0.5rem);
+    /* flex-grow: 0 evita que un item huérfano en su fila se estire al 100%
+       y rompa el centrado visual (look "todo a la izquierda" en tablets). */
+    flex: 0 1 calc(50% - 0.5rem);
+    min-width: 240px;
   }
 
   .filter-panel__dropdown--calendar {
@@ -477,11 +480,14 @@
   .filter-panel__filters {
     flex-wrap: wrap;
     gap: 0.75rem;
+    justify-content: center;
   }
 
   .filter-panel__dropdown-wrapper {
-    flex: 1 1 calc(50% - 0.375rem);
+    /* flex-grow: 0 mantiene los items huérfanos centrados (no estirados) */
+    flex: 0 1 calc(50% - 0.375rem);
     max-width: none;
+    min-width: 220px;
   }
 
   .filter-panel__dropdown {
@@ -520,6 +526,7 @@
 @media (max-width: 480px) {
   .filter-panel__dropdown-wrapper {
     flex: 1 1 100%;
+    min-width: 0;
   }
 
   .filter-panel__search-input {
