@@ -12,45 +12,24 @@
 }
 
 .drp-calendar__submission-warning {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  align-self: center;
-  width: min(100%, 760px);
-  max-width: min(100%, 760px);
-  margin-bottom: 18px;
-  padding: 18px 22px;
-  border: 1px solid rgba(255, 102, 0, 0.38);
-  border-radius: 18px;
-  background:
-    linear-gradient(135deg, rgba(255, 102, 0, 0.22), rgba(255, 153, 0, 0.12)),
-    rgba(255, 255, 255, 0.03);
-  box-shadow: 0 14px 32px rgba(255, 102, 0, 0.16);
-  color: #fff4e8;
-  font-size: clamp(0.68rem, 0.2vw + 0.64rem, 0.82rem);
-  font-weight: 600;
-  line-height: 1.3;
-  letter-spacing: 0;
-  text-align: center;
-  text-transform: none;
-  white-space: normal;
-  overflow: visible;
-  text-wrap: balance;
-}
-
-.drp-calendar__submission-warning-logo {
-  width: 53px;
-  height: 40px;
-  border-radius: 50%;
-  flex: 0 0 auto;
-}
-
-.drp-calendar__submission-warning-text {
   display: block;
   width: 100%;
-  text-align: center;
+  margin: 0 0 12px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: clamp(0.7rem, 0.35vw + 0.62rem, 0.85rem);
+  font-weight: 600;
+  line-height: clamp(1.22, 0.18vw + 1.18, 1.35);
+  letter-spacing: 0;
+  text-align: left;
+  text-transform: none;
+  white-space: nowrap;
+  overflow: visible;
+  text-wrap: nowrap;
 }
 
 /* ===== HEADER ===== */
@@ -1275,10 +1254,7 @@
   }
 
   .drp-calendar__submission-warning {
-    margin-bottom: 16px;
-    padding: 16px 18px;
-    border-radius: 16px;
-    font-size: 0.72rem;
+    margin-bottom: 10px;
   }
 
   .drp-calendar__quick-bar,
@@ -1369,10 +1345,10 @@
   }
 
   .drp-calendar__submission-warning {
-    margin-bottom: 14px;
-    padding: 14px 12px;
-    border-radius: 14px;
-    font-size: 0.66rem;
+    margin-bottom: 10px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-wrap: pretty;
     line-height: 1.25;
   }
 
