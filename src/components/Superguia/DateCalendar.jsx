@@ -8,7 +8,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import "./styles/DateCalendar.css";
 
-const DAYS_SHORT = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+const DAYS_SHORT = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 const MONTHS = [
   "Enero",
   "Febrero",
@@ -45,7 +45,8 @@ export default function DateCalendar({
     const firstDay = new Date(currentYear, currentMonth, 1);
     const lastDay = new Date(currentYear, currentMonth + 1, 0);
     const daysInMonth = lastDay.getDate();
-    const startDayOfWeek = firstDay.getDay();
+    // Convert JS day index (Sun=0) to Monday-first index (Mon=0, Sun=6)
+    const startDayOfWeek = (firstDay.getDay() + 6) % 7;
 
     const days = [];
 
@@ -72,7 +73,14 @@ export default function DateCalendar({
     }
 
     return days;
-  }, [currentMonth, currentYear, eventsPerDay, recurringDates, selectedDate, today]);
+  }, [
+    currentMonth,
+    currentYear,
+    eventsPerDay,
+    recurringDates,
+    selectedDate,
+    today,
+  ]);
 
   // Navegar al mes anterior
   const goToPrevMonth = () => {
@@ -156,9 +164,7 @@ export default function DateCalendar({
               dayInfo.isPast ? "date-calendar__day--past" : ""
             } ${dayInfo.isSelected ? "date-calendar__day--selected" : ""} ${
               dayInfo.hasEvents ? "date-calendar__day--has-events" : ""
-            } ${
-              dayInfo.isRecurring ? "date-calendar__day--recurring" : ""
-            }`}
+            } ${dayInfo.isRecurring ? "date-calendar__day--recurring" : ""}`}
             onClick={() => handleDateClick(dayInfo)}
             disabled={!dayInfo.day || dayInfo.isPast}>
             {dayInfo.day && (
@@ -203,7 +209,7 @@ export default function DateCalendar({
 function formatDateKey(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
     2,
-    "0"
+    "0",
   )}-${String(date.getDate()).padStart(2, "0")}`;
 }
 

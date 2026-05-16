@@ -34,6 +34,7 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 import "../styles/draft-preview.css";
 import { renderRichText } from "../../../../lib/textRender";
+import { buildSocialUrl } from "../../../../lib/textWrap";
 
 // Tipos de secciones del acordeón (igual que PublicationModal)
 const ACCORDION_SECTIONS = {
@@ -133,6 +134,23 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
   const hasSocialLinks =
     hasText(formData?.sitio_web) ||
     Object.values(formData?.redes_sociales || {}).some(hasText);
+  const socialLinks = formData?.redes_sociales || {};
+  const normalizedWebsiteUrl = hasText(formData?.sitio_web)
+    ? formData.sitio_web.trim().startsWith("http")
+      ? formData.sitio_web.trim()
+      : `https://${formData.sitio_web.trim()}`
+    : "";
+
+  const handleWhatsApp = () => {
+    if (!hasText(socialLinks.whatsapp)) return;
+    const cleanNumber = socialLinks.whatsapp.replace(/\D/g, "");
+    if (!cleanNumber) return;
+    window.open(
+      `https://wa.me/${cleanNumber}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -658,45 +676,102 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
                   Síguenos en redes
                 </h4>
                 <div className="publication-modal__social-bar">
-                  {hasText(formData.sitio_web) && (
-                    <span className="publication-modal__social-icon publication-modal__social-icon--website">
+                  {normalizedWebsiteUrl && (
+                    <a
+                      href={normalizedWebsiteUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="publication-modal__social-icon publication-modal__social-icon--website"
+                      title="Sitio web">
                       <FontAwesomeIcon icon={faGlobe} />
-                    </span>
+                    </a>
                   )}
-                  {hasText(formData.redes_sociales?.whatsapp) && (
-                    <span className="publication-modal__social-icon publication-modal__social-icon--whatsapp">
+                  {hasText(socialLinks.whatsapp) && (
+                    <button
+                      type="button"
+                      className="publication-modal__social-icon publication-modal__social-icon--whatsapp"
+                      onClick={handleWhatsApp}
+                      title="WhatsApp">
                       <FontAwesomeIcon icon={faWhatsapp} />
-                    </span>
+                    </button>
                   )}
-                  {hasText(formData.redes_sociales?.instagram) && (
-                    <span className="publication-modal__social-icon publication-modal__social-icon--instagram">
+                  {hasText(socialLinks.instagram) && (
+                    <a
+                      href={buildSocialUrl(
+                        socialLinks.instagram,
+                        "https://instagram.com/",
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="publication-modal__social-icon publication-modal__social-icon--instagram"
+                      title="Instagram">
                       <FontAwesomeIcon icon={faInstagram} />
-                    </span>
+                    </a>
                   )}
-                  {hasText(formData.redes_sociales?.facebook) && (
-                    <span className="publication-modal__social-icon publication-modal__social-icon--facebook">
+                  {hasText(socialLinks.facebook) && (
+                    <a
+                      href={buildSocialUrl(
+                        socialLinks.facebook,
+                        "https://facebook.com/",
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="publication-modal__social-icon publication-modal__social-icon--facebook"
+                      title="Facebook">
                       <FontAwesomeIcon icon={faFacebook} />
-                    </span>
+                    </a>
                   )}
-                  {hasText(formData.redes_sociales?.youtube) && (
-                    <span className="publication-modal__social-icon publication-modal__social-icon--youtube">
+                  {hasText(socialLinks.youtube) && (
+                    <a
+                      href={buildSocialUrl(
+                        socialLinks.youtube,
+                        "https://youtube.com/@",
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="publication-modal__social-icon publication-modal__social-icon--youtube"
+                      title="YouTube">
                       <FontAwesomeIcon icon={faYoutube} />
-                    </span>
+                    </a>
                   )}
-                  {hasText(formData.redes_sociales?.tiktok) && (
-                    <span className="publication-modal__social-icon publication-modal__social-icon--tiktok">
+                  {hasText(socialLinks.tiktok) && (
+                    <a
+                      href={buildSocialUrl(
+                        socialLinks.tiktok,
+                        "https://tiktok.com/@",
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="publication-modal__social-icon publication-modal__social-icon--tiktok"
+                      title="TikTok">
                       <FontAwesomeIcon icon={faTiktok} />
-                    </span>
+                    </a>
                   )}
-                  {hasText(formData.redes_sociales?.twitter) && (
-                    <span className="publication-modal__social-icon publication-modal__social-icon--twitter">
+                  {hasText(socialLinks.twitter) && (
+                    <a
+                      href={buildSocialUrl(
+                        socialLinks.twitter,
+                        "https://x.com/",
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="publication-modal__social-icon publication-modal__social-icon--twitter"
+                      title="X">
                       <FontAwesomeIcon icon={faXTwitter} />
-                    </span>
+                    </a>
                   )}
-                  {hasText(formData.redes_sociales?.linkedin) && (
-                    <span className="publication-modal__social-icon publication-modal__social-icon--linkedin">
+                  {hasText(socialLinks.linkedin) && (
+                    <a
+                      href={buildSocialUrl(
+                        socialLinks.linkedin,
+                        "https://linkedin.com/company/",
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="publication-modal__social-icon publication-modal__social-icon--linkedin"
+                      title="LinkedIn">
                       <FontAwesomeIcon icon={faLinkedin} />
-                    </span>
+                    </a>
                   )}
                 </div>
               </div>
