@@ -2016,7 +2016,7 @@ export default function PublicationModal({
                 <div className="publication-modal__social-section">
                   <h4 className="publication-modal__social-title">
                     <FontAwesomeIcon icon={faShareAlt} />
-                    Síguenos en redes
+                    Redes del Evento
                   </h4>
                   <div className="publication-modal__social-bar">
                     {sitio_web && (

@@ -353,10 +353,16 @@ const normalizeAbsoluteSocialUrl = (value) => {
 const normalizeSocialHandle = (value) =>
   value.trim().replace(/^@+/, "").replace(/^\/+/, "");
 
-const isPhonePrefixOnly = (value) => {
+const getChileanPhoneDigits = (value) => {
+  if (typeof value !== "string") return "";
   let digits = value.replace(/\D/g, "");
   if (digits.startsWith("0056")) digits = digits.slice(4);
   else if (digits.startsWith("56")) digits = digits.slice(2);
+  return digits.slice(0, 9);
+};
+
+const isPhonePrefixOnly = (value) => {
+  const digits = getChileanPhoneDigits(value);
   return digits === "" || digits === "9";
 };
 
@@ -452,11 +458,8 @@ export function wrapPersistedFields(
  */
 export function formatChileanPhone(raw) {
   if (typeof raw !== "string") return "";
-  let digits = raw.replace(/\D/g, "");
-  if (digits.startsWith("0056")) digits = digits.slice(4);
-  else if (digits.startsWith("56")) digits = digits.slice(2);
-  digits = digits.slice(0, 9);
-  if (digits.length === 0) return "+56 9";
+  const digits = getChileanPhoneDigits(raw);
+  if (digits.length === 0) return "";
   let result = "+56 ";
   if (digits.length <= 1) {
     result += digits;
@@ -466,4 +469,11 @@ export function formatChileanPhone(raw) {
     result += digits[0] + " " + digits.slice(1, 5) + " " + digits.slice(5);
   }
   return result;
+}
+
+export function normalizeOptionalChileanPhone(raw) {
+  if (typeof raw !== "string") return "";
+  const digits = getChileanPhoneDigits(raw);
+  if (digits.length !== 9) return "";
+  return formatChileanPhone(digits).trim();
 }

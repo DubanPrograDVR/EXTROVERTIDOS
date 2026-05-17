@@ -132,6 +132,20 @@
   margin-bottom: 10px;
 }
 
+.publicar-form__label--social {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.publicar-form__label-assist {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: clamp(0.72rem, 0.22vw + 0.66rem, 0.86rem);
+  font-weight: 500;
+  line-height: 1.35;
+}
+
 .publicar-form__label svg {
   color: #ff6600;
   margin-right: 8px;
@@ -177,6 +191,16 @@
   letter-spacing: 0.3px;
   text-transform: uppercase;
   vertical-align: middle;
+}
+
+@media (max-width: 768px) {
+  .publicar-form__label--social {
+    align-items: flex-start;
+  }
+
+  .publicar-form__label-assist {
+    flex-basis: 100%;
+  }
 }
 
 /* Full width group */

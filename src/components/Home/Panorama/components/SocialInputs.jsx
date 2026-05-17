@@ -69,7 +69,12 @@ const SocialInputs = ({ redes_sociales, sitio_web, onChange }) => {
 
   return (
     <div className="publicar-form__group">
-      <label className="publicar-form__label">Redes Sociales</label>
+      <label className="publicar-form__label publicar-form__label--social">
+        <span>Redes Sociales</span>
+        <span className="publicar-form__label-assist">
+          (Ingresa o Pega los links de las redes sociales de tu Evento)
+        </span>
+      </label>
       <div className="publicar-form__social-inputs">
         {socialNetworks.map((network) => (
           <div key={network.name} className="publicar-form__social-input">

@@ -13,6 +13,7 @@ import {
   interpretPublishResult,
 } from "../../../../lib/planRules";
 import {
+  normalizeOptionalChileanPhone,
   normalizeSocialLinks,
   wrapPersistedFields,
 } from "../../../../lib/textWrap";
@@ -175,7 +176,9 @@ const useEventSubmit = ({
           formData.tipo_entrada === "venta_externa"
             ? formData.url_venta?.trim() || null
             : null,
-        telefono_contacto: formData.telefono_contacto?.trim() || null,
+        telefono_contacto:
+          normalizeOptionalChileanPhone(formData.telefono_contacto || "") ||
+          null,
         sitio_web: formData.sitio_web?.trim() || null,
         hashtags: formData.hashtags?.trim() || null,
         etiqueta_directa: formData.etiqueta_directa?.trim() || null,

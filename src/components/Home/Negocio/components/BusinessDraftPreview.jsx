@@ -29,7 +29,10 @@ import {
 import "../../../Superguia/styles/BusinessModal.css";
 import "../../Panorama/styles/draft-preview.css";
 import { renderRichText } from "../../../../lib/textRender";
-import { buildSocialUrl } from "../../../../lib/textWrap";
+import {
+  buildSocialUrl,
+  normalizeSocialProfileValue,
+} from "../../../../lib/textWrap";
 
 // Secciones del modal (igual que BusinessModal)
 const ACCORDION_SECTIONS = {
@@ -102,10 +105,17 @@ const BusinessDraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
     hasText(formData?.direccion) || hasText(formData?.ubicacion_url);
   const hasHorarioInfo =
     Boolean(formData?.abierto_24h) || formData?.dias_atencion?.length > 0;
+  const socialLinks = formData?.redes_sociales || {};
+  const normalizedWhatsapp = normalizeSocialProfileValue(
+    socialLinks.whatsapp,
+    "whatsapp",
+  );
   const hasSocialLinks =
     hasText(formData?.sitio_web) ||
-    Object.values(formData?.redes_sociales || {}).some(hasText);
-  const socialLinks = formData?.redes_sociales || {};
+    Boolean(normalizedWhatsapp) ||
+    Object.entries(socialLinks).some(
+      ([network, value]) => network !== "whatsapp" && hasText(value),
+    );
   const normalizedWebsiteUrl = hasText(formData?.sitio_web)
     ? formData.sitio_web.trim().startsWith("http")
       ? formData.sitio_web.trim()
@@ -116,8 +126,8 @@ const BusinessDraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
   const hasInformation = hasLocationInfo || hasHorarioInfo || hasContacto;
 
   const handleWhatsApp = () => {
-    if (!hasText(socialLinks.whatsapp)) return;
-    const cleanNumber = socialLinks.whatsapp.replace(/\D/g, "");
+    if (!normalizedWhatsapp) return;
+    const cleanNumber = normalizedWhatsapp.replace(/\D/g, "");
     if (!cleanNumber) return;
     window.open(
       `https://wa.me/${cleanNumber}`,
@@ -494,7 +504,7 @@ const BusinessDraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
                                   Sitio web
                                 </a>
                               )}
-                              {hasText(socialLinks.whatsapp) && (
+                              {normalizedWhatsapp && (
                                 <button
                                   type="button"
                                   className="publication-modal__social-btn publication-modal__social-btn--whatsapp"

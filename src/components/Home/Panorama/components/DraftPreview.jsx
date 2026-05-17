@@ -34,7 +34,11 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 import "../styles/draft-preview.css";
 import { renderRichText } from "../../../../lib/textRender";
-import { buildSocialUrl } from "../../../../lib/textWrap";
+import {
+  buildSocialUrl,
+  normalizeSocialProfileValue,
+  normalizeOptionalChileanPhone,
+} from "../../../../lib/textWrap";
 
 // Tipos de secciones del acordeón (igual que PublicationModal)
 const ACCORDION_SECTIONS = {
@@ -129,12 +133,22 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
     hasText(formData?.hora_inicio) || hasText(formData?.hora_fin);
   const hasTicketInfo = Boolean(formData?.tipo_entrada);
   const hasScheduleInfo = hasDateInfo || hasTimeInfo || hasTicketInfo;
-  const hasContactInfo = hasText(formData?.telefono_contacto);
+  const contactPhone = normalizeOptionalChileanPhone(
+    formData?.telefono_contacto || "",
+  );
+  const hasContactInfo = Boolean(contactPhone);
   const hasInformation = hasLocationInfo || hasScheduleInfo || hasContactInfo;
+  const socialLinks = formData?.redes_sociales || {};
+  const normalizedWhatsapp = normalizeSocialProfileValue(
+    socialLinks.whatsapp,
+    "whatsapp",
+  );
   const hasSocialLinks =
     hasText(formData?.sitio_web) ||
-    Object.values(formData?.redes_sociales || {}).some(hasText);
-  const socialLinks = formData?.redes_sociales || {};
+    Boolean(normalizedWhatsapp) ||
+    Object.entries(socialLinks).some(
+      ([network, value]) => network !== "whatsapp" && hasText(value),
+    );
   const normalizedWebsiteUrl = hasText(formData?.sitio_web)
     ? formData.sitio_web.trim().startsWith("http")
       ? formData.sitio_web.trim()
@@ -142,8 +156,8 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
     : "";
 
   const handleWhatsApp = () => {
-    if (!hasText(socialLinks.whatsapp)) return;
-    const cleanNumber = socialLinks.whatsapp.replace(/\D/g, "");
+    if (!normalizedWhatsapp) return;
+    const cleanNumber = normalizedWhatsapp.replace(/\D/g, "");
     if (!cleanNumber) return;
     window.open(
       `https://wa.me/${cleanNumber}`,
@@ -199,6 +213,16 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
   const formatearHora = (hora) => {
     if (!hora) return null;
     return hora.substring(0, 5);
+  };
+
+  const getHorarioDisplay = () => {
+    const inicio = formatearHora(formData?.hora_inicio);
+    const fin = formatearHora(formData?.hora_fin);
+
+    if (inicio && fin) return `${inicio} - ${fin} hrs`;
+    if (inicio) return `${inicio} hrs`;
+    if (fin) return `Hasta ${fin} hrs`;
+    return "Por confirmar";
   };
 
   // Lista de fechas recurrentes ordenada cronológicamente
@@ -620,13 +644,7 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
                                 Horario
                               </span>
                               <span className="publication-modal__schedule-value">
-                                {formData.hora_inicio &&
-                                  formatearHora(formData.hora_inicio)}
-                                {formData.hora_inicio &&
-                                  formData.hora_fin &&
-                                  " - "}
-                                {formData.hora_fin &&
-                                  formatearHora(formData.hora_fin)}
+                                {getHorarioDisplay()}
                               </span>
                             </div>
                           )}
@@ -655,10 +673,10 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
                         </h4>
                         <div className="publication-modal__contact-content">
                           <a
-                            href={`tel:${formData.telefono_contacto}`}
+                            href={`tel:${contactPhone}`}
                             className="publication-modal__contact-item">
                             <FontAwesomeIcon icon={faPhone} />
-                            <span>{formData.telefono_contacto.trim()}</span>
+                            <span>{contactPhone}</span>
                           </a>
                         </div>
                       </div>
@@ -673,7 +691,7 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
               <div className="publication-modal__social-section">
                 <h4 className="publication-modal__social-title">
                   <FontAwesomeIcon icon={faShareAlt} />
-                  Síguenos en redes
+                  Redes del Evento
                 </h4>
                 <div className="publication-modal__social-bar">
                   {normalizedWebsiteUrl && (
@@ -686,7 +704,7 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
                       <FontAwesomeIcon icon={faGlobe} />
                     </a>
                   )}
-                  {hasText(socialLinks.whatsapp) && (
+                  {normalizedWhatsapp && (
                     <button
                       type="button"
                       className="publication-modal__social-icon publication-modal__social-icon--whatsapp"

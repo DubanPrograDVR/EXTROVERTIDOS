@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { saveDraft, deleteDraft } from "../../../../lib/database";
+import { normalizeOptionalChileanPhone } from "../../../../lib/textWrap";
 
 /**
  * Hook especializado para manejo de borradores
@@ -137,6 +138,9 @@ const useDraftManager = (options = {}) => {
           tipo: "evento",
           data: {
             ...formData,
+            telefono_contacto: normalizeOptionalChileanPhone(
+              formData.telefono_contacto || "",
+            ),
             categoria_nombre: categoryName,
             cantidad_imagenes: imageCount,
             imagenes_preview:
