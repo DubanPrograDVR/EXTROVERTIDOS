@@ -42,7 +42,7 @@ const AuthModal = ({ isOpen, onClose }) => {
         </button>
 
         <div className="auth-modal__logo">
-          <img src="/img/Logo_con_r_v2.png" alt="Extrovertidos" />
+          <img src="/img/Logo_con_r_v3.png" alt="Extrovertidos" />
         </div>
 
         <h2 className="auth-modal__title">¡Regístrate para publicar!</h2>

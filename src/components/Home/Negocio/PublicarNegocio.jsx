@@ -496,7 +496,7 @@ const PublicarNegocio = () => {
       {/* Header */}
       <header className="publicar-negocio__header">
         <img
-          src="/img/Logo_con_r_v2.png"
+          src="/img/Logo_con_r_v3.png"
           alt="Extrovertidos"
           className="publicar-negocio__logo"
         />

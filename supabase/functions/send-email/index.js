@@ -61,7 +61,7 @@ const templates = {
       html: `
         <div style="font-family:'Figtree',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;border-radius:16px;overflow:hidden;">
           <div style="background:#111111;padding:16px;text-align:center;border-bottom:1px solid #1e1e1e;">
-            <img src="https://extrovertidos.cl/img/Logo_con_r_v2.png" alt="Extrovertidos" style="height:50px;" />
+            <img src="https://extrovertidos.cl/img/Logo_con_r_v3.png" alt="Extrovertidos" style="height:50px;" />
           </div>
           <div style="background:linear-gradient(135deg,#22c55e,#16a34a);padding:30px;text-align:center;">
             <h1 style="color:#fff;margin:0;font-size:26px;">¡Pago exitoso! ✅</h1>
@@ -120,7 +120,7 @@ const templates = {
     html: `
       <div style="font-family:'Figtree',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;border-radius:16px;overflow:hidden;">
         <div style="background:#111111;padding:16px;text-align:center;border-bottom:1px solid #1e1e1e;">
-          <img src="https://extrovertidos.cl/img/Logo_con_r_v2.png" alt="Extrovertidos" style="height:50px;" />
+          <img src="https://extrovertidos.cl/img/Logo_con_r_v3.png" alt="Extrovertidos" style="height:50px;" />
         </div>
         <div style="background:linear-gradient(135deg,#ef4444,#dc2626);padding:30px;text-align:center;">
           <h1 style="color:#fff;margin:0;font-size:24px;">Pago no procesado ❌</h1>
@@ -152,7 +152,7 @@ const templates = {
     html: `
       <div style="font-family:'Figtree',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;border-radius:16px;overflow:hidden;">
         <div style="background:#111111;padding:16px;text-align:center;border-bottom:1px solid #1e1e1e;">
-          <img src="https://extrovertidos.cl/img/Logo_con_r_v2.png" alt="Extrovertidos" style="height:50px;" />
+          <img src="https://extrovertidos.cl/img/Logo_con_r_v3.png" alt="Extrovertidos" style="height:50px;" />
         </div>
         <div style="background:linear-gradient(135deg,#f59e0b,#d97706);padding:30px;text-align:center;">
           <h1 style="color:#fff;margin:0;font-size:24px;">Publicación en Revisión ⏳</h1>
@@ -175,7 +175,7 @@ const templates = {
     html: `
       <div style="font-family:'Figtree',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;border-radius:16px;overflow:hidden;">
         <div style="background:#111111;padding:16px;text-align:center;border-bottom:1px solid #1e1e1e;">
-          <img src="https://extrovertidos.cl/img/Logo_con_r_v2.png" alt="Extrovertidos" style="height:50px;" />
+          <img src="https://extrovertidos.cl/img/Logo_con_r_v3.png" alt="Extrovertidos" style="height:50px;" />
         </div>
         <div style="background:linear-gradient(135deg,#f59e0b,#d97706);padding:30px;text-align:center;">
           <h1 style="color:#fff;margin:0;font-size:24px;">Negocio en Revisión ⏳</h1>
@@ -198,7 +198,7 @@ const templates = {
     html: `
       <div style="font-family:'Figtree',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;border-radius:16px;overflow:hidden;">
         <div style="background:#111111;padding:16px;text-align:center;border-bottom:1px solid #1e1e1e;">
-          <img src="https://extrovertidos.cl/img/Logo_con_r_v2.png" alt="Extrovertidos" style="height:50px;" />
+          <img src="https://extrovertidos.cl/img/Logo_con_r_v3.png" alt="Extrovertidos" style="height:50px;" />
         </div>
         <div style="background:linear-gradient(135deg,#ff6600,#ff8833);padding:30px;text-align:center;">
           <h1 style="color:#fff;margin:0;font-size:28px;">¡Bienvenido a Extrovertidos!</h1>
@@ -227,7 +227,7 @@ const templates = {
     html: `
       <div style="font-family:'Figtree',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;border-radius:16px;overflow:hidden;">
         <div style="background:#111111;padding:16px;text-align:center;border-bottom:1px solid #1e1e1e;">
-          <img src="https://extrovertidos.cl/img/Logo_con_r_v2.png" alt="Extrovertidos" style="height:50px;" />
+          <img src="https://extrovertidos.cl/img/Logo_con_r_v3.png" alt="Extrovertidos" style="height:50px;" />
         </div>
         <div style="background:linear-gradient(135deg,#22c55e,#16a34a);padding:30px;text-align:center;">
           <h1 style="color:#fff;margin:0;font-size:24px;">¡Publicación Aprobada! ✅</h1>
@@ -249,7 +249,7 @@ const templates = {
     html: `
       <div style="font-family:'Figtree',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;border-radius:16px;overflow:hidden;">
         <div style="background:#111111;padding:16px;text-align:center;border-bottom:1px solid #1e1e1e;">
-          <img src="https://extrovertidos.cl/img/Logo_con_r_v2.png" alt="Extrovertidos" style="height:50px;" />
+          <img src="https://extrovertidos.cl/img/Logo_con_r_v3.png" alt="Extrovertidos" style="height:50px;" />
         </div>
         <div style="background:linear-gradient(135deg,#ef4444,#dc2626);padding:30px;text-align:center;">
           <h1 style="color:#fff;margin:0;font-size:24px;">Publicación Rechazada</h1>
@@ -270,7 +270,7 @@ const templates = {
     html: `
       <div style="font-family:'Figtree',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;border-radius:16px;overflow:hidden;">
         <div style="background:#111111;padding:16px;text-align:center;border-bottom:1px solid #1e1e1e;">
-          <img src="https://extrovertidos.cl/img/Logo_con_r_v2.png" alt="Extrovertidos" style="height:50px;" />
+          <img src="https://extrovertidos.cl/img/Logo_con_r_v3.png" alt="Extrovertidos" style="height:50px;" />
         </div>
         <div style="background:linear-gradient(135deg,#22c55e,#16a34a);padding:30px;text-align:center;">
           <h1 style="color:#fff;margin:0;font-size:24px;">¡Negocio Aprobado! ✅</h1>
@@ -292,7 +292,7 @@ const templates = {
     html: `
       <div style="font-family:'Figtree',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;border-radius:16px;overflow:hidden;">
         <div style="background:#111111;padding:16px;text-align:center;border-bottom:1px solid #1e1e1e;">
-          <img src="https://extrovertidos.cl/img/Logo_con_r_v2.png" alt="Extrovertidos" style="height:50px;" />
+          <img src="https://extrovertidos.cl/img/Logo_con_r_v3.png" alt="Extrovertidos" style="height:50px;" />
         </div>
         <div style="background:linear-gradient(135deg,#ef4444,#dc2626);padding:30px;text-align:center;">
           <h1 style="color:#fff;margin:0;font-size:24px;">Negocio Rechazado</h1>

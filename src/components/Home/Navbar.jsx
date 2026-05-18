@@ -204,7 +204,7 @@ export default function Navbar() {
           {/* Logo del menú móvil */}
           <div className="navbar-menu-logo-wrapper">
             <img
-              src="/img/Logo_con_r_v2.png"
+              src="/img/Logo_con_r_v3.png"
               alt="Extrovertidos"
               className="navbar-menu-logo"
             />
