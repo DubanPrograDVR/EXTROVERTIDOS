@@ -19,7 +19,7 @@ import { useAdminPendingCount } from "../../hooks/useAdminPendingCount";
 import { useUnreadNotificationsCount } from "../../hooks/useUnreadNotificationsCount";
 
 // Imágenes servidas desde public/
-const logo = "/img/E_Extro.png";
+const logo = "/img/E_Extro_v2.png";
 const manchaExtro = "/img/Mancha_Extro.png";
 import { useAuth } from "../../context/AuthContext";
 
@@ -204,7 +204,7 @@ export default function Navbar() {
           {/* Logo del menú móvil */}
           <div className="navbar-menu-logo-wrapper">
             <img
-              src="/img/Logo_con_r.png"
+              src="/img/Logo_con_r_v2.png"
               alt="Extrovertidos"
               className="navbar-menu-logo"
             />

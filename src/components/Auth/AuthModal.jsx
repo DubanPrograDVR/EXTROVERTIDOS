@@ -77,7 +77,7 @@ export default function AuthModal({ isOpen, onClose, persistent = false }) {
         )}
 
         <div className="auth-modal__logo">
-          <img src="/img/Logo_con_r.png" alt="Extrovertidos" />
+          <img src="/img/Logo_con_r_v2.png" alt="Extrovertidos" />
         </div>
 
         <h2 className="auth-modal__title">¡Bienvenido a Extrovertidos!</h2>

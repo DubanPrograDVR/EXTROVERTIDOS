@@ -13,7 +13,7 @@ import {
 import "./styles/footer.css";
 
 // Logo servido desde public/
-const logo = "/img/Logo_con_r.png";
+const logo = "/img/Logo_con_r_v2.png";
 
 // ===== DATOS =====
 const socialLinks = [

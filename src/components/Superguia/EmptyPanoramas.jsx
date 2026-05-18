@@ -57,7 +57,7 @@ export default function EmptyPanoramas({
 
         {/* Logo decorativo sobre acciones */}
         <div className="empty-panoramas__footer-logo">
-          <img src="/img/Logo_con_r.png" alt="Extrovertidos" />
+          <img src="/img/Logo_con_r_v2.png" alt="Extrovertidos" />
         </div>
 
         {/* Botones */}

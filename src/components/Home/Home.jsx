@@ -13,7 +13,7 @@ import {
 import Secciones from "./Secciones";
 
 // Imágenes servidas desde public/
-const logo = "/img/Logo_con_r.png";
+const logo = "/img/Logo_con_r_v2.png";
 import Panoramas from "./Panoramas";
 import Footer from "./Footer";
 

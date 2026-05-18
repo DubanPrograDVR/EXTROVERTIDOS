@@ -43,7 +43,7 @@ const PublicarAuthModal = ({ isOpen, onClose }) => {
         </button>
 
         <img
-          src="/img/Logo_con_r.png"
+          src="/img/Logo_con_r_v2.png"
           alt="Extrovertidos"
           className="auth-modal__logo"
         />

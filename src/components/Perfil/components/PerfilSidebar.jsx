@@ -103,7 +103,7 @@ export default function PerfilSidebar({
       <aside className={`perfil-sidebar ${sidebarOpen ? "open" : ""}`}>
         {/* Logo */}
         <div className="perfil-sidebar__logo">
-          <img src="/img/Logo_con_r.png" alt="Extrovertidos" />
+          <img src="/img/Logo_con_r_v2.png" alt="Extrovertidos" />
         </div>
 
         {/* Link al panel admin */}

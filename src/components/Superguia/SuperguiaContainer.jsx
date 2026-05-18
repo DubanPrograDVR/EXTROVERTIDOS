@@ -629,7 +629,7 @@ export default function SuperguiaContainer() {
           <div className="superguia__hero-overlay"></div>
           <div className="superguia__hero-content">
             <img
-              src="/img/Logo_con_r.png"
+              src="/img/Logo_con_r_v2.png"
               alt="Extrovertidos"
               className="superguia__hero-logo"
             />
@@ -753,7 +753,7 @@ export default function SuperguiaContainer() {
 
                   {/* Logo Extrovertidos */}
                   <div className="superguia__empty-brand">
-                    <img src="/img/Logo_con_r.png" alt="Extrovertidos" />
+                    <img src="/img/Logo_con_r_v2.png" alt="Extrovertidos" />
                   </div>
 
                   {/* Botones de acción */}

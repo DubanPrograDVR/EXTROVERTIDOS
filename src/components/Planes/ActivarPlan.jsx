@@ -30,9 +30,9 @@ import {
 import "./styles/activar-plan.css";
 
 // Iconos del sitio
-const logoExtro = "/img/Logo_con_r.png";
+const logoExtro = "/img/Logo_con_r_v2.png";
 const iconPanorama = "/img/P_Extro.png";
-const iconExtro = "/img/E_Extro.png";
+const iconExtro = "/img/E_Extro_v2.png";
 const iconSuperguia = "/img/SG_Extro.png";
 
 /**

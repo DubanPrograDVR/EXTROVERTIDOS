@@ -23,7 +23,7 @@ import "./styles/plan.css";
 
 // Iconos del sitio
 const iconPanorama = "/img/P_Extro.png";
-const iconExtro = "/img/E_Extro.png";
+const iconExtro = "/img/E_Extro_v2.png";
 const logoExtrovertidos = "/img/Logo_extrovertidos.png";
 const iconSuperguia = "/img/SG_Extro.png";
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
