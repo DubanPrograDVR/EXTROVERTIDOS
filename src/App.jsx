@@ -10,6 +10,9 @@ import AuthCallback from "./components/Auth/AuthCallback";
 import Navbar from "./components/Home/Navbar";
 import Home from "./components/Home/Home";
 import { SuperguiaContainer } from "./components/Superguia";
+import WelcomeSplash from "./components/WelcomeSplash";
+import AccessGate from "./components/WelcomeSplash/AccessGate";
+import { ACCESS_ROUTE } from "./components/WelcomeSplash/WelcomeSplash";
 import { cleanAuthTokensFromUrl } from "./lib/supabase";
 
 // Lazy loading de rutas menos frecuentes para optimizar bundle inicial
@@ -57,11 +60,17 @@ function App() {
       <ToastProvider>
         <AuthProvider>
           <CityProvider>
+            {/* Splash de bienvenida — overlay desacoplado del router.
+                Para desactivarlo: src/components/WelcomeSplash/WelcomeSplash.jsx -> SPLASH_ENABLED = false */}
+            <WelcomeSplash />
             <Router>
               <AppWithCleanup>
                 <Navbar />
                 <Suspense fallback={<PageLoader />}>
                   <Routes>
+                    {/* Ruta de acceso para cliente: abre login sin mostrar el splash. */}
+                    <Route path={ACCESS_ROUTE} element={<AccessGate />} />
+
                     {/* Callback de autenticación OAuth - DEBE estar antes de las rutas protegidas */}
                     <Route path="/auth/callback" element={<AuthCallback />} />
 
