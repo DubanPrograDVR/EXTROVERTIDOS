@@ -7,7 +7,7 @@ import { faMapMarkedAlt, faCompass } from "@fortawesome/free-solid-svg-icons";
 // Imágenes servidas desde public/
 const panoramasImg = "/img/Home1.png";
 const superguiaImg = "/img/Home2.png";
-const pExtroIcon = "/img/SG_Extro.png";
+const pExtroIcon = "/img/SG_Extro_v2.png";
 
 // ===== DATOS DE LAS SECCIONES =====
 const sectionsData = [

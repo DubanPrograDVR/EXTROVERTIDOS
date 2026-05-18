@@ -31,10 +31,10 @@ const PLAN_LABELS = {
 };
 
 const PLAN_ICONS = {
-  panorama_unica: "/img/P_Extro.png",
-  panorama_pack4: "/img/P_Extro.png",
-  panorama_ilimitado: "/img/P_Extro.png",
-  superguia: "/img/SG_Extro.png",
+  panorama_unica: "/img/P_Extro_v2.png",
+  panorama_pack4: "/img/P_Extro_v2.png",
+  panorama_ilimitado: "/img/P_Extro_v2.png",
+  superguia: "/img/SG_Extro_v2.png",
 };
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
@@ -156,7 +156,7 @@ export default function PerfilHeader({
                     }`}>
                     <img
                       className="perfil-header__plan-badge-icon"
-                      src={PLAN_ICONS[sub.plan] || "/img/P_Extro.png"}
+                      src={PLAN_ICONS[sub.plan] || "/img/P_Extro_v2.png"}
                       alt=""
                       aria-hidden="true"
                     />

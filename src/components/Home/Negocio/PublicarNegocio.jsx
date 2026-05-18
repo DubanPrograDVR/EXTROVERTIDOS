@@ -449,7 +449,7 @@ const PublicarNegocio = () => {
             </button>
             <div className="plan-block-modal__icon">
               <img
-                src="/img/SG_Extro.png"
+                src="/img/SG_Extro_v2.png"
                 alt="Superguía"
                 style={{
                   width: "160px",

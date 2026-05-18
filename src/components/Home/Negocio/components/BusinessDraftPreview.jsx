@@ -238,7 +238,7 @@ const BusinessDraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
         <div className="publication-modal__category-header">
           <div className="publication-modal__brand-group">
             <img
-              src="/img/SG_Extro.png"
+              src="/img/SG_Extro_v2.png"
               alt="Superguia"
               className="publication-modal__brand-logo"
             />

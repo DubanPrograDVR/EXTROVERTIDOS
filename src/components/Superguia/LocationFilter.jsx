@@ -70,7 +70,7 @@ export default function LocationFilter({
                 }`}
                 onClick={() => handleCitySelect(key)}>
                 <img
-                  src="/img/P_Extro.png"
+                  src="/img/P_Extro_v2.png"
                   alt=""
                   className="location-filter__icon"
                 />

@@ -27,7 +27,7 @@ const getFinishedPlanMessage = ({ plan }) => {
 const BLOCK_SCENARIOS = {
   // Sin plan contratado
   no_plan: {
-    customImage: "/img/P_Extro.png",
+    customImage: "/img/P_Extro_v2.png",
     iconColor: "#ff6600",
     title: "¡Estás a un paso de publicar tu panorama!",
     getMessage: () =>
@@ -37,7 +37,7 @@ const BLOCK_SCENARIOS = {
 
   // Plan vencido
   plan_expired: {
-    customImage: "/img/P_Extro.png",
+    customImage: "/img/P_Extro_v2.png",
     iconColor: "#e74c3c",
     title: "¡Tu plan ha terminado!",
     getMessage: getFinishedPlanMessage,
@@ -46,7 +46,7 @@ const BLOCK_SCENARIOS = {
 
   // Cupos agotados
   quota_exceeded: {
-    customImage: "/img/P_Extro.png",
+    customImage: "/img/P_Extro_v2.png",
     iconColor: "#f39c12",
     title: "¡Tu plan ha terminado!",
     getMessage: getFinishedPlanMessage,

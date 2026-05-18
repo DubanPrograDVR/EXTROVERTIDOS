@@ -29,7 +29,7 @@ export default function EmptyPanoramas({
         {/* Imagen/Logo */}
         <div className="empty-panoramas__image">
           <img
-            src="/img/P_Extro.png"
+            src="/img/P_Extro_v2.png"
             alt="Sin panoramas"
             className="empty-panoramas__logo"
           />

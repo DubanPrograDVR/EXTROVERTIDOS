@@ -725,7 +725,7 @@ export default function SuperguiaContainer() {
                 <div className="superguia__empty">
                   {/* Logo SG */}
                   <div className="superguia__empty-logo">
-                    <img src="/img/SG_Extro.png" alt="Superguía" />
+                    <img src="/img/SG_Extro_v2.png" alt="Superguía" />
                   </div>
 
                   <h2 className="superguia__empty-title">

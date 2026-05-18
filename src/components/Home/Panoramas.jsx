@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import "./styles/panoramas.css";
 
 // Imágenes servidas desde public/
-const pExtroIcon = "/img/P_Extro.png";
+const pExtroIcon = "/img/P_Extro_v2.png";
 const peopleImg = "/img/Home3.png";
 
 export default function Panoramas() {

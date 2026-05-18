@@ -20,7 +20,7 @@ export default function CategoryFilter({
               )
             }>
             <span className="category-filter__icon">
-              <img src="/img/P_Extro.png" alt="" />
+              <img src="/img/P_Extro_v2.png" alt="" />
             </span>
             <span className="category-filter__name">{category.nombre}</span>
           </button>

@@ -876,7 +876,7 @@ export default function PublicationModal({
           <div className="publication-modal__category-header">
             <div className="publication-modal__brand-group">
               <img
-                src="/img/P_Extro.png"
+                src="/img/P_Extro_v2.png"
                 alt="Extrovertidos"
                 className="publication-modal__brand-logo"
               />

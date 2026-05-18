@@ -19,7 +19,7 @@ import { useAdminPendingCount } from "../../hooks/useAdminPendingCount";
 import { useUnreadNotificationsCount } from "../../hooks/useUnreadNotificationsCount";
 
 // Imágenes servidas desde public/
-const logo = "/img/E_Extro_v2.png";
+const logo = "/img/E_Extro_v3.png";
 const manchaExtro = "/img/Mancha_Extro.png";
 import { useAuth } from "../../context/AuthContext";
 

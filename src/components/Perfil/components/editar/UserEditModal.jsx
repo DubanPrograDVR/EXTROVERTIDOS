@@ -263,7 +263,7 @@ export default function UserEditModal({
         {/* Header de categoría */}
         <div className="publication-modal__category-header">
           <img
-            src="/img/P_Extro.png"
+            src="/img/P_Extro_v2.png"
             alt="Extrovertidos"
             className="publication-modal__brand-logo"
           />
