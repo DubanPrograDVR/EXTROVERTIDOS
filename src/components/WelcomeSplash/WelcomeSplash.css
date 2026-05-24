@@ -71,6 +71,57 @@
   font-weight: 900;
 }
 
+.welcome-splash__countdown {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(58px, 1fr));
+  gap: clamp(0.45rem, 1.6vw, 0.85rem);
+  width: min(520px, 100%);
+  margin-top: clamp(1.15rem, 3vw, 2rem);
+}
+
+.welcome-splash__countdown-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: clamp(70px, 10vw, 92px);
+  padding: 0.75rem 0.55rem;
+  border: 1px solid rgba(255, 104, 0, 0.42);
+  border-radius: 8px;
+  background: rgba(255, 104, 0, 0.09);
+  box-shadow:
+    inset 0 0 24px rgba(255, 104, 0, 0.06),
+    0 0 24px rgba(255, 104, 0, 0.12);
+}
+
+.welcome-splash__countdown-item strong {
+  font-family: var(--font-family-heading, "Figtree", sans-serif);
+  font-size: clamp(1.45rem, 4vw, 2.65rem);
+  font-weight: 900;
+  line-height: 1;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 18px rgba(255, 104, 0, 0.35);
+}
+
+.welcome-splash__countdown-item span {
+  margin-top: 0.35rem;
+  font-size: clamp(0.66rem, 1.6vw, 0.82rem);
+  font-weight: 800;
+  letter-spacing: 0;
+  color: rgba(255, 255, 255, 0.72);
+  text-transform: uppercase;
+}
+
+.welcome-splash__release-note {
+  margin: clamp(0.8rem, 2vw, 1.25rem) 0 0;
+  max-width: min(520px, 100%);
+  font-size: clamp(0.76rem, 1.8vw, 0.95rem);
+  font-weight: 800;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.72);
+}
+
 @keyframes welcome-splash-fade-in {
   from {
     opacity: 0;
@@ -112,6 +163,20 @@
     width: clamp(145px, 56vw, 220px);
     max-height: 74px;
   }
+
+  .welcome-splash__countdown {
+    grid-template-columns: repeat(4, minmax(52px, 1fr));
+    max-width: 340px;
+  }
+
+  .welcome-splash__countdown-item {
+    min-height: 64px;
+    padding: 0.65rem 0.35rem;
+  }
+
+  .welcome-splash__release-note {
+    max-width: 320px;
+  }
 }
 
 @media (max-height: 620px) and (min-width: 681px) {
@@ -132,6 +197,14 @@
   .welcome-splash__title {
     font-size: clamp(1.15rem, 3vw, 2rem);
     line-height: 1.1;
+  }
+
+  .welcome-splash__countdown {
+    margin-top: 0.9rem;
+  }
+
+  .welcome-splash__countdown-item {
+    min-height: 64px;
   }
 }
 
