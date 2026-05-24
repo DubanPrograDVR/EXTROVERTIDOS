@@ -19,8 +19,10 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import {
   getCategories,
-  isPlanesEnabled,
+  getPlansVisibility,
   togglePlanesEnabled,
+  togglePanoramasEnabled,
+  toggleSuperguiaEnabled,
 } from "../../lib/database";
 
 // Componentes modulares
@@ -81,6 +83,8 @@ export default function AdminPanel() {
   });
   const [categories, setCategories] = useState([]);
   const [planesEnabled, setPlanesEnabled] = useState(true);
+  const [panoramasEnabled, setPanoramasEnabled] = useState(false);
+  const [superguiaEnabled, setSuperguiaEnabled] = useState(false);
   const [planesToggleLoading, setPlanesToggleLoading] = useState(false);
   const [pubsMenuOpen, setPubsMenuOpen] = useState(false);
   const [reviewMenuOpen, setReviewMenuOpen] = useState(false);
@@ -139,12 +143,14 @@ export default function AdminPanel() {
     loadCategories();
   }, []);
 
-  // Cargar estado de planes
+  // Cargar estado de planes (3 toggles)
   useEffect(() => {
     const loadPlanesStatus = async () => {
       try {
-        const enabled = await isPlanesEnabled();
-        setPlanesEnabled(enabled);
+        const visibility = await getPlansVisibility();
+        setPlanesEnabled(visibility.globalEnabled);
+        setPanoramasEnabled(visibility.panoramasEnabled);
+        setSuperguiaEnabled(visibility.superguiaEnabled);
       } catch (error) {
         console.error("Error cargando estado de planes:", error);
       }
@@ -152,16 +158,65 @@ export default function AdminPanel() {
     loadPlanesStatus();
   }, []);
 
-  // Toggle de planes
+  // Toggle GLOBAL: al activar, apaga los individuales (invariante mutua).
   const handleTogglePlanes = async () => {
     if (planesToggleLoading) return;
     setPlanesToggleLoading(true);
+    const prev = { planesEnabled, panoramasEnabled, superguiaEnabled };
     try {
       const newValue = !planesEnabled;
-      await togglePlanesEnabled(newValue, user.id);
+      // Optimista
       setPlanesEnabled(newValue);
+      if (newValue) {
+        setPanoramasEnabled(false);
+        setSuperguiaEnabled(false);
+      }
+      await togglePlanesEnabled(newValue, user.id);
     } catch (error) {
-      console.error("Error al cambiar estado de planes:", error);
+      console.error("Error al cambiar estado global de planes:", error);
+      setPlanesEnabled(prev.planesEnabled);
+      setPanoramasEnabled(prev.panoramasEnabled);
+      setSuperguiaEnabled(prev.superguiaEnabled);
+    } finally {
+      setPlanesToggleLoading(false);
+    }
+  };
+
+  // Toggle PANORAMAS: al activar, apaga el global.
+  const handleTogglePanoramas = async () => {
+    if (planesToggleLoading) return;
+    setPlanesToggleLoading(true);
+    const prev = { planesEnabled, panoramasEnabled, superguiaEnabled };
+    try {
+      const newValue = !panoramasEnabled;
+      setPanoramasEnabled(newValue);
+      if (newValue) setPlanesEnabled(false);
+      await togglePanoramasEnabled(newValue, user.id);
+    } catch (error) {
+      console.error("Error al cambiar estado de Panoramas:", error);
+      setPlanesEnabled(prev.planesEnabled);
+      setPanoramasEnabled(prev.panoramasEnabled);
+      setSuperguiaEnabled(prev.superguiaEnabled);
+    } finally {
+      setPlanesToggleLoading(false);
+    }
+  };
+
+  // Toggle SUPERGUÍA: al activar, apaga el global.
+  const handleToggleSuperguia = async () => {
+    if (planesToggleLoading) return;
+    setPlanesToggleLoading(true);
+    const prev = { planesEnabled, panoramasEnabled, superguiaEnabled };
+    try {
+      const newValue = !superguiaEnabled;
+      setSuperguiaEnabled(newValue);
+      if (newValue) setPlanesEnabled(false);
+      await toggleSuperguiaEnabled(newValue, user.id);
+    } catch (error) {
+      console.error("Error al cambiar estado de Superguía:", error);
+      setPlanesEnabled(prev.planesEnabled);
+      setPanoramasEnabled(prev.panoramasEnabled);
+      setSuperguiaEnabled(prev.superguiaEnabled);
     } finally {
       setPlanesToggleLoading(false);
     }
@@ -542,8 +597,12 @@ export default function AdminPanel() {
             chartData={chartData}
             onViewPending={() => setActiveTab("pending")}
             planesEnabled={planesEnabled}
+            panoramasEnabled={panoramasEnabled}
+            superguiaEnabled={superguiaEnabled}
             planesToggleLoading={planesToggleLoading}
             onTogglePlanes={handleTogglePlanes}
+            onTogglePanoramas={handleTogglePanoramas}
+            onToggleSuperguia={handleToggleSuperguia}
             isAdmin={isAdmin}
           />
         )}

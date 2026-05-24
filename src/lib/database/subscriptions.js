@@ -4,6 +4,7 @@
  */
 
 import { supabase } from "../supabase";
+import { MAX_DURACION_NEGOCIO } from "../planRules";
 
 const PANORAMA_PLANS = [
   "panorama_unica",
@@ -134,6 +135,100 @@ export async function getActiveSuperguiaSubscription(userId) {
   }
 
   return data;
+}
+
+/**
+ * Obtiene la suscripción superguía activa junto con metadata para decidir
+ * si el usuario puede reactivar/republicar un negocio expirado.
+ *
+ * REGLA DE NEGOCIO:
+ * - Cada cupo Superguía sirve para UNA publicación activa.
+ * - Si el usuario ya tiene un negocio publicado y NO expirado, no tiene cupo
+ *   disponible aunque la suscripción tenga slots libres: ese slot está
+ *   "ocupado" por el negocio activo. Debe esperar a que venza (o no podrá
+ *   publicar otro).
+ * - Una vez que el cupo de la suscripción más reciente está consumido
+ *   (`used >= total`), el usuario debe comprar Superguía nuevamente para
+ *   poder publicar/reactivar otro negocio.
+ *
+ * Solo se considera la suscripción más reciente (no se suman todas) para
+ * evitar que cupos viejos den falsos positivos.
+ *
+ * @param {string} userId - ID del usuario
+ * @returns {Promise<{subscription: Object|null, hasQuota: boolean, isExpired: boolean, diasRestantesPlan: number|null, hasActiveBusiness: boolean}>}
+ */
+export async function getActiveSuperguiaWithQuota(userId) {
+  if (!userId) {
+    return {
+      subscription: null,
+      hasQuota: false,
+      isExpired: false,
+      diasRestantesPlan: null,
+      hasActiveBusiness: false,
+    };
+  }
+
+  const { data: subscriptions, error } = await supabase
+    .from("subscriptions")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("estado", "activa")
+    .eq("plan", "superguia")
+    .order("created_at", { ascending: false });
+
+  if (error || !subscriptions?.length) {
+    if (error) console.error("Error al obtener suscripciones superguía:", error);
+    return {
+      subscription: null,
+      hasQuota: false,
+      isExpired: false,
+      diasRestantesPlan: null,
+      hasActiveBusiness: false,
+    };
+  }
+
+  // Solo la suscripción más reciente cuenta — comprar de nuevo arranca de cero.
+  const latest = subscriptions[0];
+  const totalPub = Number(latest.publicaciones_total ?? 0);
+  const usedPub = Number(latest.publicaciones_usadas ?? 0);
+
+  const isExpired = isSubscriptionExpired(latest);
+  const hasSubscriptionSlot = !isExpired && usedPub < totalPub;
+
+  // Verificar si el usuario ya tiene un negocio publicado y NO expirado.
+  // Si lo tiene, ese slot está "en uso" y no se puede consumir otro.
+  const nowIso = new Date().toISOString();
+  const { count: activeBusinessCount, error: bizErr } = await supabase
+    .from("businesses")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("estado", "publicado")
+    .or(`publication_expires_at.is.null,publication_expires_at.gt.${nowIso}`);
+
+  if (bizErr) {
+    console.error("Error al contar negocios activos del usuario:", bizErr);
+  }
+
+  const hasActiveBusiness = (activeBusinessCount ?? 0) > 0;
+
+  // Regla final: cupo disponible solo si hay slot en la suscripción Y el
+  // usuario NO tiene un negocio activo no expirado ocupando ese slot.
+  const hasQuota = hasSubscriptionSlot && !hasActiveBusiness;
+
+  let diasRestantesPlan = null;
+  if (latest.fecha_fin) {
+    const diffMs = new Date(latest.fecha_fin).getTime() - Date.now();
+    const rawDias = diffMs > 0 ? Math.ceil(diffMs / 86400000) : 0;
+    diasRestantesPlan = Math.min(rawDias, MAX_DURACION_NEGOCIO);
+  }
+
+  return {
+    subscription: latest,
+    hasQuota,
+    isExpired,
+    diasRestantesPlan,
+    hasActiveBusiness,
+  };
 }
 
 /**

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { IMAGE_CONFIG } from "../constants";
 
 // Array vacío estable para evitar re-renders innecesarios
@@ -46,38 +46,32 @@ const useImageManager = (options = {}) => {
   const isMountedRef = useRef(true);
 
   /**
-   * Limpia Object URLs específicas
-   */
-  const revokeUrls = useCallback((urls) => {
-    urls.forEach((url) => {
-      if (url && url.startsWith("blob:")) {
-        URL.revokeObjectURL(url);
-        createdUrlsRef.current.delete(url);
-      }
-    });
-  }, []);
-
-  /**
    * Cleanup al desmontar
    */
   useEffect(() => {
     isMountedRef.current = true;
+    // Snapshot del ref para usar en cleanup (evita warning de ref mutable)
+    const createdUrls = createdUrlsRef.current;
 
     return () => {
       isMountedRef.current = false;
       // Revocar todas las URLs creadas
-      createdUrlsRef.current.forEach((url) => {
+      createdUrls.forEach((url) => {
         URL.revokeObjectURL(url);
       });
-      createdUrlsRef.current.clear();
+      createdUrls.clear();
     };
   }, []);
 
   /**
    * Actualiza imágenes existentes (para edición)
+   * Sincroniza estado derivado de props cuando llegan imágenes iniciales
+   * (caso edición con carga asíncrona). Patrón legítimo de sync external→internal.
    */
   useEffect(() => {
     if (initialExistingImages.length > 0 && existingImages.length === 0) {
+      // Sync inicial defensivo: solo si el estado interno aún está vacío.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setExistingImages(initialExistingImages);
       setPreviewUrls((prev) => {
         // Solo agregar si no hay previews aún

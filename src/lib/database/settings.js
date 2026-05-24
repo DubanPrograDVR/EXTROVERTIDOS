@@ -58,27 +58,127 @@ export async function updateAppSetting(key, value, userId, description) {
   return true;
 }
 
+// =============================
+// VISIBILIDAD DE PLANES
+// =============================
+// Existen tres flags en app_settings:
+//   - planes_enabled (global)    → si true, fuerza a mostrar ambas categorías
+//   - panoramas_enabled          → si true, muestra solo Panoramas
+//   - superguia_enabled          → si true, muestra solo Superguía
+// Invariante: planes_enabled y los individuales son mutuamente excluyentes.
+// Activar global apaga los individuales; activar un individual apaga el global.
+
+export const PLANES_ENABLED_KEY = "planes_enabled";
+export const PANORAMAS_ENABLED_KEY = "panoramas_enabled";
+export const SUPERGUIA_ENABLED_KEY = "superguia_enabled";
+
 /**
- * Verificar si los planes están habilitados
- * Retorna true por defecto si no se puede obtener la configuración
- * (ej: tabla no existe aún o error de conexión)
+ * Verificar si los planes están habilitados (toggle global).
+ * Retorna true por defecto si no se puede obtener la configuración.
  * @returns {Promise<boolean>}
  */
 export async function isPlanesEnabled() {
-  const value = await getAppSetting("planes_enabled");
-  // Si no se pudo obtener (null), asumir habilitado por defecto
+  const value = await getAppSetting(PLANES_ENABLED_KEY);
   if (value === null) return true;
   return value === true;
 }
 
 /**
- * Activar o desactivar los planes
+ * Verificar si Panoramas está habilitado de forma individual.
+ * Default: false (si no existe la clave aún).
+ * @returns {Promise<boolean>}
+ */
+export async function isPanoramasEnabled() {
+  const value = await getAppSetting(PANORAMAS_ENABLED_KEY);
+  return value === true;
+}
+
+/**
+ * Verificar si Superguía está habilitada de forma individual.
+ * Default: false (si no existe la clave aún).
+ * @returns {Promise<boolean>}
+ */
+export async function isSuperguiaEnabled() {
+  const value = await getAppSetting(SUPERGUIA_ENABLED_KEY);
+  return value === true;
+}
+
+/**
+ * Obtiene la visibilidad combinada de planes.
+ * @returns {Promise<{globalEnabled:boolean, panoramasEnabled:boolean, superguiaEnabled:boolean, panoramasVisible:boolean, superguiaVisible:boolean, anyVisible:boolean}>}
+ */
+export async function getPlansVisibility() {
+  const [globalEnabled, panoramasEnabled, superguiaEnabled] = await Promise.all(
+    [isPlanesEnabled(), isPanoramasEnabled(), isSuperguiaEnabled()],
+  );
+
+  const panoramasVisible = globalEnabled || panoramasEnabled;
+  const superguiaVisible = globalEnabled || superguiaEnabled;
+
+  return {
+    globalEnabled,
+    panoramasEnabled,
+    superguiaEnabled,
+    panoramasVisible,
+    superguiaVisible,
+    anyVisible: panoramasVisible || superguiaVisible,
+  };
+}
+
+/**
+ * Activar o desactivar el toggle GLOBAL de planes.
+ * Si se activa, también apaga los toggles individuales para preservar la invariante.
  * @param {boolean} enabled
  * @param {string} userId - ID del admin
  * @returns {Promise<boolean>}
  */
 export async function togglePlanesEnabled(enabled, userId) {
-  return updateAppSetting("planes_enabled", enabled, userId);
+  if (enabled) {
+    // Activar global → apagar individuales
+    await Promise.all([
+      updateAppSetting(PLANES_ENABLED_KEY, true, userId),
+      updateAppSetting(PANORAMAS_ENABLED_KEY, false, userId),
+      updateAppSetting(SUPERGUIA_ENABLED_KEY, false, userId),
+    ]);
+    return true;
+  }
+  return updateAppSetting(PLANES_ENABLED_KEY, false, userId);
+}
+
+/**
+ * Activar o desactivar el toggle individual de Panoramas.
+ * Si se activa, también apaga el toggle global para preservar la invariante.
+ * @param {boolean} enabled
+ * @param {string} userId
+ * @returns {Promise<boolean>}
+ */
+export async function togglePanoramasEnabled(enabled, userId) {
+  if (enabled) {
+    await Promise.all([
+      updateAppSetting(PANORAMAS_ENABLED_KEY, true, userId),
+      updateAppSetting(PLANES_ENABLED_KEY, false, userId),
+    ]);
+    return true;
+  }
+  return updateAppSetting(PANORAMAS_ENABLED_KEY, false, userId);
+}
+
+/**
+ * Activar o desactivar el toggle individual de Superguía.
+ * Si se activa, también apaga el toggle global para preservar la invariante.
+ * @param {boolean} enabled
+ * @param {string} userId
+ * @returns {Promise<boolean>}
+ */
+export async function toggleSuperguiaEnabled(enabled, userId) {
+  if (enabled) {
+    await Promise.all([
+      updateAppSetting(SUPERGUIA_ENABLED_KEY, true, userId),
+      updateAppSetting(PLANES_ENABLED_KEY, false, userId),
+    ]);
+    return true;
+  }
+  return updateAppSetting(SUPERGUIA_ENABLED_KEY, false, userId);
 }
 
 // =============================
@@ -143,7 +243,7 @@ export async function updatePlanPrices(prices, userId) {
 
   // 2. Si UPDATE no afectó filas, la fila no existe → INSERT
   if (!updated || updated.length === 0) {
-    console.log("[updatePlanPrices] Fila no existe, insertando...");
+    import.meta.env.DEV && console.log("[updatePlanPrices] Fila no existe, insertando...");
     const { error: insertError } = await supabase.from("app_settings").insert({
       key: "plan_prices",
       value: normalized,
@@ -180,6 +280,6 @@ export async function updatePlanPrices(prices, userId) {
     throw new Error("Los precios guardados no coinciden con los enviados");
   }
 
-  console.log("[updatePlanPrices] Precios guardados exitosamente:", saved);
+  import.meta.env.DEV && console.log("[updatePlanPrices] Precios guardados exitosamente:", saved);
   return true;
 }

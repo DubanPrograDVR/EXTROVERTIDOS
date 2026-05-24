@@ -23,8 +23,11 @@ export function useRealtimeRefetch({
   enabled = true,
   debounceMs = 500,
 }) {
+  // Mantener referencia estable al callback sin mutar durante el render.
   const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
   useEffect(() => {
     if (!enabled || !table) return undefined;

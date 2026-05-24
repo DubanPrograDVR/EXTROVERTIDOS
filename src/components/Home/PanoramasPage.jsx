@@ -31,6 +31,15 @@ import { useAuth } from "../../context/AuthContext";
 import { useRealtimeRefetch } from "../../hooks/useRealtimeRefetch";
 import { useHighlightCard } from "../../hooks/useHighlightCard";
 import { LOCATIONS, mapCategoriesToUI } from "../Superguia/data";
+import {
+  trackSearch,
+  trackFilter,
+  trackFiltersCleared,
+  trackPublicationView,
+  trackBusinessView,
+  trackCarouselClick,
+  trackPaginationUse,
+} from "../../lib/analytics";
 import "./styles/panoramas-page.css";
 
 const ITEMS_PER_PAGE = 16;
@@ -63,6 +72,7 @@ export default function PanoramasPage() {
       if (page === currentPage) return;
       shouldScrollToFiltersRef.current = true;
       setCurrentPage(page);
+      trackPaginationUse(page);
     },
     [currentPage],
   );
@@ -192,9 +202,9 @@ export default function PanoramasPage() {
       setSelectedComuna(null);
       setCurrentPage(1);
 
-      // Actualizar URL para compartir/navegar (sin recargar datos)
       if (city) {
         const cityName = LOCATIONS[city]?.nombre;
+        trackFilter("city", city, cityName);
         if (cityName) {
           setSearchParams({ ciudad: cityName }, { replace: true });
           selectCity(cityName);
@@ -209,26 +219,42 @@ export default function PanoramasPage() {
   const handleCategoryChange = useCallback((category) => {
     setSelectedCategory(category);
     setCurrentPage(1);
-  }, []);
+    if (category) {
+      const cat = categories.find((c) => c.id === category);
+      trackFilter("category", category, cat?.nombre || category);
+    }
+  }, [categories]);
 
   const handleComunaChange = useCallback((comuna) => {
     setSelectedComuna(comuna);
     setCurrentPage(1);
+    if (comuna) {
+      trackFilter("comuna", comuna, comuna);
+    }
   }, []);
 
   const handleDateChange = useCallback((date) => {
     setSelectedDate(date);
     setCurrentPage(1);
+    if (date) {
+      trackFilter("date", date, date);
+    }
   }, []);
 
   const handlePriceChange = useCallback((price) => {
     setSelectedPrice(price);
     setCurrentPage(1);
+    if (price) {
+      trackFilter("price", price, price);
+    }
   }, []);
 
   const handleSearch = useCallback((query) => {
     setSearchQuery(query);
     setCurrentPage(1);
+    if (query?.trim()) {
+      trackSearch(query, "panoramas");
+    }
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -240,11 +266,13 @@ export default function PanoramasPage() {
     setSearchQuery("");
     setCurrentPage(1);
     setSearchParams({});
+    trackFiltersCleared();
   }, [setSearchParams]);
 
   // Handlers para el modal
   const handleEventClick = useCallback(async (event) => {
     setSelectedEvent(event);
+    trackPublicationView(event);
     if (event?.id) {
       try {
         const fullEvent = await getEventById(event.id);
@@ -265,6 +293,7 @@ export default function PanoramasPage() {
   const handleBusinessClick = useCallback((business) => {
     setSelectedBusiness(business);
     setIsBusinessModalOpen(true);
+    trackBusinessView(business);
   }, []);
 
   const handleCloseBusinessModal = useCallback(() => {

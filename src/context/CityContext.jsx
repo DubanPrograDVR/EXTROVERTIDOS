@@ -56,7 +56,6 @@ export const CityProvider = ({ children }) => {
   // Navegar a la ciudad anterior
   const prevCity = () => {
     const newIndex = currentIndex === 0 ? CITIES.length - 1 : currentIndex - 1;
-    console.log("prevCity:", CITIES[newIndex]?.nombre);
     setCurrentIndex(newIndex);
     setSelectedCity(CITIES[newIndex]);
   };
@@ -64,7 +63,6 @@ export const CityProvider = ({ children }) => {
   // Navegar a la ciudad siguiente
   const nextCity = () => {
     const newIndex = currentIndex === CITIES.length - 1 ? 0 : currentIndex + 1;
-    console.log("nextCity:", CITIES[newIndex]?.nombre);
     setCurrentIndex(newIndex);
     setSelectedCity(CITIES[newIndex]);
   };

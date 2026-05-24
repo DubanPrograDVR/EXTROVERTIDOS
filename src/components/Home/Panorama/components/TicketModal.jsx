@@ -62,6 +62,8 @@ const TicketModal = ({ isOpen, onClose, currentValues, onSave }) => {
   // Sincronizar con valores externos cuando cambian
   useEffect(() => {
     if (isOpen) {
+      // Init de form local al abrir el modal con valores externos. Patrón legítimo.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedType(currentValues?.tipo_entrada || "");
       setPrecio(currentValues?.precio || "");
       setUrlVenta(currentValues?.url_venta || "");

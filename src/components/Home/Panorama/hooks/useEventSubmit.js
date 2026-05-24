@@ -17,6 +17,7 @@ import {
   normalizeSocialLinks,
   wrapPersistedFields,
 } from "../../../../lib/textWrap";
+import { trackPublicationCreated } from "../../../../lib/analytics";
 
 /**
  * Hook especializado para manejar el proceso de envío de eventos
@@ -335,6 +336,12 @@ const useEventSubmit = ({
               "¡Publicación actualizada exitosamente!",
               "success",
             );
+            trackPublicationCreated({
+              category: eventData.category_id,
+              city: formData.provincia,
+              comuna: formData.comuna?.trim(),
+              isEdit: true,
+            });
           }
         } else {
           // === CREAR NUEVO EVENTO ===
@@ -392,6 +399,15 @@ const useEventSubmit = ({
               "success",
             );
           }
+
+          if (isMountedRef.current) {
+            trackPublicationCreated({
+              category: eventData.category_id,
+              city: formData.provincia,
+              comuna: formData.comuna?.trim(),
+              isEdit: false,
+            });
+          }
         }
 
         // 5. ELIMINAR BORRADOR SI EXISTE
@@ -427,7 +443,7 @@ const useEventSubmit = ({
           error.name === "AbortError" ||
           error.message === "Operación cancelada"
         ) {
-          console.log("Submit cancelado");
+          import.meta.env.DEV && console.log("Submit cancelado");
           return false;
         }
 

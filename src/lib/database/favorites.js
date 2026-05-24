@@ -80,10 +80,9 @@ export async function isFavorite(userId, eventId) {
     .select("id")
     .eq("user_id", userId)
     .eq("event_id", eventId)
-    .single();
+    .maybeSingle();
 
-  if (error && error.code !== "PGRST116") {
-    // PGRST116 = no rows returned
+  if (error) {
     console.error("Error verificando favorito:", error);
   }
 
@@ -134,7 +133,7 @@ export async function addFavorite(userId, eventId) {
   if (error) {
     // Si ya existe, no es error crítico
     if (error.code === "23505") {
-      console.log("El evento ya está en favoritos");
+      import.meta.env.DEV && console.log("El evento ya está en favoritos");
       return { alreadyExists: true };
     }
     console.error("Error agregando favorito:", error);

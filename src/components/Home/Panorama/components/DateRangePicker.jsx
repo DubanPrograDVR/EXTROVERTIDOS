@@ -223,12 +223,61 @@ const DateRangePicker = ({
     else if (esMultidia && fechaFin) setSelectionMode("range");
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ===== MODE SWITCHING =====
+  // Declarado antes del useEffect que lo usa para evitar TDZ.
+  const switchToSingle = useCallback(() => {
+    setSelectionMode("single");
+    onChange({
+      target: { name: "es_multidia", value: false, type: "checkbox" },
+    });
+    onChange({
+      target: { name: "es_recurrente", value: false, type: "checkbox" },
+    });
+    onChange({ target: { name: "fecha_fin", value: "" } });
+    onChange({ target: { name: "fechas_recurrencia", value: [] } });
+    onChange({ target: { name: "dia_recurrencia", value: "" } });
+    onChange({ target: { name: "cantidad_repeticiones", value: 2 } });
+    setRangeStep("start");
+  }, [onChange]);
+
+  const switchToRange = useCallback(() => {
+    setSelectionMode("range");
+    onChange({
+      target: { name: "es_multidia", value: true, type: "checkbox" },
+    });
+    onChange({
+      target: { name: "es_recurrente", value: false, type: "checkbox" },
+    });
+    onChange({ target: { name: "fechas_recurrencia", value: [] } });
+    onChange({ target: { name: "dia_recurrencia", value: "" } });
+    onChange({ target: { name: "cantidad_repeticiones", value: 2 } });
+    if (fechaEvento) {
+      setRangeStep("end");
+    } else {
+      setRangeStep("start");
+    }
+  }, [onChange, fechaEvento]);
+
+  const switchToSpecific = useCallback(() => {
+    setSelectionMode("specific");
+    onChange({
+      target: { name: "es_recurrente", value: true, type: "checkbox" },
+    });
+    onChange({
+      target: { name: "es_multidia", value: false, type: "checkbox" },
+    });
+    onChange({ target: { name: "fecha_fin", value: "" } });
+    const initial = fechaEvento ? [fechaEvento] : [];
+    onChange({ target: { name: "fechas_recurrencia", value: initial } });
+    setRangeStep("start");
+  }, [onChange, fechaEvento]);
+
   // Force single mode if current mode is not allowed by plan
   useEffect(() => {
     if (enabledModes && !enabledModes.includes(selectionMode)) {
       switchToSingle();
     }
-  }, [enabledModes]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [enabledModes, selectionMode, switchToSingle]);
 
   useEffect(() => {
     if (selectionMode === "range") {
@@ -266,54 +315,6 @@ const DateRangePicker = ({
     const hoy = new Date(todayISO + "T00:00:00");
     return Math.ceil((evento - hoy) / (1000 * 60 * 60 * 24));
   }, [fechaEvento, todayISO]);
-
-  // ===== MODE SWITCHING =====
-  const switchToSingle = () => {
-    setSelectionMode("single");
-    onChange({
-      target: { name: "es_multidia", value: false, type: "checkbox" },
-    });
-    onChange({
-      target: { name: "es_recurrente", value: false, type: "checkbox" },
-    });
-    onChange({ target: { name: "fecha_fin", value: "" } });
-    onChange({ target: { name: "fechas_recurrencia", value: [] } });
-    onChange({ target: { name: "dia_recurrencia", value: "" } });
-    onChange({ target: { name: "cantidad_repeticiones", value: 2 } });
-    setRangeStep("start");
-  };
-
-  const switchToRange = () => {
-    setSelectionMode("range");
-    onChange({
-      target: { name: "es_multidia", value: true, type: "checkbox" },
-    });
-    onChange({
-      target: { name: "es_recurrente", value: false, type: "checkbox" },
-    });
-    onChange({ target: { name: "fechas_recurrencia", value: [] } });
-    onChange({ target: { name: "dia_recurrencia", value: "" } });
-    onChange({ target: { name: "cantidad_repeticiones", value: 2 } });
-    if (fechaEvento) {
-      setRangeStep("end");
-    } else {
-      setRangeStep("start");
-    }
-  };
-
-  const switchToSpecific = () => {
-    setSelectionMode("specific");
-    onChange({
-      target: { name: "es_recurrente", value: true, type: "checkbox" },
-    });
-    onChange({
-      target: { name: "es_multidia", value: false, type: "checkbox" },
-    });
-    onChange({ target: { name: "fecha_fin", value: "" } });
-    const initial = fechaEvento ? [fechaEvento] : [];
-    onChange({ target: { name: "fechas_recurrencia", value: initial } });
-    setRangeStep("start");
-  };
 
   // ===== NAVIGATION =====
   const goToPrevMonth = () => {

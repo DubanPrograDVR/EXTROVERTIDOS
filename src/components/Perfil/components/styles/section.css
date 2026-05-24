@@ -292,6 +292,50 @@
   color: #f44336;
 }
 
+.status-badge--expired {
+  background: rgba(156, 163, 175, 0.2);
+  color: #9ca3af;
+}
+
+.status-badge__sg-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.perfil-business-card__plan-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 4px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(76, 175, 80, 0.12);
+  color: #4caf50;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.perfil-business-card__expired-block {
+  margin: 12px 0;
+  padding: 14px;
+  border-radius: 10px;
+  background: rgba(156, 163, 175, 0.12);
+  border: 1px solid rgba(156, 163, 175, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.perfil-business-card__expired-msg {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #d1d5db;
+  line-height: 1.4;
+  text-align: center;
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .perfil-negocios__grid {

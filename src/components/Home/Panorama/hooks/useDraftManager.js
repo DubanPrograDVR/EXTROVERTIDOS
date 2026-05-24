@@ -170,7 +170,7 @@ const useDraftManager = (options = {}) => {
         // Retry automático (máximo 2 intentos)
         if (retryCountRef.current < 2) {
           retryCountRef.current++;
-          console.log(
+          import.meta.env.DEV && console.log(
             `Reintentando guardar borrador (intento ${retryCountRef.current})`,
           );
 
@@ -260,7 +260,7 @@ const useDraftManager = (options = {}) => {
 
     try {
       await deleteDraft(currentDraftId, userId);
-      console.log("Borrador eliminado tras publicar");
+      import.meta.env.DEV && console.log("Borrador eliminado tras publicar");
     } catch (error) {
       console.warn("No se pudo eliminar el borrador:", error);
       // Silencioso - no afecta al usuario

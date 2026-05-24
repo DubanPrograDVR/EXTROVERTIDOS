@@ -40,9 +40,9 @@ export async function hasUserLiked(userId, eventId) {
     .select("id")
     .eq("user_id", userId)
     .eq("event_id", eventId)
-    .single();
+    .maybeSingle();
 
-  if (error && error.code !== "PGRST116") {
+  if (error) {
     console.error("Error verificando like:", error);
   }
 

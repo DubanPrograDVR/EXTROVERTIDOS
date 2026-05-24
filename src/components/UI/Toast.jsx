@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCheckCircle,
@@ -21,21 +21,22 @@ const Toast = ({ message, type = "success", duration = 4000, onClose }) => {
     };
   }, []);
 
+  // Declarado ANTES del useEffect que lo usa para evitar "used before declared".
+  const handleClose = useCallback(() => {
+    setIsExiting(true);
+    closeTimerRef.current = setTimeout(() => {
+      setIsVisible(false);
+      if (onClose) onClose();
+    }, 300);
+  }, [onClose]);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       handleClose();
     }, duration);
 
     return () => clearTimeout(timer);
-  }, [duration]);
-
-  const handleClose = () => {
-    setIsExiting(true);
-    closeTimerRef.current = setTimeout(() => {
-      setIsVisible(false);
-      if (onClose) onClose();
-    }, 300);
-  };
+  }, [duration, handleClose]);
 
   const icons = {
     success: faCheckCircle,

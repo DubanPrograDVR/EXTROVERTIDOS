@@ -124,16 +124,20 @@ const withTimeout = (promise, ms, errorMessage) => {
 const compressImage = async (file) => {
   // Si el archivo es muy pequeño (< 200KB), no comprimir
   if (file.size < 200 * 1024) {
-    console.log(
-      `📷 Imagen pequeña (${(file.size / 1024).toFixed(2)}KB), saltando compresión`,
-    );
+    if (import.meta.env.DEV) {
+      console.log(
+        `📷 Imagen pequeña (${(file.size / 1024).toFixed(2)}KB), saltando compresión`,
+      );
+    }
     return file;
   }
 
   try {
-    console.log(
-      `📷 Comprimiendo imagen: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`,
-    );
+    if (import.meta.env.DEV) {
+      console.log(
+        `📷 Comprimiendo imagen: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`,
+      );
+    }
 
     const compressionOptions = getCompressionOptions(file);
 
@@ -147,9 +151,11 @@ const compressImage = async (file) => {
     const originalSize = (file.size / 1024 / 1024).toFixed(2);
     const compressedSize = (compressedFile.size / 1024 / 1024).toFixed(2);
 
-    console.log(
-      `✅ Imagen comprimida: ${originalSize}MB → ${compressedSize}MB`,
-    );
+    if (import.meta.env.DEV) {
+      console.log(
+        `✅ Imagen comprimida: ${originalSize}MB → ${compressedSize}MB`,
+      );
+    }
 
     return compressedFile;
   } catch (error) {
@@ -180,9 +186,11 @@ const compressImage = async (file) => {
  * @returns {Promise<string>} URL pública de la imagen
  */
 export const uploadEventImage = async (file, userId, compress = true) => {
-  console.log(
-    `📤 Iniciando subida de imagen: ${file.name}, tipo: ${file.type}, tamaño: ${(file.size / 1024 / 1024).toFixed(2)}MB`,
-  );
+  if (import.meta.env.DEV) {
+    console.log(
+      `📤 Iniciando subida de imagen: ${file.name}, tipo: ${file.type}, tamaño: ${(file.size / 1024 / 1024).toFixed(2)}MB`,
+    );
+  }
 
   try {
     // NOTA: NO llamar verifySession() / getSession() / refreshSession() aquí.
@@ -193,15 +201,15 @@ export const uploadEventImage = async (file, userId, compress = true) => {
     // esperando INFINITAMENTE (acquireTimeout=-1), causando loading infinito.
 
     // 🔍 PASO 1: Validar formato de imagen
-    console.log("🔍 Validando formato...");
+    import.meta.env.DEV && console.log("🔍 Validando formato...");
     validateImageFormat(file);
-    console.log("✅ Formato válido");
+    import.meta.env.DEV && console.log("✅ Formato válido");
 
     // 📦 PASO 3: Comprimir imagen si está habilitado
     let fileToUpload = file;
 
     if (compress) {
-      console.log("📦 Iniciando compresión...");
+      import.meta.env.DEV && console.log("📦 Iniciando compresión...");
       try {
         fileToUpload = await compressImage(file);
       } catch (compressError) {
@@ -225,7 +233,7 @@ export const uploadEventImage = async (file, userId, compress = true) => {
       .substring(7)}.${fileExt}`;
     const filePath = `events/${fileName}`;
 
-    console.log(`📤 Subiendo a Supabase: ${filePath}`);
+    import.meta.env.DEV && console.log(`📤 Subiendo a Supabase: ${filePath}`);
 
     const uploadPromise = supabase.storage
       .from("Imagenes")
@@ -282,7 +290,7 @@ export const uploadEventImage = async (file, userId, compress = true) => {
       data: { publicUrl },
     } = supabase.storage.from("Imagenes").getPublicUrl(filePath);
 
-    console.log(`✅ Imagen subida exitosamente: ${publicUrl}`);
+    import.meta.env.DEV && console.log(`✅ Imagen subida exitosamente: ${publicUrl}`);
     return publicUrl;
   } catch (error) {
     console.error(`❌ Error en uploadEventImage para ${file.name}:`, error);
@@ -384,7 +392,7 @@ export const deleteEventImage = async (imageUrl, userId) => {
       throw error;
     }
 
-    console.log("✅ Imagen eliminada:", filePath);
+    import.meta.env.DEV && console.log("✅ Imagen eliminada:", filePath);
     return true;
   } catch (error) {
     console.error("❌ Error en deleteEventImage:", error);
@@ -399,7 +407,7 @@ export const deleteEventImage = async (imageUrl, userId) => {
  * @returns {Promise<string>} URL pública de la imagen
  */
 export const uploadBusinessImage = async (file, userId) => {
-  console.log(`📤 Subiendo imagen de negocio: ${file.name}`);
+  import.meta.env.DEV && console.log(`📤 Subiendo imagen de negocio: ${file.name}`);
 
   try {
     // NOTA: NO llamar verifySession() aquí — ver comentario en uploadEventImage().
@@ -432,7 +440,7 @@ export const uploadBusinessImage = async (file, userId) => {
       data: { publicUrl },
     } = supabase.storage.from("Imagenes").getPublicUrl(filePath);
 
-    console.log(`✅ Imagen de negocio subida: ${publicUrl}`);
+    import.meta.env.DEV && console.log(`✅ Imagen de negocio subida: ${publicUrl}`);
     return publicUrl;
   } catch (error) {
     console.error("❌ Error en uploadBusinessImage:", error);

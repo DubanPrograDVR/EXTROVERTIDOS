@@ -8,9 +8,16 @@ import {
   useMemo,
 } from "react";
 import { supabase } from "../lib/supabase";
-import { ROLES, checkBanStatus, ensureProfileExists } from "../lib/database";
+import { ROLES, checkBanStatus, ensureProfileExists, getBusinessesByUser } from "../lib/database";
+import { getDiasRestantesNegocio } from "../lib/database/businesses";
 import { useToast } from "./ToastContext";
 import BannedUserCard from "../components/UI/BannedUserCard";
+import {
+  setUserContext,
+  trackLogin,
+  trackSignUp,
+  trackLogout,
+} from "../lib/analytics";
 
 // ──────────────────────────────────────────────────────────────
 // HELPER: Logger condicional (solo en dev)
@@ -31,6 +38,8 @@ const AUTH_ACTIONS = {
   INITIALIZED: "INITIALIZED",
   SET_BAN: "SET_BAN",
   CLEAR_BAN: "CLEAR_BAN",
+  SET_LOGIN_REMINDER: "SET_LOGIN_REMINDER",
+  CLEAR_LOGIN_REMINDER: "CLEAR_LOGIN_REMINDER",
 };
 
 const initialState = {
@@ -40,6 +49,7 @@ const initialState = {
   initialized: false,
   banInfo: null,
   showBanCard: false,
+  loginReminder: { show: false, data: null },
 };
 
 function authReducer(state, action) {
@@ -58,6 +68,7 @@ function authReducer(state, action) {
         user: null,
         userRole: ROLES.USER,
         loading: false,
+        loginReminder: { show: false, data: null },
       };
 
     case AUTH_ACTIONS.SET_LOADING:
@@ -78,6 +89,18 @@ function authReducer(state, action) {
         ...state,
         banInfo: null,
         showBanCard: false,
+      };
+
+    case AUTH_ACTIONS.SET_LOGIN_REMINDER:
+      return {
+        ...state,
+        loginReminder: { show: true, data: action.payload },
+      };
+
+    case AUTH_ACTIONS.CLEAR_LOGIN_REMINDER:
+      return {
+        ...state,
+        loginReminder: { show: false, data: null },
       };
 
     default:
@@ -111,7 +134,7 @@ export const useAuth = () => {
  */
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
-  const { user, userRole, loading, initialized, banInfo, showBanCard } = state;
+  const { user, userRole, loading, initialized, banInfo, showBanCard, loginReminder } = state;
 
   // Toast vive en su propio contexto ahora
   const { showToast } = useToast();
@@ -123,11 +146,14 @@ export const AuthProvider = ({ children }) => {
   // Ref para user en el listener de visibilidad (evita re-registrar el listener)
   const userRef = useRef(user);
   const showToastRef = useRef(showToast);
+  const loginMethodRef = useRef(null);
+  const roleRef = useRef(ROLES.USER);
 
   // Mantener refs sincronizadas sin causar re-renders
   useEffect(() => {
     userRef.current = user;
     showToastRef.current = showToast;
+    roleRef.current = userRole;
   });
 
   // ── Cargar rol con cache y deduplicación de promesas ─────
@@ -232,6 +258,7 @@ export const AuthProvider = ({ children }) => {
               type: AUTH_ACTIONS.SET_AUTH,
               payload: { user: session.user, role },
             });
+            setUserContext(session.user, role);
           }
         }
       } catch (error) {
@@ -285,6 +312,8 @@ export const AuthProvider = ({ children }) => {
               payload: { user: session.user, role: cachedRole },
             });
 
+            setUserContext(session.user, cachedRole);
+
             // Diferir ban check y role load para ejecutarse FUERA del lock
             setTimeout(async () => {
               try {
@@ -307,6 +336,9 @@ export const AuthProvider = ({ children }) => {
                     type: AUTH_ACTIONS.SET_AUTH,
                     payload: { user: session.user, role },
                   });
+                  setUserContext(session.user, role);
+                } else {
+                  setUserContext(session.user, roleCache.current.role);
                 }
               } catch (err) {
                 log.error("Error en post-SIGNED_IN:", err);
@@ -316,15 +348,62 @@ export const AuthProvider = ({ children }) => {
             // Solo mostrar toast en login real, no en re-validaciones
             // por cambio de pestaña o visibilitychange
             if (isNewLogin) {
+              const method =
+                session.user?.app_metadata?.provider ||
+                loginMethodRef.current ||
+                "password";
+              trackLogin(method);
+              loginMethodRef.current = null;
+
               showToastRef.current?.(
                 "¡Has iniciado sesión correctamente!",
                 "success",
               );
+
+              dispatch({ type: AUTH_ACTIONS.CLEAR_LOGIN_REMINDER });
+
+              const userId = session.user.id;
+              setTimeout(async () => {
+                try {
+                  const businesses = await getBusinessesByUser(userId);
+                  if (!businesses?.length) return;
+
+                  const urgentBusinesses = businesses
+                    .filter(
+                      (b) =>
+                        b.estado === "publicado" &&
+                        !b.is_paused &&
+                        b.publication_expires_at,
+                    )
+                    .map((b) => ({
+                      ...b,
+                      diasRestantes: getDiasRestantesNegocio(b),
+                    }))
+                    .filter((b) => b.diasRestantes !== null && b.diasRestantes <= 5)
+                    .sort((a, b) => a.diasRestantes - b.diasRestantes);
+
+                  if (urgentBusinesses.length > 0) {
+                    const mostUrgent = urgentBusinesses[0];
+                    dispatch({
+                      type: AUTH_ACTIONS.SET_LOGIN_REMINDER,
+                      payload: {
+                        business: mostUrgent,
+                        diasRestantes: mostUrgent.diasRestantes,
+                        expired: mostUrgent.diasRestantes <= 0,
+                      },
+                    });
+                  }
+                } catch (err) {
+                  log.error("Error verificando negocios próximos a expirar:", err);
+                }
+              }, 1500);
             }
           }
           break;
 
         case "SIGNED_OUT":
+          trackLogout();
+          setUserContext(null);
           // Limpiar estado si aún había user (caso: sesión cerrada externamente)
           // El toast se muestra desde signOut() directamente, no aquí,
           // porque CLEAR_AUTH se despacha antes del evento SIGNED_OUT
@@ -349,6 +428,7 @@ export const AuthProvider = ({ children }) => {
                 role: cachedRefreshRole,
               },
             });
+            setUserContext(session.user, cachedRefreshRole);
 
             // Si el rol no estaba cacheado, cargarlo fuera del lock
             if (roleCache.current.userId !== session.user.id) {
@@ -359,6 +439,7 @@ export const AuthProvider = ({ children }) => {
                     type: AUTH_ACTIONS.SET_AUTH,
                     payload: { user: session.user, role },
                   });
+                  setUserContext(session.user, role);
                 } catch (err) {
                   log.error("Error cargando rol post-TOKEN_REFRESHED:", err);
                 }
@@ -420,6 +501,10 @@ export const AuthProvider = ({ children }) => {
       options: { data: metadata },
     });
 
+    if (!error) {
+      trackSignUp("email");
+    }
+
     // Enviar email de bienvenida (sin bloquear el registro)
     if (data?.user && !error) {
       supabase.functions
@@ -439,6 +524,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const signIn = useCallback(async (email, password) => {
+    loginMethodRef.current = "password";
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -447,9 +533,12 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const signOut = useCallback(async () => {
+    trackLogout();
+
     // Limpiar estado local PRIMERO para UI responsiva inmediata
     roleCache.current = { userId: null, role: ROLES.USER };
     rolePendingPromise.current = null;
+    setUserContext(null);
     dispatch({ type: AUTH_ACTIONS.CLEAR_AUTH });
 
     // Mostrar toast AQUÍ porque el listener SIGNED_OUT ya no verá user
@@ -478,6 +567,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const signInWithGoogle = useCallback(async (credential) => {
+    loginMethodRef.current = "google";
     if (!credential) {
       return {
         data: null,
@@ -526,6 +616,7 @@ export const AuthProvider = ({ children }) => {
    * 5. Si popup bloqueado → cae a redirect y AuthCallback lo procesa local
    */
   const signInWithGooglePopup = useCallback(async () => {
+    loginMethodRef.current = "google";
     try {
       const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
       if (!clientId) {
@@ -659,6 +750,10 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: AUTH_ACTIONS.CLEAR_BAN });
   }, []);
 
+  const closeLoginReminder = useCallback(() => {
+    dispatch({ type: AUTH_ACTIONS.CLEAR_LOGIN_REMINDER });
+  }, []);
+
   // ── Context value (useMemo para evitar object nuevo si nada cambió) ──
   const value = useMemo(
     () => ({
@@ -683,6 +778,10 @@ export const AuthProvider = ({ children }) => {
       // Compatibilidad: exponer showToast desde aquí también
       // para no romper componentes existentes que hacen useAuth().showToast
       showToast,
+
+      // Modal de recordatorio post-login
+      loginReminder,
+      closeLoginReminder,
     }),
     [
       user,
@@ -697,6 +796,7 @@ export const AuthProvider = ({ children }) => {
       resetPassword,
       refreshRole,
       showToast,
+      loginReminder,
     ],
   );
 

@@ -92,6 +92,6 @@ export const cleanAuthTokensFromUrl = () => {
       url.pathname +
       (url.searchParams.toString() ? "?" + url.searchParams.toString() : "");
     window.history.replaceState({}, document.title, cleanUrl);
-    console.log("[Auth] URL limpiada de tokens sensibles");
+    import.meta.env.DEV && console.log("[Auth] URL limpiada de tokens sensibles");
   }
 };

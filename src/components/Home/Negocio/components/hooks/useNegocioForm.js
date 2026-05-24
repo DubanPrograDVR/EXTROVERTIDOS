@@ -7,6 +7,7 @@ import {
   normalizeSocialLinks,
   wrapPersistedFields,
 } from "../../../../../lib/textWrap";
+import { trackBusinessCreated } from "../../../../../lib/analytics";
 import {
   createBusiness,
   uploadBusinessImage,
@@ -17,7 +18,7 @@ import {
   validateAndConsumeBusinessPublication,
   refundBusinessPublication,
 } from "../../../../../lib/database";
-import { isPlanesEnabled } from "../../../../../lib/database/settings";
+import { getPlansVisibility } from "../../../../../lib/database/settings";
 import { canUserPublishBusiness } from "../../../../../lib/planRules";
 import { INITIAL_FORM_STATE, IMAGE_CONFIG } from "../constants";
 
@@ -55,12 +56,13 @@ export const useNegocioForm = () => {
     let isCancelled = false;
     const loadPlanData = async () => {
       try {
-        const [enabled, sub] = await Promise.all([
-          isPlanesEnabled(),
+        const [visibility, sub] = await Promise.all([
+          getPlansVisibility(),
           user?.id
             ? getActiveSuperguiaSubscription(user.id)
             : Promise.resolve(null),
         ]);
+        const enabled = visibility.superguiaVisible;
         if (!isCancelled) {
           setPlanesEnabled(enabled);
           setSuperguiaSubscription(sub);
@@ -604,6 +606,13 @@ export const useNegocioForm = () => {
               : "¡Negocio creado exitosamente! Será revisado pronto.",
             "success",
           );
+
+        trackBusinessCreated({
+          category: formData.category_id,
+          subcategory: formData.subcategoria,
+          city: formData.provincia,
+          comuna: formData.comuna?.trim(),
+        });
 
         // Limpiar borrador de Supabase si existe
         if (currentDraftId && user?.id) {

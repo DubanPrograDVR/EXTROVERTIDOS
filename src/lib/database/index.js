@@ -77,6 +77,7 @@ export {
   pauseBusiness,
   updateBusiness,
   hasUserPendingBusiness,
+  republishBusiness,
 } from "./businesses";
 
 // ============ ROLES Y PERMISOS ============
@@ -180,6 +181,7 @@ export {
   getActivePublishSubscription,
   getAnyActivePanoramaSubscription,
   getActiveSuperguiaSubscription,
+  getActiveSuperguiaWithQuota,
   getUserSubscriptions,
   cancelSubscription,
   consumePublication,
@@ -196,4 +198,9 @@ export {
   updatePlanPrices,
   isPlanesEnabled,
   togglePlanesEnabled,
+  isPanoramasEnabled,
+  isSuperguiaEnabled,
+  togglePanoramasEnabled,
+  toggleSuperguiaEnabled,
+  getPlansVisibility,
 } from "./settings";

@@ -148,7 +148,7 @@ export default function Terminos() {
               Sección Superguia Extrovertidos
             </h3>
             <p>
-              Directorio comercial con vigencia de un año (365 días) desde su
+              Directorio comercial con vigencia de 30 días desde su
               puesta en línea. Al cumplirse el plazo, el anuncio caduca
               automáticamente.
             </p>
@@ -308,9 +308,8 @@ export default function Terminos() {
                 durante el periodo de 30 días de vigencia del plan.
               </li>
               <li>
-                <strong>Plan Superguia Extrovertidos:</strong> Vigencia de un
-                año (365 días). Permite edición ilimitada de la publicación
-                aprobada.
+                <strong>Plan Superguia Extrovertidos:</strong> Vigencia de 30
+                días. Permite edición ilimitada de la publicación aprobada.
               </li>
             </ul>
             <h3 className="terminos-clause__subtitle">7.3. No Retracto</h3>
@@ -355,9 +354,9 @@ export default function Terminos() {
             </h3>
             <p>
               Una vez obtenida la aprobación inicial, los usuarios del Plan
-              Superguía podrán editar su contenido ilimitadamente durante el año
-              de vigencia. Cada edición volverá a revisión obligatoria bajo los
-              mismos estándares de la Cláusula 6.
+              Superguía podrán editar su contenido ilimitadamente durante el
+              período de vigencia de 30 días. Cada edición volverá a revisión
+              obligatoria bajo los mismos estándares de la Cláusula 6.
             </p>
             <h3 className="terminos-clause__subtitle">
               8.4. Reembolso Excepcional

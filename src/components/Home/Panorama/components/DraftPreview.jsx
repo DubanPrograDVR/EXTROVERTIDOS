@@ -176,6 +176,8 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
       hasInformation && ACCORDION_SECTIONS.INFORMATION,
     ].filter(Boolean);
 
+    // Sync defensivo: si la sección activa ya no es visible, ajustar.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActiveSection((prev) =>
       visibleSections.includes(prev) ? prev : visibleSections[0] || null,
     );
@@ -656,7 +658,17 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
                                 Entrada
                               </span>
                               <span className="publication-modal__schedule-value publication-modal__schedule-value--price">
-                                {getEntradaText()}
+                                {formData.tipo_entrada === "venta_externa" && formData.url_venta ? (
+                                  <a
+                                    href={formData.url_venta}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="publication-modal__entrada-link">
+                                    Ver entradas ↗
+                                  </a>
+                                ) : (
+                                  getEntradaText()
+                                )}
                               </span>
                             </div>
                           )}

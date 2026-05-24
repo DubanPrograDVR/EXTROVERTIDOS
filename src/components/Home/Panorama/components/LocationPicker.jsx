@@ -71,40 +71,33 @@ const extractCoordsFromUrl = (url) => {
   // Limpiar espacios
   url = url.trim();
 
-  console.log("Intentando extraer coordenadas de:", url);
-
   // Formato 1: https://www.google.com/maps?q=-35.123,-71.456
   let match = url.match(/[?&]q=(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/);
   if (match) {
-    console.log("Match formato 1 (q=lat,lng):", match);
     return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
   }
 
   // Formato 2: https://www.google.com/maps/@-35.123,-71.456,15z
   match = url.match(/@(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/);
   if (match) {
-    console.log("Match formato 2 (@lat,lng):", match);
     return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
   }
 
   // Formato 3: https://www.google.com/maps/place/.../@-35.123,-71.456,15z
   match = url.match(/place\/[^/]+\/@(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/);
   if (match) {
-    console.log("Match formato 3 (place/@lat,lng):", match);
     return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
   }
 
   // Formato 4: https://maps.google.com/?ll=-35.123,-71.456
   match = url.match(/[?&]ll=(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/);
   if (match) {
-    console.log("Match formato 4 (ll=lat,lng):", match);
     return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
   }
 
   // Formato 5: https://goo.gl/maps/... con coordenadas en query
   match = url.match(/!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/);
   if (match) {
-    console.log("Match formato 5 (!3d!4d):", match);
     return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
   }
 
@@ -115,12 +108,10 @@ const extractCoordsFromUrl = (url) => {
     const lng = parseFloat(match[2]);
     // Validar que sean coordenadas válidas
     if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-      console.log("Match formato 6 (coords directas):", { lat, lng });
       return { lat, lng };
     }
   }
 
-  console.log("No se encontraron coordenadas en el URL");
   return null;
 };
 
@@ -175,7 +166,7 @@ const LocationPicker = ({ isOpen, onClose, currentLocation, onSave }) => {
 
     // Si es una URL corta, mostrar error inmediatamente (no intentamos resolver)
     if (!coords && isShortUrl(currentLocation)) {
-      console.log("URL corta detectada - no soportada directamente");
+      // URL corta detectada - no soportada directamente
       setShortUrlError(true);
       return;
     }

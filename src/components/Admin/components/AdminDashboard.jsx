@@ -39,8 +39,12 @@ export default function AdminDashboard({
   chartData,
   onViewPending,
   planesEnabled,
+  panoramasEnabled,
+  superguiaEnabled,
   planesToggleLoading,
   onTogglePlanes,
+  onTogglePanoramas,
+  onToggleSuperguia,
   isAdmin,
 }) {
   if (!stats) return null;
@@ -229,6 +233,8 @@ export default function AdminDashboard({
       {isAdmin && (
         <div className="admin-site-settings">
           <h3>Configuraciones del Sitio</h3>
+
+          {/* Toggle GLOBAL */}
           <div className="admin-setting-row">
             <div className="admin-setting-row__info">
               <FontAwesomeIcon
@@ -236,9 +242,12 @@ export default function AdminDashboard({
                 className="admin-setting-row__icon"
               />
               <div>
-                <span className="admin-setting-row__label">Activar Plan</span>
+                <span className="admin-setting-row__label">
+                  Activar Planes (global)
+                </span>
                 <span className="admin-setting-row__description">
-                  Muestra u oculta la sección de planes para los usuarios
+                  Muestra todos los planes. Al activar, se desactivan los
+                  toggles individuales.
                 </span>
               </div>
             </div>
@@ -248,8 +257,76 @@ export default function AdminDashboard({
               disabled={planesToggleLoading}
               title={
                 planesEnabled
-                  ? "Desactivar planes para usuarios"
-                  : "Activar planes para usuarios"
+                  ? "Desactivar planes (global)"
+                  : "Activar planes (global)"
+              }>
+              {planesToggleLoading ? (
+                <FontAwesomeIcon icon={faSpinner} spin />
+              ) : (
+                <span className="admin-toggle__knob" />
+              )}
+            </button>
+          </div>
+
+          {/* Toggle SUPERGUÍA */}
+          <div className="admin-setting-row">
+            <div className="admin-setting-row__info">
+              <FontAwesomeIcon
+                icon={faCreditCard}
+                className="admin-setting-row__icon"
+              />
+              <div>
+                <span className="admin-setting-row__label">
+                  Activar Superguía
+                </span>
+                <span className="admin-setting-row__description">
+                  Muestra únicamente la Superguía. Al activar, se desactiva el
+                  toggle global.
+                </span>
+              </div>
+            </div>
+            <button
+              className={`admin-toggle ${superguiaEnabled ? "admin-toggle--active" : ""}`}
+              onClick={onToggleSuperguia}
+              disabled={planesToggleLoading}
+              title={
+                superguiaEnabled
+                  ? "Desactivar Superguía"
+                  : "Activar Superguía"
+              }>
+              {planesToggleLoading ? (
+                <FontAwesomeIcon icon={faSpinner} spin />
+              ) : (
+                <span className="admin-toggle__knob" />
+              )}
+            </button>
+          </div>
+
+          {/* Toggle PANORAMAS */}
+          <div className="admin-setting-row">
+            <div className="admin-setting-row__info">
+              <FontAwesomeIcon
+                icon={faCreditCard}
+                className="admin-setting-row__icon"
+              />
+              <div>
+                <span className="admin-setting-row__label">
+                  Activar Panoramas
+                </span>
+                <span className="admin-setting-row__description">
+                  Muestra únicamente los Panoramas. Al activar, se desactiva el
+                  toggle global.
+                </span>
+              </div>
+            </div>
+            <button
+              className={`admin-toggle ${panoramasEnabled ? "admin-toggle--active" : ""}`}
+              onClick={onTogglePanoramas}
+              disabled={planesToggleLoading}
+              title={
+                panoramasEnabled
+                  ? "Desactivar Panoramas"
+                  : "Activar Panoramas"
               }>
               {planesToggleLoading ? (
                 <FontAwesomeIcon icon={faSpinner} spin />

@@ -42,9 +42,9 @@ export async function hasUserLikedBusiness(userId, businessId) {
     .select("id")
     .eq("user_id", userId)
     .eq("business_id", businessId)
-    .single();
+    .maybeSingle();
 
-  if (error && error.code !== "PGRST116") {
+  if (error) {
     console.error("Error verificando like de negocio:", error);
   }
 
@@ -150,9 +150,9 @@ export async function isBusinessFavorite(userId, businessId) {
     .select("id")
     .eq("user_id", userId)
     .eq("business_id", businessId)
-    .single();
+    .maybeSingle();
 
-  if (error && error.code !== "PGRST116") {
+  if (error) {
     console.error("Error verificando favorito de negocio:", error);
   }
 

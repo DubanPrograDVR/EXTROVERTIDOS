@@ -4,7 +4,6 @@ import { useAuth } from "../../../context/AuthContext";
 import { useToast } from "../../../context/ToastContext";
 import {
   wrapPersistedFields,
-  normalizeLineEndings,
   buildSocialUrl,
   formatChileanPhone,
   normalizeSocialLinks,
@@ -31,10 +30,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faTimes,
   faCalendarDays,
-  faCalendarWeek,
   faClock,
   faTicket,
-  faLocationDot,
   faPhone,
   faMapMarkerAlt,
   faUser,
@@ -42,11 +39,8 @@ import {
   faChevronUp,
   faChevronLeft,
   faChevronRight,
-  faRoute,
-  faExternalLinkAlt,
   faPlus,
   faShareAlt,
-  faHeart,
   faBookmark,
   faBullhorn,
   faTag,
@@ -265,12 +259,37 @@ export default function PublicationModal({
     );
   }, [validImagesLength]);
 
+  // Obtener array de imágenes válidas (declarado ANTES del early return
+  // para no romper las reglas de hooks).
+  const publicationImages = publication?.imagenes;
+  const validImages = useMemo(() => {
+    if (canManageAdminMedia) {
+      const realImages = getRealPublicationImages(editData.imagenes);
+      if (realImages.length > 0) {
+        return realImages;
+      }
+      return [];
+    }
+    if (Array.isArray(publicationImages) && publicationImages.length > 0) {
+      const realImages = getRealPublicationImages(publicationImages);
+      return realImages.length > 0
+        ? realImages
+        : disablePlaceholderImage
+          ? []
+          : ["/img/Home1.png"];
+    }
+    return disablePlaceholderImage ? [] : ["/img/Home1.png"];
+  }, [
+    canManageAdminMedia,
+    disablePlaceholderImage,
+    editData.imagenes,
+    publicationImages,
+  ]);
+
   if (!isOpen || !publication) return null;
 
   const {
     titulo,
-    subtitulo,
-    imagenes,
     comuna,
     provincia,
     categories,
@@ -301,7 +320,6 @@ export default function PublicationModal({
     redes_sociales,
     profiles,
     organizador,
-    event_tags,
   } = publication;
 
   // Extraer redes sociales del objeto JSON
@@ -341,31 +359,6 @@ export default function PublicationModal({
 
   const hashtagsList = parseHashtags();
   const hasDescription = Boolean(descripcion?.trim());
-
-  // Obtener array de imágenes válidas
-  const validImages = useMemo(() => {
-    if (canManageAdminMedia) {
-      const realImages = getRealPublicationImages(editData.imagenes);
-      if (realImages.length > 0) {
-        return realImages;
-      }
-      return [];
-    }
-    if (Array.isArray(imagenes) && imagenes.length > 0) {
-      const realImages = getRealPublicationImages(imagenes);
-      return realImages.length > 0
-        ? realImages
-        : disablePlaceholderImage
-          ? []
-          : ["/img/Home1.png"];
-    }
-    return disablePlaceholderImage ? [] : ["/img/Home1.png"];
-  }, [
-    canManageAdminMedia,
-    disablePlaceholderImage,
-    editData.imagenes,
-    imagenes,
-  ]);
 
   const currentImageUrl = validImages[currentImageIndex] || null;
   const hasMultipleImages = validImages.length > 1;
@@ -579,44 +572,6 @@ export default function PublicationModal({
       return `$${Number(precio).toLocaleString("es-CL")}`;
     }
     return "Entrada gratuita";
-  };
-
-  // Extraer coordenadas de la URL de Google Maps
-  const extractCoordinates = (url) => {
-    if (!url) return null;
-
-    // Patrón para URLs de Google Maps con @lat,lng
-    const atPattern = /@(-?\d+\.?\d*),(-?\d+\.?\d*)/;
-    // Patrón para URLs con query ?q=lat,lng
-    const qPattern = /[?&]q=(-?\d+\.?\d*),(-?\d+\.?\d*)/;
-    // Patrón para URLs con /place/lat,lng
-    const placePattern = /\/place\/(-?\d+\.?\d*),(-?\d+\.?\d*)/;
-
-    let match =
-      url.match(atPattern) || url.match(qPattern) || url.match(placePattern);
-
-    if (match) {
-      return {
-        lat: parseFloat(match[1]),
-        lng: parseFloat(match[2]),
-      };
-    }
-    return null;
-  };
-
-  // Obtener coordenadas del evento
-  const coordinates = extractCoordinates(ubicacion_url);
-
-  // Generar URL de direcciones de Google Maps
-  const getDirectionsUrl = () => {
-    if (coordinates) {
-      return `https://www.google.com/maps/dir/?api=1&destination=${coordinates.lat},${coordinates.lng}`;
-    }
-    // Fallback: usar la dirección como destino
-    const destination = encodeURIComponent(
-      direccion || `${comuna}, ${provincia}, Chile`,
-    );
-    return `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
   };
 
   const handleOverlayClick = (e) => {

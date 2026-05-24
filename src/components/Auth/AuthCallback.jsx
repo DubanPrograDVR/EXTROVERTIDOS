@@ -36,7 +36,7 @@ const AuthCallback = () => {
 
     const handleAuthCallback = async () => {
       try {
-        console.log("[AuthCallback] Procesando callback de autenticación...");
+        import.meta.env.DEV && console.log("[AuthCallback] Procesando callback de autenticación...");
 
         // ── Flujo Google directo: id_token en el hash fragment ──
         const hash = window.location.hash.substring(1);
@@ -44,7 +44,7 @@ const AuthCallback = () => {
         const idToken = hashParams.get("id_token");
 
         if (idToken) {
-          console.log("[AuthCallback] id_token detectado (Google directo)");
+          import.meta.env.DEV && console.log("[AuthCallback] id_token detectado (Google directo)");
 
           // Limpiar hash de la URL por seguridad
           window.history.replaceState(null, "", window.location.pathname);
@@ -71,7 +71,7 @@ const AuthCallback = () => {
             // Si el error es de nonce, reintentar SIN nonce
             // (puede ocurrir si el nonce se perdió por COOP/sessionStorage aislado)
             if (signInError.message?.includes("nonce")) {
-              console.log("[AuthCallback] Reintentando sin nonce...");
+              import.meta.env.DEV && console.log("[AuthCallback] Reintentando sin nonce...");
               const { error: retryError } =
                 await supabase.auth.signInWithIdToken({
                   provider: "google",
@@ -100,7 +100,7 @@ const AuthCallback = () => {
             }
           }
 
-          console.log("[AuthCallback] Sesión establecida correctamente");
+          import.meta.env.DEV && console.log("[AuthCallback] Sesión establecida correctamente");
 
           // Detectar si somos un popup via flag en localStorage
           // (window.opener es null por COOP de Google, así que usamos este flag)
@@ -147,9 +147,9 @@ const AuthCallback = () => {
         cleanAuthTokensFromUrl();
 
         if (session) {
-          console.log("[AuthCallback] Sesión establecida correctamente");
+          import.meta.env.DEV && console.log("[AuthCallback] Sesión establecida correctamente");
         } else {
-          console.log(
+          import.meta.env.DEV && console.log(
             "[AuthCallback] No hay sesión, el listener de auth se encargará",
           );
         }

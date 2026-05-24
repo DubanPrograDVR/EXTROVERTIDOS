@@ -56,18 +56,7 @@ export async function initiatePayment({
   addSuperguia,
   resourceId,
 }) {
-  // Obtener sesión actual para el JWT
-  const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession();
-
-  if (sessionError || !session) {
-    throw new PaymentError(
-      "Debes iniciar sesión para realizar un pago",
-      "AUTH_REQUIRED",
-    );
-  }
+  const session = await getValidatedPaymentSession();
 
   // Preparar el body para la Edge Function
   const requestBody = {
@@ -79,14 +68,21 @@ export async function initiatePayment({
   // Llamar a la Edge Function create-payment
   const { data, error } = await supabase.functions.invoke("create-payment", {
     body: requestBody,
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
   });
 
   if (error) {
     console.error("[Payment] Error al crear pago:", error);
-    throw new PaymentError(
-      error.message || "Error al iniciar el pago",
+    const serverError = await parseFunctionError(error);
+    const err = new PaymentError(
+      serverError?.message || error.message || "Error al iniciar el pago",
       "CREATE_FAILED",
+      serverError?.status,
     );
+    err.dbCode = serverError?.dbCode || null;
+    throw err;
   }
 
   if (!data || !data.token || !data.url) {
@@ -196,6 +192,50 @@ function redirectToTransbank(url, token) {
   form.submit();
 }
 
+async function getValidatedPaymentSession() {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError || !session?.access_token) {
+    throw new PaymentError(
+      "Debes iniciar sesión para realizar un pago",
+      "AUTH_REQUIRED",
+    );
+  }
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser(session.access_token);
+
+  if (userError || !user) {
+    throw new PaymentError(
+      "Tu sesión expiró. Vuelve a iniciar sesión para pagar.",
+      "AUTH_REQUIRED",
+    );
+  }
+
+  return session;
+}
+
+async function parseFunctionError(error) {
+  const response = error?.context;
+  if (!response || typeof response.clone !== "function") return null;
+
+  try {
+    const payload = await response.clone().json();
+    return {
+      message: payload?.error || payload?.message || null,
+      dbCode: payload?.code || null,
+      status: response.status,
+    };
+  } catch {
+    return { message: null, dbCode: null, status: response.status };
+  }
+}
+
 /**
  * Parsea los query params de la URL de retorno de pago.
  *
@@ -236,9 +276,10 @@ export function formatCLP(amount) {
  * Error personalizado para el flujo de pagos
  */
 export class PaymentError extends Error {
-  constructor(message, code) {
+  constructor(message, code, status) {
     super(message);
     this.name = "PaymentError";
     this.code = code;
+    this.status = status;
   }
 }

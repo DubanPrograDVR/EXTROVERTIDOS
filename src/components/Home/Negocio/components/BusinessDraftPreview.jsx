@@ -6,7 +6,6 @@ import {
   faPhone,
   faEnvelope,
   faGlobe,
-  faClock,
   faChevronLeft,
   faChevronRight,
   faChevronDown,
@@ -146,6 +145,8 @@ const BusinessDraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
       hasInformation && ACCORDION_SECTIONS.INFORMATION,
     ].filter(Boolean);
 
+    // Sync defensivo: si la sección activa ya no es visible, ajustar.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActiveSection((prev) =>
       visibleSections.includes(prev) ? prev : visibleSections[0] || null,
     );
@@ -185,47 +186,53 @@ const BusinessDraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
     }
   };
 
-  // Horarios
-  const getHorarioResumen = () => {
+  const getHorarioDetalle = () => {
     if (formData.abierto_24h) {
-      return { diasAbiertos: "Todos los días", horarioAtencion: "24 horas" };
+      return [{ label: "TODOS", horario: "Abierto 24h" }];
     }
 
-    const dias = formData.dias_atencion;
-    if (!dias || dias.length === 0) return null;
+    const diasOrden = [
+      { key: "Lunes", label: "LUN" },
+      { key: "Martes", label: "MAR" },
+      { key: "Miércoles", label: "MIE" },
+      { key: "Jueves", label: "JUE" },
+      { key: "Viernes", label: "VIE" },
+      { key: "Sábado", label: "SÁB" },
+      { key: "Domingo", label: "DOM" },
+    ];
 
-    const diasAbrev = {
-      Lunes: "Lun",
-      Martes: "Mar",
-      Miércoles: "Mié",
-      Jueves: "Jue",
-      Viernes: "Vie",
-      Sábado: "Sáb",
-      Domingo: "Dom",
+    const formatHora = (hora) => {
+      if (!hora) return "";
+      const [hours, minutes] = String(hora).split(":");
+      return hours && minutes ? `${hours}:${minutes}` : String(hora);
     };
 
-    let diasText;
-    if (dias.length === 7) {
-      diasText = "Todos los días";
-    } else {
-      diasText = dias.map((d) => diasAbrev[d] || d).join(", ");
-    }
+    const diasSeleccionados = Array.isArray(formData.dias_atencion)
+      ? formData.dias_atencion
+      : [];
 
-    // Obtener horario del primer día configurado
-    let horarioText = "Consultar";
-    const primerDia = dias[0];
-    const detalle = formData.horarios_detalle?.[primerDia];
-    if (detalle && detalle.length > 0) {
-      const turno = detalle[0];
-      if (turno.apertura && turno.cierre) {
-        horarioText = `${turno.apertura} - ${turno.cierre}`;
-      }
-    }
+    return diasOrden
+      .filter(({ key }) => diasSeleccionados.includes(key))
+      .map(({ key, label }) => {
+        const turnos = Array.isArray(formData.horarios_detalle?.[key])
+          ? formData.horarios_detalle[key]
+          : [];
+        const horario = turnos
+          .filter((turno) => turno?.apertura && turno?.cierre)
+          .map(
+            (turno) =>
+              `${formatHora(turno.apertura)} - ${formatHora(turno.cierre)}`,
+          )
+          .join(" | ");
 
-    return { diasAbiertos: diasText, horarioAtencion: horarioText };
+        return {
+          label,
+          horario: horario || "Consultar",
+        };
+      });
   };
 
-  const horarioResumen = getHorarioResumen();
+  const horarioDetalle = getHorarioDetalle();
 
   return (
     <div
@@ -445,28 +452,21 @@ const BusinessDraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
                     )}
 
                     {/* Horarios */}
-                    {hasHorarioInfo && horarioResumen && (
+                    {hasHorarioInfo && horarioDetalle.length > 0 && (
                       <div className="publication-modal__info-section">
-                        <h4 className="publication-modal__info-subtitle">
-                          <FontAwesomeIcon icon={faClock} /> Horario de atención
-                        </h4>
                         <div className="publication-modal__schedule-simple">
-                          <div className="publication-modal__schedule-row">
-                            <span className="publication-modal__schedule-day">
-                              Días de atención
-                            </span>
-                            <span className="publication-modal__schedule-time">
-                              {horarioResumen.diasAbiertos}
-                            </span>
-                          </div>
-                          <div className="publication-modal__schedule-row">
-                            <span className="publication-modal__schedule-day">
-                              Horario
-                            </span>
-                            <span className="publication-modal__schedule-time">
-                              {horarioResumen.horarioAtencion}
-                            </span>
-                          </div>
+                          {horarioDetalle.map((dia) => (
+                            <div
+                              key={dia.label}
+                              className="publication-modal__schedule-row">
+                              <span className="publication-modal__schedule-day">
+                                {dia.label}
+                              </span>
+                              <span className="publication-modal__schedule-time">
+                                {dia.horario}
+                              </span>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}

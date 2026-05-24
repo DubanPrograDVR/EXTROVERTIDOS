@@ -57,6 +57,8 @@ export default function BusinessCard({
   isFavorite: initialIsFavorite = false,
   onFavoriteChange,
   categories = [],
+  likeState,
+  onLikeChange,
 }) {
   const {
     id,
@@ -90,24 +92,37 @@ export default function BusinessCard({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorited, setIsFavorited] = useState(initialIsFavorite);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
+  const [isLiked, setIsLiked] = useState(likeState?.isLiked ?? false);
+  const [likeCount, setLikeCount] = useState(likeState?.count ?? 0);
   const [isTogglingLike, setIsTogglingLike] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
-  // Cargar estado de likes y favoritos al montar
+  const hasExternalLikeState = likeState !== undefined && likeState !== null;
+  const externalIsLiked = likeState?.isLiked;
+  const externalCount = likeState?.count;
+
+  // Cargar estado de likes y favoritos al montar.
+  // Si el grid ya provee likeState batched, omitimos las queries de likes
+  // y solo cargamos el favorito del usuario actual.
   const loadInteractions = async () => {
     try {
-      const count = await getBusinessLikesCount(id);
-      setLikeCount(count);
+      if (!hasExternalLikeState) {
+        const count = await getBusinessLikesCount(id);
+        setLikeCount(count);
+      }
 
       if (user) {
-        const [liked, favorited] = await Promise.all([
-          hasUserLikedBusiness(user.id, id),
-          isBusinessFavorite(user.id, id),
-        ]);
-        setIsLiked(liked);
-        setIsFavorited(favorited);
+        if (hasExternalLikeState) {
+          const favorited = await isBusinessFavorite(user.id, id);
+          setIsFavorited(favorited);
+        } else {
+          const [liked, favorited] = await Promise.all([
+            hasUserLikedBusiness(user.id, id),
+            isBusinessFavorite(user.id, id),
+          ]);
+          setIsLiked(liked);
+          setIsFavorited(favorited);
+        }
       }
     } catch (error) {
       console.error("Error cargando interacciones de negocio:", error);
@@ -117,14 +132,21 @@ export default function BusinessCard({
   useEffect(() => {
     if (id) loadInteractions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, user]);
+  }, [id, user, hasExternalLikeState]);
 
-  // Tiempo real: actualizar likes cuando cualquier usuario reacciona
+  // Sincronizar con el estado batched provisto por el padre.
+  useEffect(() => {
+    if (!hasExternalLikeState) return;
+    setIsLiked(!!externalIsLiked);
+    setLikeCount(Number(externalCount) || 0);
+  }, [hasExternalLikeState, externalIsLiked, externalCount]);
+
+  // Tiempo real: solo si la card es autónoma (sin batched state del padre).
   useRealtimeRefetch({
     table: "business_likes",
     event: "*",
     filter: id ? `business_id=eq.${id}` : undefined,
-    enabled: Boolean(id),
+    enabled: Boolean(id) && !hasExternalLikeState,
     onChange: () => loadInteractions(),
   });
 
@@ -335,6 +357,9 @@ export default function BusinessCard({
       const result = await toggleBusinessLike(user.id, id);
       setIsLiked(result.isLiked);
       setLikeCount(result.count);
+      if (onLikeChange) {
+        onLikeChange(id, result);
+      }
     } catch (error) {
       console.error("Error al cambiar like:", error);
       showToast?.("Error al procesar tu like", "error");

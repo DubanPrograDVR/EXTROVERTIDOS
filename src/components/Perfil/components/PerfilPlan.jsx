@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -18,13 +18,14 @@ import {
 } from "../../../lib/database";
 import { MAX_DIAS_CREACION } from "../../../lib/planRules";
 import { useToast } from "../../../context/ToastContext";
+import usePlansVisibility from "../../../hooks/usePlansVisibility";
 import "./styles/section.css";
 import "./styles/plan.css";
 
 // Iconos del sitio
 const iconPanorama = "/img/P_Extro_v2.png";
 const iconExtro = "/img/E_Extro_v3.png";
-const logoExtrovertidos = "/img/Logo_extrovertidos.png";
+const logoExtrovertidos = "/img/Logo_con_r_v3.png";
 const iconSuperguia = "/img/SG_Extro_v2.png";
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
@@ -150,6 +151,22 @@ export default function PerfilPlan() {
   const [cancelModal, setCancelModal] = useState({ open: false, sub: null });
   const [cancelling, setCancelling] = useState(false);
 
+  const {
+    panoramasVisible,
+    superguiaVisible,
+    anyVisible,
+    loading: visLoading,
+  } = usePlansVisibility();
+
+  const visiblePlans = useMemo(
+    () =>
+      ALL_PLANS.filter((plan) => {
+        if (plan.key === "superguia") return superguiaVisible;
+        return panoramasVisible;
+      }),
+    [panoramasVisible, superguiaVisible],
+  );
+
   useEffect(() => {
     const loadSubscriptions = async () => {
       if (!user?.id) {
@@ -255,7 +272,7 @@ export default function PerfilPlan() {
   };
 
   // Loading
-  if (loading) {
+  if (loading || visLoading) {
     return (
       <div className="perfil-section">
         <div className="perfil-section__header">
@@ -274,16 +291,18 @@ export default function PerfilPlan() {
       {/* Header con botón Ver Planes */}
       <div className="perfil-section__header">
         <h2>Mi PLAN</h2>
-        <button
-          className="perfil-plan__ver-planes-btn"
-          onClick={() => navigate("/activar-plan")}>
-          Ver Planes
-        </button>
+        {anyVisible && (
+          <button
+            className="perfil-plan__ver-planes-btn"
+            onClick={() => navigate("/activar-plan")}>
+            Ver Planes
+          </button>
+        )}
       </div>
 
-      {/* Grilla 2x2 de todos los planes */}
+      {/* Grilla de planes visibles según toggle activo */}
       <div className="perfil-plan__grid">
-        {ALL_PLANS.map((plan) => {
+        {visiblePlans.map((plan) => {
           const planStatus = getPlanStatus(plan.key);
           const activeSub = planStatus.subscription;
           const isContracted = planStatus.type === "active";
@@ -387,7 +406,7 @@ export default function PerfilPlan() {
       </div>
 
       {/* CTA inferior */}
-      {!hasActiveWithQuota && (
+      {!hasActiveWithQuota && anyVisible && (
         <div className="perfil-plan__cta">
           <div className="perfil-plan__cta-icon">
             <img src={logoExtrovertidos} alt="Extrovertidos" />

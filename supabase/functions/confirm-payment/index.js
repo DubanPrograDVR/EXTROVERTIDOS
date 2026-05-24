@@ -295,14 +295,44 @@ Deno.serve(async (req) => {
       `[confirm-payment] Confirmando transacción: buy_order=${transaction.buy_order}`,
     );
 
-    const tbkCommitResponse = await fetch(commitUrl, {
-      method: "PUT",
-      headers: {
-        "Tbk-Api-Key-Id": tbkConfig.commerceCode,
-        "Tbk-Api-Key-Secret": tbkConfig.apiKeySecret,
-        "Content-Type": "application/json",
-      },
-    });
+    const commitController = new AbortController();
+    const commitTimeout = setTimeout(() => commitController.abort(), 15000);
+    let tbkCommitResponse;
+    try {
+      tbkCommitResponse = await fetch(commitUrl, {
+        method: "PUT",
+        headers: {
+          "Tbk-Api-Key-Id": tbkConfig.commerceCode,
+          "Tbk-Api-Key-Secret": tbkConfig.apiKeySecret,
+          "Content-Type": "application/json",
+        },
+        signal: commitController.signal,
+      });
+    } catch (commitNetworkError) {
+      clearTimeout(commitTimeout);
+      console.error(
+        "[confirm-payment] Error de red en commit Transbank:",
+        commitNetworkError,
+      );
+      await supabaseAdmin
+        .from("transactions")
+        .update({
+          status: "failed",
+          error_message: `Network commit: ${commitNetworkError?.message || "timeout"}`,
+        })
+        .eq("id", transaction.id);
+      await rejectSubscriptions(
+        supabaseAdmin,
+        transaction.subscription_ids,
+        "Error de red al confirmar con Transbank",
+      );
+      return redirectToFrontend({
+        status: "error",
+        buy_order: transaction.buy_order,
+        message: "No se pudo contactar al procesador de pago",
+      });
+    }
+    clearTimeout(commitTimeout);
 
     if (!tbkCommitResponse.ok) {
       const errorText = await tbkCommitResponse.text();

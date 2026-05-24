@@ -10,7 +10,7 @@ import {
   deleteNotifications as deleteNotificationsDB,
   countDrafts,
   countUserFavorites,
-  isPlanesEnabled,
+  getPlansVisibility,
   getUserSubscriptions,
 } from "../../lib/database";
 import { useRealtimeRefetch } from "../../hooks/useRealtimeRefetch";
@@ -151,7 +151,8 @@ export default function Perfil() {
   useEffect(() => {
     const checkPlanes = async () => {
       try {
-        const enabled = await isPlanesEnabled();
+        const visibility = await getPlansVisibility();
+        const enabled = visibility.anyVisible;
         setPlanesEnabled(enabled);
         if (enabled && user?.id) {
           const subs = await getUserSubscriptions(user.id);
@@ -160,6 +161,16 @@ export default function Perfil() {
             if (s.estado !== "activa") return false;
             // Excluir suscripciones expiradas
             if (s.fecha_fin && new Date(s.fecha_fin) <= now) return false;
+            // Excluir suscripciones de secciones no visibles (toggle OFF)
+            if (s.plan === "superguia" && !visibility.superguiaVisible)
+              return false;
+            if (
+              ["panorama_unica", "panorama_pack4", "panorama_ilimitado"].includes(
+                s.plan,
+              ) &&
+              !visibility.panoramasVisible
+            )
+              return false;
             // Excluir suscripciones sin cupo restante (ilimitado siempre pasa)
             if (s.plan === "panorama_ilimitado") return true;
             if (s.plan === "superguia") {

@@ -120,13 +120,19 @@ Deno.serve(async (req) => {
         error_message,
         created_at,
         updated_at,
-        user_id
+        user_id,
+        token_ws
       `,
       )
       .eq("buy_order", buyOrder)
-      .single();
+      .maybeSingle();
 
-    if (txError || !transaction) {
+    if (txError) {
+      console.error("[payment-status] Error consultando transacción:", txError);
+      return jsonResponse({ error: "Error al consultar la transacción" }, 500);
+    }
+
+    if (!transaction) {
       return jsonResponse({ error: "Transacción no encontrada" }, 404);
     }
 
@@ -136,43 +142,44 @@ Deno.serve(async (req) => {
     }
 
     // ── 5. Si la transacción está en processing, verificar con Transbank ──
-    if (transaction.status === "processing") {
+    if (transaction.status === "processing" && transaction.token_ws) {
       try {
-        const tokenWsResult = await supabaseAdmin
-          .from("transactions")
-          .select("token_ws")
-          .eq("buy_order", buyOrder)
-          .single();
+        const tbkConfig = getTransbankConfig();
+        if (tbkConfig.commerceCode && tbkConfig.apiKeySecret) {
+          const statusUrl = `${tbkConfig.baseUrl}${TRANSBANK_API.transactionPath}/${transaction.token_ws}`;
 
-        if (tokenWsResult.data?.token_ws) {
-          const tbkConfig = getTransbankConfig();
-          const statusUrl = `${tbkConfig.baseUrl}${TRANSBANK_API.transactionPath}/${tokenWsResult.data.token_ws}`;
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 8000);
 
-          const tbkResponse = await fetch(statusUrl, {
-            method: "GET",
-            headers: {
-              "Tbk-Api-Key-Id": tbkConfig.commerceCode,
-              "Tbk-Api-Key-Secret": tbkConfig.apiKeySecret,
-              "Content-Type": "application/json",
-            },
-          });
+          try {
+            const tbkResponse = await fetch(statusUrl, {
+              method: "GET",
+              headers: {
+                "Tbk-Api-Key-Id": tbkConfig.commerceCode,
+                "Tbk-Api-Key-Secret": tbkConfig.apiKeySecret,
+                "Content-Type": "application/json",
+              },
+              signal: controller.signal,
+            });
 
-          if (tbkResponse.ok) {
-            const tbkStatus = await tbkResponse.json();
-            transaction.transbank_status = tbkStatus.status;
+            if (tbkResponse.ok) {
+              const tbkStatus = await tbkResponse.json();
+              transaction.transbank_status = tbkStatus.status;
+            }
+          } finally {
+            clearTimeout(timeout);
           }
         }
       } catch (tbkError) {
-        // Si falla la consulta a Transbank, seguir con lo que tenemos en DB
         console.warn(
           "[payment-status] No se pudo consultar estado en Transbank:",
-          tbkError.message,
+          tbkError?.message || tbkError,
         );
       }
     }
 
     // ── 6. Retornar estado (sin datos sensibles) ──
-    const { user_id: _uid, ...safeTransaction } = transaction;
+    const { user_id: _uid, token_ws: _tw, ...safeTransaction } = transaction;
 
     return jsonResponse({
       transaction: safeTransaction,

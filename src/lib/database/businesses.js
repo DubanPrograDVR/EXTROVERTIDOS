@@ -9,6 +9,7 @@ import {
   refundBusinessPublication,
   validateAndConsumeBusinessPublication,
 } from "./subscriptions";
+import { MAX_DURACION_NEGOCIO } from "../planRules";
 
 /**
  * Crea un nuevo negocio
@@ -35,12 +36,14 @@ export const createBusiness = async (businessData) => {
  * @returns {Promise<Array>} Lista de negocios publicados
  */
 export const getPublishedBusinesses = async () => {
+  const nowIso = new Date().toISOString();
   // Primero obtenemos los negocios
   const { data: businesses, error } = await supabase
     .from("businesses")
     .select("*")
     .eq("estado", "publicado")
     .eq("is_paused", false)
+    .or(`publication_expires_at.is.null,publication_expires_at.gt.${nowIso}`)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -266,9 +269,9 @@ export const approveBusiness = async (businessId, adminId) => {
   }
 
   // NOTA: El cupo ya fue consumido al momento del envío (useNegocioForm).
-  // Aquí solo aprobamos y calculamos la fecha de expiración (365 días).
+  // Aquí solo aprobamos y calculamos la fecha de expiración (MAX_DURACION_NEGOCIO días).
   const publicationExpiresAt = new Date(
-    Date.now() + 365 * 24 * 60 * 60 * 1000,
+    Date.now() + MAX_DURACION_NEGOCIO * 24 * 60 * 60 * 1000,
   ).toISOString();
 
   const { data, error } = await supabase
@@ -603,6 +606,129 @@ export const updateBusiness = async (
 
   if (error) {
     console.error("Error al actualizar negocio:", error);
+    throw error;
+  }
+
+  return data;
+};
+
+// ═══════════════════════════════════════════════
+// HELPERS DE EXPIRACIÓN
+// ═══════════════════════════════════════════════
+
+/**
+ * Verifica si un negocio publicado expiró según su publication_expires_at.
+ * @param {Object} business
+ * @returns {boolean}
+ */
+export const isBusinessExpired = (business) => {
+  if (!business) return false;
+  if (business.estado !== "publicado") return false;
+  if (!business.publication_expires_at) return false;
+  return new Date(business.publication_expires_at).getTime() <= Date.now();
+};
+
+/**
+ * Días restantes hasta la expiración (>=0). Null si no aplica.
+ * @param {Object} business
+ * @returns {number|null}
+ */
+export const getDiasRestantesNegocio = (business) => {
+  if (!business?.publication_expires_at) return null;
+  const diffMs =
+    new Date(business.publication_expires_at).getTime() - Date.now();
+  if (diffMs <= 0) return 0;
+  return Math.min(Math.ceil(diffMs / 86400000), MAX_DURACION_NEGOCIO);
+};
+
+/**
+ * Reactivar/republicar un negocio expirado del usuario reutilizando todos los datos.
+ *
+ * Flujo:
+ * 1. Verifica que el negocio sea del usuario y esté expirado.
+ * 2. Consume un cupo de la suscripción superguía activa
+ *    (RPC `validate_and_consume_business_publication`).
+ * 3. Actualiza el negocio: estado='publicado', publication_expires_at=now+30d,
+ *    is_paused=false. NO pasa por revisión admin (datos ya aprobados antes).
+ * 4. Si la actualización falla, intenta hacer refund del cupo.
+ *
+ * @param {string} businessId - ID del negocio a republicar
+ * @param {string} userId - ID del dueño (para validación)
+ * @returns {Promise<Object>} Negocio actualizado
+ */
+export const republishBusiness = async (businessId, userId) => {
+  if (!businessId) throw new Error("ID de negocio requerido");
+  if (!userId) throw new Error("ID de usuario requerido");
+
+  // 1. Cargar y validar el negocio
+  const { data: business, error: fetchError } = await supabase
+    .from("businesses")
+    .select("id, user_id, estado, publication_expires_at")
+    .eq("id", businessId)
+    .single();
+
+  if (fetchError || !business) {
+    throw new Error("No se encontró el negocio");
+  }
+  if (business.user_id !== userId) {
+    throw new Error("No tienes permisos para reactivar este negocio");
+  }
+  if (!isBusinessExpired(business)) {
+    throw new Error("Este negocio aún no ha expirado");
+  }
+
+  // 1b. Defensa: no permitir reactivar si el usuario tiene OTRO negocio
+  // publicado y no expirado. Cada cupo Superguía sirve para un único
+  // negocio activo a la vez.
+  const nowIso = new Date().toISOString();
+  const { count: otherActiveCount, error: countErr } = await supabase
+    .from("businesses")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("estado", "publicado")
+    .neq("id", businessId)
+    .or(`publication_expires_at.is.null,publication_expires_at.gt.${nowIso}`);
+
+  if (countErr) {
+    console.error("Error al verificar otros negocios activos:", countErr);
+  }
+  if ((otherActiveCount ?? 0) > 0) {
+    throw new Error(
+      "Ya tenés otro negocio publicado y vigente. Esperá a que expire para reactivar este.",
+    );
+  }
+
+  // 2. Consumir cupo
+  await validateAndConsumeBusinessPublication(userId);
+
+  // 3. Calcular nueva expiración y actualizar
+  const publicationExpiresAt = new Date(
+    Date.now() + MAX_DURACION_NEGOCIO * 24 * 60 * 60 * 1000,
+  ).toISOString();
+
+  const { data, error } = await supabase
+    .from("businesses")
+    .update({
+      estado: "publicado",
+      is_paused: false,
+      publication_expires_at: publicationExpiresAt,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", businessId)
+    .select()
+    .single();
+
+  if (error) {
+    // Intentar revertir el cupo consumido
+    try {
+      await refundBusinessPublication(userId);
+    } catch (refundErr) {
+      console.error(
+        "Fallo el refund tras error al republicar negocio:",
+        refundErr,
+      );
+    }
+    console.error("Error al republicar negocio:", error);
     throw error;
   }
 

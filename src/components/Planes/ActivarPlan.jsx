@@ -4,25 +4,23 @@ import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import {
   getPlanPrices,
-  isPlanesEnabled,
+  getPlansVisibility,
   getUserSubscriptions,
   hasUserPendingBusiness,
 } from "../../lib/database";
 import { initiatePayment, PaymentError } from "../../lib/payment";
+import { trackPlanStarted } from "../../lib/analytics";
 import AuthModal from "../Auth/AuthModal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCheck,
-  faArrowRight,
   faStar,
   faCrown,
   faRocket,
   faStore,
   faCalendarDays,
-  faInfinity,
   faPlus,
   faChevronRight,
-  faBan,
   faSpinner,
   faCircleCheck,
   faLock,
@@ -32,7 +30,6 @@ import "./styles/activar-plan.css";
 // Iconos del sitio
 const logoExtro = "/img/Logo_con_r_v3.png";
 const iconPanorama = "/img/P_Extro_v2.png";
-const iconExtro = "/img/E_Extro_v3.png";
 const iconSuperguia = "/img/SG_Extro_v2.png";
 
 /**
@@ -94,9 +91,9 @@ const BASE_PLAN_SUPERGUIA = {
   id: "superguia",
   nombre: "Superguia Extrovertidos",
   descripcion: "¡Publica Tu Negocio!",
-  duracion: "365 días",
+  duracion: "30 días",
   features: [
-    "Tu negocio visible todo el año",
+    "Tu negocio visible durante 30 días",
     "Perfil completo del negocio",
     "Horarios y contacto",
     "Ubicación en mapa",
@@ -184,14 +181,18 @@ export default function ActivarPlan() {
   const [hasActivePanorama, setHasActivePanorama] = useState(false);
   const [hasActiveSuperguia, setHasActiveSuperguia] = useState(false);
   const [hasPendingBusiness, setHasPendingBusiness] = useState(false);
+  const [panoramasVisible, setPanoramasVisible] = useState(true);
+  const [superguiaVisible, setSuperguiaVisible] = useState(true);
 
-  // Verificar si los planes están habilitados
+  // Verificar si los planes están habilitados (3 toggles)
   useEffect(() => {
     const checkAccess = async () => {
       try {
-        const enabled = await isPlanesEnabled();
-        // Si no está habilitado y no es admin, redirigir
-        if (!enabled && !isAdmin) {
+        const visibility = await getPlansVisibility();
+        setPanoramasVisible(visibility.panoramasVisible);
+        setSuperguiaVisible(visibility.superguiaVisible);
+        // Si ninguna sección es visible y no es admin, redirigir
+        if (!visibility.anyVisible && !isAdmin) {
           navigate("/", { replace: true });
           return;
         }
@@ -206,6 +207,12 @@ export default function ActivarPlan() {
       checkAccess();
     }
   }, [loading, isAdmin, navigate]);
+
+  // Limpiar selección si la sección correspondiente queda oculta
+  useEffect(() => {
+    if (!panoramasVisible && selectedPlan) setSelectedPlan(null);
+    if (!superguiaVisible && addSuperguia) setAddSuperguia(false);
+  }, [panoramasVisible, superguiaVisible, selectedPlan, addSuperguia]);
 
   // Cargar suscripciones activas del usuario
   useEffect(() => {
@@ -322,6 +329,12 @@ export default function ActivarPlan() {
 
     setProcessingPayment(true);
 
+    if (selectedPlan) {
+      trackPlanStarted(selectedPlan);
+    }
+    if (addSuperguia) {
+      trackPlanStarted("superguia");
+    }
     try {
       // Pago con Webpay Plus - redirección a Transbank
       await initiatePayment({
@@ -336,7 +349,10 @@ export default function ActivarPlan() {
       if (error instanceof PaymentError) {
         switch (error.code) {
           case "AUTH_REQUIRED":
-            showToast("Debes iniciar sesión para realizar un pago", "error");
+            showToast(
+              error.message || "Debes iniciar sesión para realizar un pago",
+              "error",
+            );
             break;
           case "CREATE_FAILED":
             showToast(
@@ -389,238 +405,242 @@ export default function ActivarPlan() {
           alt="Extrovertidos"
           className="activar-plan__logo"
         />
-        <h1 className="activar-plan__title">¡Elige tu mejor opción!</h1>
+        <h1 className="activar-plan__title">¡Extrovertidos tu mejor opción!</h1>
         <p className="activar-plan__subtitle">
           Selecciona una alternativa para Publicar tus Panoramas
         </p>
       </header>
 
       {/* Planes de Panoramas */}
-      <section className="activar-plan__section">
-        <div className="activar-plan__section-header">
-          <img
-            src={iconPanorama}
-            alt="Panoramas"
-            className="activar-plan__section-icon"
-          />
-          <h2 className="activar-plan__section-title">Panoramas</h2>
-        </div>
+      {panoramasVisible && (
+        <section className="activar-plan__section">
+          <div className="activar-plan__section-header">
+            <img
+              src={iconPanorama}
+              alt="Panoramas"
+              className="activar-plan__section-icon"
+            />
+            <h2 className="activar-plan__section-title">Panoramas</h2>
+          </div>
 
-        <div className="activar-plan__cards">
-          {planesPanoramas.map((plan) => {
-            const isOwnActive = activePlans.has(plan.id);
-            const isRenewable = renewablePlans.has(plan.id);
-            const isOtherActive = hasActivePanorama && !isOwnActive;
-            const isPlanDisabled = isOwnActive || isOtherActive;
-            return (
-              <div
-                key={plan.id}
-                className={`activar-plan__card ${
-                  plan.destacado ? "activar-plan__card--featured" : ""
-                } ${selectedPlan === plan.id ? "activar-plan__card--selected" : ""} ${isPlanDisabled ? "activar-plan__card--disabled" : ""} ${isOwnActive ? "activar-plan__card--own-active" : ""} ${isOtherActive ? "activar-plan__card--other-active" : ""}`}
-                onClick={() => {
-                  if (!isPlanDisabled) {
-                    const newPlan = selectedPlan === plan.id ? null : plan.id;
-                    setSelectedPlan(newPlan);
-                    if (newPlan) {
-                      setTimeout(() => {
-                        termsRef.current?.scrollIntoView({
-                          behavior: "smooth",
-                          block: "center",
-                        });
-                      }, 100);
+          <div className="activar-plan__cards">
+            {planesPanoramas.map((plan) => {
+              const isOwnActive = activePlans.has(plan.id);
+              const isRenewable = renewablePlans.has(plan.id);
+              const isOtherActive = hasActivePanorama && !isOwnActive;
+              const isPlanDisabled = isOwnActive || isOtherActive;
+              return (
+                <div
+                  key={plan.id}
+                  className={`activar-plan__card ${
+                    plan.destacado ? "activar-plan__card--featured" : ""
+                  } ${selectedPlan === plan.id ? "activar-plan__card--selected" : ""} ${isPlanDisabled ? "activar-plan__card--disabled" : ""} ${isOwnActive ? "activar-plan__card--own-active" : ""} ${isOtherActive ? "activar-plan__card--other-active" : ""}`}
+                  onClick={() => {
+                    if (!isPlanDisabled) {
+                      const newPlan = selectedPlan === plan.id ? null : plan.id;
+                      setSelectedPlan(newPlan);
+                      if (newPlan) {
+                        setTimeout(() => {
+                          termsRef.current?.scrollIntoView({
+                            behavior: "smooth",
+                            block: "center",
+                          });
+                        }, 100);
+                      }
                     }
-                  }
-                }}>
-                {/* Badge de plan activo */}
-                {isOwnActive && (
-                  <span className="activar-plan__card-active-badge">
-                    <FontAwesomeIcon icon={faCircleCheck} />
-                    Plan Activo
-                  </span>
-                )}
-
-                {isRenewable && (
-                  <span className="activar-plan__card-active-badge activar-plan__card-active-badge--renewable">
-                    <FontAwesomeIcon icon={faCircleCheck} />
-                    Puedes volver a suscribirte
-                  </span>
-                )}
-
-                {/* Etiqueta destacada */}
-                {plan.etiqueta && !isOwnActive && !isRenewable && (
-                  <span className="activar-plan__card-badge">
-                    {plan.etiqueta}
-                  </span>
-                )}
-
-                {/* Icono del plan */}
-                <div className="activar-plan__card-icon">
-                  <img
-                    src={iconPanorama}
-                    alt=""
-                    className="activar-plan__card-icon-img"
-                  />
-                </div>
-
-                {/* Info del plan */}
-                <h3 className="activar-plan__card-name">{plan.nombre}</h3>
-                <p className="activar-plan__card-desc">{plan.descripcion}</p>
-
-                {/* Precio */}
-                <div className="activar-plan__card-pricing">
-                  {plan.precioOriginal && (
-                    <span className="activar-plan__card-original">
-                      {formatPrecio(plan.precioOriginal)}
+                  }}>
+                  {/* Badge de plan activo */}
+                  {isOwnActive && (
+                    <span className="activar-plan__card-active-badge">
+                      <FontAwesomeIcon icon={faCircleCheck} />
+                      Plan Activo
                     </span>
                   )}
-                  <span className="activar-plan__card-price">
-                    {formatPrecio(plan.precio)}
+
+                  {isRenewable && (
+                    <span className="activar-plan__card-active-badge activar-plan__card-active-badge--renewable">
+                      <FontAwesomeIcon icon={faCircleCheck} />
+                      Puedes volver a suscribirte
+                    </span>
+                  )}
+
+                  {/* Etiqueta destacada */}
+                  {plan.etiqueta && !isOwnActive && !isRenewable && (
+                    <span className="activar-plan__card-badge">
+                      {plan.etiqueta}
+                    </span>
+                  )}
+
+                  {/* Icono del plan */}
+                  <div className="activar-plan__card-icon">
+                    <img
+                      src={iconPanorama}
+                      alt=""
+                      className="activar-plan__card-icon-img"
+                    />
+                  </div>
+
+                  {/* Info del plan */}
+                  <h3 className="activar-plan__card-name">{plan.nombre}</h3>
+                  <p className="activar-plan__card-desc">{plan.descripcion}</p>
+
+                  {/* Precio */}
+                  <div className="activar-plan__card-pricing">
+                    {plan.precioOriginal && (
+                      <span className="activar-plan__card-original">
+                        {formatPrecio(plan.precioOriginal)}
+                      </span>
+                    )}
+                    <span className="activar-plan__card-price">
+                      {formatPrecio(plan.precio)}
+                    </span>
+                  </div>
+
+                  {/* Duración */}
+                  {plan.duracion && (
+                    <span className="activar-plan__card-duration">
+                      {plan.duracion}
+                    </span>
+                  )}
+
+                  {/* Features */}
+                  <ul className="activar-plan__card-features">
+                    {plan.features.map((feat, i) => (
+                      <li key={i}>
+                        <FontAwesomeIcon icon={faCheck} />
+                        {feat}
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* Botón seleccionar o mensaje de plan activo */}
+                  {isOwnActive ? (
+                    <div className="activar-plan__card-active-msg activar-plan__card-active-msg--own">
+                      <FontAwesomeIcon icon={faCircleCheck} />
+                      <span>Suscripción activa</span>
+                    </div>
+                  ) : isRenewable ? (
+                    <div className="activar-plan__card-active-msg activar-plan__card-active-msg--renewable">
+                      <FontAwesomeIcon icon={faCircleCheck} />
+                      <span>Puedes volver a suscribirte o cambiar de plan</span>
+                    </div>
+                  ) : isOtherActive ? (
+                    <div className="activar-plan__card-active-msg activar-plan__card-active-msg--other">
+                      <FontAwesomeIcon icon={faLock} />
+                      <span>Ya tienes otro plan de panorama activo</span>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className={`activar-plan__card-btn ${
+                        selectedPlan === plan.id
+                          ? "activar-plan__card-btn--active"
+                          : ""
+                      }`}>
+                      {selectedPlan === plan.id ? (
+                        <>
+                          <FontAwesomeIcon icon={faCheck} /> Seleccionado
+                        </>
+                      ) : (
+                        "Seleccionar"
+                      )}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* Plan Superguía */}
+      {superguiaVisible && (
+        <section className="activar-plan__section activar-plan__section--superguia">
+          <div className="activar-plan__section-header">
+            <img
+              src={iconSuperguia}
+              alt="Superguía"
+              className="activar-plan__section-icon"
+            />
+            <h2 className="activar-plan__section-title">
+              Superguia Extrovertidos
+            </h2>
+          </div>
+
+          <div
+            className={`activar-plan__superguia ${
+              addSuperguia ? "activar-plan__superguia--selected" : ""
+            } ${hasActiveSuperguia ? "activar-plan__superguia--disabled activar-plan__superguia--own-active" : ""} ${hasPendingBusiness && !hasActiveSuperguia ? "activar-plan__superguia--disabled activar-plan__superguia--pending" : ""}`}
+            onClick={() => {
+              if (!hasActiveSuperguia && !hasPendingBusiness) {
+                setAddSuperguia(!addSuperguia);
+                if (!addSuperguia) {
+                  setTimeout(() => {
+                    termsRef.current?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "center",
+                    });
+                  }, 100);
+                }
+              }
+            }}>
+            <div className="activar-plan__superguia-content">
+              <div className="activar-plan__superguia-icon">
+                <FontAwesomeIcon icon={faStore} />
+              </div>
+              <div className="activar-plan__superguia-info">
+                <h3>{planSuperguia.descripcion}</h3>
+                <div className="activar-plan__superguia-price">
+                  <span className="activar-plan__superguia-amount">
+                    {formatPrecio(planSuperguia.precio)}
+                  </span>
+                  <span className="activar-plan__superguia-duration">
+                    <FontAwesomeIcon icon={faCalendarDays} /> ¡Por{" "}
+                    {planSuperguia.duracion}!
                   </span>
                 </div>
-
-                {/* Duración */}
-                {plan.duracion && (
-                  <span className="activar-plan__card-duration">
-                    {plan.duracion}
-                  </span>
-                )}
-
-                {/* Features */}
-                <ul className="activar-plan__card-features">
-                  {plan.features.map((feat, i) => (
+                <ul className="activar-plan__superguia-features">
+                  {planSuperguia.features.map((feat, i) => (
                     <li key={i}>
-                      <FontAwesomeIcon icon={faCheck} />
-                      {feat}
+                      <FontAwesomeIcon icon={faCheck} /> {feat}
                     </li>
                   ))}
                 </ul>
-
-                {/* Botón seleccionar o mensaje de plan activo */}
-                {isOwnActive ? (
-                  <div className="activar-plan__card-active-msg activar-plan__card-active-msg--own">
-                    <FontAwesomeIcon icon={faCircleCheck} />
-                    <span>Suscripción activa</span>
-                  </div>
-                ) : isRenewable ? (
-                  <div className="activar-plan__card-active-msg activar-plan__card-active-msg--renewable">
-                    <FontAwesomeIcon icon={faCircleCheck} />
-                    <span>Puedes volver a suscribirte o cambiar de plan</span>
-                  </div>
-                ) : isOtherActive ? (
-                  <div className="activar-plan__card-active-msg activar-plan__card-active-msg--other">
-                    <FontAwesomeIcon icon={faLock} />
-                    <span>Ya tienes otro plan de panorama activo</span>
-                  </div>
+                <p className="activar-plan__superguia-slogan">
+                  ¡Haz que siempre te encuentren!
+                </p>
+              </div>
+            </div>
+            {hasActiveSuperguia ? (
+              <div className="activar-plan__card-active-msg activar-plan__card-active-msg--own activar-plan__superguia-active-msg">
+                <FontAwesomeIcon icon={faCircleCheck} />
+                <span>Superguía activa</span>
+              </div>
+            ) : hasPendingBusiness ? (
+              <div className="activar-plan__card-active-msg activar-plan__card-active-msg--other activar-plan__superguia-active-msg">
+                <FontAwesomeIcon icon={faLock} />
+                <span>Publicación en revisión</span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className={`activar-plan__superguia-btn ${
+                  addSuperguia ? "activar-plan__superguia-btn--active" : ""
+                }`}>
+                {addSuperguia ? (
+                  <>
+                    <FontAwesomeIcon icon={faCheck} /> Agregado
+                  </>
                 ) : (
-                  <button
-                    type="button"
-                    className={`activar-plan__card-btn ${
-                      selectedPlan === plan.id
-                        ? "activar-plan__card-btn--active"
-                        : ""
-                    }`}>
-                    {selectedPlan === plan.id ? (
-                      <>
-                        <FontAwesomeIcon icon={faCheck} /> Seleccionado
-                      </>
-                    ) : (
-                      "Seleccionar"
-                    )}
-                  </button>
+                  <>
+                    <FontAwesomeIcon icon={faPlus} /> Agregar
+                  </>
                 )}
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Plan Superguía */}
-      <section className="activar-plan__section activar-plan__section--superguia">
-        <div className="activar-plan__section-header">
-          <img
-            src={iconSuperguia}
-            alt="Superguía"
-            className="activar-plan__section-icon"
-          />
-          <h2 className="activar-plan__section-title">
-            Superguia Extrovertidos
-          </h2>
-        </div>
-
-        <div
-          className={`activar-plan__superguia ${
-            addSuperguia ? "activar-plan__superguia--selected" : ""
-          } ${hasActiveSuperguia ? "activar-plan__superguia--disabled activar-plan__superguia--own-active" : ""} ${hasPendingBusiness && !hasActiveSuperguia ? "activar-plan__superguia--disabled activar-plan__superguia--pending" : ""}`}
-          onClick={() => {
-            if (!hasActiveSuperguia && !hasPendingBusiness) {
-              setAddSuperguia(!addSuperguia);
-              if (!addSuperguia) {
-                setTimeout(() => {
-                  termsRef.current?.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center",
-                  });
-                }, 100);
-              }
-            }
-          }}>
-          <div className="activar-plan__superguia-content">
-            <div className="activar-plan__superguia-icon">
-              <FontAwesomeIcon icon={faStore} />
-            </div>
-            <div className="activar-plan__superguia-info">
-              <h3>{planSuperguia.descripcion}</h3>
-              <div className="activar-plan__superguia-price">
-                <span className="activar-plan__superguia-amount">
-                  {formatPrecio(planSuperguia.precio)}
-                </span>
-                <span className="activar-plan__superguia-duration">
-                  <FontAwesomeIcon icon={faCalendarDays} /> ¡Por{" "}
-                  {planSuperguia.duracion}!
-                </span>
-              </div>
-              <ul className="activar-plan__superguia-features">
-                {planSuperguia.features.map((feat, i) => (
-                  <li key={i}>
-                    <FontAwesomeIcon icon={faCheck} /> {feat}
-                  </li>
-                ))}
-              </ul>
-              <p className="activar-plan__superguia-slogan">
-                ¡Haz que siempre te encuentren!
-              </p>
-            </div>
+              </button>
+            )}
           </div>
-          {hasActiveSuperguia ? (
-            <div className="activar-plan__card-active-msg activar-plan__card-active-msg--own activar-plan__superguia-active-msg">
-              <FontAwesomeIcon icon={faCircleCheck} />
-              <span>Superguía activa</span>
-            </div>
-          ) : hasPendingBusiness ? (
-            <div className="activar-plan__card-active-msg activar-plan__card-active-msg--other activar-plan__superguia-active-msg">
-              <FontAwesomeIcon icon={faLock} />
-              <span>Publicación en revisión</span>
-            </div>
-          ) : (
-            <button
-              type="button"
-              className={`activar-plan__superguia-btn ${
-                addSuperguia ? "activar-plan__superguia-btn--active" : ""
-              }`}>
-              {addSuperguia ? (
-                <>
-                  <FontAwesomeIcon icon={faCheck} /> Agregado
-                </>
-              ) : (
-                <>
-                  <FontAwesomeIcon icon={faPlus} /> Agregar
-                </>
-              )}
-            </button>
-          )}
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Términos y condiciones previos al pago */}
       {(selectedPlan || addSuperguia) && (

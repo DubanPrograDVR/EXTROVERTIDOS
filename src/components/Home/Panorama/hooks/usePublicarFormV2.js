@@ -7,7 +7,7 @@ import {
   getActivePublishSubscription,
   getAnyActivePanoramaSubscription,
 } from "../../../../lib/database";
-import { isPlanesEnabled } from "../../../../lib/database/settings";
+import { getPlansVisibility } from "../../../../lib/database/settings";
 import { supabase } from "../../../../lib/supabase";
 import { INITIAL_FORM_STATE } from "../constants";
 import {
@@ -225,8 +225,8 @@ const usePublicarFormV2 = () => {
 
     const loadPlanData = async () => {
       try {
-        const [enabled, sub, anySub] = await Promise.all([
-          isPlanesEnabled(),
+        const [visibility, sub, anySub] = await Promise.all([
+          getPlansVisibility(),
           user?.id
             ? getActivePublishSubscription(user.id)
             : Promise.resolve(null),
@@ -234,6 +234,7 @@ const usePublicarFormV2 = () => {
             ? getAnyActivePanoramaSubscription(user.id)
             : Promise.resolve(null),
         ]);
+        const enabled = visibility.panoramasVisible;
 
         if (!isCancelled && isMountedRef.current) {
           setPlanesEnabled(enabled);

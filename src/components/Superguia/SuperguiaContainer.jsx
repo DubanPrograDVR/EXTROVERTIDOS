@@ -20,6 +20,15 @@ import { useRealtimeRefetch } from "../../hooks/useRealtimeRefetch";
 import { useHighlightCard } from "../../hooks/useHighlightCard";
 import { useAuth } from "../../context/AuthContext";
 import { LOCATIONS } from "./data";
+import {
+  trackSearch,
+  trackFilter,
+  trackFiltersCleared,
+  trackBusinessView,
+  trackPublicationView,
+  trackCarouselClick,
+  trackPaginationUse,
+} from "../../lib/analytics";
 import "./styles/SuperguiaContainer.css";
 
 const ITEMS_PER_PAGE = 16;
@@ -131,6 +140,7 @@ export default function SuperguiaContainer() {
       if (page === currentPage) return;
       shouldScrollToFiltersRef.current = true;
       setCurrentPage(page);
+      trackPaginationUse(page);
     },
     [currentPage],
   );
@@ -305,6 +315,12 @@ export default function SuperguiaContainer() {
     setSelectedCity(city);
     setSelectedComuna(null);
     setCurrentPage(1);
+    if (city) {
+      const cityName = LOCATIONS[city]?.nombre || city;
+      trackFilter("city", city, cityName);
+    } else {
+      trackFiltersCleared();
+    }
   }, []);
 
   const handleCategoryChange = useCallback((category) => {
@@ -312,22 +328,36 @@ export default function SuperguiaContainer() {
     setSelectedSubcategory(null);
     setCurrentPage(1);
     setShuffleKey((k) => k + 1);
-  }, []);
+    if (category) {
+      const cat = categories.find((c) => c.id === category);
+      trackFilter("category", category, cat?.nombre || category);
+    }
+  }, [categories]);
 
   const handleSubcategoryChange = useCallback((subcategory) => {
     setSelectedSubcategory(subcategory);
     setCurrentPage(1);
     setShuffleKey((k) => k + 1);
-  }, []);
+    if (subcategory) {
+      const sub = flatSubcategories.find((s) => s.id === subcategory);
+      trackFilter("subcategory", subcategory, sub?.nombre || subcategory);
+    }
+  }, [flatSubcategories]);
 
   const handleComunaChange = useCallback((comuna) => {
     setSelectedComuna(comuna);
     setCurrentPage(1);
+    if (comuna) {
+      trackFilter("comuna", comuna, comuna);
+    }
   }, []);
 
   const handleSearch = useCallback((query) => {
     setSearchQuery(query);
     setCurrentPage(1);
+    if (query?.trim()) {
+      trackSearch(query, "superguia");
+    }
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -337,12 +367,14 @@ export default function SuperguiaContainer() {
     setSelectedComuna(null);
     setSearchQuery("");
     setCurrentPage(1);
+    trackFiltersCleared();
   }, []);
 
   // Handlers para el modal
   const handleBusinessClick = useCallback((business) => {
     setSelectedBusiness(business);
     setIsModalOpen(true);
+    trackBusinessView(business);
   }, []);
 
   const handleCloseModal = useCallback(() => {
@@ -353,6 +385,7 @@ export default function SuperguiaContainer() {
   // Handlers para carrusel de panoramas
   const handlePanoramaClick = useCallback(async (panorama) => {
     setSelectedPanorama(panorama);
+    trackCarouselClick(panorama);
     if (panorama?.id) {
       try {
         const fullPanorama = await getEventById(panorama.id);

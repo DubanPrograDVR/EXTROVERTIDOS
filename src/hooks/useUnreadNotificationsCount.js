@@ -29,6 +29,8 @@ export function useUnreadNotificationsCount(userId) {
   }, [userId]);
 
   useEffect(() => {
+    // setState dentro de loadCount ocurre tras await; setCount(0) en else es reset válido.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (enabled) loadCount();
     else setCount(0);
   }, [enabled, loadCount]);

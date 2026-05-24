@@ -15,9 +15,9 @@ export const getProfile = async (userId) => {
     .from("profiles")
     .select("*")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
 
-  if (error && error.code !== "PGRST116") {
+  if (error) {
     console.error("Error al obtener perfil:", error);
     throw error;
   }
@@ -99,7 +99,7 @@ export const ensureProfileExists = async (userId) => {
       return false;
     }
 
-    console.log(
+    import.meta.env.DEV && console.log(
       "[ensureProfileExists] Perfil creado exitosamente para:",
       userId,
     );

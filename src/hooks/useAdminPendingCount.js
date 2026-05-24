@@ -58,6 +58,8 @@ export function useAdminPendingCount(enabled) {
   }, [enabled]);
 
   useEffect(() => {
+    // setState ocurre tras await dentro de loadCounts — no es cascada síncrona.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (enabled) loadCounts();
   }, [enabled, loadCounts]);
 

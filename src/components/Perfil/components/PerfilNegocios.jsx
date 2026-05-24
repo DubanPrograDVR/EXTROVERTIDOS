@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -18,6 +18,8 @@ import {
   faExclamationTriangle,
   faRedoAlt,
   faLocationArrow,
+  faCalendarXmark,
+  faBoltLightning,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "../../../context/AuthContext";
 import {
@@ -26,8 +28,14 @@ import {
   updateBusiness,
   deleteOwnBusiness,
   pauseBusiness,
+  getActiveSuperguiaWithQuota,
 } from "../../../lib/database";
-import { resubmitBusiness } from "../../../lib/database/businesses";
+import {
+  resubmitBusiness,
+  republishBusiness,
+  isBusinessExpired,
+  getDiasRestantesNegocio,
+} from "../../../lib/database/businesses";
 import { useToast } from "../../../context/ToastContext";
 import { useRealtimeRefetch } from "../../../hooks/useRealtimeRefetch";
 import BusinessModal from "../../Superguia/BusinessModal";
@@ -49,6 +57,28 @@ export default function PerfilNegocios() {
   const [pausing, setPausing] = useState(null);
   const [resubmitting, setResubmitting] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [republishing, setRepublishing] = useState(null);
+  const [superguiaQuota, setSuperguiaQuota] = useState({
+    subscription: null,
+    hasQuota: false,
+    isExpired: false,
+    diasRestantesPlan: null,
+    hasActiveBusiness: false,
+  });
+
+  const reloadSuperguiaQuota = useCallback(async () => {
+    if (!user) return;
+    try {
+      const info = await getActiveSuperguiaWithQuota(user.id);
+      setSuperguiaQuota(info);
+    } catch (err) {
+      console.error("Error cargando suscripción superguía:", err);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    reloadSuperguiaQuota();
+  }, [reloadSuperguiaQuota]);
 
   useEffect(() => {
     const loadBusinesses = async () => {
@@ -102,6 +132,15 @@ export default function PerfilNegocios() {
     filter: user?.id ? `user_id=eq.${user.id}` : undefined,
     enabled: Boolean(user?.id),
     onChange: () => reloadBusinesses(),
+  });
+
+  // Tiempo real: refrescar cupo de suscripción superguía en vivo
+  useRealtimeRefetch({
+    table: "subscriptions",
+    event: "*",
+    filter: user?.id ? `user_id=eq.${user.id}` : undefined,
+    enabled: Boolean(user?.id),
+    onChange: () => reloadSuperguiaQuota(),
   });
 
   // Guardar edición
@@ -196,8 +235,48 @@ export default function PerfilNegocios() {
     }
   };
 
+  // Republicar (reactivar) un negocio expirado, consumiendo cupo del plan.
+  const handleRepublish = async (business) => {
+    if (!user) return;
+    setRepublishing(business.id);
+    try {
+      await republishBusiness(business.id, user.id);
+      if (showToast) {
+        showToast(
+          "¡Negocio reactivado y publicado nuevamente por 30 días!",
+          "success",
+        );
+      }
+      await Promise.all([reloadBusinesses(), reloadSuperguiaQuota()]);
+    } catch (err) {
+      console.error("Error al republicar negocio:", err);
+      if (showToast) {
+        showToast(
+          err?.message || "No se pudo reactivar el negocio",
+          "error",
+        );
+      }
+    } finally {
+      setRepublishing(null);
+    }
+  };
+
+  // Llevar al usuario a la página de planes para reactivar/comprar Superguía.
+  const handleGoActivarPlan = (business) => {
+    navigate(`/activar-plan?reactivar=${business.id}`);
+  };
+
   // Renderizar badge de estado
   const renderStatusBadge = (business) => {
+    if (isBusinessExpired(business)) {
+      return (
+        <span className="status-badge status-badge--expired">
+          <FontAwesomeIcon icon={faCalendarXmark} />
+          Expirado
+        </span>
+      );
+    }
+
     if (business.estado === "publicado" && business.is_paused) {
       return (
         <span className="status-badge status-badge--paused">
@@ -296,6 +375,12 @@ export default function PerfilNegocios() {
               (Array.isArray(business.imagenes) && business.imagenes.length > 0
                 ? business.imagenes[0]
                 : null);
+            const expired = isBusinessExpired(business);
+            const diasRestantes = getDiasRestantesNegocio(business);
+            const isActivePublished =
+              business.estado === "publicado" &&
+              !business.is_paused &&
+              !expired;
 
             return (
               <article key={business.id} className="perfil-business-card">
@@ -325,7 +410,7 @@ export default function PerfilNegocios() {
                     <h3 className="perfil-business-card__title">
                       {business.nombre}
                     </h3>
-                    {business.estado === "publicado" && !business.is_paused && (
+                    {isActivePublished && (
                       <button
                         type="button"
                         className="perfil-business-card__goto"
@@ -343,6 +428,63 @@ export default function PerfilNegocios() {
                     {business.direccion || "Sin dirección"}
                     {business.telefono ? ` • ${business.telefono}` : ""}
                   </p>
+
+                  {/* Mini tarjeta: días restantes (negocio activo) */}
+                  {isActivePublished && diasRestantes !== null && (
+                    <div className="perfil-business-card__plan-info">
+                      <FontAwesomeIcon icon={faClock} />
+                      <span>
+                        {diasRestantes > 0
+                          ? `Termina en ${diasRestantes} día${diasRestantes === 1 ? "" : "s"}`
+                          : "Termina hoy"}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Bloque expirado: opciones de reactivación */}
+                  {expired && (
+                    <div className="perfil-business-card__expired-block">
+                      <p className="perfil-business-card__expired-msg">
+                        Tu Publicación de Negocio en la Superguía ha terminado.
+                        <br />
+                        Haz click en Reactivar plan para publicarlo nuevamente.
+                      </p>
+                      {superguiaQuota.hasQuota ? (
+                        <>
+                          <button
+                            className="perfil-publication-card__btn perfil-publication-card__btn--reactivar"
+                            onClick={() => handleRepublish(business)}
+                            disabled={republishing === business.id}>
+                            <FontAwesomeIcon
+                              icon={
+                                republishing === business.id
+                                  ? faSpinner
+                                  : faBoltLightning
+                              }
+                              spin={republishing === business.id}
+                            />
+                            {republishing === business.id
+                              ? "Reactivando..."
+                              : "Volver a publicar negocio"}
+                          </button>
+                          <button
+                            className="perfil-business-card__btn"
+                            onClick={() => navigate("/publicar-negocio")}>
+                            <FontAwesomeIcon icon={faPlus} />
+                            Crear negocio nuevo
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          className="perfil-publication-card__btn perfil-publication-card__btn--reactivar"
+                          onClick={() => handleGoActivarPlan(business)}>
+                          <FontAwesomeIcon icon={faRedoAlt} />
+                          Reactivar Plan
+                        </button>
+                      )}
+                    </div>
+                  )}
+
                   {business.estado === "pendiente" && (
                     <div className="perfil-publication-card__review">
                       <FontAwesomeIcon icon={faExclamationTriangle} />
@@ -393,66 +535,70 @@ export default function PerfilNegocios() {
                       )}
                     </div>
                   )}
-                  <div className="perfil-business-card__actions">
-                    <button
-                      className="perfil-business-card__btn"
-                      onClick={() => setViewModal({ open: true, business })}>
-                      <FontAwesomeIcon icon={faEye} />
-                      Ver
-                    </button>
-                    <button
-                      className="perfil-business-card__btn"
-                      onClick={() => setEditModal({ open: true, business })}
-                      disabled={
-                        business.estado === "pendiente" ||
-                        business.estado === "en_revision"
-                      }
-                      title={
-                        business.estado === "pendiente" ||
-                        business.estado === "en_revision"
-                          ? "No puedes editar mientras está en revisión"
-                          : "Editar"
-                      }>
-                      <FontAwesomeIcon icon={faEdit} />
-                      Editar
-                    </button>
-                    {business.estado === "publicado" && (
+
+                  {/* Acciones estándar: ocultas cuando el negocio está expirado */}
+                  {!expired && (
+                    <div className="perfil-business-card__actions">
                       <button
-                        className={`perfil-business-card__btn ${
-                          business.is_paused
-                            ? "perfil-publication-card__btn--unpause"
-                            : "perfil-publication-card__btn--pause"
-                        }`}
-                        onClick={() => handlePauseBusiness(business)}
-                        disabled={pausing === business.id}>
-                        <FontAwesomeIcon
-                          icon={
-                            pausing === business.id
-                              ? faSpinner
-                              : business.is_paused
-                                ? faPlay
-                                : faPause
-                          }
-                          spin={pausing === business.id}
-                        />
-                        {pausing === business.id
-                          ? "..."
-                          : business.is_paused
-                            ? "Reactivar"
-                            : "Pausar"}
+                        className="perfil-business-card__btn"
+                        onClick={() => setViewModal({ open: true, business })}>
+                        <FontAwesomeIcon icon={faEye} />
+                        Ver
                       </button>
-                    )}
-                    <button
-                      className="perfil-business-card__btn perfil-business-card__btn--delete"
-                      onClick={() => setDeleteConfirm(business)}
-                      disabled={deleting === business.id}>
-                      <FontAwesomeIcon
-                        icon={deleting === business.id ? faSpinner : faTrash}
-                        spin={deleting === business.id}
-                      />
-                      {deleting === business.id ? "..." : "Eliminar"}
-                    </button>
-                  </div>
+                      <button
+                        className="perfil-business-card__btn"
+                        onClick={() => setEditModal({ open: true, business })}
+                        disabled={
+                          business.estado === "pendiente" ||
+                          business.estado === "en_revision"
+                        }
+                        title={
+                          business.estado === "pendiente" ||
+                          business.estado === "en_revision"
+                            ? "No puedes editar mientras está en revisión"
+                            : "Editar"
+                        }>
+                        <FontAwesomeIcon icon={faEdit} />
+                        Editar
+                      </button>
+                      {business.estado === "publicado" && (
+                        <button
+                          className={`perfil-business-card__btn ${
+                            business.is_paused
+                              ? "perfil-publication-card__btn--unpause"
+                              : "perfil-publication-card__btn--pause"
+                          }`}
+                          onClick={() => handlePauseBusiness(business)}
+                          disabled={pausing === business.id}>
+                          <FontAwesomeIcon
+                            icon={
+                              pausing === business.id
+                                ? faSpinner
+                                : business.is_paused
+                                  ? faPlay
+                                  : faPause
+                            }
+                            spin={pausing === business.id}
+                          />
+                          {pausing === business.id
+                            ? "..."
+                            : business.is_paused
+                              ? "Reactivar"
+                              : "Pausar"}
+                        </button>
+                      )}
+                      <button
+                        className="perfil-business-card__btn perfil-business-card__btn--delete"
+                        onClick={() => setDeleteConfirm(business)}
+                        disabled={deleting === business.id}>
+                        <FontAwesomeIcon
+                          icon={deleting === business.id ? faSpinner : faTrash}
+                          spin={deleting === business.id}
+                        />
+                        {deleting === business.id ? "..." : "Eliminar"}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </article>
             );

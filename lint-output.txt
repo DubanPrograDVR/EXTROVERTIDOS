@@ -1,0 +1,522 @@
+
+> extrovertidos@0.0.0 lint
+> eslint .
+
+node.exe : [baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: `npm i 
+baseline-browser-mapping@latest -D`
+En línea: 1 Carácter: 1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([baseline-brows...ping@latest -D` 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Admin\AdminPanel.jsx
+   82:10  error  'categories' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u         no-unused-vars
+  109:5   error  'handleUpdateEvent' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Admin\components\AdminBusinessList.jsx
+  12:3  error  'faClock' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  13:3  error  'faPhone' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Admin\components\AdminCategoryManager.jsx
+  367:6  warning  React Hook useCallback has a missing dependency: 'crudFns'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Admin\components\AdminEditModal.jsx
+  148:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  146 |         externo: "venta_externa",
+  147 |       };
+> 148 |       setFormData({
+      |       ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  149 |         titulo: event.titulo || "",
+  150 |         descripcion: event.descripcion || "",
+  151 |         organizador: event.organizador || "",  react-hooks/set-state-in-effect
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Admin\components\AdminPublicationsList.jsx
+  17:3  error  'faUser' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  90:3  error  'onBulkDelete' is defined but never used                                       no-unused-vars
+  92:3  error  'onRefresh' is defined but never used                                          no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\FAQ\FAQItem.jsx
+  1:10  error  'useState' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Home\Footer.jsx
+  10:3  error  'faCommentDots' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Home\Navbar.jsx
+   10:3   error  'faUserPlus' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                  no-unused-vars
+   41:56  error  'loading' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u            no-unused-vars
+  120:9   error  'openRegisterModal' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Home\Negocio\PublicarNegocio.jsx
+   10:3  error    'faStore' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                no-unused-vars
+  154:9  error    'validateCurrentStep' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u           no-unused-vars
+  210:6  warning  React Hook useEffect has a missing dependency: 'stepError'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Home\Negocio\components\BusinessDraftPreview.jsx
+  149:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  147 |     ].filter(Boolean);
+  148 |
+> 149 |     setActiveSection((prev) =>
+      |     ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  150 |       visibleSections.includes(prev) ? prev : visibleSections[0] || null,
+  151 |     );
+  152 |   }, [  react-hooks/set-state-in-effect
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Home\Negocio\components\HorariosModal.jsx
+    9:3  error  'faChevronDown' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          no-unused-vars
+  118:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  116 |             : [{ ...DEFAULT_TURNO }];
+  117 |       });
+> 118 |       setLocalHorarios(initial);
+      |       ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  119 |       setAbierto24h(initialAbierto24h || false);
+  120 |     }
+  121 |   }, [isOpen, diasSeleccionados, horarios, initialAbierto24h]);  react-hooks/set-state-in-effect
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Home\Negocio\components\hooks\useNegocioForm.js
+  129:15  error  Empty block statement                                                                     no-empty
+  133:13  error  'imagenes' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  163:17  error  Empty block statement                                                                     no-empty
+  167:15  error  'imagenes' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  176:15  error  Empty block statement                                                                     no-empty
+  195:13  error  Empty block statement                                                                     no-empty
+  377:15  error  'imagenes' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Home\Panorama\components\DateRangePicker.jsx
+   10:3  error    'faPlus' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   no-unused-vars
+  151:3  error    'cantidadRepeticiones' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                no-unused-vars
+  163:9  warning  The 'todayDate' object construction makes the dependencies of useMemo Hook (at line 195) change on every render. To fix this, wrap the initialization of 'todayDate' in its own useMemo() Hook                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  react-hooks/exhaustive-deps
+  164:9  warning  The 'maxSelectableDate' object construction makes the dependencies of useMemo Hook (at line 207) change on every render. To fix this, wrap the initialization of 'maxSelectableDate' in its own useMemo() Hook                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  react-hooks/exhaustive-deps
+  229:7  error    Error: Cannot access variable before it is declared
+
+`switchToSingle` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  227 |   useEffect(() => {
+  228 |     if (enabledModes && !enabledModes.includes(selectionMode)) {
+> 229 |       switchToSingle();
+      |       ^^^^^^^^^^^^^^ `switchToSingle` accessed before it is declared
+  230 |     }
+  231 |   }, [enabledModes]); // eslint-disable-line react-hooks/exhaustive-deps
+  232 |
+
+  269 |
+  270 |   // ===== MODE SWITCHING =====
+> 271 |   const switchToSingle = () => {
+      |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 272 |     setSelectionMode("single");
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 273 |     onChange({
+      ÔÇª
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 283 |     setRangeStep("start");
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 284 |   };
+      | ^^^^^ `switchToSingle` is declared here
+  285 |
+  286 |   const switchToRange = () => {
+  287 |     setSelectionMode("range");  react-hooks/immutability
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Home\Panorama\components\DraftPreview.jsx
+  179:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  177 |     ].filter(Boolean);
+  178 |
+> 179 |     setActiveSection((prev) =>
+      |     ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  180 |       visibleSections.includes(prev) ? prev : visibleSections[0] || null,
+  181 |     );
+  182 |   }, [  react-hooks/set-state-in-effect
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Home\Panorama\components\LocationPicker.jsx
+  58:7  error  'resolveShortUrl' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Home\Panorama\components\PlanBlockModal.jsx
+  76:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  79:3   error  'planInfo' is defined but never used                                                                                            no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Home\Panorama\components\TagsModal.jsx
+  100:10  error    'dbTags' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                             no-unused-vars
+  101:10  error    'loadingDbTags' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                      no-unused-vars
+  143:6   warning  React Hook useEffect has a missing dependency: 'applySelection'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Home\Panorama\components\TicketModal.jsx
+  65:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  63 |   useEffect(() => {
+  64 |     if (isOpen) {
+> 65 |       setSelectedType(currentValues?.tipo_entrada || "");
+     |       ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  66 |       setPrecio(currentValues?.precio || "");
+  67 |       setUrlVenta(currentValues?.url_venta || "");
+  68 |     }  react-hooks/set-state-in-effect
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Home\Panorama\components\wizard\WizardStepImages.jsx
+  2:21  error  'faEye' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Home\Panorama\hooks\useImageManager.js
+   1:52  error    'useMemo' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  no-unused-vars
+  51:9   error    'revokeUrls' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      no-unused-vars
+  72:22  warning  The ref value 'createdUrlsRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'createdUrlsRef.current' to a variable inside the effect, and use that variable in the cleanup function                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     react-hooks/exhaustive-deps
+  81:7   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  79 |   useEffect(() => {
+  80 |     if (initialExistingImages.length > 0 && existingImages.length === 0) {
+> 81 |       setExistingImages(initialExistingImages);
+     |       ^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  82 |       setPreviewUrls((prev) => {
+  83 |         // Solo agregar si no hay previews a+¦n
+  84 |         if (prev.length === 0) {  react-hooks/set-state-in-effect
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Home\Panorama\hooks\usePublicarFormV2.js
+   11:10  error  'supabase' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                no-unused-vars
+   15:3   error  'canUserPublish' is defined but never used. Allowed unused vars must match /^[A-Z_]/u          no-unused-vars
+   63:9   error  'navigate' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u       no-unused-vars
+   64:10  error  'searchParams' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u   no-unused-vars
+  165:13  error  'imagenes' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u       no-unused-vars
+  209:14  error  'cleanupSubmit' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Home\Secciones.jsx
+  5:10  error  'faMapMarkedAlt' is defined but never used. Allowed unused vars must match /^[A-Z_]/u         no-unused-vars
+  5:26  error  'faCompass' is defined but never used. Allowed unused vars must match /^[A-Z_]/u              no-unused-vars
+  8:7   error  'panoramasImg' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Perfil\components\PerfilBorradores.jsx
+  131:19  error  'descripcion' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Perfil\components\PerfilFavoritos.jsx
+  78:9  error  'formatTime' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Perfil\components\PerfilHeader.jsx
+  5:3  error  'faEdit' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Perfil\components\PerfilNegocios.jsx
+   46:10  error  'categories' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u      no-unused-vars
+   47:10  error  'saving' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u          no-unused-vars
+  108:9   error  'handleSaveEdit' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Perfil\components\PerfilPlan.jsx
+   12:3   error  'faCircleCheck' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                         no-unused-vars
+  200:9   error  'hasAnyActive' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                 no-unused-vars
+  209:9   error  'hasActivePanoramaWithQuota' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u   no-unused-vars
+  217:9   error  'hasActiveSuperguiaWithQuota' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  290:17  error  'isRenewable' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                  no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Perfil\components\editar\UserBusinessEditModal.jsx
+   22:3  error  'faStore' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               no-unused-vars
+  117:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  115 |   useEffect(() => {
+  116 |     if (isOpen) {
+> 117 |       setActiveSection(SECTIONS.DESCRIPTION);
+      |       ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  118 |       setCurrentImageIndex(0);
+  119 |     }
+  120 |   }, [isOpen, business?.id]);  react-hooks/set-state-in-effect
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Perfil\components\editar\UserEditModal.jsx
+   20:3  error  'faLink' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  no-unused-vars
+   21:3  error  'faCalendarAlt' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           no-unused-vars
+   23:3  error  'faUser' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  no-unused-vars
+  145:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  143 |   useEffect(() => {
+  144 |     if (isOpen) {
+> 145 |       setActiveSection(ACCORDION_SECTIONS.DESCRIPTION);
+      |       ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  146 |       setCurrentImageIndex(0);
+  147 |       setNewImageFiles([]);
+  148 |       setIsInfoExpanded(false);  react-hooks/set-state-in-effect
+  244:9  error  'currentCategory' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Perfil\components\editar\useBusinessEditForm.js
+  81:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  79 |       const { dias_atencion, horarios_detalle, abierto_24h } =
+  80 |         parseHorariosFromDB(business.horarios);
+> 81 |       setFormData({
+     |       ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  82 |         nombre: business.nombre || "",
+  83 |         descripcion: business.descripcion || "",
+  84 |         categoria: business.categoria || "",  react-hooks/set-state-in-effect
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Perfil\components\editar\useEditForm.js
+  31:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  29 |         externo: "venta_externa",
+  30 |       };
+> 31 |       setFormData({
+     |       ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  32 |         titulo: event.titulo || "",
+  33 |         descripcion: event.descripcion || "",
+  34 |         organizador: event.organizador || "",  react-hooks/set-state-in-effect
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Planes\ActivarPlan.jsx
+  16:3  error  'faArrowRight' is defined but never used. Allowed unused vars must match /^[A-Z_]/u        no-unused-vars
+  22:3  error  'faInfinity' is defined but never used. Allowed unused vars must match /^[A-Z_]/u          no-unused-vars
+  25:3  error  'faBan' is defined but never used. Allowed unused vars must match /^[A-Z_]/u               no-unused-vars
+  35:7  error  'iconExtro' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Planes\PaymentResult.jsx
+  43:10  error  'error' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u     no-unused-vars
+  43:17  error  'setError' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\SupabaseTest.jsx
+  34:15  error  'data' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Superguia\BusinessCard.jsx
+  64:5  error  'descripcion' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  72:5  error  'provincia' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u    no-unused-vars
+  73:5  error  'direccion' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u    no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Superguia\BusinessModal\BusinessModalContent.jsx
+    4:3  error    'normalizeLineEndings' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                            no-unused-vars
+   38:3  error    'faRoute' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                         no-unused-vars
+   42:3  error    'faExternalLinkAlt' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                               no-unused-vars
+  345:6  warning  React Hook useEffect has missing dependencies: 'business' and 'startInEditMode'. Either include them or remove the dependency array. If 'setIsEditMode' needs the current value of 'startInEditMode', you can also switch to useReducer instead of useState and read 'startInEditMode' in the reducer  react-hooks/exhaustive-deps
+  370:5  error    'comuna' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                 no-unused-vars
+  371:5  error    'provincia' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                              no-unused-vars
+  372:5  error    'region' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                 no-unused-vars
+  375:5  error    'categoria' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                              no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Superguia\DateCalendar.jsx
+   35:3   error    'minDate' is assigned a value but never used                                                                                                                                           no-unused-vars
+   37:9   warning  The 'today' object construction makes the dependencies of useMemo Hook (at line 76) change on every render. To fix this, wrap the initialization of 'today' in its own useMemo() Hook  react-hooks/exhaustive-deps
+  224:10  error    Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                         react-refresh/only-export-components
+  224:25  error    Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                         react-refresh/only-export-components
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Superguia\PublicationCard.jsx
+    8:3   error  'faClock' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                     no-unused-vars
+    9:3   error  'faTicketAlt' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                 no-unused-vars
+   16:17  error  'faThumbsUpSolid' is defined but never used. Allowed unused vars must match /^[A-Z_]/u             no-unused-vars
+   17:3   error  'faBullhorn' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                  no-unused-vars
+   24:17  error  'faThumbsUpRegular' is defined but never used. Allowed unused vars must match /^[A-Z_]/u           no-unused-vars
+  108:5   error  'provincia' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u          no-unused-vars
+  122:5   error  'mensaje_marketing' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  405:9   error  'horarioShort' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u       no-unused-vars
+  406:9   error  'entradaText' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u        no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Superguia\PublicationModal\PublicationModalContent.jsx
+    7:3   error    'normalizeLineEndings' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                               no-unused-vars
+   34:3   error    'faCalendarWeek' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                     no-unused-vars
+   37:3   error    'faLocationDot' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                      no-unused-vars
+   45:3   error    'faRoute' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                            no-unused-vars
+   46:3   error    'faExternalLinkAlt' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                  no-unused-vars
+   49:3   error    'faHeart' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                            no-unused-vars
+  256:6   warning  React Hook useEffect has missing dependencies: 'publication' and 'startInEditMode'. Either include them or remove the dependency array. If 'setIsEditMode' needs the current value of 'startInEditMode', you can also switch to useReducer instead of useState and read 'startInEditMode' in the reducer  react-hooks/exhaustive-deps
+  272:5   error    'subtitulo' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                 no-unused-vars
+  304:5   error    'event_tags' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                no-unused-vars
+  346:23  error    React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?                                                                                                                 react-hooks/rules-of-hooks
+  611:9   error    'getDirectionsUrl' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                          no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\Superguia\SuperguiaContainer.jsx
+  200:6  warning  React Hook useMemo has an unnecessary dependency: 'weekRefreshKey'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\UI\Toast.jsx
+  26:7  error    Error: Cannot access variable before it is declared
+
+`handleClose` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  24 |   useEffect(() => {
+  25 |     const timer = setTimeout(() => {
+> 26 |       handleClose();
+     |       ^^^^^^^^^^^ `handleClose` accessed before it is declared
+  27 |     }, duration);
+  28 |
+  29 |     return () => clearTimeout(timer);
+
+  30 |   }, [duration]);
+  31 |
+> 32 |   const handleClose = () => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 33 |     setIsExiting(true);
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+> 34 |     closeTimerRef.current = setTimeout(() => {
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+> 35 |       setIsVisible(false);
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+> 36 |       if (onClose) onClose();
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+> 37 |     }, 300);
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+> 38 |   };
+     | ^^^^^ `handleClose` is declared here
+  39 |
+  40 |   const icons = {
+  41 |     success: faCheckCircle,  react-hooks/immutability
+  30:6  warning  React Hook useEffect has a missing dependency: 'handleClose'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    react-hooks/exhaustive-deps
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\components\UI\WrappingTextarea.jsx
+  230:10  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\context\AuthContext.jsx
+  93:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\context\CityContext.jsx
+   4:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  13:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\context\ToastContext.jsx
+  35:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\hooks\useAdminPendingCount.js
+  61:18  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  59 |
+  60 |   useEffect(() => {
+> 61 |     if (enabled) loadCounts();
+     |                  ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  62 |   }, [enabled, loadCounts]);
+  63 |
+  64 |   useRealtimeRefetch({  react-hooks/set-state-in-effect
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\hooks\useHighlightCard.js
+  143:6  warning  React Hook useEffect has a missing dependency: 'navigate'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\hooks\useRealtimeRefetch.js
+  27:3  error  Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+  25 | }) {
+  26 |   const onChangeRef = useRef(onChange);
+> 27 |   onChangeRef.current = onChange;
+     |   ^^^^^^^^^^^^^^^^^^^ Cannot update ref during render
+  28 |
+  29 |   useEffect(() => {
+  30 |     if (!enabled || !table) return undefined;  react-hooks/refs
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\hooks\useUnreadNotificationsCount.js
+  32:18  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  30 |
+  31 |   useEffect(() => {
+> 32 |     if (enabled) loadCount();
+     |                  ^^^^^^^^^ Avoid calling setState() directly within an effect
+  33 |     else setCount(0);
+  34 |   }, [enabled, loadCount]);
+  35 |  react-hooks/set-state-in-effect
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\lib\database\images.js
+  239:13  error  'data' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  417:13  error  'data' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\src\lib\planRules.js
+  239:39  error  'publicaciones_total' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  375:39  error  'publicaciones_total' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\supabase\functions\confirm-payment\index.js
+   34:24  error  'Deno' is not defined                                                                        no-undef
+   35:24  error  'Deno' is not defined                                                                        no-undef
+   36:23  error  'Deno' is not defined                                                                        no-undef
+   68:19  error  'Deno' is not defined                                                                        no-undef
+  113:25  error  'Deno' is not defined                                                                        no-undef
+  114:24  error  'Deno' is not defined                                                                        no-undef
+  141:1   error  'Deno' is not defined                                                                        no-undef
+  164:23  error  'Deno' is not defined                                                                        no-undef
+  165:30  error  'Deno' is not defined                                                                        no-undef
+  199:9   error  'tbkIdSesion' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\supabase\functions\create-payment\index.js
+   83:24  error  'Deno' is not defined  no-undef
+   84:24  error  'Deno' is not defined  no-undef
+   85:23  error  'Deno' is not defined  no-undef
+  181:1   error  'Deno' is not defined  no-undef
+  198:25  error  'Deno' is not defined  no-undef
+  199:29  error  'Deno' is not defined  no-undef
+  200:32  error  'Deno' is not defined  no-undef
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\supabase\functions\payment-status\index.js
+  46:24  error  'Deno' is not defined  no-undef
+  47:24  error  'Deno' is not defined  no-undef
+  48:23  error  'Deno' is not defined  no-undef
+  62:1   error  'Deno' is not defined  no-undef
+  79:25  error  'Deno' is not defined  no-undef
+  80:29  error  'Deno' is not defined  no-undef
+  81:32  error  'Deno' is not defined  no-undef
+
+C:\Users\duban\OneDrive\Escritorio\EXTROVERTIDOS\Extrovertidos\supabase\functions\send-email\index.js
+    1:10  error  'createClient' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  313:1   error  'Deno' is not defined                                                                no-undef
+  319:28  error  'Deno' is not defined                                                                no-undef
+
+Ô£û 159 problems (147 errors, 12 warnings)
+
+

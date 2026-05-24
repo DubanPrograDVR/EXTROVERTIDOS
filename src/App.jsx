@@ -14,6 +14,7 @@ import WelcomeSplash from "./components/WelcomeSplash";
 import AccessGate from "./components/WelcomeSplash/AccessGate";
 import { ACCESS_ROUTE } from "./components/WelcomeSplash/WelcomeSplash";
 import { cleanAuthTokensFromUrl } from "./lib/supabase";
+import useAnalytics from "./hooks/useAnalytics";
 
 // Lazy loading de rutas menos frecuentes para optimizar bundle inicial
 const Publicar = lazy(() => import("./components/Home/Panorama/Publicar"));
@@ -43,6 +44,8 @@ const PageLoader = () => (
  * a rutas que no son /auth/callback.
  */
 const AppWithCleanup = ({ children }) => {
+  useAnalytics();
+
   useEffect(() => {
     // Limpiar tokens de la URL al cargar la app (backup de seguridad)
     // Solo si NO estamos en la ruta de callback (esa ruta lo maneja específicamente)

@@ -43,7 +43,7 @@ export const PLAN_LIMITS = {
 };
 
 /** Duración máxima de un negocio publicado en Superguía (días) */
-export const MAX_DURACION_NEGOCIO = 365;
+export const MAX_DURACION_NEGOCIO = 30;
 
 // ═══════════════════════════════════════════════
 // FUNCIONES DE REGLAS

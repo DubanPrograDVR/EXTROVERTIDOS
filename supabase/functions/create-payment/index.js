@@ -152,6 +152,42 @@ function jsonResponse(data, status = 200) {
   });
 }
 
+/**
+ * Construye una respuesta de error con detalles seguros del error original.
+ * Incluye el codigo SQLSTATE/PostgREST para diagnosticar en el cliente sin exponer datos sensibles.
+ */
+function dbErrorResponse(prefix, dbError, fallbackStatus = 500) {
+  const status = mapDbErrorToStatus(dbError, fallbackStatus);
+  const detail = dbError?.message || dbError?.details || dbError?.hint || "";
+  return jsonResponse(
+    {
+      error: detail ? `${prefix}: ${detail}` : prefix,
+      code: dbError?.code || null,
+    },
+    status,
+  );
+}
+
+function mapDbErrorToStatus(dbError, fallback) {
+  switch (dbError?.code) {
+    case "23505": // unique_violation
+      return 409;
+    case "23503": // foreign_key_violation
+      return 409;
+    case "23514": // check_violation
+      return 422;
+    case "23502": // not_null_violation
+      return 422;
+    case "22P02": // invalid_text_representation (cast/enum)
+      return 422;
+    case "42P01": // undefined_table
+    case "42703": // undefined_column
+      return 500;
+    default:
+      return fallback;
+  }
+}
+
 function isSubscriptionExpired(subscription) {
   if (!subscription?.fecha_fin) return false;
   return new Date(subscription.fecha_fin) <= new Date();
@@ -423,7 +459,7 @@ Deno.serve(async (req) => {
             .delete()
             .in("id", subscriptionIds);
         }
-        return jsonResponse({ error: "Error al crear la suscripción" }, 500);
+        return dbErrorResponse("Error al crear la suscripción", subError);
       }
 
       item.subscription_id = sub.id;
@@ -455,33 +491,91 @@ Deno.serve(async (req) => {
         .from("subscriptions")
         .delete()
         .in("id", subscriptionIds);
-      return jsonResponse({ error: "Error al registrar la transacción" }, 500);
+      return dbErrorResponse("Error al registrar la transacción", txError);
     }
 
     // ── 7. Llamar a Transbank para crear la transacción ──
-    const tbkConfig = getTransbankConfig();
-    const returnUrl = `${supabaseUrl}/functions/v1/confirm-payment`;
+    let tbkConfig;
+    try {
+      tbkConfig = getTransbankConfig();
+    } catch (cfgError) {
+      console.error("[create-payment]", cfgError);
+      await supabaseAdmin
+        .from("transactions")
+        .update({
+          status: "failed",
+          error_message: "Credenciales Transbank no configuradas",
+        })
+        .eq("id", transaction.id);
+      await supabaseAdmin
+        .from("subscriptions")
+        .update({
+          estado: "rechazada",
+          notas: "Credenciales Transbank no configuradas",
+        })
+        .in("id", subscriptionIds);
+      return jsonResponse(
+        { error: "Pagos no disponibles temporalmente. Intenta más tarde." },
+        503,
+      );
+    }
 
+    const returnUrl = `${supabaseUrl}/functions/v1/confirm-payment`;
     const tbkCreateUrl = `${tbkConfig.baseUrl}${TRANSBANK_API.transactionPath}`;
 
     console.log(
       `[create-payment] Creando transacción Transbank: buy_order=${buyOrder}, amount=${totalAmount}, user=${user.id}`,
     );
 
-    const tbkResponse = await fetch(tbkCreateUrl, {
-      method: "POST",
-      headers: {
-        "Tbk-Api-Key-Id": tbkConfig.commerceCode,
-        "Tbk-Api-Key-Secret": tbkConfig.apiKeySecret,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        buy_order: buyOrder,
-        session_id: sessionId,
-        amount: totalAmount,
-        return_url: returnUrl,
-      }),
-    });
+    const controller = new AbortController();
+    const tbkTimeout = setTimeout(() => controller.abort(), 15000);
+
+    let tbkResponse;
+    try {
+      tbkResponse = await fetch(tbkCreateUrl, {
+        method: "POST",
+        headers: {
+          "Tbk-Api-Key-Id": tbkConfig.commerceCode,
+          "Tbk-Api-Key-Secret": tbkConfig.apiKeySecret,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          buy_order: buyOrder,
+          session_id: sessionId,
+          amount: totalAmount,
+          return_url: returnUrl,
+        }),
+        signal: controller.signal,
+      });
+    } catch (networkError) {
+      console.error(
+        "[create-payment] Error de red llamando a Transbank:",
+        networkError,
+      );
+      await supabaseAdmin
+        .from("transactions")
+        .update({
+          status: "failed",
+          error_message: `Network: ${networkError?.message || "timeout"}`,
+        })
+        .eq("id", transaction.id);
+      await supabaseAdmin
+        .from("subscriptions")
+        .update({
+          estado: "rechazada",
+          notas: "No se pudo contactar a Transbank",
+        })
+        .in("id", subscriptionIds);
+      return jsonResponse(
+        {
+          error:
+            "No se pudo contactar al procesador de pago. Intenta nuevamente.",
+        },
+        504,
+      );
+    } finally {
+      clearTimeout(tbkTimeout);
+    }
 
     if (!tbkResponse.ok) {
       const errorText = await tbkResponse.text();
@@ -538,6 +632,12 @@ Deno.serve(async (req) => {
     });
   } catch (error) {
     console.error("[create-payment] Error inesperado:", error);
-    return jsonResponse({ error: "Error interno del servidor" }, 500);
+    return jsonResponse(
+      {
+        error: `Error interno del servidor: ${error?.message || "desconocido"}`,
+        code: error?.code || null,
+      },
+      500,
+    );
   }
 });

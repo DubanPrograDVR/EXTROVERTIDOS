@@ -99,6 +99,8 @@ export default function PublicationCard({
   onClick,
   isFavorite: initialIsFavorite = false,
   onFavoriteChange,
+  likeState,
+  onLikeChange,
 }) {
   const {
     id,
@@ -128,12 +130,17 @@ export default function PublicationCard({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorited, setIsFavorited] = useState(initialIsFavorite);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
+  const [isLiked, setIsLiked] = useState(likeState?.isLiked ?? false);
+  const [likeCount, setLikeCount] = useState(likeState?.count ?? 0);
   const [isTogglingLike, setIsTogglingLike] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
-  // Cargar estado de likes al montar
+  // Si el padre provee likeState (batched), úsalo como fuente de verdad.
+  const hasExternalLikeState = likeState !== undefined && likeState !== null;
+  const externalIsLiked = likeState?.isLiked;
+  const externalCount = likeState?.count;
+
+  // Cargar estado de likes al montar (solo si NO viene del padre).
   const loadLikeState = async () => {
     try {
       const count = await getLikesCount(id);
@@ -149,16 +156,25 @@ export default function PublicationCard({
   };
 
   useEffect(() => {
+    if (hasExternalLikeState) return;
     loadLikeState();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, user]);
+  }, [id, user, hasExternalLikeState]);
 
-  // Tiempo real: actualizar likes cuando cualquier usuario reacciona
+  // Sincronizar con el estado batched provisto por el padre.
+  useEffect(() => {
+    if (!hasExternalLikeState) return;
+    setIsLiked(!!externalIsLiked);
+    setLikeCount(Number(externalCount) || 0);
+  }, [hasExternalLikeState, externalIsLiked, externalCount]);
+
+  // Tiempo real: actualizar likes cuando cualquier usuario reacciona.
+  // Solo se activa si la card es autónoma (sin batched state del padre).
   useRealtimeRefetch({
     table: "event_likes",
     event: "*",
     filter: id ? `event_id=eq.${id}` : undefined,
-    enabled: Boolean(id),
+    enabled: Boolean(id) && !hasExternalLikeState,
     onChange: () => loadLikeState(),
   });
 
@@ -394,6 +410,10 @@ export default function PublicationCard({
       const result = await toggleLike(user.id, id);
       setIsLiked(result.isLiked);
       setLikeCount(result.count);
+      // Notificar al grid (si maneja batched state) para actualizar el mapa.
+      if (onLikeChange) {
+        onLikeChange(id, result);
+      }
     } catch (error) {
       console.error("Error al cambiar like:", error);
       showToast?.("Error al procesar tu like", "error");

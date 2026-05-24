@@ -2,6 +2,9 @@
 -- CULTURA MAULE - MODELO DE BASE DE DATOS
 -- Simple, Escalable y Fácil de Mantener
 -- ============================================
+-- Nota: este archivo representa el esquema base/documentacion.
+-- En una base Supabase ya existente, aplica cambios con archivos en supabase/migrations/
+-- en lugar de ejecutar CREATE TYPE / CREATE TABLE manualmente por partes.
 
 -- ============================================
 -- 1. TIPOS ENUMERADOS (ENUMs)
@@ -20,7 +23,15 @@ CREATE TYPE provincia AS ENUM ('curico', 'talca', 'linares', 'cauquenes');
 CREATE TYPE event_status AS ENUM ('borrador', 'en_revision', 'publicado', 'rechazado');
 
 -- Tipo de entrada para el evento
-CREATE TYPE ticket_type AS ENUM ('gratis', 'pagado', 'externo');
+CREATE TYPE ticket_type AS ENUM (
+  'gratis',
+  'gratuito',
+  'sin_entrada',
+  'info_descripcion',
+  'pagado',
+  'externo',
+  'venta_externa'
+);
 
 
 -- ============================================
@@ -129,9 +140,9 @@ CREATE TABLE events (
   imagenes TEXT[] DEFAULT '{}',
   
   -- === TIPO DE ENTRADA ===
-  tipo_entrada ticket_type DEFAULT 'gratis',
+  tipo_entrada ticket_type DEFAULT 'sin_entrada',
   precio INT,                -- solo si tipo_entrada = 'pagado' (en CLP)
-  url_venta TEXT,            -- solo si tipo_entrada = 'externo'
+  url_venta TEXT,            -- solo si tipo_entrada = 'venta_externa'
   
   -- === CONTACTO Y REDES ===
   -- JSONB flexible: {"instagram": "@cuenta", "whatsapp": "+56..."}
@@ -298,7 +309,143 @@ CREATE POLICY "Gestionar tags propios"
 
 
 -- ============================================
--- 9. DATOS INICIALES (Seeds)
+-- 9. TABLA: subscriptions (Suscripciones)
+-- ============================================
+-- Registra planes contratados por los usuarios.
+-- Controla acceso a publicaciones y funciones premium.
+
+-- Tipo de plan contratado
+CREATE TYPE plan_type AS ENUM (
+  'panorama_unica',     -- Publicación Única ($25.000)
+  'panorama_pack4',     -- Pack 4 Publicaciones ($39.990)
+  'panorama_ilimitado', -- Sin Límite ($70.000)
+  'superguia'           -- Superguía Negocios ($15.000)
+);
+
+-- Estado de la suscripción
+CREATE TYPE subscription_status AS ENUM (
+  'pendiente',   -- Pago iniciado, aún no confirmado
+  'activa',      -- Pago confirmado, plan vigente
+  'expirada',    -- Pasó la fecha de vencimiento
+  'cancelada',   -- Cancelada por el usuario o admin
+  'rechazada'    -- Pago rechazado por el procesador
+);
+
+-- Método de pago utilizado
+CREATE TYPE payment_method AS ENUM (
+  'webpay',        -- Transbank Webpay
+  'transferencia', -- Transferencia bancaria
+  'mock'           -- Pago simulado (desarrollo)
+);
+
+CREATE TABLE subscriptions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  
+  -- Datos del plan
+  plan plan_type NOT NULL,
+  estado subscription_status DEFAULT 'pendiente',
+  monto INT NOT NULL,  -- Monto en CLP
+
+  -- Vigencia
+  fecha_inicio TIMESTAMPTZ,
+  fecha_fin TIMESTAMPTZ,
+  
+  -- Control de publicaciones
+  publicaciones_total INT DEFAULT 0,
+  publicaciones_usadas INT DEFAULT 0,
+
+  -- Datos de pago
+  metodo_pago payment_method,
+  transaccion_id VARCHAR(100),
+  detalles_pago JSONB DEFAULT '{}',
+  
+  -- Notas internas (admin)
+  notas TEXT,
+
+  -- Auditoría
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+
+  -- Constraints anti pagos fantasmas
+  CONSTRAINT chk_monto_positivo CHECK (monto > 0),
+  CONSTRAINT chk_publicaciones_no_excede CHECK (publicaciones_usadas <= publicaciones_total),
+  CONSTRAINT chk_publicaciones_no_negativas CHECK (publicaciones_total >= 0 AND publicaciones_usadas >= 0),
+  CONSTRAINT chk_activa_tiene_datos_pago CHECK (
+    estado != 'activa' OR (fecha_inicio IS NOT NULL AND fecha_fin IS NOT NULL AND metodo_pago IS NOT NULL)
+  ),
+  CONSTRAINT chk_fechas_coherentes CHECK (fecha_inicio IS NULL OR fecha_fin IS NULL OR fecha_fin > fecha_inicio),
+  -- NOTA: chk_monto_coincide_plan fue ELIMINADO por migración 20260220_manage_plan_prices.sql
+  -- Los precios ahora son dinámicos y se leen de app_settings.plan_prices
+  CONSTRAINT chk_publicaciones_coherentes CHECK (
+    (plan = 'panorama_unica' AND publicaciones_total = 1)
+    OR (plan = 'panorama_pack4' AND publicaciones_total = 4)
+    OR (plan = 'panorama_ilimitado' AND publicaciones_total = 0)
+    OR (plan = 'superguia' AND publicaciones_total = 1)
+  ),
+  CONSTRAINT uq_transaccion UNIQUE (transaccion_id)
+);
+
+CREATE INDEX idx_subscriptions_user ON subscriptions(user_id);
+CREATE INDEX idx_subscriptions_estado ON subscriptions(estado);
+CREATE INDEX idx_subscriptions_plan ON subscriptions(plan);
+CREATE INDEX idx_subscriptions_fecha_fin ON subscriptions(fecha_fin);
+CREATE INDEX idx_subscriptions_user_activa ON subscriptions(user_id, estado) 
+  WHERE estado = 'activa';
+
+CREATE TRIGGER tr_subscriptions_updated
+  BEFORE UPDATE ON subscriptions
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+COMMENT ON TABLE subscriptions IS 'Suscripciones/planes contratados por los usuarios';
+COMMENT ON COLUMN subscriptions.monto IS 'Monto en CLP sin decimales';
+COMMENT ON COLUMN subscriptions.publicaciones_total IS 'Total de publicaciones incluidas en el plan';
+COMMENT ON COLUMN subscriptions.publicaciones_usadas IS 'Publicaciones ya utilizadas';
+
+-- RLS para subscriptions
+ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Usuarios ven sus suscripciones"
+  ON subscriptions FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Usuarios crean suscripciones pendientes"
+  ON subscriptions FOR INSERT
+  WITH CHECK (auth.uid() = user_id AND estado = 'pendiente');
+
+CREATE POLICY "Staff ve todas las suscripciones"
+  ON subscriptions FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.rol IN ('admin', 'moderator')
+    )
+  );
+
+CREATE POLICY "Admin actualiza suscripciones"
+  ON subscriptions FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.rol = 'admin'
+    )
+  );
+
+CREATE POLICY "Admin elimina suscripciones"
+  ON subscriptions FOR DELETE
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.rol = 'admin'
+    )
+  );
+
+
+-- ============================================
+-- 10. DATOS INICIALES (Seeds)
 -- ============================================
 
 -- Categorías base

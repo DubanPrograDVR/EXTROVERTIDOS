@@ -14,7 +14,8 @@ import {
   faExchangeAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import AuthModal from "../Auth/AuthModal";
-import { isPlanesEnabled } from "../../lib/database";
+import LoginReminderModal from "../Auth/LoginReminderModal";
+import { usePlansVisibility } from "../../hooks/usePlansVisibility";
 import { useAdminPendingCount } from "../../hooks/useAdminPendingCount";
 import { useUnreadNotificationsCount } from "../../hooks/useUnreadNotificationsCount";
 
@@ -38,14 +39,14 @@ const NAV_LINKS = [
 ];
 
 export default function Navbar() {
-  const { user, isAuthenticated, isModerator, signOut, loading } = useAuth();
+  const { user, isAuthenticated, isModerator, signOut, loading, loginReminder, closeLoginReminder } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState("login");
-  const [planesVisible, setPlanesVisible] = useState(true);
+  const { anyVisible: planesVisible } = usePlansVisibility();
   const userDropdownRef = useRef(null);
 
   // Obtener datos del usuario
@@ -70,18 +71,7 @@ export default function Navbar() {
     : "notificaciones sin leer";
 
   // Cargar estado de planes
-  useEffect(() => {
-    const checkPlanes = async () => {
-      try {
-        const enabled = await isPlanesEnabled();
-        setPlanesVisible(enabled);
-      } catch (error) {
-        console.error("Error verificando planes:", error);
-      }
-    };
-    checkPlanes();
-  }, []);
-
+  // (manejado por usePlansVisibility hook)
   const handleLinkClick = (e, href) => {
     setIsMenuOpen(false);
     // Si el link requiere autenticación y el usuario no está logueado,
@@ -432,6 +422,15 @@ export default function Navbar() {
         isOpen={isAuthModalOpen}
         onClose={closeAuthModal}
         initialMode={authModalMode}
+      />
+
+      {/* Modal de recordatorio post-login */}
+      <LoginReminderModal
+        isOpen={loginReminder.show}
+        onClose={closeLoginReminder}
+        data={loginReminder.data}
+        onVerPerfil={() => navigate("/perfil")}
+        onActivarPlan={() => navigate("/activar-plan")}
       />
     </header>
   );

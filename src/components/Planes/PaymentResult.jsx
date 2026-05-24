@@ -7,6 +7,7 @@ import {
   formatCLP,
   PAYMENT_STATUS,
 } from "../../lib/payment";
+import { trackPurchase, trackPaymentFailed } from "../../lib/analytics";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCheckCircle,
@@ -40,7 +41,6 @@ export default function PaymentResult() {
   const [paymentData, setPaymentData] = useState(null);
   const [serverStatus, setServerStatus] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   // Parsear resultado de los query params
   useEffect(() => {
@@ -54,6 +54,41 @@ export default function PaymentResult() {
       setLoading(false);
     }
   }, [location.search, isAuthenticated]);
+
+  // Determinar el estado final (priorizar datos del servidor)
+  const finalStatus =
+    serverStatus?.status === "completed"
+      ? PAYMENT_STATUS.SUCCESS
+      : serverStatus?.status === "failed"
+        ? PAYMENT_STATUS.FAILED
+        : paymentData?.status || PAYMENT_STATUS.ERROR;
+
+  // Trackear resultado del pago cuando termine la verificación
+  useEffect(() => {
+    if (authLoading || loading) return;
+    if (!paymentData && !serverStatus) return;
+
+    const status = finalStatus;
+    const amount = serverStatus?.amount || paymentData?.amount;
+    const buyOrder = serverStatus?.buy_order || paymentData?.buyOrder;
+
+    if (status === PAYMENT_STATUS.SUCCESS) {
+      trackPurchase({
+        value: amount,
+        currency: "CLP",
+        transactionId: buyOrder,
+        items: (serverStatus?.items || []).map((i) => ({
+          item_name: i.plan,
+          price: i.amount,
+          quantity: 1,
+        })),
+      });
+    } else if (status === PAYMENT_STATUS.FAILED) {
+      trackPaymentFailed(paymentData?.message || "transaction_rejected");
+    } else if (status === PAYMENT_STATUS.ABORTED) {
+      trackPaymentFailed("user_aborted");
+    }
+  }, [authLoading, loading, paymentData, serverStatus, finalStatus]);
 
   /**
    * Verifica el estado real de la transacción contra el servidor.
@@ -70,14 +105,6 @@ export default function PaymentResult() {
       setLoading(false);
     }
   }
-
-  // Determinar el estado final (priorizar datos del servidor)
-  const finalStatus =
-    serverStatus?.status === "completed"
-      ? PAYMENT_STATUS.SUCCESS
-      : serverStatus?.status === "failed"
-        ? PAYMENT_STATUS.FAILED
-        : paymentData?.status || PAYMENT_STATUS.ERROR;
 
   const finalAmount = serverStatus?.amount || paymentData?.amount;
   const finalBuyOrder = serverStatus?.buy_order || paymentData?.buyOrder;

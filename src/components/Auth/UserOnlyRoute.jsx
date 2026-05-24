@@ -33,9 +33,6 @@ export default function UserOnlyRoute({ children }) {
 
   // Si es admin o moderador Y NO está en una ruta permitida, redirigir al panel admin
   if (user && isModerator && !isAdminAllowedPath) {
-    console.log(
-      "UserOnlyRoute: Admin/Moderador detectado, redirigiendo a /admin"
-    );
     return <Navigate to="/admin" replace />;
   }
 
