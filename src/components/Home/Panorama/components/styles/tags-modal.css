@@ -121,6 +121,35 @@
   letter-spacing: 0.5px;
 }
 
+.tags-modal__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.tags-modal__section-header .tags-modal__section-title {
+  margin-bottom: 0;
+}
+
+.tags-modal__delete-all {
+  background: none;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  border-radius: 6px;
+  color: #ef4444;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.tags-modal__delete-all:hover {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: #ef4444;
+}
+
 .tags-modal__grid {
   display: flex;
   flex-wrap: wrap;

@@ -234,6 +234,19 @@ const TagsModal = ({
     );
   };
 
+  // Eliminar TODOS los hashtags personalizados guardados
+  const handleDeleteAllCustomTags = () => {
+    setSavedCustomTags([]);
+    saveCustomTagsToStorage([]);
+    // Deseleccionar solo los custom tags; mantener predefinidos seleccionados
+    applySelection(
+      internalSelectedRef.current.filter((t) =>
+        ETIQUETAS_PREDEFINIDAS.includes(t),
+      ),
+      { notify: true },
+    );
+  };
+
   // Handler para Enter en el input
   const handleCustomTagKeyDown = (e) => {
     if (e.key === "Enter") {
@@ -323,9 +336,19 @@ const TagsModal = ({
           {/* Tags personalizados guardados */}
           {savedCustomTags.length > 0 && (
             <div className="tags-modal__section">
-              <p className="tags-modal__section-title">
-                Mis hashtags personalizados
-              </p>
+              <div className="tags-modal__section-header">
+                <p className="tags-modal__section-title">
+                  Mis hashtags personalizados
+                </p>
+                {savedCustomTags.length >= 5 && (
+                  <button
+                    type="button"
+                    className="tags-modal__delete-all"
+                    onClick={handleDeleteAllCustomTags}>
+                    Borrar todos
+                  </button>
+                )}
+              </div>
               <div className="tags-modal__grid">
                 {savedCustomTags.map((tag) => (
                   <div key={tag} className="tags-modal__tag-wrapper">
