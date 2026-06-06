@@ -419,6 +419,8 @@ export default function PublicationModal({
 
   // Determinar si es evento recurrente
   const isRecurring = es_recurrente && cantidad_repeticiones > 1;
+  const pluralizeWeekday = (dayName) =>
+    dayName?.endsWith("s") ? dayName : `${dayName}s`;
   // Fechas recurrentes normalizadas y ordenadas cronológicamente
   const fechasRecurrenciaOrdenadas = Array.isArray(fechas_recurrencia)
     ? [...fechas_recurrencia].filter(Boolean).sort()
@@ -429,7 +431,7 @@ export default function PublicationModal({
       if (dia_recurrencia) {
         const cap =
           dia_recurrencia.charAt(0).toUpperCase() + dia_recurrencia.slice(1);
-        return `Se repite ${cantidad_repeticiones} ${cap}s`;
+        return `Se repite ${cantidad_repeticiones} ${pluralizeWeekday(cap)}`;
       }
       return null;
     }
@@ -452,7 +454,7 @@ export default function PublicationModal({
     ];
 
     if (diasUnicos.length === 1) {
-      return `Se repite ${fechasRecurrenciaOrdenadas.length} ${diasNombres[diasUnicos[0]]}s`;
+      return `Se repite ${fechasRecurrenciaOrdenadas.length} ${pluralizeWeekday(diasNombres[diasUnicos[0]])}`;
     }
 
     // Días variados
