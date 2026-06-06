@@ -11,7 +11,6 @@ import {
   faCheck,
 } from "@fortawesome/free-solid-svg-icons";
 import DateCalendar from "./DateCalendar";
-import { resolveIcon } from "./iconMap";
 import "./styles/FilterPanel.css";
 
 /**
@@ -53,6 +52,7 @@ export default function FilterPanel({
   eventsCountByCategory = {},
   eventsCountBySubcategory = {},
   searchPlaceholder = "Buscar eventos, lugares, actividades...",
+  categoryIcon = null,
 }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const panelRef = useRef(null);
@@ -176,7 +176,9 @@ export default function FilterPanel({
                 activeDropdown === "category" ? "active" : ""
               } ${selectedCategory ? "has-value" : ""}`}
               onClick={() => toggleDropdown("category")}>
-              <FontAwesomeIcon icon={faLayerGroup} />
+              {categoryIcon
+                ? <img src={categoryIcon} alt="" className="filter-panel__btn-icon" />
+                : <FontAwesomeIcon icon={faLayerGroup} />}
               <span>{categoryLabel}</span>
               <FontAwesomeIcon icon={faChevronDown} className="chevron" />
             </button>
@@ -209,9 +211,10 @@ export default function FilterPanel({
                         onSubcategoryChange && onSubcategoryChange(null);
                         setActiveDropdown(null);
                       }}>
-                      {cat.icono && resolveIcon(cat.icono) && (
-                        <FontAwesomeIcon
-                          icon={resolveIcon(cat.icono)}
+                      {categoryIcon && (
+                        <img
+                          src={categoryIcon}
+                          alt=""
                           className="filter-panel__cat-icon"
                         />
                       )}
@@ -483,6 +486,13 @@ export default function FilterPanel({
                       selectedSubcategory === subcat.id ? null : subcat.id,
                     )
                   }>
+                  {categoryIcon && (
+                    <img
+                      src={categoryIcon}
+                      alt=""
+                      className="filter-panel__subcat-chip-icon"
+                    />
+                  )}
                   <span>{subcat.nombre}</span>
                   {shouldShowCountBadge(
                     eventsCountBySubcategory[subcat.id],

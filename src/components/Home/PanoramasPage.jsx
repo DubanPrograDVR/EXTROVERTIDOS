@@ -1003,6 +1003,7 @@ export default function PanoramasPage() {
       {/* Panel de filtros de Superguia */}
       <div ref={filterRef}>
         <FilterPanel
+          categoryIcon="/img/P_Extro_v2.png"
           categories={categories}
           locations={LOCATIONS}
           selectedCategory={selectedCategory}

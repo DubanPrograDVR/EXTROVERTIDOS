@@ -10,13 +10,20 @@
 export function formatDate(dateString) {
   if (!dateString) return "Fecha no disponible";
 
-  const date = new Date(dateString);
+  // Si es solo fecha (YYYY-MM-DD) la parseamos como hora local para evitar
+  // el desfase UTC que hace que aparezca un día antes en zonas UTC-.
+  const normalized =
+    typeof dateString === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateString)
+      ? `${dateString}T00:00:00`
+      : dateString;
+
+  const date = new Date(normalized);
 
   if (isNaN(date.getTime())) {
     return "Fecha inválida";
   }
 
-  return date.toLocaleDateString("es-CO", {
+  return date.toLocaleDateString("es-CL", {
     day: "numeric",
     month: "short",
     year: "numeric",

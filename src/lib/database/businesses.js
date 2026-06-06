@@ -257,10 +257,10 @@ export const approveBusiness = async (businessId, adminId) => {
     throw new Error("No tienes permisos para aprobar negocios");
   }
 
-  // Obtener el user_id del negocio
+  // Obtener el user_id y la fecha de expiración actual del negocio
   const { data: business, error: fetchError } = await supabase
     .from("businesses")
-    .select("user_id")
+    .select("user_id, publication_expires_at")
     .eq("id", businessId)
     .single();
 
@@ -269,10 +269,14 @@ export const approveBusiness = async (businessId, adminId) => {
   }
 
   // NOTA: El cupo ya fue consumido al momento del envío (useNegocioForm).
-  // Aquí solo aprobamos y calculamos la fecha de expiración (MAX_DURACION_NEGOCIO días).
-  const publicationExpiresAt = new Date(
-    Date.now() + MAX_DURACION_NEGOCIO * 24 * 60 * 60 * 1000,
-  ).toISOString();
+  // Si el negocio ya tiene una fecha de expiración vigente (re-aprobación tras edición),
+  // se conserva para no reiniciar el contador. Solo se calcula nueva fecha si es
+  // aprobación inicial o si la fecha ya expiró.
+  const existingExpiry = business.publication_expires_at;
+  const publicationExpiresAt =
+    existingExpiry && new Date(existingExpiry) > new Date()
+      ? existingExpiry
+      : new Date(Date.now() + MAX_DURACION_NEGOCIO * 24 * 60 * 60 * 1000).toISOString();
 
   const { data, error } = await supabase
     .from("businesses")

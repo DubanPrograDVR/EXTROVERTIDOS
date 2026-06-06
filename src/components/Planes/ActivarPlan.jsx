@@ -407,7 +407,7 @@ export default function ActivarPlan() {
         />
         <h1 className="activar-plan__title">¡Extrovertidos tu mejor opción!</h1>
         <p className="activar-plan__subtitle">
-          Selecciona una alternativa para Publicar tus Panoramas
+          ¡Estas a un solo paso de Publicar!
         </p>
       </header>
 

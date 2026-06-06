@@ -1,19 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import "./styles/authModal.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimes } from "@fortawesome/free-solid-svg-icons";
 import { faGoogle } from "@fortawesome/free-brands-svg-icons";
 import { useAuth } from "../../context/AuthContext";
+import { isInAppBrowser } from "../../lib/browserDetect";
 
 export default function AuthModal({ isOpen, onClose, persistent = false }) {
   const { signInWithGooglePopup, showToast, user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
+  // Detectar IAB una sola vez al montar.
+  const inAppBrowser = useMemo(() => isInAppBrowser(), []);
+
   // Cerrar modal automáticamente al iniciar sesión
   useEffect(() => {
-    if (user && isOpen) {
-      onClose();
-    }
+    if (user && isOpen) onClose();
   }, [user, isOpen, onClose]);
 
   useEffect(() => {
@@ -35,17 +37,11 @@ export default function AuthModal({ isOpen, onClose, persistent = false }) {
       const { error } = await signInWithGooglePopup();
       if (error) {
         console.error("Error al iniciar sesión con Google:", error);
-        showToast(
-          "Error al iniciar sesión con Google. Intenta nuevamente.",
-          "error",
-        );
+        showToast("Error al iniciar sesión con Google. Intenta nuevamente.", "error");
       }
     } catch (err) {
       console.error("Error:", err);
-      showToast(
-        "No fue posible iniciar sesión con Google. Intenta nuevamente.",
-        "error",
-      );
+      showToast("No fue posible iniciar sesión con Google. Intenta nuevamente.", "error");
     } finally {
       setIsLoading(false);
     }
@@ -62,16 +58,14 @@ export default function AuthModal({ isOpen, onClose, persistent = false }) {
         role="dialog"
         aria-modal="true"
         aria-label="Autenticación">
+
         {!persistent && (
           <button className="auth-modal__close" onClick={onClose}>
             <FontAwesomeIcon icon={faTimes} />
           </button>
         )}
         {persistent && onClose && (
-          <button
-            className="auth-modal__close"
-            onClick={onClose}
-            title="Volver al inicio">
+          <button className="auth-modal__close" onClick={onClose} title="Volver al inicio">
             <FontAwesomeIcon icon={faTimes} />
           </button>
         )}
@@ -85,25 +79,42 @@ export default function AuthModal({ isOpen, onClose, persistent = false }) {
           Inicia sesión para acceder a tu cuenta
         </p>
 
-        <div className="auth-modal__google-wrapper">
-          <button
-            type="button"
-            className={`auth-form__google-btn${isLoading ? " auth-form__google-btn--disabled" : ""}`}
-            onClick={handleGoogleLogin}
-            disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <span className="auth-spinner" />
-                Conectando con Google...
-              </>
-            ) : (
-              <>
-                <FontAwesomeIcon icon={faGoogle} />
-                Continuar con Google
-              </>
-            )}
-          </button>
-        </div>
+        {inAppBrowser ? (
+          // ── Aviso para usuarios en navegador embebido (Instagram, Facebook, TikTok…) ──
+          <div className="auth-modal__iab-notice" role="alert">
+            <p className="auth-modal__iab-notice-text">
+              Para iniciar sesión ingresa al sitio desde tu navegador principal Chrome o Safari
+            </p>
+            <a
+              href="https://www.extrovertidos.cl"
+              className="auth-modal__iab-link"
+              target="_blank"
+              rel="noopener noreferrer">
+              www.extrovertidos.cl
+            </a>
+          </div>
+        ) : (
+          // ── Botón estándar Google ──
+          <div className="auth-modal__google-wrapper">
+            <button
+              type="button"
+              className={`auth-form__google-btn${isLoading ? " auth-form__google-btn--disabled" : ""}`}
+              onClick={handleGoogleLogin}
+              disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <span className="auth-spinner" />
+                  Conectando con Google...
+                </>
+              ) : (
+                <>
+                  <FontAwesomeIcon icon={faGoogle} />
+                  Continuar con Google
+                </>
+              )}
+            </button>
+          </div>
+        )}
 
         <p className="auth-modal__terms">
           Al continuar, aceptas los{" "}

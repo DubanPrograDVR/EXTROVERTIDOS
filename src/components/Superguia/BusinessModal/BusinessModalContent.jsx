@@ -428,7 +428,7 @@ export default function BusinessModal({
       if (editableImages.length > 0) {
         return editableImages;
       }
-      return disablePlaceholderImage ? [] : [PLACEHOLDER_IMAGE];
+      return [];
     }
     const businessImages = getRealBusinessImages(imagenes);
     if (businessImages.length > 0) {
@@ -455,11 +455,15 @@ export default function BusinessModal({
 
   const getCurrentImageUrl = () => {
     if (imageError) {
-      return disablePlaceholderImage ? null : PLACEHOLDER_IMAGE;
+      return canManageBusinessMedia || disablePlaceholderImage
+        ? null
+        : PLACEHOLDER_IMAGE;
     }
     return (
       validImages[currentImageIndex] ||
-      (disablePlaceholderImage ? null : PLACEHOLDER_IMAGE)
+      (canManageBusinessMedia || disablePlaceholderImage
+        ? null
+        : PLACEHOLDER_IMAGE)
     );
   };
   const currentImageUrl = getCurrentImageUrl();
@@ -614,6 +618,16 @@ export default function BusinessModal({
 
   // Guardar cambios de edición
   const handleSaveChanges = async () => {
+    // Validar que haya al menos una imagen real antes de guardar
+    const existingRealImages = getRealBusinessImages(editData.imagenes);
+    if (existingRealImages.length === 0 && newImageFiles.length === 0) {
+      showToast(
+        "Debes agregar al menos una imagen real para guardar.",
+        "error",
+      );
+      return;
+    }
+
     setIsSaving(true);
     try {
       const { dias_atencion, horarios_detalle, abierto_24h, ...rest } =
@@ -1180,30 +1194,6 @@ export default function BusinessModal({
                           Ir a la ubicación
                         </button>
                       )}
-                    </div>
-
-                    {/* Horarios */}
-                    <div className="publication-modal__info-section">
-                      <div className="publication-modal__schedule-simple">
-                        {horarioDetalle && horarioDetalle.length > 0 ? (
-                          horarioDetalle.map((dia, idx) => (
-                            <div
-                              key={idx}
-                              className="publication-modal__schedule-row">
-                              <span className="publication-modal__schedule-day">
-                                {dia.label}
-                              </span>
-                              <span className="publication-modal__schedule-time">
-                                {dia.horario}
-                              </span>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="publication-modal__no-data">
-                            Horarios no disponibles
-                          </p>
-                        )}
-                      </div>
                     </div>
 
                     {/* Contacto */}

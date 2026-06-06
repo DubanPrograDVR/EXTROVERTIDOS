@@ -754,6 +754,17 @@ export default function UserBusinessEditModal({
                       <p>No hay imágenes</p>
                     </div>
                   )}
+                  {errors.imagenes && (
+                    <p
+                      style={{
+                        color: "#ff4444",
+                        fontSize: "0.82rem",
+                        marginTop: "8px",
+                        fontWeight: 600,
+                      }}>
+                      {errors.imagenes}
+                    </p>
+                  )}
                 </div>
               </AccordionSection>
             </div>

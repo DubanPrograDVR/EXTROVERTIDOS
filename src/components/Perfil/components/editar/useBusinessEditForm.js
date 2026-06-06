@@ -159,6 +159,10 @@ export const useBusinessEditForm = (business, isOpen) => {
     if (!formData.comuna.trim()) {
       newErrors.comuna = "La comuna es obligatoria";
     }
+    if (!Array.isArray(formData.imagenes) || formData.imagenes.length === 0) {
+      newErrors.imagenes =
+        "Debes agregar al menos una imagen real para guardar.";
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [formData]);

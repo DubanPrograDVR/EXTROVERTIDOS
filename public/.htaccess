@@ -1,4 +1,18 @@
 # ============================================
+# Forzar HTTPS — redirige HTTP → HTTPS
+# Esto elimina el aviso "sitio no seguro" en
+# navegadores embebidos de Instagram / redes sociales
+# ============================================
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Si la petición llega por HTTP (no HTTPS), redirigir permanentemente
+  RewriteCond %{HTTPS} off
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+</IfModule>
+
+# ============================================
 
 # SPA Fallback para React Router en Apache
 
@@ -75,6 +89,15 @@ Header set Pragma "no-cache"
   # Permite que el popup de Google se comunique con la página
   Header always set Cross-Origin-Opener-Policy "same-origin-allow-popups"
   Header always set Cross-Origin-Embedder-Policy "unsafe-none"
+
+  # HSTS: obliga al navegador (incluido IAB de Instagram) a usar HTTPS
+  # durante 1 año. Después del primer acceso nunca más mostrará warning.
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+  # Cabeceras de seguridad adicionales
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
 
 # ============================================

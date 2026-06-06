@@ -371,10 +371,11 @@ export default function PerfilNegocios() {
         <div className="perfil-negocios__grid">
           {businesses.map((business) => {
             const imageUrl =
-              business.imagen_url ||
               (Array.isArray(business.imagenes) && business.imagenes.length > 0
                 ? business.imagenes[0]
-                : null);
+                : null) ||
+              business.imagen_url ||
+              null;
             const expired = isBusinessExpired(business);
             const diasRestantes = getDiasRestantesNegocio(business);
             const isActivePublished =

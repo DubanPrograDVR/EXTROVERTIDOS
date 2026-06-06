@@ -8,6 +8,7 @@ import FilterPanel from "./FilterPanel";
 import BusinessGrid from "./BusinessGrid";
 import BusinessModal from "./BusinessModal";
 import Carousel from "./Carousel";
+import SponsorCarousel from "./SponsorCarousel";
 import PublicationModal from "./PublicationModal";
 import AuthModal from "../Auth/AuthModal";
 import {
@@ -25,7 +26,6 @@ import {
   trackFilter,
   trackFiltersCleared,
   trackBusinessView,
-  trackPublicationView,
   trackCarouselClick,
   trackPaginationUse,
 } from "../../lib/analytics";
@@ -323,26 +323,32 @@ export default function SuperguiaContainer() {
     }
   }, []);
 
-  const handleCategoryChange = useCallback((category) => {
-    setSelectedCategory(category);
-    setSelectedSubcategory(null);
-    setCurrentPage(1);
-    setShuffleKey((k) => k + 1);
-    if (category) {
-      const cat = categories.find((c) => c.id === category);
-      trackFilter("category", category, cat?.nombre || category);
-    }
-  }, [categories]);
+  const handleCategoryChange = useCallback(
+    (category) => {
+      setSelectedCategory(category);
+      setSelectedSubcategory(null);
+      setCurrentPage(1);
+      setShuffleKey((k) => k + 1);
+      if (category) {
+        const cat = categories.find((c) => c.id === category);
+        trackFilter("category", category, cat?.nombre || category);
+      }
+    },
+    [categories],
+  );
 
-  const handleSubcategoryChange = useCallback((subcategory) => {
-    setSelectedSubcategory(subcategory);
-    setCurrentPage(1);
-    setShuffleKey((k) => k + 1);
-    if (subcategory) {
-      const sub = flatSubcategories.find((s) => s.id === subcategory);
-      trackFilter("subcategory", subcategory, sub?.nombre || subcategory);
-    }
-  }, [flatSubcategories]);
+  const handleSubcategoryChange = useCallback(
+    (subcategory) => {
+      setSelectedSubcategory(subcategory);
+      setCurrentPage(1);
+      setShuffleKey((k) => k + 1);
+      if (subcategory) {
+        const sub = flatSubcategories.find((s) => s.id === subcategory);
+        trackFilter("subcategory", subcategory, sub?.nombre || subcategory);
+      }
+    },
+    [flatSubcategories],
+  );
 
   const handleComunaChange = useCallback((comuna) => {
     setSelectedComuna(comuna);
@@ -380,6 +386,19 @@ export default function SuperguiaContainer() {
   const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);
     setSelectedBusiness(null);
+  }, []);
+
+  const handleBusinessUpdate = useCallback((updatedBusiness) => {
+    if (!updatedBusiness?.id) return;
+
+    setSelectedBusiness(updatedBusiness);
+    setBusinesses((prev) =>
+      prev.map((business) =>
+        business.id === updatedBusiness.id
+          ? { ...business, ...updatedBusiness }
+          : business,
+      ),
+    );
   }, []);
 
   // Handlers para carrusel de panoramas
@@ -675,9 +694,12 @@ export default function SuperguiaContainer() {
 
         {/* Contenido principal */}
         <div className="superguia__container">
+          <SponsorCarousel />
+
           {/* Panel de filtros */}
           <div ref={filterRef}>
             <FilterPanel
+              categoryIcon="/img/SG_Extro_v2.png"
               categories={categories}
               subcategories={flatSubcategories}
               locations={LOCATIONS}
@@ -858,6 +880,7 @@ export default function SuperguiaContainer() {
         business={selectedBusiness}
         isOpen={isModalOpen}
         onClose={handleCloseModal}
+        onUpdate={handleBusinessUpdate}
       />
 
       {/* Modal de panorama */}
