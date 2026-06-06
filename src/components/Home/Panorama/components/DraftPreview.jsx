@@ -559,7 +559,7 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
                       <div className="publication-modal__info-section">
                         <h4 className="publication-modal__info-section-title">
                           <FontAwesomeIcon icon={faMapMarkerAlt} />
-                          Ubicaci{"\u00f3"}n
+                          Dirección / Lugar
                         </h4>
                         <div className="publication-modal__location-content">
                           {hasText(formData.direccion) && (
@@ -578,7 +578,7 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
                                 )
                               }>
                               <FontAwesomeIcon icon={faMapMarkerAlt} />
-                              Ir a la ubicaci{"\u00f3"}n
+                              Ir a la dirección / lugar
                             </button>
                           )}
                         </div>
@@ -658,7 +658,8 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
                                 Entrada
                               </span>
                               <span className="publication-modal__schedule-value publication-modal__schedule-value--price">
-                                {formData.tipo_entrada === "venta_externa" && formData.url_venta ? (
+                                {formData.tipo_entrada === "venta_externa" &&
+                                formData.url_venta ? (
                                   <a
                                     href={formData.url_venta}
                                     target="_blank"
