@@ -46,6 +46,8 @@ export {
   updateEvent,
   deleteEvent,
   pauseEvent,
+  incrementShareCount,
+  getEventShareCount,
 } from "./events";
 
 // ============ IMÁGENES ============
@@ -131,6 +133,7 @@ export {
   removeFavorite,
   toggleFavorite,
   countUserFavorites,
+  getFavoritesCount,
 } from "./favorites";
 
 // ============ BORRADORES ============
@@ -163,6 +166,9 @@ export {
   getBusinessFavoriteIds,
   toggleBusinessFavorite,
   getUserBusinessFavorites,
+  getBusinessFavoritesCount,
+  incrementBusinessShareCount,
+  getBusinessShareCount,
 } from "./businessInteractions";
 
 // ============ CATEGORÍAS DE NEGOCIO ============

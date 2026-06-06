@@ -32,6 +32,9 @@ import {
   toggleLike,
   hasUserLiked,
   getLikesCount,
+  getFavoritesCount,
+  incrementShareCount,
+  getEventShareCount,
 } from "../../lib/database";
 
 // Imagen placeholder por defecto
@@ -131,9 +134,11 @@ export default function PublicationCard({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorited, setIsFavorited] = useState(initialIsFavorite);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
+  const [favoriteCount, setFavoriteCount] = useState(0);
   const [isLiked, setIsLiked] = useState(likeState?.isLiked ?? false);
   const [likeCount, setLikeCount] = useState(likeState?.count ?? 0);
   const [isTogglingLike, setIsTogglingLike] = useState(false);
+  const [shareCount, setShareCount] = useState(publication?.share_count ?? 0);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Si el padre provee likeState (batched), úsalo como fuente de verdad.
@@ -156,6 +161,14 @@ export default function PublicationCard({
     }
   };
 
+  // Cargar contador de favoritos por evento al montar.
+  useEffect(() => {
+    getFavoritesCount(id)
+      .then(setFavoriteCount)
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
   useEffect(() => {
     if (hasExternalLikeState) return;
     loadLikeState();
@@ -177,6 +190,19 @@ export default function PublicationCard({
     filter: id ? `event_id=eq.${id}` : undefined,
     enabled: Boolean(id) && !hasExternalLikeState,
     onChange: () => loadLikeState(),
+  });
+
+  // Tiempo real: actualizar share_count cuando otro usuario comparte.
+  useRealtimeRefetch({
+    table: "events",
+    event: "UPDATE",
+    filter: id ? `id=eq.${id}` : undefined,
+    enabled: Boolean(id),
+    onChange: () => {
+      getEventShareCount(id)
+        .then(setShareCount)
+        .catch(() => {});
+    },
   });
 
   // Obtener array de imágenes válidas
@@ -385,6 +411,9 @@ export default function PublicationCard({
     try {
       const result = await toggleFavorite(user.id, id);
       setIsFavorited(result.isFavorite);
+      setFavoriteCount((prev) =>
+        result.isFavorite ? prev + 1 : Math.max(0, prev - 1),
+      );
 
       // Notificar al componente padre si existe el callback
       if (onFavoriteChange) {
@@ -581,6 +610,7 @@ export default function PublicationCard({
             disabled={isTogglingLike}
             aria-label={isLiked ? "Quitar imperdible" : "Imperdible"}>
             <FontAwesomeIcon icon={faFire} />
+            {likeCount > 0 && <span>{likeCount}</span>}
           </button>
           <button
             className={`publication-card__action-btn ${isFavorited ? "publication-card__action-btn--active" : ""}`}
@@ -590,23 +620,37 @@ export default function PublicationCard({
             <FontAwesomeIcon
               icon={isFavorited ? faBookmarkSolid : faBookmarkRegular}
             />
-            <span>{isFavorited ? "Guardado" : "Guardar"}</span>
+            {favoriteCount > 0 && <span>{favoriteCount}</span>}
           </button>
           <button
             type="button"
             className="publication-card__action-btn publication-card__action-btn--share"
-            onClick={(e) => {
+            onClick={async (e) => {
               e.stopPropagation();
-              const shareUrl = `${window.location.origin}/panoramas?highlight=${encodeURIComponent(id)}`;
+              // URL directa a og.php: bots reciben OG tags con imagen real,
+              // usuarios son redirigidos instantáneamente a la app React.
+              const shareUrl = `${window.location.origin}/og.php?type=event&highlight=${encodeURIComponent(id)}`;
               if (navigator.share) {
-                navigator.share({ title: titulo, url: shareUrl });
+                try {
+                  await navigator.share({ title: titulo, url: shareUrl });
+                  // Solo contar si el usuario completó el share (no canceló)
+                  incrementShareCount(id);
+                  setShareCount((prev) => prev + 1);
+                } catch (err) {
+                  // AbortError = usuario canceló el share sheet → no contar
+                  if (err?.name !== "AbortError") {
+                    console.warn("Share fallido:", err);
+                  }
+                }
               } else {
                 navigator.clipboard.writeText(shareUrl);
+                incrementShareCount(id);
+                setShareCount((prev) => prev + 1);
               }
             }}
             aria-label="Compartir publicación">
             <FontAwesomeIcon icon={faShareAlt} />
-            <span>Compartir</span>
+            {shareCount > 0 && <span>{shareCount}</span>}
           </button>
         </div>
       </div>

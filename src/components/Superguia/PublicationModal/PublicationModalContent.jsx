@@ -1892,7 +1892,8 @@ export default function PublicationModal({
                   </div>
 
                   {/* Sección: Contacto (dentro de Información) */}
-                  {!isEditMode && (contactPhone || sitio_web) && (
+                  {/* Solo se muestra si hay teléfono; sitio_web va en "Redes del Evento" */}
+                  {!isEditMode && contactPhone?.trim() && (
                     <div className="publication-modal__info-section">
                       <h4 className="publication-modal__info-section-title">
                         <FontAwesomeIcon icon={faAddressCard} />

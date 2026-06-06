@@ -15,6 +15,7 @@ import {
   faHeart as faHeartSolid,
   faBookmark as faBookmarkSolid,
   faStar,
+  faShareAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faHeart as faHeartRegular,
@@ -34,6 +35,9 @@ import {
   getBusinessLikesCount,
   toggleBusinessFavorite,
   isBusinessFavorite,
+  getBusinessFavoritesCount,
+  incrementBusinessShareCount,
+  getBusinessShareCount,
 } from "../../lib/database";
 import { resolveIcon } from "./iconMap";
 
@@ -92,9 +96,11 @@ export default function BusinessCard({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorited, setIsFavorited] = useState(initialIsFavorite);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
+  const [favoriteCount, setFavoriteCount] = useState(0);
   const [isLiked, setIsLiked] = useState(likeState?.isLiked ?? false);
   const [likeCount, setLikeCount] = useState(likeState?.count ?? 0);
   const [isTogglingLike, setIsTogglingLike] = useState(false);
+  const [shareCount, setShareCount] = useState(business?.share_count ?? 0);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   const hasExternalLikeState = likeState !== undefined && likeState !== null;
@@ -110,6 +116,9 @@ export default function BusinessCard({
         const count = await getBusinessLikesCount(id);
         setLikeCount(count);
       }
+
+      const favCount = await getBusinessFavoritesCount(id);
+      setFavoriteCount(favCount);
 
       if (user) {
         if (hasExternalLikeState) {
@@ -148,6 +157,19 @@ export default function BusinessCard({
     filter: id ? `business_id=eq.${id}` : undefined,
     enabled: Boolean(id) && !hasExternalLikeState,
     onChange: () => loadInteractions(),
+  });
+
+  // Tiempo real: actualizar share_count cuando otro usuario comparte.
+  useRealtimeRefetch({
+    table: "businesses",
+    event: "UPDATE",
+    filter: id ? `id=eq.${id}` : undefined,
+    enabled: Boolean(id),
+    onChange: () => {
+      getBusinessShareCount(id)
+        .then(setShareCount)
+        .catch(() => {});
+    },
   });
 
   // Obtener array de imágenes válidas
@@ -334,6 +356,9 @@ export default function BusinessCard({
     try {
       const result = await toggleBusinessFavorite(user.id, id);
       setIsFavorited(result.isFavorite);
+      setFavoriteCount((prev) =>
+        result.isFavorite ? prev + 1 : Math.max(0, prev - 1),
+      );
       if (onFavoriteChange) onFavoriteChange(id, result.isFavorite);
     } catch (error) {
       console.error("Error al cambiar favorito:", error);
@@ -568,7 +593,7 @@ export default function BusinessCard({
           </div>
         )}
 
-        {/* Botones Recomendado / Guardar */}
+        {/* Botones Recomendado / Guardar / Compartir */}
         <div className="business-card__interaction-buttons">
           <button
             className={`business-card__interaction-btn business-card__interaction-btn--recommend ${isLiked ? "business-card__interaction-btn--active" : ""}`}
@@ -576,9 +601,7 @@ export default function BusinessCard({
             disabled={isTogglingLike}
             aria-label={isLiked ? "Quitar recomendación" : "Recomendar"}>
             <FontAwesomeIcon icon={faStar} />
-            <span>
-              {likeCount > 0 ? `${likeCount} Recomendado` : "Recomendado"}
-            </span>
+            {likeCount > 0 && <span>{likeCount}</span>}
           </button>
           <button
             className={`business-card__interaction-btn ${isFavorited ? "business-card__interaction-btn--active" : ""}`}
@@ -588,7 +611,33 @@ export default function BusinessCard({
             <FontAwesomeIcon
               icon={isFavorited ? faBookmarkSolid : faBookmarkRegular}
             />
-            <span>{isFavorited ? "Guardado" : "Guardar"}</span>
+            {favoriteCount > 0 && <span>{favoriteCount}</span>}
+          </button>
+          <button
+            type="button"
+            className="business-card__interaction-btn business-card__interaction-btn--share"
+            onClick={async (e) => {
+              e.stopPropagation();
+              const url = `${window.location.origin}/og.php?type=business&highlight=${encodeURIComponent(id)}`;
+              if (navigator.share) {
+                try {
+                  await navigator.share({ title: nombre, url });
+                  incrementBusinessShareCount(id);
+                  setShareCount((prev) => prev + 1);
+                } catch (err) {
+                  if (err?.name !== "AbortError") {
+                    console.warn("Share fallido:", err);
+                  }
+                }
+              } else {
+                navigator.clipboard.writeText(url);
+                incrementBusinessShareCount(id);
+                setShareCount((prev) => prev + 1);
+              }
+            }}
+            aria-label="Compartir negocio">
+            <FontAwesomeIcon icon={faShareAlt} />
+            {shareCount > 0 && <span>{shareCount}</span>}
           </button>
         </div>
       </div>

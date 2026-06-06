@@ -1,5 +1,4 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { useScrollOnFocus } from "../../../hooks/useScrollOnFocus";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -54,7 +53,6 @@ const PublicarNegocio = () => {
   const [stepError, setStepError] = useState("");
   const [missingFields, setMissingFields] = useState([]);
   const [errorKey, setErrorKey] = useState(0);
-  const scrollOnFocus = useScrollOnFocus();
 
   // Hook personalizado que maneja toda la lógica del formulario
   const {
@@ -208,6 +206,9 @@ const PublicarNegocio = () => {
 
     return () => window.clearTimeout(timeoutId);
   }, [errorKey]);
+
+  // Todos los pasos con campos obligatorios están completos (paso 1: info, paso 3: ubicación)
+  const areAllRequiredComplete = isStepValid(1) && isStepValid(3);
 
   const goToStep = useCallback((step) => {
     setStepError("");
@@ -565,10 +566,7 @@ const PublicarNegocio = () => {
       </div>
 
       {/* Formulario */}
-      <form
-        className="publicar-negocio__form"
-        onSubmit={handleSubmit}
-        onFocus={scrollOnFocus}>
+      <form className="publicar-negocio__form" onSubmit={handleSubmit}>
         {/* Contenido del paso actual */}
         <div className="wizard-step-container">
           {/* Reset discreto en esquina superior derecha: solo paso 1 */}
@@ -632,7 +630,9 @@ const PublicarNegocio = () => {
 
           <button
             type="button"
-            className="wizard-nav__btn wizard-nav__btn--draft"
+            className={`wizard-nav__btn wizard-nav__btn--draft${
+              areAllRequiredComplete ? " wizard-nav__btn--draft--ready" : ""
+            }`}
             onClick={() => setIsDraftPreviewOpen(true)}>
             <FontAwesomeIcon icon={faEye} />
             Ver Borrador

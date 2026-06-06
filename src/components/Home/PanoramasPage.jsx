@@ -183,16 +183,38 @@ export default function PanoramasPage() {
     setSearchQuery("");
   }, []);
 
-  // Tiempo real: actualizar cuando se publica/actualiza un evento o negocio
+  // Tiempo real: actualizar cuando se publica/actualiza un evento o negocio.
+  // Se ignoran los UPDATE que solo cambian share_count para no reordenar
+  // el grid cuando un usuario comparte una publicación.
   useRealtimeRefetch({
     table: "events",
     event: "*",
-    onChange: () => loadEvents({ silent: true }),
+    onChange: (payload) => {
+      if (payload?.eventType === "UPDATE") {
+        const changed = Object.keys(payload?.new ?? {}).filter(
+          (k) => (payload?.new ?? {})[k] !== (payload?.old ?? {})[k],
+        );
+        if (changed.length > 0 && changed.every((k) => k === "share_count")) {
+          return;
+        }
+      }
+      loadEvents({ silent: true });
+    },
   });
   useRealtimeRefetch({
     table: "businesses",
     event: "*",
-    onChange: () => loadBusinesses(),
+    onChange: (payload) => {
+      if (payload?.eventType === "UPDATE") {
+        const changed = Object.keys(payload?.new ?? {}).filter(
+          (k) => (payload?.new ?? {})[k] !== (payload?.old ?? {})[k],
+        );
+        if (changed.length > 0 && changed.every((k) => k === "share_count")) {
+          return;
+        }
+      }
+      loadBusinesses();
+    },
   });
 
   // Handlers para filtros
@@ -216,14 +238,17 @@ export default function PanoramasPage() {
     [setSearchParams, selectCity],
   );
 
-  const handleCategoryChange = useCallback((category) => {
-    setSelectedCategory(category);
-    setCurrentPage(1);
-    if (category) {
-      const cat = categories.find((c) => c.id === category);
-      trackFilter("category", category, cat?.nombre || category);
-    }
-  }, [categories]);
+  const handleCategoryChange = useCallback(
+    (category) => {
+      setSelectedCategory(category);
+      setCurrentPage(1);
+      if (category) {
+        const cat = categories.find((c) => c.id === category);
+        trackFilter("category", category, cat?.nombre || category);
+      }
+    },
+    [categories],
+  );
 
   const handleComunaChange = useCallback((comuna) => {
     setSelectedComuna(comuna);

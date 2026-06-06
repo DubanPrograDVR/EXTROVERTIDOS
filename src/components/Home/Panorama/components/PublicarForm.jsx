@@ -18,7 +18,6 @@ import {
 } from "./wizard";
 import DraftPreview from "./DraftPreview";
 import FormResetButton from "../../../UI/FormResetButton";
-import { useScrollOnFocus } from "../../../../hooks/useScrollOnFocus";
 import "../styles/draft-preview.css";
 
 const WIZARD_STEPS = [
@@ -57,7 +56,6 @@ const PublicarForm = ({
   const [missingFields, setMissingFields] = useState([]);
   const [errorKey, setErrorKey] = useState(0);
   const [passedSteps, setPassedSteps] = useState(() => new Set());
-  const scrollOnFocus = useScrollOnFocus();
 
   // Detectar campos obligatorios faltantes por paso
   const getMissingFields = useCallback(() => {
@@ -229,6 +227,10 @@ const PublicarForm = ({
     }
   }, []);
 
+  // Todos los pasos con campos obligatorios están completos
+  const areAllRequiredComplete =
+    isStepValid(1) && isStepValid(2) && isStepValid(3) && isStepValid(4);
+
   const goNext = useCallback(() => {
     if (currentStep < WIZARD_STEPS.length) {
       const missing = getMissingFields();
@@ -361,10 +363,7 @@ const PublicarForm = ({
       <form
         className="publicar-form"
         onSubmit={onSubmit}
-        onFocus={(e) => {
-          onFieldFocus(e);
-          scrollOnFocus(e);
-        }}>
+        onFocus={onFieldFocus}>
         {/* Contenido del paso actual */}
         <div className="wizard-step-container">
           {/* Reset discreto en esquina superior derecha: solo paso 1 */}
@@ -428,7 +427,9 @@ const PublicarForm = ({
 
           <button
             type="button"
-            className="wizard-nav__btn wizard-nav__btn--draft"
+            className={`wizard-nav__btn wizard-nav__btn--draft${
+              areAllRequiredComplete ? " wizard-nav__btn--draft--ready" : ""
+            }`}
             onClick={() => setIsDraftPreviewOpen(true)}>
             <FontAwesomeIcon icon={faEye} />
             Ver Borrador

@@ -79,6 +79,24 @@ export default function AdminBusinessList({
     });
   };
 
+  // Formatear fecha + hora (para columna Creado)
+  const formatDateTime = (dateString) => {
+    if (!dateString) return "-";
+    const d = new Date(dateString);
+    return (
+      d.toLocaleDateString("es-CL", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }) +
+      " " +
+      d.toLocaleTimeString("es-CL", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    );
+  };
+
   // Obtener clase de estado
   const getStatusClass = (estado) => {
     switch (estado) {
@@ -359,7 +377,7 @@ export default function AdminBusinessList({
                       </td>
 
                       {/* Fecha de creación */}
-                      <td>{formatDate(business.created_at)}</td>
+                      <td>{formatDateTime(business.created_at)}</td>
 
                       {/* Término plan */}
                       <td>

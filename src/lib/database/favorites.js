@@ -250,3 +250,24 @@ export async function countUserFavorites(userId) {
 
   return activeEvents.length + (businessResult.count || 0);
 }
+
+/**
+ * Obtener cantidad de favoritos de un evento específico
+ * @param {string} eventId - ID del evento
+ * @returns {Promise<number>}
+ */
+export async function getFavoritesCount(eventId) {
+  if (!eventId) return 0;
+
+  const { count, error } = await supabase
+    .from("user_favorites")
+    .select("*", { count: "exact", head: true })
+    .eq("event_id", eventId);
+
+  if (error) {
+    console.error("Error obteniendo favoritos del evento:", error);
+    return 0;
+  }
+
+  return count || 0;
+}

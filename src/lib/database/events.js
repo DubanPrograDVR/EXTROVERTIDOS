@@ -251,6 +251,7 @@ export const getPublishedEvents = async () => {
       precio,
       etiqueta_directa,
       hashtags,
+      share_count,
       categories (
         id,
         nombre,
@@ -700,3 +701,35 @@ export const pauseEvent = async (eventId, paused) => {
 
   return true;
 };
+
+/**
+ * Incrementa el contador de compartidos de un evento de forma atómica.
+ * Requiere la migración 202506060001_add_share_count.sql aplicada en Supabase.
+ * @param {string} eventId - ID del evento
+ * @returns {Promise<void>}
+ */
+export async function incrementShareCount(eventId) {
+  if (!eventId) return;
+  const { error } = await supabase.rpc("increment_share_count", {
+    event_id: eventId,
+  });
+  if (error) {
+    console.error("Error incrementando share_count:", error);
+  }
+}
+
+/**
+ * Obtener el share_count actual de un evento.
+ * @param {string} eventId
+ * @returns {Promise<number>}
+ */
+export async function getEventShareCount(eventId) {
+  if (!eventId) return 0;
+  const { data, error } = await supabase
+    .from("events")
+    .select("share_count")
+    .eq("id", eventId)
+    .single();
+  if (error) return 0;
+  return data?.share_count ?? 0;
+}

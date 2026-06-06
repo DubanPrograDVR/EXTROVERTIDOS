@@ -1663,6 +1663,28 @@
   border-color: #ff6600;
 }
 
+/* Borrador listo: todos los campos obligatorios completados */
+.wizard-nav__btn--draft--ready {
+  color: #ff6600;
+  border-color: #ff6600;
+  animation: draft-pulse 2.2s ease-in-out infinite;
+}
+
+.wizard-nav__btn--draft--ready:hover {
+  background: rgba(255, 102, 0, 0.12);
+  box-shadow: 0 0 20px rgba(255, 102, 0, 0.55);
+}
+
+@keyframes draft-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 6px rgba(255, 102, 0, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(255, 102, 0, 0.6);
+  }
+}
+
 /* ============================================
    WIZARD RESPONSIVE
    ============================================ */

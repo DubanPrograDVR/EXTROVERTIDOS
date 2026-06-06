@@ -270,3 +270,52 @@ export async function getUserBusinessFavorites(userId) {
   // Aplanar: devolver los negocios directamente
   return (data || []).map((fav) => fav.businesses).filter((b) => b !== null);
 }
+
+/**
+ * Obtener cantidad de favoritos de un negocio específico
+ * @param {string} businessId - ID del negocio
+ * @returns {Promise<number>}
+ */
+export async function getBusinessFavoritesCount(businessId) {
+  if (!businessId) return 0;
+  const { count, error } = await supabase
+    .from("business_favorites")
+    .select("*", { count: "exact", head: true })
+    .eq("business_id", businessId);
+  if (error) {
+    console.error("Error obteniendo favoritos del negocio:", error);
+    return 0;
+  }
+  return count || 0;
+}
+
+/**
+ * Incrementa el contador de compartidos de un negocio de forma atómica.
+ * @param {string} businessId - ID del negocio
+ * @returns {Promise<void>}
+ */
+export async function incrementBusinessShareCount(businessId) {
+  if (!businessId) return;
+  const { error } = await supabase.rpc("increment_business_share_count", {
+    business_id_param: businessId,
+  });
+  if (error) {
+    console.error("Error incrementando business share_count:", error);
+  }
+}
+
+/**
+ * Obtener el share_count actual de un negocio.
+ * @param {string} businessId
+ * @returns {Promise<number>}
+ */
+export async function getBusinessShareCount(businessId) {
+  if (!businessId) return 0;
+  const { data, error } = await supabase
+    .from("businesses")
+    .select("share_count")
+    .eq("id", businessId)
+    .single();
+  if (error) return 0;
+  return data?.share_count ?? 0;
+}

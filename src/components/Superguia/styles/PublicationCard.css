@@ -222,7 +222,7 @@
   background: none;
   border: 1px solid rgba(255, 102, 0, 0.5);
   border-radius: 6px;
-  color: #ff6600;
+  color: #fff;
   font-size: 0.75rem;
   font-weight: 600;
   padding: 3px 10px;
@@ -233,8 +233,9 @@
 }
 
 .publication-card__ver-mas:hover {
-  background: rgba(255, 102, 0, 0.15);
+  background: #ff6600;
   border-color: #ff6600;
+  color: #000;
 }
 
 .publication-card__location svg {

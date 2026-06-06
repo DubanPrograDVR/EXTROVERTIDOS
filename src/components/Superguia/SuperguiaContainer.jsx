@@ -280,16 +280,38 @@ export default function SuperguiaContainer() {
     loadPanoramas();
   }, [loadBusinesses, loadCategories, loadPanoramas]);
 
-  // Tiempo real: actualizar cuando se publica/actualiza un negocio o evento
+  // Tiempo real: actualizar cuando se publica/actualiza un negocio o evento.
+  // Se ignoran los UPDATE que solo cambian share_count para no reordenar
+  // el grid cuando un usuario comparte una publicación.
   useRealtimeRefetch({
     table: "businesses",
     event: "*",
-    onChange: () => loadBusinesses({ silent: true }),
+    onChange: (payload) => {
+      if (payload?.eventType === "UPDATE") {
+        const changed = Object.keys(payload?.new ?? {}).filter(
+          (k) => (payload?.new ?? {})[k] !== (payload?.old ?? {})[k],
+        );
+        if (changed.length > 0 && changed.every((k) => k === "share_count")) {
+          return;
+        }
+      }
+      loadBusinesses({ silent: true });
+    },
   });
   useRealtimeRefetch({
     table: "events",
     event: "*",
-    onChange: () => loadPanoramas(),
+    onChange: (payload) => {
+      if (payload?.eventType === "UPDATE") {
+        const changed = Object.keys(payload?.new ?? {}).filter(
+          (k) => (payload?.new ?? {})[k] !== (payload?.old ?? {})[k],
+        );
+        if (changed.length > 0 && changed.every((k) => k === "share_count")) {
+          return;
+        }
+      }
+      loadPanoramas();
+    },
   });
 
   // Construir subcategorías planas para el FilterPanel

@@ -21,7 +21,7 @@ import {
   faSquare,
   faLocationArrow,
 } from "@fortawesome/free-solid-svg-icons";
-import { formatDate } from "../utils/formatters";
+import { formatDate, formatDateTime } from "../utils/formatters";
 import AdminDeleteConfirmModal from "./AdminDeleteConfirmModal";
 
 const normalizeDateList = (dates) =>
@@ -389,7 +389,7 @@ export default function AdminPublicationsList({
                       {renderScheduleCell(event)}
                     </td>
                     <td className="admin-cell--date">
-                      {formatDate(event.created_at)}
+                      {formatDateTime(event.created_at)}
                     </td>
                     <td className="admin-cell--actions">
                       <div className="admin-publications__actions">
