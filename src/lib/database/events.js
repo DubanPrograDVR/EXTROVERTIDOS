@@ -267,7 +267,9 @@ export const getPublishedEvents = async () => {
     )
     .eq("estado", "publicado")
     .eq("is_paused", false)
-    .gte("fecha_fin", today) // Solo eventos que no han terminado
+    // Vigentes por fecha_fin O recurrentes (su vigencia real se filtra en cliente
+    // según fechas_recurrencia, ya que fecha_fin puede ser la primera fecha).
+    .or(`fecha_fin.gte.${today},es_recurrente.eq.true`)
     .order("fecha_evento", { ascending: true });
 
   if (error) {
@@ -315,7 +317,8 @@ export const getEventsByCity = async (ciudad, provincia = null) => {
     )
     .eq("estado", "publicado")
     .eq("is_paused", false)
-    .gte("fecha_fin", today); // Solo eventos que no han terminado
+    // Vigentes por fecha_fin O recurrentes (vigencia real evaluada en cliente).
+    .or(`fecha_fin.gte.${today},es_recurrente.eq.true`);
 
   // Filtrar por comuna o provincia
   if (ciudad) {
@@ -456,7 +459,8 @@ export const getFilteredEvents = async (filters = {}) => {
     )
     .eq("estado", "publicado")
     .eq("is_paused", false)
-    .gte("fecha_fin", today); // Solo eventos que no han terminado
+    // Vigentes por fecha_fin O recurrentes (vigencia real evaluada en cliente).
+    .or(`fecha_fin.gte.${today},es_recurrente.eq.true`);
 
   // Filtro por categoría
   if (filters.categoryId) {

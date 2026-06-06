@@ -44,6 +44,19 @@ import "./styles/panoramas-page.css";
 
 const ITEMS_PER_PAGE = 16;
 
+// Fecha de término real de un evento. Para recurrentes, es la última fecha de
+// fechas_recurrencia (fecha_fin puede ser solo la primera fecha del evento).
+const getEffectiveEndDate = (event) => {
+  if (
+    event?.es_recurrente &&
+    Array.isArray(event.fechas_recurrencia) &&
+    event.fechas_recurrencia.length > 0
+  ) {
+    return [...event.fechas_recurrencia].filter(Boolean).sort().pop();
+  }
+  return event?.fecha_fin || event?.fecha_evento;
+};
+
 export default function PanoramasPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -333,8 +346,8 @@ export default function PanoramasPage() {
     today.setHours(0, 0, 0, 0); // Inicio del día actual
 
     let result = events.filter((event) => {
-      // Usar fecha_fin si existe, sino fecha_evento
-      const eventEndDate = event.fecha_fin || event.fecha_evento;
+      // Usar fecha_fin si existe, sino fecha_evento (recurrentes: última fecha)
+      const eventEndDate = getEffectiveEndDate(event);
       if (!eventEndDate) return true; // Si no hay fecha, mostrar el evento
 
       const endDate = new Date(eventEndDate + "T23:59:59");
@@ -475,7 +488,7 @@ export default function PanoramasPage() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       base = events.filter((event) => {
-        const eventEndDate = event.fecha_fin || event.fecha_evento;
+        const eventEndDate = getEffectiveEndDate(event);
         if (!eventEndDate) return true;
         return new Date(eventEndDate + "T23:59:59") >= today;
       });
@@ -538,7 +551,7 @@ export default function PanoramasPage() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       base = events.filter((event) => {
-        const eventEndDate = event.fecha_fin || event.fecha_evento;
+        const eventEndDate = getEffectiveEndDate(event);
         if (!eventEndDate) return true;
         return new Date(eventEndDate + "T23:59:59") >= today;
       });

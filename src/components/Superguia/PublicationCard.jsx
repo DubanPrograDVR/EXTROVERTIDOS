@@ -252,6 +252,8 @@ export default function PublicationCard({
   // Determinar si es evento recurrente
   const isRecurring = es_recurrente && cantidad_repeticiones > 1;
   const publicationDayLabel = getPublicationDayLabel(publication);
+  const pluralizeWeekday = (dayName) =>
+    dayName?.endsWith("s") ? dayName : `${dayName}s`;
 
   // Obtener texto inteligente de recurrencia
   const getRecurrenciaText = () => {
@@ -260,7 +262,7 @@ export default function PublicationCard({
       if (dia_recurrencia) {
         const cap =
           dia_recurrencia.charAt(0).toUpperCase() + dia_recurrencia.slice(1);
-        return `${cantidad_repeticiones} ${cap}s`;
+        return `${cantidad_repeticiones} ${pluralizeWeekday(cap)}`;
       }
       return null;
     }
@@ -288,7 +290,7 @@ export default function PublicationCard({
 
     if (diasUnicos.length === 1) {
       // Todas las fechas caen en el mismo día
-      return `${fechas_recurrencia.length} ${diasNombres[diasUnicos[0]]}s`;
+      return `${fechas_recurrencia.length} ${pluralizeWeekday(diasNombres[diasUnicos[0]])}`;
     }
 
     // Días variados: respetar el orden cronológico de las fechas seleccionadas
