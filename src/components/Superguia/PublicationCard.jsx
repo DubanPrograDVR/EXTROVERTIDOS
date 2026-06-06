@@ -17,6 +17,7 @@ import {
   faBullhorn,
   faRepeat,
   faFire,
+  faShareAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faHeart as faHeartRegular,
@@ -503,9 +504,18 @@ export default function PublicationCard({
       </div>
 
       <div className="publication-card__content">
-        <div className="publication-card__location">
-          <FontAwesomeIcon icon={faMapMarkerAlt} />
-          <span>{comuna}</span>
+        <div className="publication-card__location-row">
+          <div className="publication-card__location">
+            <FontAwesomeIcon icon={faMapMarkerAlt} />
+            <span>{comuna}</span>
+          </div>
+          <button
+            type="button"
+            className="publication-card__ver-mas"
+            onClick={onClick}
+            aria-label="Ver más detalles">
+            Ver más
+          </button>
         </div>
         <h3 className="publication-card__title">{titulo}</h3>
 
@@ -571,9 +581,6 @@ export default function PublicationCard({
             disabled={isTogglingLike}
             aria-label={isLiked ? "Quitar imperdible" : "Imperdible"}>
             <FontAwesomeIcon icon={faFire} />
-            <span>
-              {likeCount > 0 ? `${likeCount} Imperdible` : "Imperdible"}
-            </span>
           </button>
           <button
             className={`publication-card__action-btn ${isFavorited ? "publication-card__action-btn--active" : ""}`}
@@ -584,6 +591,22 @@ export default function PublicationCard({
               icon={isFavorited ? faBookmarkSolid : faBookmarkRegular}
             />
             <span>{isFavorited ? "Guardado" : "Guardar"}</span>
+          </button>
+          <button
+            type="button"
+            className="publication-card__action-btn publication-card__action-btn--share"
+            onClick={(e) => {
+              e.stopPropagation();
+              const shareUrl = `${window.location.origin}/panoramas?highlight=${encodeURIComponent(id)}`;
+              if (navigator.share) {
+                navigator.share({ title: titulo, url: shareUrl });
+              } else {
+                navigator.clipboard.writeText(shareUrl);
+              }
+            }}
+            aria-label="Compartir publicación">
+            <FontAwesomeIcon icon={faShareAlt} />
+            <span>Compartir</span>
           </button>
         </div>
       </div>
