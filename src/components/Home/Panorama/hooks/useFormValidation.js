@@ -64,9 +64,9 @@ export const EVENT_VALIDATION_SCHEMA = {
     validate: (value, formData) => {
       if (!formData.es_recurrente) return true;
       const num = parseInt(value);
-      return num >= 2 && num <= 12;
+      return num >= 2 && num <= 8;
     },
-    validateMessage: "La cantidad de repeticiones debe ser entre 2 y 12",
+    validateMessage: "La cantidad de repeticiones debe ser entre 2 y 8",
   },
   fecha_evento_recurrente: {
     required: false,

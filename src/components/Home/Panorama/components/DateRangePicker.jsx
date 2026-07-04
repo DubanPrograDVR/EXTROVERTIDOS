@@ -68,6 +68,10 @@ const MESES_CORTOS = [
   "Dic",
 ];
 
+// Máximo de días seleccionables para "Varios días seguidos" (rango) y
+// "Fechas específicas" (recurrente).
+const MAX_DIAS_SELECCION = 8;
+
 // ===== FERIADOS DE CHILE =====
 const getFeriadosChile = (year) => {
   const fijos = [
@@ -338,6 +342,16 @@ const DateRangePicker = ({
   };
 
   // ===== DAY CLICK HANDLER =====
+  // Bloquea días que exceden el máximo de días seguidos al elegir el fin del rango.
+  const isBeyondRangeLimit = (dateStr) => {
+    if (selectionMode !== "range" || rangeStep !== "end" || !fechaEvento)
+      return false;
+    const start = new Date(fechaEvento + "T00:00:00");
+    const target = new Date(dateStr + "T00:00:00");
+    const diffDias = Math.abs(Math.round((target - start) / 86400000));
+    return diffDias > MAX_DIAS_SELECCION - 1;
+  };
+
   const handleDayClick = (dateStr) => {
     if (dateStr < todayISO || dateStr > maxSelectableISO) return;
 
@@ -348,7 +362,7 @@ const DateRangePicker = ({
         if (currentDates.length <= 1) return;
         currentDates.splice(idx, 1);
       } else {
-        if (currentDates.length >= 12) return;
+        if (currentDates.length >= MAX_DIAS_SELECCION) return;
         currentDates.push(dateStr);
       }
       currentDates.sort();
@@ -366,6 +380,7 @@ const DateRangePicker = ({
         onChange({ target: { name: "fecha_fin", value: "" } });
         setRangeStep("end");
       } else if (rangeStep === "end") {
+        if (isBeyondRangeLimit(dateStr)) return;
         if (dateStr < fechaEvento) {
           onChange({ target: { name: "fecha_fin", value: fechaEvento } });
           onChange({ target: { name: "fecha_evento", value: dateStr } });
@@ -388,7 +403,12 @@ const DateRangePicker = ({
   };
 
   const handleDayHover = (dateStr) => {
-    if (selectionMode === "range" && rangeStep === "end") setHoverDate(dateStr);
+    if (
+      selectionMode === "range" &&
+      rangeStep === "end" &&
+      !isBeyondRangeLimit(dateStr)
+    )
+      setHoverDate(dateStr);
   };
 
   // ===== DAY CLASSES =====
@@ -411,6 +431,10 @@ const DateRangePicker = ({
         if (date > start && date < end)
           classes.push("drp-calendar__day--in-range");
       }
+    }
+
+    if (isBeyondRangeLimit(date)) {
+      classes.push("drp-calendar__day--blocked");
     }
 
     if (selectionMode === "specific") {
@@ -665,7 +689,7 @@ const DateRangePicker = ({
               onClick={() => handleDayClick(dayObj.date)}
               onMouseEnter={() => handleDayHover(dayObj.date)}
               onMouseLeave={() => setHoverDate(null)}
-              disabled={isOutOfAvailability}
+              disabled={isOutOfAvailability || isBeyondRangeLimit(dayObj.date)}
               title={
                 holidayName
                   ? `${formatearFechaLarga(dayObj.date)}  ${holidayName}`
@@ -775,7 +799,7 @@ const DateRangePicker = ({
         {selectionMode === "range" && rangeStep === "end" && (
           <p>
             <FontAwesomeIcon icon={faInfoCircle} /> Ahora haz clic en el día de{" "}
-            <strong>fin</strong> de tu evento
+            <strong>fin</strong> de tu evento (máximo 8 días)
           </p>
         )}
         {selectionMode === "range" && rangeStep === "complete" && !fechaFin && (
@@ -787,7 +811,7 @@ const DateRangePicker = ({
         {selectionMode === "specific" && (
           <p>
             <FontAwesomeIcon icon={faInfoCircle} /> Haz clic en los días del
-            calendario para <strong>agregar o quitar</strong> fechas
+            calendario para <strong>agregar o quitar</strong> fechas (máximo 8)
           </p>
         )}
       </div>
