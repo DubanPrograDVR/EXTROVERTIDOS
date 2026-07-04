@@ -322,6 +322,7 @@ export default function PublicationCard({
 
     const formatShort = (fecha) => {
       return new Date(fecha + "T00:00:00").toLocaleDateString("es-CL", {
+        weekday: "short",
         day: "numeric",
         month: "short",
       });
@@ -340,6 +341,7 @@ export default function PublicationCard({
     }
 
     return new Date(fecha_evento + "T00:00:00").toLocaleDateString("es-CL", {
+      weekday: "short",
       day: "numeric",
       month: "short",
       year: "numeric",
