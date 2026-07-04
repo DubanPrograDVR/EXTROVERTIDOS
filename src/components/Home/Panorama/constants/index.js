@@ -61,7 +61,7 @@ export const INITIAL_FORM_STATE = {
   // Recurrencia
   es_recurrente: false, // Indica si el evento se repite ciertos días
   dia_recurrencia: "", // Día de la semana en que se repite
-  cantidad_repeticiones: 2, // Cuántas veces se repite (2-12)
+  cantidad_repeticiones: 2, // Cuántas veces se repite (2-8)
   fechas_recurrencia: [], // Array de fechas calculadas
   // Horarios
   hora_inicio: "",
