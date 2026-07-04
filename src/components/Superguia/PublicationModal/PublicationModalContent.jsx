@@ -334,8 +334,10 @@ export default function PublicationModal({
   // Usar telefono_contacto si existe, sino usar telefono
   const contactPhone = telefono_contacto || telefono;
 
+  // URL directa a og.php: los bots reciben OG tags con la imagen real del
+  // panorama y los usuarios son redirigidos a /panoramas?highlight=<id>.
   const shareUrl = publication?.id
-    ? `${window.location.origin}/panoramas?highlight=${encodeURIComponent(publication.id)}`
+    ? `${window.location.origin}/og.php?type=event&highlight=${encodeURIComponent(publication.id)}`
     : window.location.href;
 
   // Parsear hashtags

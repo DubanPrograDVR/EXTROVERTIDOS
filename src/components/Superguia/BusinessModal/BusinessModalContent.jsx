@@ -397,8 +397,10 @@ export default function BusinessModal({
     mensaje_marketing_2,
   } = business;
 
+  // URL directa a og.php: los bots reciben OG tags con la imagen real del
+  // negocio y los usuarios son redirigidos a /superguia?highlight=<id>.
   const shareUrl = business?.id
-    ? `${window.location.origin}/superguia?highlight=${encodeURIComponent(business.id)}`
+    ? `${window.location.origin}/og.php?type=business&highlight=${encodeURIComponent(business.id)}`
     : window.location.href;
   const normalizedWebsiteUrl = normalizeExternalUrl(sitio_web);
   const socialLinks = {
