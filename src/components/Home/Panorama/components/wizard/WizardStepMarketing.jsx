@@ -130,7 +130,8 @@ const WizardStepMarketing = ({ formData, errors, onChange }) => {
       {/* Etiquetas Complementarias */}
       <div className="publicar-form__group publicar-form__group--tags">
         <label className="publicar-form__label">
-          <FontAwesomeIcon icon={faTags} /> Crea o Selecciona Hashtags para tu publicación (10 Max)
+          <FontAwesomeIcon icon={faTags} /> Crea o Selecciona Hashtags para tu
+          publicación (10 Max)
           <span
             style={{
               color: "gray",
@@ -149,6 +150,9 @@ const WizardStepMarketing = ({ formData, errors, onChange }) => {
           <FontAwesomeIcon icon={faTags} />
           Ver Etiquetas
         </button>
+        <p className="publicar-form__tags-helper">
+          Estas etiquetas ayudan a encontrarte desde el buscador principal
+        </p>
         {selectedTags.length > 0 && (
           <div className="publicar-form__selected-tags">
             {selectedTags.map((tag) => (
