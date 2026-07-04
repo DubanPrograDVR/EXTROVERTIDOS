@@ -28,7 +28,10 @@ import {
 } from "../../lib/database";
 import { useCity } from "../../context/CityContext";
 import { useAuth } from "../../context/AuthContext";
-import { useRealtimeRefetch } from "../../hooks/useRealtimeRefetch";
+import {
+  useRealtimeRefetch,
+  getChangedColumns,
+} from "../../hooks/useRealtimeRefetch";
 import { useHighlightCard } from "../../hooks/useHighlightCard";
 import { LOCATIONS, mapCategoriesToUI } from "../Superguia/data";
 import {
@@ -204,10 +207,11 @@ export default function PanoramasPage() {
     event: "*",
     onChange: (payload) => {
       if (payload?.eventType === "UPDATE") {
-        const changed = Object.keys(payload?.new ?? {}).filter(
-          (k) => (payload?.new ?? {})[k] !== (payload?.old ?? {})[k],
-        );
-        if (changed.length > 0 && changed.every((k) => k === "share_count")) {
+        const changed = getChangedColumns(payload);
+        if (
+          changed.length > 0 &&
+          changed.every((k) => k === "share_count" || k === "updated_at")
+        ) {
           return;
         }
       }
@@ -219,10 +223,11 @@ export default function PanoramasPage() {
     event: "*",
     onChange: (payload) => {
       if (payload?.eventType === "UPDATE") {
-        const changed = Object.keys(payload?.new ?? {}).filter(
-          (k) => (payload?.new ?? {})[k] !== (payload?.old ?? {})[k],
-        );
-        if (changed.length > 0 && changed.every((k) => k === "share_count")) {
+        const changed = getChangedColumns(payload);
+        if (
+          changed.length > 0 &&
+          changed.every((k) => k === "share_count" || k === "updated_at")
+        ) {
           return;
         }
       }

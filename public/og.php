@@ -11,10 +11,14 @@
  */
 
 // ─── 1. CONFIGURACIÓN ────────────────────────────────────────────────────────
-define('SUPABASE_URL',      'https://vlymipndnhzvbrvvkbie.supabase.co');
-define('SUPABASE_ANON_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZseW1pcG5kbmh6dmJydnZrYmllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NDQ0MDcsImV4cCI6MjA4MDEyMDQwN30.vZUuC1GVvlrqMtrZM2HO4ujm1xHUWALr0ibRCrjIAWs');
-define('SITE_URL',          'https://www.extrovertidos.cl');
-define('DEFAULT_IMAGE',     SITE_URL . '/img/Logo_con_r_v3.png');
+// Las credenciales se cargan desde og_config.php (NO tracked en git).
+// En el servidor: copia og_config.example.php → og_config.php y rellena los valores.
+$_configFile = __DIR__ . '/og_config.php';
+if (!file_exists($_configFile)) {
+    http_response_code(503);
+    exit('Configuración no encontrada. Crea og_config.php en el servidor.');
+}
+require_once $_configFile;
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── 2. LEER PARÁMETROS ───────────────────────────────────────────────────────

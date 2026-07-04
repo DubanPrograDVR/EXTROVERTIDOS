@@ -17,7 +17,10 @@ import {
   getPublishedEvents,
   getEventById,
 } from "../../lib/database";
-import { useRealtimeRefetch } from "../../hooks/useRealtimeRefetch";
+import {
+  useRealtimeRefetch,
+  getChangedColumns,
+} from "../../hooks/useRealtimeRefetch";
 import { useHighlightCard } from "../../hooks/useHighlightCard";
 import { useAuth } from "../../context/AuthContext";
 import { LOCATIONS } from "./data";
@@ -288,10 +291,11 @@ export default function SuperguiaContainer() {
     event: "*",
     onChange: (payload) => {
       if (payload?.eventType === "UPDATE") {
-        const changed = Object.keys(payload?.new ?? {}).filter(
-          (k) => (payload?.new ?? {})[k] !== (payload?.old ?? {})[k],
-        );
-        if (changed.length > 0 && changed.every((k) => k === "share_count")) {
+        const changed = getChangedColumns(payload);
+        if (
+          changed.length > 0 &&
+          changed.every((k) => k === "share_count" || k === "updated_at")
+        ) {
           return;
         }
       }
@@ -303,10 +307,11 @@ export default function SuperguiaContainer() {
     event: "*",
     onChange: (payload) => {
       if (payload?.eventType === "UPDATE") {
-        const changed = Object.keys(payload?.new ?? {}).filter(
-          (k) => (payload?.new ?? {})[k] !== (payload?.old ?? {})[k],
-        );
-        if (changed.length > 0 && changed.every((k) => k === "share_count")) {
+        const changed = getChangedColumns(payload);
+        if (
+          changed.length > 0 &&
+          changed.every((k) => k === "share_count" || k === "updated_at")
+        ) {
           return;
         }
       }
