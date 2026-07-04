@@ -60,6 +60,32 @@ const getEffectiveEndDate = (event) => {
   return event?.fecha_fin || event?.fecha_evento;
 };
 
+// Fecha usada para ORDENAR/agrupar la cartelera: la próxima fecha relevante
+// (>= hoy). Evita que recurrentes ("días específicos") y multidía ("días
+// seguidos") cuya primera fecha ya pasó queden siempre al inicio.
+// Devuelve string "YYYY-MM-DD".
+const getSortDate = (event, todayStr) => {
+  // Recurrente: próxima ocurrencia futura (o la última como respaldo)
+  if (
+    event?.es_recurrente &&
+    Array.isArray(event.fechas_recurrencia) &&
+    event.fechas_recurrencia.length > 0
+  ) {
+    const fechas = [...event.fechas_recurrencia].filter(Boolean).sort();
+    return fechas.find((f) => f >= todayStr) || fechas[fechas.length - 1];
+  }
+
+  // Normal / multidía: si aún no empieza, su fecha de inicio
+  if (event?.fecha_evento && event.fecha_evento >= todayStr) {
+    return event.fecha_evento;
+  }
+  // Ya empezó pero sigue vigente (en curso) → ordena como hoy
+  if (event?.fecha_fin && event.fecha_fin >= todayStr) {
+    return todayStr;
+  }
+  return event?.fecha_evento || null;
+};
+
 export default function PanoramasPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -450,10 +476,13 @@ export default function PanoramasPage() {
       });
     }
 
-    // Agrupar por fecha
+    // Agrupar por próxima fecha relevante (>= hoy). Así recurrentes y multidía
+    // se ordenan según su próxima ocurrencia y no por su primera fecha (que
+    // puede estar en el pasado y los dejaba fijados al inicio).
+    const todayStr = formatDateKey(today);
     const groups = {};
     result.forEach((event) => {
-      const key = event.fecha_evento || "9999-12-31";
+      const key = getSortDate(event, todayStr) || "9999-12-31";
       if (!groups[key]) groups[key] = [];
       groups[key].push(event);
     });
