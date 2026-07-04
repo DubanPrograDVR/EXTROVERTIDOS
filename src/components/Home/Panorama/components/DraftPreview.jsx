@@ -578,7 +578,7 @@ const DraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
                                 )
                               }>
                               <FontAwesomeIcon icon={faMapMarkerAlt} />
-                              Ir a la dirección / lugar
+                              Ir a la ubicación
                             </button>
                           )}
                         </div>
