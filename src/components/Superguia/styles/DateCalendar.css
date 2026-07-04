@@ -171,6 +171,24 @@
     0 0 0 2px rgba(255, 102, 0, 0.3);
 }
 
+/* Días pasados: sin fondo ni badges */
+.date-calendar__day--past.date-calendar__day--has-events {
+  background: transparent;
+}
+
+.date-calendar__day--past.date-calendar__day--recurring {
+  background: transparent;
+  border: none;
+}
+
+.date-calendar__day--past .date-calendar__event-dot {
+  display: none;
+}
+
+.date-calendar__day--past .date-calendar__recurring-icon {
+  display: none;
+}
+
 /* Ícono de recurrencia */
 .date-calendar__recurring-icon {
   position: absolute;
