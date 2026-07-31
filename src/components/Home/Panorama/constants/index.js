@@ -106,3 +106,18 @@ export const IMAGE_CONFIG = {
   maxSize: 5 * 1024 * 1024, // 5MB
   acceptedTypes: "image/*",
 };
+
+// ─────────────────────────────────────────────────
+// TIPOS DE PUBLICACIÓN
+// ─────────────────────────────────────────────────
+// Los valores deben coincidir con el CHECK constraint de events.tipo_publicacion.
+// Para agregar un nuevo tipo (ej: 'premium'):
+//   1) Actualiza el CHECK en la migración (o crea una nueva).
+//   2) Añade la entrada aquí (label + descripción).
+//   3) Si requiere pago, ajusta la lógica en useEventSubmit + create-payment.
+export const PUBLICATION_TYPES = {
+  NORMAL: "normal",
+  DESTACADA: "destacada",
+};
+
+export const DEFAULT_PUBLICATION_TYPE = PUBLICATION_TYPES.NORMAL;

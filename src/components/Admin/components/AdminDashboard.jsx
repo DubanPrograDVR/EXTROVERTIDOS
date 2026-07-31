@@ -8,6 +8,7 @@ import {
   faChevronRight,
   faCreditCard,
   faSpinner,
+  faStar,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   PieChart,
@@ -45,6 +46,9 @@ export default function AdminDashboard({
   onTogglePlanes,
   onTogglePanoramas,
   onToggleSuperguia,
+  destacadasEnabled,
+  destacadasToggleLoading,
+  onToggleDestacadas,
   isAdmin,
 }) {
   if (!stats) return null;
@@ -290,9 +294,7 @@ export default function AdminDashboard({
               onClick={onToggleSuperguia}
               disabled={planesToggleLoading}
               title={
-                superguiaEnabled
-                  ? "Desactivar Superguía"
-                  : "Activar Superguía"
+                superguiaEnabled ? "Desactivar Superguía" : "Activar Superguía"
               }>
               {planesToggleLoading ? (
                 <FontAwesomeIcon icon={faSpinner} spin />
@@ -324,11 +326,44 @@ export default function AdminDashboard({
               onClick={onTogglePanoramas}
               disabled={planesToggleLoading}
               title={
-                panoramasEnabled
-                  ? "Desactivar Panoramas"
-                  : "Activar Panoramas"
+                panoramasEnabled ? "Desactivar Panoramas" : "Activar Panoramas"
               }>
               {planesToggleLoading ? (
+                <FontAwesomeIcon icon={faSpinner} spin />
+              ) : (
+                <span className="admin-toggle__knob" />
+              )}
+            </button>
+          </div>
+
+          {/* Toggle PUBLICACIONES DESTACADAS (independiente) */}
+          <div className="admin-setting-row">
+            <div className="admin-setting-row__info">
+              <FontAwesomeIcon
+                icon={faStar}
+                className="admin-setting-row__icon"
+              />
+              <div>
+                <span className="admin-setting-row__label">
+                  Publicaciones Destacadas
+                </span>
+                <span className="admin-setting-row__description">
+                  Si está activo, se muestra la pestaña “Panoramas Destacados” y
+                  la opción de pago en el formulario. Si se desactiva, solo hay
+                  publicaciones gratuitas.
+                </span>
+              </div>
+            </div>
+            <button
+              className={`admin-toggle ${destacadasEnabled ? "admin-toggle--active" : ""}`}
+              onClick={onToggleDestacadas}
+              disabled={destacadasToggleLoading}
+              title={
+                destacadasEnabled
+                  ? "Desactivar publicaciones destacadas"
+                  : "Activar publicaciones destacadas"
+              }>
+              {destacadasToggleLoading ? (
                 <FontAwesomeIcon icon={faSpinner} spin />
               ) : (
                 <span className="admin-toggle__knob" />

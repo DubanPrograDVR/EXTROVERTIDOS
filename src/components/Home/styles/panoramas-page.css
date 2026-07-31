@@ -361,6 +361,129 @@
   padding: 40px 40px;
 }
 
+/* ===== TABS: Panoramas / Destacados ===== */
+.panoramas-page__tabs {
+  display: inline-flex;
+  gap: 8px;
+  padding: 6px;
+  background: #111;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.panoramas-page__tab {
+  position: relative;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.panoramas-page__tab:hover {
+  color: #fff;
+}
+
+.panoramas-page__tab--active {
+  background: #ff6600;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(255, 102, 0, 0.35);
+}
+
+.panoramas-page__tab--destacada.panoramas-page__tab--active {
+  background: linear-gradient(135deg, #ffd700, #f5b400);
+  color: #1a1206;
+  box-shadow: 0 4px 14px rgba(255, 215, 0, 0.35);
+}
+
+.panoramas-page__tab-badge {
+  width: 22px;
+  height: auto;
+  filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.5));
+}
+
+.panoramas-page__tab-count {
+  min-width: 22px;
+  padding: 0 6px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  color: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panoramas-page__tab--active .panoramas-page__tab-count {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+@media (max-width: 640px) {
+  .panoramas-page__tabs {
+    width: 100%;
+    justify-content: center;
+  }
+  .panoramas-page__tab {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+  }
+}
+
+/* ===== MINI CARRUSEL DE PANORAMAS DESTACADOS ===== */
+.panoramas-page__destacados {
+  margin-bottom: 28px;
+}
+
+.panoramas-page__destacados-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.panoramas-page__destacados-badge {
+  width: 34px;
+  height: auto;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6));
+}
+
+.panoramas-page__destacados-header h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+@media (max-width: 600px) {
+  .panoramas-page__destacados {
+    margin-bottom: 22px;
+  }
+
+  .panoramas-page__destacados-badge {
+    width: 28px;
+  }
+
+  .panoramas-page__destacados-header h3 {
+    font-size: 1rem;
+  }
+}
+
 .panoramas-page__events-header {
   display: flex;
   justify-content: space-between;

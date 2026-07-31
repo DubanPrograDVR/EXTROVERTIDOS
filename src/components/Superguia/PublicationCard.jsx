@@ -127,7 +127,10 @@ export default function PublicationCard({
     profiles,
     mensaje_marketing,
     organizador,
+    tipo_publicacion,
   } = publication;
+
+  const isDestacada = tipo_publicacion === "destacada";
 
   const { user, showToast } = useAuth();
   const [imageError, setImageError] = useState(false);
@@ -462,8 +465,19 @@ export default function PublicationCard({
   return (
     <article
       id={`publication-card-${id}`}
-      className="publication-card"
+      className={`publication-card ${
+        isDestacada ? "publication-card--destacada" : ""
+      }`}
       onClick={handleClick}>
+      {/* Logo Extrovertidos montado sobre la esquina superior izquierda.
+          Presente en todas las cards; las destacadas añaden glow dorado + pulso. */}
+      <img
+        src="/img/P_Extro_v2.png"
+        alt="Extrovertidos"
+        className="publication-card__corner-badge"
+        loading="lazy"
+      />
+
       <div className="publication-card__image-container">
         <img
           src={imageUrl}

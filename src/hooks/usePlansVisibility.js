@@ -18,6 +18,7 @@ const INITIAL_STATE = {
   globalEnabled: true,
   panoramasEnabled: false,
   superguiaEnabled: false,
+  destacadasEnabled: true,
   panoramasVisible: true,
   superguiaVisible: true,
   anyVisible: true,

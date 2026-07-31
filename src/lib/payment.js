@@ -96,6 +96,63 @@ export async function initiatePayment({
   redirectToTransbank(data.url, data.token);
 }
 
+/**
+ * Inicia el pago de una publicación destacada (pago único por publicación).
+ * A diferencia de initiatePayment(), no crea ni activa suscripciones:
+ * la publicación queda en borrador hasta que Transbank confirme el pago.
+ *
+ * @param {Object} params
+ * @param {string} params.eventId - UUID del evento destacado (creado en borrador)
+ * @param {string} [params.eventTitle] - Título del evento (para el registro)
+ * @returns {Promise<void>} Redirige al usuario a Transbank
+ * @throws {PaymentError}
+ */
+export async function initiateDestacadaPayment({ eventId, eventTitle }) {
+  if (!eventId) {
+    throw new PaymentError(
+      "Falta el identificador de la publicación destacada",
+      "INVALID_ARGS",
+    );
+  }
+
+  const session = await getValidatedPaymentSession();
+
+  const { data, error } = await supabase.functions.invoke("create-payment", {
+    body: {
+      publicacion_destacada: {
+        event_id: eventId,
+        titulo: eventTitle || "",
+      },
+    },
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  });
+
+  if (error) {
+    console.error("[Payment] Error al crear pago destacada:", error);
+    const serverError = await parseFunctionError(error);
+    const err = new PaymentError(
+      serverError?.message ||
+        error.message ||
+        "Error al iniciar el pago de la publicación destacada",
+      "CREATE_FAILED",
+      serverError?.status,
+    );
+    err.dbCode = serverError?.dbCode || null;
+    throw err;
+  }
+
+  if (!data || !data.token || !data.url) {
+    throw new PaymentError(
+      "Respuesta inválida del servidor de pago",
+      "INVALID_RESPONSE",
+    );
+  }
+
+  redirectToTransbank(data.url, data.token);
+}
+
 // ──────────────────────────────────────────────
 // CONSULTAS
 // ──────────────────────────────────────────────

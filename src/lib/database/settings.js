@@ -71,6 +71,7 @@ export async function updateAppSetting(key, value, userId, description) {
 export const PLANES_ENABLED_KEY = "planes_enabled";
 export const PANORAMAS_ENABLED_KEY = "panoramas_enabled";
 export const SUPERGUIA_ENABLED_KEY = "superguia_enabled";
+export const DESTACADAS_ENABLED_KEY = "destacadas_enabled";
 
 /**
  * Verificar si los planes están habilitados (toggle global).
@@ -108,9 +109,13 @@ export async function isSuperguiaEnabled() {
  * @returns {Promise<{globalEnabled:boolean, panoramasEnabled:boolean, superguiaEnabled:boolean, panoramasVisible:boolean, superguiaVisible:boolean, anyVisible:boolean}>}
  */
 export async function getPlansVisibility() {
-  const [globalEnabled, panoramasEnabled, superguiaEnabled] = await Promise.all(
-    [isPlanesEnabled(), isPanoramasEnabled(), isSuperguiaEnabled()],
-  );
+  const [globalEnabled, panoramasEnabled, superguiaEnabled, destacadasEnabled] =
+    await Promise.all([
+      isPlanesEnabled(),
+      isPanoramasEnabled(),
+      isSuperguiaEnabled(),
+      isDestacadasEnabled(),
+    ]);
 
   const panoramasVisible = globalEnabled || panoramasEnabled;
   const superguiaVisible = globalEnabled || superguiaEnabled;
@@ -119,6 +124,7 @@ export async function getPlansVisibility() {
     globalEnabled,
     panoramasEnabled,
     superguiaEnabled,
+    destacadasEnabled,
     panoramasVisible,
     superguiaVisible,
     anyVisible: panoramasVisible || superguiaVisible,
@@ -182,6 +188,36 @@ export async function toggleSuperguiaEnabled(enabled, userId) {
 }
 
 // =============================
+// PUBLICACIONES DESTACADAS (toggle independiente)
+// =============================
+// Flag global e independiente de la invariante de planes. Controla si:
+//  - Aparece la opción "Destacada" en el modal de publicación (con pago).
+//  - Se muestra la pestaña "Panoramas Destacados".
+// Default: true (para no romper el comportamiento existente).
+
+/**
+ * Verificar si las publicaciones destacadas están habilitadas.
+ * Default: true si la clave no existe aún.
+ * @returns {Promise<boolean>}
+ */
+export async function isDestacadasEnabled() {
+  const value = await getAppSetting(DESTACADAS_ENABLED_KEY);
+  if (value === null) return true;
+  return value === true;
+}
+
+/**
+ * Activar o desactivar globalmente las publicaciones destacadas.
+ * Toggle independiente: no afecta la invariante de planes.
+ * @param {boolean} enabled
+ * @param {string} userId - ID del admin
+ * @returns {Promise<boolean>}
+ */
+export async function toggleDestacadasEnabled(enabled, userId) {
+  return updateAppSetting(DESTACADAS_ENABLED_KEY, enabled, userId);
+}
+
+// =============================
 // PRECIOS DE SUSCRIPCIONES
 // =============================
 
@@ -190,6 +226,7 @@ const DEFAULT_PLAN_PRICES = {
   panorama_pack4: 39990,
   panorama_ilimitado: 70000,
   superguia: 15000,
+  publicacion_destacada: 10000,
 };
 
 /**
@@ -243,7 +280,8 @@ export async function updatePlanPrices(prices, userId) {
 
   // 2. Si UPDATE no afectó filas, la fila no existe → INSERT
   if (!updated || updated.length === 0) {
-    import.meta.env.DEV && console.log("[updatePlanPrices] Fila no existe, insertando...");
+    import.meta.env.DEV &&
+      console.log("[updatePlanPrices] Fila no existe, insertando...");
     const { error: insertError } = await supabase.from("app_settings").insert({
       key: "plan_prices",
       value: normalized,
@@ -280,6 +318,7 @@ export async function updatePlanPrices(prices, userId) {
     throw new Error("Los precios guardados no coinciden con los enviados");
   }
 
-  import.meta.env.DEV && console.log("[updatePlanPrices] Precios guardados exitosamente:", saved);
+  import.meta.env.DEV &&
+    console.log("[updatePlanPrices] Precios guardados exitosamente:", saved);
   return true;
 }

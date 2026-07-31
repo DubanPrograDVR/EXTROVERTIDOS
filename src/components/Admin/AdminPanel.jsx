@@ -23,6 +23,7 @@ import {
   togglePlanesEnabled,
   togglePanoramasEnabled,
   toggleSuperguiaEnabled,
+  toggleDestacadasEnabled,
 } from "../../lib/database";
 
 // Componentes modulares
@@ -85,7 +86,9 @@ export default function AdminPanel() {
   const [planesEnabled, setPlanesEnabled] = useState(true);
   const [panoramasEnabled, setPanoramasEnabled] = useState(false);
   const [superguiaEnabled, setSuperguiaEnabled] = useState(false);
+  const [destacadasEnabled, setDestacadasEnabled] = useState(true);
   const [planesToggleLoading, setPlanesToggleLoading] = useState(false);
+  const [destacadasToggleLoading, setDestacadasToggleLoading] = useState(false);
   const [pubsMenuOpen, setPubsMenuOpen] = useState(false);
   const [reviewMenuOpen, setReviewMenuOpen] = useState(false);
 
@@ -151,6 +154,7 @@ export default function AdminPanel() {
         setPlanesEnabled(visibility.globalEnabled);
         setPanoramasEnabled(visibility.panoramasEnabled);
         setSuperguiaEnabled(visibility.superguiaEnabled);
+        setDestacadasEnabled(visibility.destacadasEnabled);
       } catch (error) {
         console.error("Error cargando estado de planes:", error);
       }
@@ -219,6 +223,23 @@ export default function AdminPanel() {
       setSuperguiaEnabled(prev.superguiaEnabled);
     } finally {
       setPlanesToggleLoading(false);
+    }
+  };
+
+  // Toggle PUBLICACIONES DESTACADAS: flag independiente (no afecta la invariante).
+  const handleToggleDestacadas = async () => {
+    if (destacadasToggleLoading) return;
+    setDestacadasToggleLoading(true);
+    const prev = destacadasEnabled;
+    try {
+      const newValue = !destacadasEnabled;
+      setDestacadasEnabled(newValue);
+      await toggleDestacadasEnabled(newValue, user.id);
+    } catch (error) {
+      console.error("Error al cambiar estado de destacadas:", error);
+      setDestacadasEnabled(prev);
+    } finally {
+      setDestacadasToggleLoading(false);
     }
   };
 
@@ -603,6 +624,9 @@ export default function AdminPanel() {
             onTogglePlanes={handleTogglePlanes}
             onTogglePanoramas={handleTogglePanoramas}
             onToggleSuperguia={handleToggleSuperguia}
+            destacadasEnabled={destacadasEnabled}
+            destacadasToggleLoading={destacadasToggleLoading}
+            onToggleDestacadas={handleToggleDestacadas}
             isAdmin={isAdmin}
           />
         )}

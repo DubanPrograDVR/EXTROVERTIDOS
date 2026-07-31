@@ -33,6 +33,7 @@ import {
   getChangedColumns,
 } from "../../hooks/useRealtimeRefetch";
 import { useHighlightCard } from "../../hooks/useHighlightCard";
+import { usePlansVisibility } from "../../hooks/usePlansVisibility";
 import { LOCATIONS, mapCategoriesToUI } from "../Superguia/data";
 import {
   trackSearch,
@@ -91,6 +92,7 @@ export default function PanoramasPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { selectCity } = useCity();
   const { isAuthenticated } = useAuth();
+  const { destacadasEnabled } = usePlansVisibility();
 
   // Estados de datos
   const [events, setEvents] = useState([]);
@@ -476,21 +478,10 @@ export default function PanoramasPage() {
       });
     }
 
-    // Agrupar por próxima fecha relevante (>= hoy). Así recurrentes y multidía
-    // se ordenan según su próxima ocurrencia y no por su primera fecha (que
-    // puede estar en el pasado y los dejaba fijados al inicio).
+    // Ordenar: destacadas primero (por fecha), luego normales (por fecha).
+    // Dentro de cada grupo del mismo día se mezclan aleatoriamente.
     const todayStr = formatDateKey(today);
-    const groups = {};
-    result.forEach((event) => {
-      const key = getSortDate(event, todayStr) || "9999-12-31";
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(event);
-    });
 
-    // Ordenar fechas ascendente (las más próximas primero, sin fecha al final)
-    const sortedDates = Object.keys(groups).sort((a, b) => a.localeCompare(b));
-
-    // Mezclar aleatoriamente dentro de cada grupo del mismo día
     const shuffle = (arr) => {
       for (let i = arr.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -499,12 +490,31 @@ export default function PanoramasPage() {
       return arr;
     };
 
-    const sorted = [];
-    for (const date of sortedDates) {
-      sorted.push(...shuffle(groups[date]));
-    }
+    const sortByDate = (list) => {
+      const groups = {};
+      list.forEach((event) => {
+        const key = getSortDate(event, todayStr) || "9999-12-31";
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(event);
+      });
+      const sortedDates = Object.keys(groups).sort((a, b) =>
+        a.localeCompare(b),
+      );
+      const sorted = [];
+      for (const date of sortedDates) {
+        sorted.push(...shuffle(groups[date]));
+      }
+      return sorted;
+    };
 
-    return sorted;
+    const destacadas = destacadasEnabled
+      ? result.filter((e) => e.tipo_publicacion === "destacada")
+      : [];
+    const normales = result.filter(
+      (e) => (e.tipo_publicacion || "normal") === "normal",
+    );
+
+    return [...sortByDate(destacadas), ...sortByDate(normales)];
   }, [
     events,
     searchQuery,
@@ -513,6 +523,7 @@ export default function PanoramasPage() {
     selectedComuna,
     selectedDate,
     selectedPrice,
+    destacadasEnabled,
   ]);
 
   // Contadores dinámicos basados en filtros activos
@@ -817,6 +828,14 @@ export default function PanoramasPage() {
     return filteredEvents.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredEvents, currentPage]);
 
+  // Panoramas destacados para el mini carrusel superior (modo tren).
+  // Respeta los filtros activos. En modo tren se repiten automáticamente
+  // cuando hay pocos elementos.
+  const destacadaEvents = useMemo(
+    () => filteredEvents.filter((e) => e.tipo_publicacion === "destacada"),
+    [filteredEvents],
+  );
+
   // Resaltar card cuando venimos con ?highlight=<id>
   useHighlightCard({
     prefix: "publication-card",
@@ -1107,6 +1126,29 @@ export default function PanoramasPage() {
 
       {/* Lista de eventos */}
       <section className="panoramas-page__events">
+        {/* Mini carrusel de panoramas destacados (modo tren, compacto).
+            Solo se muestra si existen panoramas destacados vigentes. */}
+        {!loading && destacadasEnabled && destacadaEvents.length > 0 && (
+          <div className="panoramas-page__destacados">
+            <div className="panoramas-page__destacados-header">
+              <img
+                src="/img/P_Extro_v2.png"
+                alt=""
+                aria-hidden="true"
+                className="panoramas-page__destacados-badge"
+              />
+              <h3>Panoramas Destacados</h3>
+            </div>
+            <Carousel
+              publications={destacadaEvents}
+              onPublicationClick={handleEventClick}
+              badgeUrl="/img/P_Extro_v2.png"
+              className="carousel--mini"
+              speedPerItem={1.8}
+            />
+          </div>
+        )}
+
         <div className="panoramas-page__events-header">
           <h2>
             {filteredEvents.length}{" "}
@@ -1177,6 +1219,7 @@ export default function PanoramasPage() {
           <Carousel
             publications={filteredBusinesses}
             onPublicationClick={handleBusinessClick}
+            badgeUrl="/img/SG_Extro_v2.png"
           />
         </section>
       )}

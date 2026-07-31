@@ -94,6 +94,67 @@ async function rejectSubscriptions(supabaseAdmin, subscriptionIds, reason) {
 }
 
 /**
+ * Detecta si una transacción corresponde a un pago único de publicación destacada
+ * en lugar de una suscripción. Se identifica por items[].type === 'publicacion_destacada'.
+ */
+function isDestacadaTransaction(transaction) {
+  const items = Array.isArray(transaction?.items) ? transaction.items : [];
+  return items.some((item) => item?.type === "publicacion_destacada");
+}
+
+/**
+ * Extrae el event_id del item de publicación destacada de una transacción.
+ */
+function getDestacadaEventId(transaction) {
+  const items = Array.isArray(transaction?.items) ? transaction.items : [];
+  const item = items.find((it) => it?.type === "publicacion_destacada");
+  return item?.event_id || null;
+}
+
+/**
+ * Al APROBAR el pago de una publicación destacada:
+ *  - Mueve el evento borrador → pendiente (para que el admin lo revise).
+ *  - No activa ninguna suscripción.
+ * Solo actualiza si el evento sigue en 'borrador' (idempotente).
+ */
+async function activateDestacadaEvent(supabaseAdmin, eventId) {
+  if (!eventId) return;
+  const { error } = await supabaseAdmin
+    .from("events")
+    .update({ estado: "pendiente" })
+    .eq("id", eventId)
+    .eq("estado", "borrador");
+
+  if (error) {
+    console.error(
+      `[confirm-payment] Error activando publicación destacada ${eventId}:`,
+      error,
+    );
+  }
+}
+
+/**
+ * Al RECHAZAR/ABORTAR el pago de una publicación destacada:
+ *  - Elimina el evento borrador (nunca llegó a existir públicamente).
+ * Solo elimina si sigue en 'borrador' (idempotente y seguro).
+ */
+async function discardDestacadaEvent(supabaseAdmin, eventId) {
+  if (!eventId) return;
+  const { error } = await supabaseAdmin
+    .from("events")
+    .delete()
+    .eq("id", eventId)
+    .eq("estado", "borrador");
+
+  if (error) {
+    console.error(
+      `[confirm-payment] Error eliminando publicación destacada ${eventId}:`,
+      error,
+    );
+  }
+}
+
+/**
  * Envía un email de resultado de pago al usuario.
  * Non-blocking: no lanza error si falla.
  */
@@ -211,7 +272,7 @@ Deno.serve(async (req) => {
       if (tbkOrdenCompra) {
         const { data: tx } = await supabaseAdmin
           .from("transactions")
-          .select("id, subscription_ids, status")
+          .select("id, subscription_ids, status, items")
           .eq("buy_order", tbkOrdenCompra)
           .single();
 
@@ -229,6 +290,10 @@ Deno.serve(async (req) => {
             tx.subscription_ids,
             "Pago cancelado por el usuario en Transbank",
           );
+
+          if (isDestacadaTransaction(tx)) {
+            await discardDestacadaEvent(supabaseAdmin, getDestacadaEventId(tx));
+          }
         }
       }
 
@@ -326,6 +391,12 @@ Deno.serve(async (req) => {
         transaction.subscription_ids,
         "Error de red al confirmar con Transbank",
       );
+      if (isDestacadaTransaction(transaction)) {
+        await discardDestacadaEvent(
+          supabaseAdmin,
+          getDestacadaEventId(transaction),
+        );
+      }
       return redirectToFrontend({
         status: "error",
         buy_order: transaction.buy_order,
@@ -355,6 +426,13 @@ Deno.serve(async (req) => {
         `Error al confirmar pago con Transbank: ${tbkCommitResponse.status}`,
       );
 
+      if (isDestacadaTransaction(transaction)) {
+        await discardDestacadaEvent(
+          supabaseAdmin,
+          getDestacadaEventId(transaction),
+        );
+      }
+
       return redirectToFrontend({
         status: "error",
         buy_order: transaction.buy_order,
@@ -383,6 +461,13 @@ Deno.serve(async (req) => {
           })
           .eq("id", transaction.id);
 
+        if (isDestacadaTransaction(transaction)) {
+          await discardDestacadaEvent(
+            supabaseAdmin,
+            getDestacadaEventId(transaction),
+          );
+        }
+
         return redirectToFrontend({
           status: "error",
           buy_order: transaction.buy_order,
@@ -403,6 +488,13 @@ Deno.serve(async (req) => {
             transbank_response: sanitizeTransbankResponse(tbkResult),
           })
           .eq("id", transaction.id);
+
+        if (isDestacadaTransaction(transaction)) {
+          await discardDestacadaEvent(
+            supabaseAdmin,
+            getDestacadaEventId(transaction),
+          );
+        }
 
         return redirectToFrontend({
           status: "error",
@@ -548,6 +640,14 @@ Deno.serve(async (req) => {
         );
       }
 
+      // Publicación destacada: mover evento borrador → pendiente (admin la revisará).
+      if (isDestacadaTransaction(transaction)) {
+        await activateDestacadaEvent(
+          supabaseAdmin,
+          getDestacadaEventId(transaction),
+        );
+      }
+
       // Enviar boleta por email (non-blocking)
       await sendPaymentEmail(
         supabaseAdmin,
@@ -581,6 +681,13 @@ Deno.serve(async (req) => {
       transaction.subscription_ids,
       `Pago rechazado por Transbank (código: ${tbkResult.response_code})`,
     );
+
+    if (isDestacadaTransaction(transaction)) {
+      await discardDestacadaEvent(
+        supabaseAdmin,
+        getDestacadaEventId(transaction),
+      );
+    }
 
     // Enviar email de pago fallido (non-blocking)
     await sendPaymentEmail(supabaseAdmin, transaction.user_id, "pago_fallido", {

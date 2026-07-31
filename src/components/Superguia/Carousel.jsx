@@ -15,9 +15,14 @@ import {
 export default function Carousel({
   publications,
   onPublicationClick,
+  // URL del logo que se monta sobre la esquina superior izquierda de cada card.
+  // P_Extro_v2.png para panoramas, SG_Extro_v2.png para negocios.
+  badgeUrl = null,
   // Velocidad en segundos por cada item que recorre la pista.
   // Más bajo = más rápido.
   speedPerItem = 2.2,
+  // Clase adicional para variantes (por ejemplo, "carousel--mini").
+  className = "",
 }) {
   const [isPaused, setIsPaused] = useState(false);
   const [canPauseOnHover, setCanPauseOnHover] = useState(false);
@@ -346,7 +351,7 @@ export default function Carousel({
       ref={carouselRef}
       className={`carousel carousel--train ${
         isPaused ? "carousel--paused" : ""
-      } ${isAppleTouchDevice ? "carousel--apple-touch" : ""}`}
+      } ${isAppleTouchDevice ? "carousel--apple-touch" : ""} ${className}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}>
       {/* Track del carrusel */}
@@ -366,20 +371,31 @@ export default function Carousel({
               aria-hidden={slotIndex >= totalItems}
               onClick={() => onPublicationClick && onPublicationClick(item)}>
               <div className="carousel__card">
-                <img
-                  src={
-                    Array.isArray(item.imagenes) && item.imagenes.length > 0
-                      ? item.imagenes[0]
-                      : "/img/Home1.png"
-                  }
-                  alt={item.titulo}
-                  className="carousel__image"
-                  loading="lazy"
-                  decoding="async"
-                  onError={(e) => {
-                    e.target.src = "/img/Home1.png";
-                  }}
-                />
+                {badgeUrl && (
+                  <img
+                    src={badgeUrl}
+                    alt=""
+                    aria-hidden="true"
+                    className="carousel__corner-badge"
+                    loading="lazy"
+                  />
+                )}
+                <div className="carousel__image-container">
+                  <img
+                    src={
+                      Array.isArray(item.imagenes) && item.imagenes.length > 0
+                        ? item.imagenes[0]
+                        : "/img/Home1.png"
+                    }
+                    alt={item.titulo}
+                    className="carousel__image"
+                    loading="lazy"
+                    decoding="async"
+                    onError={(e) => {
+                      e.target.src = "/img/Home1.png";
+                    }}
+                  />
+                </div>
                 <div className="carousel__info">
                   <h3 className="carousel__title">
                     {item.titulo || item.nombre}

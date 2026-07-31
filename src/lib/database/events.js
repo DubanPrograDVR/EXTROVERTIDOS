@@ -252,6 +252,7 @@ export const getPublishedEvents = async () => {
       etiqueta_directa,
       hashtags,
       share_count,
+      tipo_publicacion,
       categories (
         id,
         nombre,

@@ -80,11 +80,39 @@
 .carousel__card {
   background: linear-gradient(145deg, #1a1a1a 0%, #0d0d0d 100%);
   border-radius: 16px;
-  overflow: hidden;
+  /* overflow visible para que el logo de esquina sobresalga del borde. */
+  overflow: visible;
   position: relative;
   height: 100%;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Imagen envuelta en un contenedor que mantiene las esquinas redondeadas. */
+.carousel__image-container {
+  overflow: hidden;
+  border-radius: 16px 16px 0 0;
+  position: relative;
+}
+
+/* Logo de esquina centrado sobre el vértice superior izquierdo del card.
+   Mismo patrón que publication-card__corner-badge y business-card__corner-badge. */
+.carousel__corner-badge {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 58px;
+  height: auto;
+  z-index: 10;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.7));
+}
+
+@media (max-width: 480px) {
+  .carousel__corner-badge {
+    width: 46px;
+  }
 }
 
 .carousel__card::before {
@@ -106,7 +134,7 @@
 }
 
 /* ===== IMAGEN ===== */
-.carousel__image {
+.carousel__image-container .carousel__image {
   display: block;
   width: 100%;
   aspect-ratio: 3/4;
@@ -244,5 +272,132 @@
   .carousel__track {
     -webkit-transform: translateX(0) !important;
     transform: translateX(0) !important;
+  }
+}
+
+/* ===== VARIANTE MINI - carrusel compacto de destacados ===== */
+.carousel--mini {
+  padding: 12px 0;
+  margin-bottom: 0;
+}
+
+.carousel--mini .carousel__track {
+  padding: 4px 0;
+}
+
+.carousel--mini .carousel__group {
+  gap: 14px;
+  padding-right: 14px;
+}
+
+.carousel--mini .carousel__item {
+  flex: 0 0 150px;
+}
+
+.carousel--mini .carousel__image-container {
+  border-radius: 10px 10px 0 0;
+}
+
+.carousel--mini .carousel__card {
+  border-radius: 12px;
+  border: 2px solid #ffd700;
+  background: linear-gradient(160deg, #1a1206 0%, #111 60%);
+  box-shadow:
+    0 0 0 1px rgba(255, 215, 0, 0.25),
+    0 8px 22px rgba(255, 215, 0, 0.18);
+}
+
+.carousel--mini .carousel__card:hover {
+  box-shadow:
+    0 0 0 1px rgba(255, 215, 0, 0.4),
+    0 12px 28px rgba(255, 215, 0, 0.32);
+}
+
+.carousel--mini .carousel__corner-badge {
+  width: 40px;
+  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6))
+    drop-shadow(0 3px 8px rgba(0, 0, 0, 0.6));
+  animation: carouselMiniGlow 3.5s ease-in-out infinite;
+}
+
+@keyframes carouselMiniGlow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6))
+      drop-shadow(0 3px 8px rgba(0, 0, 0, 0.6));
+  }
+  50% {
+    filter: drop-shadow(0 0 14px rgba(255, 215, 0, 0.85))
+      drop-shadow(0 4px 10px rgba(0, 0, 0, 0.7));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .carousel--mini .carousel__corner-badge {
+    animation: none;
+  }
+}
+
+.carousel--mini .carousel__corner-badge {
+  width: 40px;
+}
+
+.carousel--mini .carousel__image-container .carousel__image {
+  aspect-ratio: 4/5;
+}
+
+.carousel--mini .carousel__info {
+  padding: 12px 10px;
+}
+
+.carousel--mini .carousel__title {
+  font-size: 0.82rem;
+  margin-bottom: 6px;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+
+.carousel--mini .carousel__meta {
+  gap: 3px;
+}
+
+.carousel--mini .carousel__location {
+  font-size: 0.72rem;
+}
+
+.carousel--mini .carousel__location svg {
+  font-size: 0.72rem;
+}
+
+.carousel--mini .carousel__date {
+  font-size: 0.7rem;
+}
+
+.carousel--mini::before,
+.carousel--mini::after {
+  width: 48px;
+}
+
+@media (max-width: 600px) {
+  .carousel--mini {
+    margin-bottom: 0;
+  }
+
+  .carousel--mini .carousel__item {
+    flex: 0 0 130px;
+  }
+
+  .carousel--mini .carousel__info {
+    padding: 10px 8px;
+  }
+
+  .carousel--mini .carousel__title {
+    font-size: 0.78rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .carousel--mini .carousel__item {
+    flex: 0 0 120px;
   }
 }

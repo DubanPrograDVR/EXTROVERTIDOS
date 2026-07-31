@@ -112,6 +112,12 @@ export default function PaymentResult() {
     serverStatus?.authorization_code || paymentData?.authorizationCode;
   const finalCardLast = serverStatus?.card_last_four;
 
+  // Detectar si la transacción corresponde a una publicación destacada
+  // (pago único, no suscripción). Cambia el copy de la vista de éxito.
+  const isDestacadaTransaction =
+    Array.isArray(serverStatus?.items) &&
+    serverStatus.items.some((item) => item?.type === "publicacion_destacada");
+
   // Estado de carga
   if (authLoading || loading) {
     return (
@@ -140,9 +146,13 @@ export default function PaymentResult() {
             <div className="payment-result__icon-wrapper payment-result__icon-wrapper--success">
               <FontAwesomeIcon icon={faCheckCircle} />
             </div>
-            <h1 className="payment-result__title">¡Pago exitoso!</h1>
+            <h1 className="payment-result__title">
+              {isDestacadaTransaction ? "¡Pago exitoso!" : "¡Pago exitoso!"}
+            </h1>
             <p className="payment-result__subtitle">
-              Tu plan ha sido activado correctamente.
+              {isDestacadaTransaction
+                ? "Tu publicación destacada será revisada por el equipo y aparecerá pronto en Panoramas Destacados."
+                : "Tu plan ha sido activado correctamente."}
             </p>
 
             <div className="payment-result__details">
@@ -202,11 +212,17 @@ export default function PaymentResult() {
             {/* Items comprados */}
             {serverStatus?.items && serverStatus.items.length > 0 && (
               <div className="payment-result__items">
-                <h3>Planes activados:</h3>
+                <h3>
+                  {isDestacadaTransaction
+                    ? "Publicación destacada:"
+                    : "Planes activados:"}
+                </h3>
                 <ul>
                   {serverStatus.items.map((item, i) => (
                     <li key={i}>
-                      {formatPlanName(item.plan)} — {formatCLP(item.amount)}
+                      {formatPlanName(item.plan)}
+                      {item.titulo ? ` — “${item.titulo}”` : ""} —{" "}
+                      {formatCLP(item.amount)}
                     </li>
                   ))}
                 </ul>
@@ -306,6 +322,7 @@ function formatPlanName(planId) {
     panorama_pack4: "Pack 4 Publicaciones",
     panorama_ilimitado: "Publica Sin Límite",
     superguia: "Superguia Extrovertidos",
+    publicacion_destacada: "Publicación Destacada",
   };
   return names[planId] || planId;
 }

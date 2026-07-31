@@ -12,3 +12,4 @@ export { default as ImageUpload } from "./ImageUpload";
 export { default as DateRangePicker } from "./DateRangePicker";
 export { default as DraftPreview } from "./DraftPreview";
 export { default as TagsModal } from "./TagsModal";
+export { default as PublicationTypeModal } from "./PublicationTypeModal";

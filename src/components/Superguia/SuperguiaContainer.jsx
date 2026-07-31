@@ -897,6 +897,7 @@ export default function SuperguiaContainer() {
           <Carousel
             publications={filteredPanoramas}
             onPublicationClick={handlePanoramaClick}
+            badgeUrl="/img/P_Extro_v2.png"
             autoPlayInterval={2000}
           />
         </section>

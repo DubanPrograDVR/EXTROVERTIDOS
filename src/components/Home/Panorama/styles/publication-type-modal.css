@@ -1,0 +1,298 @@
+/* =========================================
+   PublicationTypeModal
+   Modal para elegir tipo de publicación (Normal / Destacada).
+   Diseño coherente con PlanBlockModal y el sistema oscuro con acento naranja.
+   ========================================= */
+
+.publication-type-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3200;
+  padding: 20px;
+  animation: publicationTypeFadeIn 0.25s ease;
+}
+
+@keyframes publicationTypeFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.publication-type-modal {
+  background: #111;
+  border-radius: 24px;
+  padding: 44px 32px 32px;
+  max-width: 880px;
+  width: 100%;
+  max-height: 92vh;
+  overflow-y: auto;
+  position: relative;
+  border: 2px solid rgba(255, 102, 0, 0.35);
+  box-shadow: 0 0 60px rgba(255, 102, 0, 0.15);
+  animation: publicationTypeSlideUp 0.35s ease;
+}
+
+@keyframes publicationTypeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.publication-type-modal__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.publication-type-modal__close:hover:not(:disabled) {
+  border-color: #ff6600;
+  color: #ff6600;
+}
+
+.publication-type-modal__close:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.publication-type-modal__header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.publication-type-modal__header-icon {
+  width: 56px;
+  height: auto;
+  display: block;
+  margin: 0 auto 12px;
+}
+
+.publication-type-modal__title {
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 8px;
+  line-height: 1.2;
+}
+
+.publication-type-modal__subtitle {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.publication-type-modal__options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+@media (max-width: 720px) {
+  .publication-type-modal {
+    padding: 40px 20px 24px;
+  }
+  .publication-type-modal__options {
+    grid-template-columns: 1fr;
+  }
+}
+
+.publication-type-option {
+  position: relative;
+  text-align: left;
+  background: #161616;
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 26px 22px 22px;
+  cursor: pointer;
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+  color: inherit;
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.publication-type-option:hover:not(:disabled) {
+  transform: translateY(-3px);
+}
+
+.publication-type-option:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.publication-type-option--normal {
+  border-color: rgba(255, 102, 0, 0.35);
+}
+
+.publication-type-option--normal:hover:not(:disabled) {
+  border-color: #ff6600;
+  box-shadow: 0 0 30px rgba(255, 102, 0, 0.2);
+}
+
+.publication-type-option--destacada {
+  border-color: rgba(255, 215, 0, 0.45);
+  background: linear-gradient(160deg, #1a1206 0%, #161616 55%);
+}
+
+.publication-type-option--destacada:hover:not(:disabled) {
+  border-color: #ffd700;
+  box-shadow: 0 0 40px rgba(255, 215, 0, 0.22);
+}
+
+.publication-type-option--featured::before {
+  content: "Recomendado";
+  position: absolute;
+  top: -12px;
+  right: 20px;
+  background: linear-gradient(135deg, #ffd700, #f5b400);
+  color: #1a1206;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 999px;
+  box-shadow: 0 6px 16px rgba(255, 215, 0, 0.25);
+}
+
+.publication-type-option__badge {
+  position: absolute;
+  top: -18px;
+  left: 16px;
+  width: 58px;
+  height: auto;
+  filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.6));
+}
+
+.publication-type-option__icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  background: rgba(255, 102, 0, 0.14);
+  color: #ff8833;
+}
+
+.publication-type-option--destacada .publication-type-option__icon {
+  background: rgba(255, 215, 0, 0.14);
+  color: #ffd700;
+}
+
+.publication-type-option__title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.publication-type-option__price {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #ff8833;
+  margin: 0;
+}
+
+.publication-type-option--destacada .publication-type-option__price {
+  color: #ffd700;
+}
+
+.publication-type-option__description {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.publication-type-option__highlights {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.publication-type-option__highlights li {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.82);
+  padding-left: 18px;
+  position: relative;
+  line-height: 1.4;
+}
+
+.publication-type-option__highlights li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff8833;
+}
+
+.publication-type-option--destacada
+  .publication-type-option__highlights
+  li::before {
+  background: #ffd700;
+}
+
+.publication-type-option__cta {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #ff6600;
+  color: #fff;
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: filter 0.2s ease;
+}
+
+.publication-type-option:hover:not(:disabled) .publication-type-option__cta {
+  filter: brightness(1.1);
+}
+
+.publication-type-option--destacada .publication-type-option__cta {
+  background: linear-gradient(135deg, #ffd700, #f5b400);
+  color: #1a1206;
+}
+
+.publication-type-modal__note {
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+  font-size: 0.8rem;
+  margin: 22px 0 0;
+}

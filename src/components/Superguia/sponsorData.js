@@ -1,8 +1,8 @@
 export const SPONSOR_SLOTS = [
   {
     id: 1,
-    imageUrl: "/img/Auspiciador_01.jpeg",
-    alt: "Auspiciador Extrovertidos 1",
+    imageUrl: "",
+    alt: "",
     href: "",
   },
   { id: 2, imageUrl: "", alt: "", href: "" },

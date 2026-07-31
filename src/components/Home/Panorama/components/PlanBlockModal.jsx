@@ -124,6 +124,7 @@ const PlanBlockModal = ({
   scenario = "no_plan",
   subscription = null,
   onRetry = null,
+  onPublishDestacada = null,
 }) => {
   const navigate = useNavigate();
 
@@ -150,6 +151,9 @@ const PlanBlockModal = ({
   const handleGoBack = () => {
     navigate("/");
   };
+
+  const showDestacadaFallback =
+    typeof onPublishDestacada === "function" && scenario !== "server_error";
 
   return (
     <div
@@ -205,6 +209,14 @@ const PlanBlockModal = ({
             onClick={handlePrimary}>
             {config.primaryLabel}
           </button>
+
+          {showDestacadaFallback && (
+            <button
+              className="plan-block-modal__btn plan-block-modal__btn--destacada"
+              onClick={onPublishDestacada}>
+              Publicar como Destacada (pago único)
+            </button>
+          )}
 
           <button
             className="plan-block-modal__btn plan-block-modal__btn--secondary"

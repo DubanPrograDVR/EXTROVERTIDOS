@@ -36,6 +36,7 @@ const PLAN_PRICES = {
   panorama_pack4: 39990,
   panorama_ilimitado: 70000,
   superguia: 15000,
+  publicacion_destacada: 10000,
 };
 
 // Publicaciones incluidas por plan
@@ -211,6 +212,221 @@ function blocksNewPanoramaPurchase(subscription) {
 }
 
 // ──────────────────────────────────────────────
+// FLUJO: PUBLICACIÓN DESTACADA (pago único, sin suscripción)
+// ──────────────────────────────────────────────
+
+/**
+ * Maneja el flujo de pago para una publicación destacada:
+ * 1. Valida que el evento exista, pertenezca al usuario y esté en borrador
+ *    con tipo_publicacion = 'destacada'.
+ * 2. Crea una transacción sin subscription_ids (pago único).
+ * 3. Llama a Transbank y retorna token + url para redirigir.
+ *
+ * Si el pago se completa, confirm-payment moverá el evento a estado 'pendiente'.
+ * Si el pago falla/aborta, confirm-payment eliminará el evento borrador.
+ */
+async function handleDestacadaPayment({
+  supabaseAdmin,
+  supabaseUrl,
+  user,
+  planPrices,
+  eventId,
+  eventTitle,
+}) {
+  if (!eventId) {
+    return jsonResponse(
+      { error: "Falta el identificador de la publicación destacada" },
+      400,
+    );
+  }
+
+  const amount = Number(planPrices.publicacion_destacada);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return jsonResponse(
+      { error: "El precio de la publicación destacada no está configurado" },
+      500,
+    );
+  }
+
+  // Validar evento: debe existir, pertenecer al usuario, ser destacada y estar en borrador.
+  const { data: event, error: eventError } = await supabaseAdmin
+    .from("events")
+    .select("id, user_id, titulo, estado, tipo_publicacion")
+    .eq("id", eventId)
+    .maybeSingle();
+
+  if (eventError) {
+    console.error(
+      "[create-payment] Error buscando evento destacado:",
+      eventError,
+    );
+    return dbErrorResponse(
+      "Error al validar la publicación destacada",
+      eventError,
+    );
+  }
+
+  if (!event) {
+    return jsonResponse({ error: "Publicación no encontrada" }, 404);
+  }
+
+  if (event.user_id !== user.id) {
+    return jsonResponse(
+      { error: "No puedes pagar por una publicación que no te pertenece" },
+      403,
+    );
+  }
+
+  if (event.tipo_publicacion !== "destacada") {
+    return jsonResponse(
+      { error: "Esta publicación no es de tipo destacada" },
+      400,
+    );
+  }
+
+  if (event.estado !== "borrador") {
+    return jsonResponse(
+      { error: "Esta publicación destacada ya fue procesada" },
+      409,
+    );
+  }
+
+  const buyOrder = generateBuyOrder(user.id);
+  const sessionId = generateSessionId(user.id);
+  const titulo = eventTitle || event.titulo || "Publicación destacada";
+
+  const { data: transaction, error: txError } = await supabaseAdmin
+    .from("transactions")
+    .insert({
+      user_id: user.id,
+      subscription_ids: [],
+      buy_order: buyOrder,
+      session_id: sessionId,
+      amount,
+      status: "pending",
+      items: [
+        {
+          type: "publicacion_destacada",
+          plan: "publicacion_destacada",
+          event_id: event.id,
+          titulo,
+          amount,
+        },
+      ],
+    })
+    .select("id")
+    .single();
+
+  if (txError) {
+    console.error(
+      "[create-payment] Error creando transacción destacada:",
+      txError,
+    );
+    return dbErrorResponse("Error al registrar la transacción", txError);
+  }
+
+  let tbkConfig;
+  try {
+    tbkConfig = getTransbankConfig();
+  } catch (cfgError) {
+    console.error("[create-payment]", cfgError);
+    await supabaseAdmin
+      .from("transactions")
+      .update({
+        status: "failed",
+        error_message: "Credenciales Transbank no configuradas",
+      })
+      .eq("id", transaction.id);
+    return jsonResponse(
+      { error: "Pagos no disponibles temporalmente. Intenta más tarde." },
+      503,
+    );
+  }
+
+  const returnUrl = `${supabaseUrl}/functions/v1/confirm-payment`;
+  const tbkCreateUrl = `${tbkConfig.baseUrl}${TRANSBANK_API.transactionPath}`;
+
+  console.log(
+    `[create-payment] Destacada: buy_order=${buyOrder}, amount=${amount}, user=${user.id}, event=${event.id}`,
+  );
+
+  const controller = new AbortController();
+  const tbkTimeout = setTimeout(() => controller.abort(), 15000);
+  let tbkResponse;
+  try {
+    tbkResponse = await fetch(tbkCreateUrl, {
+      method: "POST",
+      headers: {
+        "Tbk-Api-Key-Id": tbkConfig.commerceCode,
+        "Tbk-Api-Key-Secret": tbkConfig.apiKeySecret,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        buy_order: buyOrder,
+        session_id: sessionId,
+        amount,
+        return_url: returnUrl,
+      }),
+      signal: controller.signal,
+    });
+  } catch (networkError) {
+    console.error("[create-payment] Red destacada:", networkError);
+    await supabaseAdmin
+      .from("transactions")
+      .update({
+        status: "failed",
+        error_message: `Network: ${networkError?.message || "timeout"}`,
+      })
+      .eq("id", transaction.id);
+    return jsonResponse(
+      {
+        error:
+          "No se pudo contactar al procesador de pago. Intenta nuevamente.",
+      },
+      504,
+    );
+  } finally {
+    clearTimeout(tbkTimeout);
+  }
+
+  if (!tbkResponse.ok) {
+    const errorText = await tbkResponse.text();
+    console.error(
+      `[create-payment] Error Transbank destacada (${tbkResponse.status}):`,
+      errorText,
+    );
+    await supabaseAdmin
+      .from("transactions")
+      .update({
+        status: "failed",
+        error_message: `Transbank HTTP ${tbkResponse.status}: ${errorText.substring(0, 200)}`,
+      })
+      .eq("id", transaction.id);
+    return jsonResponse(
+      { error: "Error al conectar con el procesador de pago" },
+      502,
+    );
+  }
+
+  const tbkData = await tbkResponse.json();
+
+  await supabaseAdmin
+    .from("transactions")
+    .update({
+      token_ws: tbkData.token,
+      status: "processing",
+    })
+    .eq("id", transaction.id);
+
+  return jsonResponse({
+    token: tbkData.token,
+    url: tbkData.url,
+    buy_order: buyOrder,
+    amount,
+  });
+}
+
+// ──────────────────────────────────────────────
 // HANDLER PRINCIPAL
 // ──────────────────────────────────────────────
 
@@ -298,7 +514,20 @@ Deno.serve(async (req) => {
 
     // ── 2. Parsear y validar el body ──
     const body = await req.json();
-    const { panorama_plan, add_superguia, resource_id } = body;
+    const { panorama_plan, add_superguia, resource_id, publicacion_destacada } =
+      body;
+
+    // ── 2b. Rama especial: PUBLICACION DESTACADA (pago único, sin suscripción) ──
+    if (publicacion_destacada) {
+      return await handleDestacadaPayment({
+        supabaseAdmin,
+        supabaseUrl,
+        user,
+        planPrices,
+        eventId: publicacion_destacada.event_id,
+        eventTitle: publicacion_destacada.titulo || "",
+      });
+    }
 
     // Al menos un plan debe estar seleccionado
     if (!panorama_plan && !add_superguia) {

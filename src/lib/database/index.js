@@ -208,5 +208,7 @@ export {
   isSuperguiaEnabled,
   togglePanoramasEnabled,
   toggleSuperguiaEnabled,
+  isDestacadasEnabled,
+  toggleDestacadasEnabled,
   getPlansVisibility,
 } from "./settings";

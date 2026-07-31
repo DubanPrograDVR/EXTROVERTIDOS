@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import usePublicarForm from "./hooks/usePublicarFormV2";
 import { useAuth } from "../../../context/AuthContext";
@@ -9,9 +9,10 @@ import {
   PublicarForm,
   PublicarAuthModal,
   PlanBlockModal,
+  PublicationTypeModal,
   detectBlockScenario,
 } from "./components";
-import { INITIAL_FORM_STATE } from "./constants";
+import { INITIAL_FORM_STATE, PUBLICATION_TYPES } from "./constants";
 import "./styles/publicar.css";
 
 /**
@@ -38,6 +39,7 @@ const Publicar = () => {
     activeSubscription,
     anyPanoramaSubscription,
     planesEnabled,
+    destacadasEnabled,
     enabledCalendarModes,
     planInfo,
     isLoading,
@@ -52,10 +54,66 @@ const Publicar = () => {
     resetForm,
   } = usePublicarForm();
 
+  // === MODAL DE TIPO DE PUBLICACIÓN ===
+  // Al presionar "Publicar" en una publicación nueva, se muestra un modal para
+  // elegir entre Normal (gratis) o Destacada (paga vía Webpay). Para ediciones
+  // se omite el modal y se guarda directamente.
+  const [showTypeModal, setShowTypeModal] = useState(false);
+  // Cuando el usuario está bloqueado por plan pero elige la ruta Destacada,
+  // se salta la validación de plan y se envía directo como destacada.
+  const [forceDestacada, setForceDestacada] = useState(false);
+
+  const handleFormSubmit = useCallback(
+    (event) => {
+      event?.preventDefault?.();
+      if (isSubmitting) return;
+      if (isEditing) {
+        // Edición: mantener flujo actual sin selector de tipo.
+        handleSubmit(event);
+        return;
+      }
+      if (forceDestacada) {
+        // El usuario llegó vía el CTA de destacada desde PlanBlockModal:
+        // se salta la selección y se envía como destacada directamente.
+        handleSubmit({ tipoPublicacion: PUBLICATION_TYPES.DESTACADA });
+        return;
+      }
+      if (!destacadasEnabled) {
+        // Destacadas desactivadas globalmente por el admin: sin modal,
+        // se publica directamente como normal (gratis).
+        handleSubmit({ tipoPublicacion: PUBLICATION_TYPES.NORMAL });
+        return;
+      }
+      setShowTypeModal(true);
+    },
+    [isSubmitting, isEditing, handleSubmit, forceDestacada, destacadasEnabled],
+  );
+
+  const handleSelectPublicationType = useCallback(
+    async (tipo) => {
+      const result = await handleSubmit({ tipoPublicacion: tipo });
+      setShowTypeModal(false);
+      return result;
+    },
+    [handleSubmit],
+  );
+
+  const handleCloseTypeModal = useCallback(() => {
+    if (isSubmitting) return;
+    setShowTypeModal(false);
+  }, [isSubmitting]);
+
+  const handlePublishDestacadaFromBlock = useCallback(() => {
+    setForceDestacada(true);
+  }, []);
+
   // Detectar si el usuario está bloqueado para publicar
   // (solo aplica para nuevas publicaciones, no edición)
+  // Si el usuario eligió "Publicar como Destacada" desde el bloque, se ignora
+  // el escenario ya que destacada no requiere plan.
   const blockScenario = useMemo(() => {
     if (isEditing) return null; // Editar siempre permitido
+    if (forceDestacada) return null;
     return detectBlockScenario({
       subscription: activeSubscription || anyPanoramaSubscription,
       planesEnabled,
@@ -65,6 +123,7 @@ const Publicar = () => {
     });
   }, [
     isEditing,
+    forceDestacada,
     activeSubscription,
     anyPanoramaSubscription,
     planesEnabled,
@@ -133,6 +192,9 @@ const Publicar = () => {
         <PlanBlockModal
           scenario={blockScenario}
           subscription={activeSubscription || anyPanoramaSubscription}
+          onPublishDestacada={
+            destacadasEnabled ? handlePublishDestacadaFromBlock : null
+          }
         />
       </div>
     );
@@ -164,7 +226,7 @@ const Publicar = () => {
         previewImages={previewImages}
         isEditing={isEditing}
         isSavingDraft={isSavingDraft}
-        onSubmit={handleSubmit}
+        onSubmit={handleFormSubmit}
         onChange={handleChange}
         onFieldFocus={handleFieldFocus}
         onImageChange={handleImageChange}
@@ -177,6 +239,14 @@ const Publicar = () => {
 
       {/* Modal de autenticación */}
       <PublicarAuthModal isOpen={showAuthModal} onClose={closeAuthModal} />
+
+      {/* Modal de tipo de publicación (Normal / Destacada) */}
+      <PublicationTypeModal
+        isOpen={showTypeModal && !isEditing && destacadasEnabled}
+        onClose={handleCloseTypeModal}
+        onSelect={handleSelectPublicationType}
+        isSubmitting={isSubmitting}
+      />
     </div>
   );
 };

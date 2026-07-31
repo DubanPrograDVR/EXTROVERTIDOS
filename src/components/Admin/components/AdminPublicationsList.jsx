@@ -20,6 +20,7 @@ import {
   faCheckSquare,
   faSquare,
   faLocationArrow,
+  faCrown,
 } from "@fortawesome/free-solid-svg-icons";
 import { formatDate, formatDateTime } from "../utils/formatters";
 import AdminDeleteConfirmModal from "./AdminDeleteConfirmModal";
@@ -357,9 +358,21 @@ export default function AdminPublicationsList({
                           <span className="admin-pub-cell__title">
                             {event.titulo}
                           </span>
-                          <span className="admin-pub-cell__category">
-                            {event.categories?.nombre || "Sin categoría"}
-                          </span>
+                          <div className="admin-pub-cell__meta">
+                            {event.tipo_publicacion === "destacada" ? (
+                              <span className="admin-tipo-badge admin-tipo-badge--destacada">
+                                <FontAwesomeIcon icon={faCrown} />
+                                Destacada
+                              </span>
+                            ) : (
+                              <span className="admin-tipo-badge admin-tipo-badge--normal">
+                                Normal
+                              </span>
+                            )}
+                            <span className="admin-pub-cell__category">
+                              {event.categories?.nombre || "Sin categoría"}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </td>

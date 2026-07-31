@@ -398,6 +398,13 @@ export default function BusinessCard({
       id={`business-card-${id}`}
       className="business-card"
       onClick={handleCardClick}>
+      {/* Logo Superguía montado sobre la esquina superior izquierda */}
+      <img
+        src="/img/SG_Extro_v2.png"
+        alt="Superguía Extrovertidos"
+        className="business-card__corner-badge"
+        loading="lazy"
+      />
       {/* Imagen con carrusel */}
       <div className="business-card__image-container">
         <img

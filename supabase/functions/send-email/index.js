@@ -29,6 +29,7 @@ function formatPlanLabel(plan) {
     panorama_pack4: "Pack 4 Publicaciones",
     panorama_ilimitado: "Plan Ilimitado",
     superguia: "Superguía",
+    publicacion_destacada: "Publicación Destacada",
   };
   return labels[plan] || plan;
 }

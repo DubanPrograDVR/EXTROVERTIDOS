@@ -176,6 +176,19 @@
   transform: translateY(-2px);
 }
 
+/* Botón dorado (Publicar como Destacada) */
+.plan-block-modal__btn--destacada {
+  background: linear-gradient(135deg, #ffd700, #f5b400);
+  color: #1a1206;
+  border: none;
+}
+
+.plan-block-modal__btn--destacada:hover {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.35);
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 480px) {
   .plan-block-modal {

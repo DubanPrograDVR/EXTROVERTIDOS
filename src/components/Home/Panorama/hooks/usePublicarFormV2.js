@@ -91,6 +91,7 @@ const usePublicarFormV2 = () => {
   const [activeSubscription, setActiveSubscription] = useState(null);
   const [anyPanoramaSubscription, setAnyPanoramaSubscription] = useState(null);
   const [planesEnabled, setPlanesEnabled] = useState(true);
+  const [destacadasEnabled, setDestacadasEnabled] = useState(true);
   const [loadingPlan, setLoadingPlan] = useState(true);
 
   // === HOOKS ESPECIALIZADOS ===
@@ -238,6 +239,7 @@ const usePublicarFormV2 = () => {
 
         if (!isCancelled && isMountedRef.current) {
           setPlanesEnabled(enabled);
+          setDestacadasEnabled(visibility.destacadasEnabled);
           setActiveSubscription(sub);
           setAnyPanoramaSubscription(anySub);
         }
@@ -639,10 +641,18 @@ const usePublicarFormV2 = () => {
 
   /**
    * Envía el formulario
+   * @param {Event|Object} [e] - Evento del submit o `{ tipoPublicacion }`
+   * @param {Object} [meta] - Objeto opcional con `{ tipoPublicacion }`
    */
   const handleSubmit = useCallback(
-    async (e) => {
-      e?.preventDefault();
+    async (e, meta = {}) => {
+      if (e?.preventDefault) e.preventDefault();
+
+      // Si `e` es un objeto sin preventDefault, se asume que es meta ({ tipoPublicacion })
+      const combinedMeta =
+        e && typeof e === "object" && !e.preventDefault
+          ? { ...e, ...meta }
+          : meta;
 
       // Preparar datos para submit
       const submitResult = await submitEvent({
@@ -653,6 +663,7 @@ const usePublicarFormV2 = () => {
         existingImages,
         editEventId,
         currentDraftId: draftCurrentIdRef.current,
+        tipoPublicacion: combinedMeta.tipoPublicacion,
         onSuccess: () => {
           // Limpiar después de éxito
           resetForm();
@@ -737,6 +748,7 @@ const usePublicarFormV2 = () => {
     activeSubscription,
     anyPanoramaSubscription,
     planesEnabled,
+    destacadasEnabled,
     enabledCalendarModes,
     planInfo,
 

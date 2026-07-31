@@ -18,6 +18,8 @@ import {
   wrapPersistedFields,
 } from "../../../../lib/textWrap";
 import { trackPublicationCreated } from "../../../../lib/analytics";
+import { initiateDestacadaPayment } from "../../../../lib/payment";
+import { PUBLICATION_TYPES, DEFAULT_PUBLICATION_TYPE } from "../constants";
 
 /**
  * Hook especializado para manejar el proceso de envío de eventos
@@ -197,6 +199,8 @@ const useEventSubmit = ({
    * @param {string[]} options.existingImages - URLs de imágenes existentes
    * @param {string|null} options.editEventId - ID del evento si estamos editando
    * @param {string|null} options.currentDraftId - ID del borrador actual
+   * @param {string} [options.tipoPublicacion] - Tipo de publicación: 'normal' | 'destacada'.
+   *   Cuando es 'destacada' se salta la validación de plan y se redirige a Webpay.
    * @param {Function} options.onSuccess - Callback en caso de éxito
    * @returns {Promise<boolean>} true si fue exitoso
    */
@@ -206,6 +210,7 @@ const useEventSubmit = ({
       existingImages = [],
       editEventId = null,
       currentDraftId = null,
+      tipoPublicacion = DEFAULT_PUBLICATION_TYPE,
       onSuccess,
     }) => {
       // === PROTECCIÓN CONTRA DOUBLE-SUBMIT ===
@@ -241,11 +246,14 @@ const useEventSubmit = ({
       }
 
       // === VERIFICACIÓN DE PLAN/SUSCRIPCIÓN ===
-      // Solo para creación de eventos nuevos (no edición)
+      // Solo para creación de eventos NORMALES nuevos (no edición ni destacada).
+      // Las publicaciones destacadas pagan por publicación y no requieren plan.
       const isEditing = !!editEventId;
+      const isDestacadaNew =
+        !isEditing && tipoPublicacion === PUBLICATION_TYPES.DESTACADA;
       let publishResult = null;
 
-      if (!isEditing) {
+      if (!isEditing && !isDestacadaNew) {
         // Pre-validación rápida en frontend (UX inmediata)
         // Usa datos en cache para bloquear antes de llamar al servidor
         const quickCheck = canUserPublish({
@@ -346,7 +354,65 @@ const useEventSubmit = ({
         } else {
           // === CREAR NUEVO EVENTO ===
           eventData.user_id = currentUser.id;
+          eventData.tipo_publicacion = tipoPublicacion;
 
+          if (isDestacadaNew && !currentIsAdmin && !currentIsModerator) {
+            // === FLUJO DESTACADA CON PAGO (solo usuarios normales) ===
+            // Crea el evento en borrador, redirige a Webpay y confirm-payment lo mueve
+            // a 'pendiente' al aprobarse. Admins/moderadores caen al bloque FLUJO NORMAL
+            // y publican la destacada directamente sin pago.
+            eventData.estado = "borrador";
+
+            const createdEvent = await createEvent(eventData);
+
+            if (currentDraftId && currentUser.id) {
+              try {
+                await deleteDraft(currentDraftId, currentUser.id);
+              } catch (draftError) {
+                console.warn("No se pudo eliminar el borrador:", draftError);
+              }
+            }
+
+            if (isMountedRef.current) {
+              showToastRef.current?.(
+                "Redirigiendo a la pasarela de pago...",
+                "info",
+              );
+            }
+
+            try {
+              await initiateDestacadaPayment({
+                eventId: createdEvent.id,
+                eventTitle: createdEvent.titulo,
+              });
+              // initiateDestacadaPayment redirige vía form.submit(); no retorna.
+              // El bloque finally reseteará isSubmittingRef; el usuario ya está en Transbank.
+              return true;
+            } catch (paymentError) {
+              console.error("Error iniciando pago destacada:", paymentError);
+              // Rollback: eliminar el evento borrador para no dejar basura.
+              try {
+                const { deleteEvent } =
+                  await import("../../../../lib/database");
+                await deleteEvent(createdEvent.id);
+              } catch (cleanupError) {
+                console.warn(
+                  "No se pudo limpiar evento borrador tras fallo de pago:",
+                  cleanupError,
+                );
+              }
+              if (isMountedRef.current) {
+                showToastRef.current?.(
+                  paymentError?.message ||
+                    "No se pudo iniciar el pago. Intenta nuevamente.",
+                  "error",
+                );
+              }
+              return false;
+            }
+          }
+
+          // === FLUJO NORMAL ===
           // Admins y Moderadores publican directamente
           const canPublishDirectly = currentIsAdmin || currentIsModerator;
           eventData.estado = canPublishDirectly ? "publicado" : "pendiente";
