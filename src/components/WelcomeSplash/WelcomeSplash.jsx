@@ -1,5 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { createPortal } from "react-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faFacebook,
+  faInstagram,
+  faTiktok,
+} from "@fortawesome/free-brands-svg-icons";
 import { useAuth } from "../../context/AuthContext";
 import "./WelcomeSplash.css";
 
@@ -15,46 +21,31 @@ import "./WelcomeSplash.css";
  */
 export const SPLASH_ENABLED = true;
 export const ACCESS_ROUTE = "/acceso-extra";
-const SPLASH_RELEASE_AT = "2026-05-25T20:00:00-04:00";
 
-const getCountdown = () => {
-  const releaseAt = new Date(SPLASH_RELEASE_AT).getTime();
-  const remainingMs = Math.max(0, releaseAt - Date.now());
-  const totalSeconds = Math.ceil(remainingMs / 1000);
-
-  return {
-    days: Math.floor(totalSeconds / 86400),
-    hours: Math.floor((totalSeconds % 86400) / 3600),
-    minutes: Math.floor((totalSeconds % 3600) / 60),
-    seconds: totalSeconds % 60,
-    isComplete: totalSeconds <= 0,
-  };
-};
-
-const padTime = (value) => String(value).padStart(2, "0");
+const SOCIAL_LINKS = [
+  {
+    name: "Facebook",
+    url: "https://www.facebook.com/share/18g6zk79dP/?mibextid=wwXIfr",
+    icon: faFacebook,
+  },
+  {
+    name: "Instagram",
+    url: "https://www.instagram.com/extrovertidos.cl?igsh=ejFqOTlic2ptbTFz&utm_source=qr",
+    icon: faInstagram,
+  },
+  {
+    name: "TikTok",
+    url: "https://www.tiktok.com/@extrovertidos.cl?_r=1&_t=ZS-98VNLdEWCXQ",
+    icon: faTiktok,
+  },
+];
 
 const WelcomeSplash = () => {
   const { user, loading } = useAuth();
-  const [countdown, setCountdown] = useState(getCountdown);
   const currentPath = window.location.pathname.replace(/\/$/, "") || "/";
   const isExcludedPath =
     currentPath === ACCESS_ROUTE || currentPath.startsWith("/auth/callback");
-  const shouldShow =
-    SPLASH_ENABLED &&
-    !countdown.isComplete &&
-    !loading &&
-    !user &&
-    !isExcludedPath;
-
-  useEffect(() => {
-    if (!SPLASH_ENABLED || countdown.isComplete) return undefined;
-
-    const timerId = window.setInterval(() => {
-      setCountdown(getCountdown());
-    }, 1000);
-
-    return () => window.clearInterval(timerId);
-  }, [countdown.isComplete]);
+  const shouldShow = SPLASH_ENABLED && !loading && !user && !isExcludedPath;
 
   useEffect(() => {
     if (!shouldShow) return;
@@ -72,7 +63,7 @@ const WelcomeSplash = () => {
       className="welcome-splash"
       role="dialog"
       aria-modal="true"
-      aria-label="Algo EXTRA grande está por venir">
+      aria-label="Estamos mejorando la experiencia de Extrovertidos">
       <div className="welcome-splash__backdrop" />
       <div className="welcome-splash__content">
         <img
@@ -81,35 +72,27 @@ const WelcomeSplash = () => {
           className="welcome-splash__logo"
           draggable="false"
         />
-        <h1
-          className="welcome-splash__title"
-          aria-label="¡Algo Extra grande está por venir!">
-          ¡Algo <span className="welcome-splash__title-emphasis">Extra</span>{" "}
-          grande está por venir!
+        <h1 className="welcome-splash__title">
+          ¡Estamos mejorando la experiencia de{" "}
+          <span className="welcome-splash__title-emphasis">Extrovertidos</span>!
         </h1>
-        <div
-          className="welcome-splash__countdown"
-          aria-label={`Cuenta regresiva: ${countdown.days} días, ${countdown.hours} horas, ${countdown.minutes} minutos y ${countdown.seconds} segundos`}>
-          <span className="welcome-splash__countdown-item">
-            <strong>{padTime(countdown.days)}</strong>
-            <span>Días</span>
-          </span>
-          <span className="welcome-splash__countdown-item">
-            <strong>{padTime(countdown.hours)}</strong>
-            <span>Horas</span>
-          </span>
-          <span className="welcome-splash__countdown-item">
-            <strong>{padTime(countdown.minutes)}</strong>
-            <span>Min</span>
-          </span>
-          <span className="welcome-splash__countdown-item">
-            <strong>{padTime(countdown.seconds)}</strong>
-            <span>Seg</span>
-          </span>
-        </div>
-        <p className="welcome-splash__release-note">
-          Lunes 25 de mayo · 20:00 hrs · Región del Maule
+        <p className="welcome-splash__social-note">
+          Síguenos en todas nuestras redes sociales
         </p>
+        <div className="welcome-splash__social">
+          {SOCIAL_LINKS.map((social) => (
+            <a
+              key={social.name}
+              href={social.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="welcome-splash__social-link"
+              aria-label={social.name}
+              title={social.name}>
+              <FontAwesomeIcon icon={social.icon} aria-hidden="true" />
+            </a>
+          ))}
+        </div>
       </div>
     </div>,
     document.body,
