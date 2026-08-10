@@ -4,12 +4,18 @@ import { faTicket, faPhone, faXmark } from "@fortawesome/free-solid-svg-icons";
 import SocialInputs from "../SocialInputs";
 import TicketModal from "../TicketModal";
 import { formatChileanPhone } from "../../../../../lib/textWrap";
+import { isFieldEnabled } from "../../constants";
 
 /**
  * Wizard Step 3: Detalles del Evento
  * Entradas, Redes Sociales, Contacto
  */
-const WizardStepDetails = ({ formData, errors, onChange }) => {
+const WizardStepDetails = ({
+  formData,
+  errors,
+  onChange,
+  enabledFields = null,
+}) => {
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
   const hasSelectedTicketType = Boolean(formData.tipo_entrada);
 
@@ -43,6 +49,7 @@ const WizardStepDetails = ({ formData, errors, onChange }) => {
   return (
     <div className="wizard-step">
       {/* Opciones de Entrada */}
+      {isFieldEnabled("tipo_entrada", enabledFields) && (
       <div className="publicar-form__group">
         <label className="publicar-form__label">
           <FontAwesomeIcon icon={faTicket} /> Opciones de Entrada
@@ -71,15 +78,18 @@ const WizardStepDetails = ({ formData, errors, onChange }) => {
           <span className="publicar-form__error">{errors.tipo_entrada}</span>
         )}
       </div>
+      )}
 
       {/* Redes Sociales */}
       <SocialInputs
         redes_sociales={formData.redes_sociales}
         sitio_web={formData.sitio_web}
         onChange={onChange}
+        enabledFields={enabledFields}
       />
 
       {/* Número de Contacto */}
+      {isFieldEnabled("telefono_contacto", enabledFields) && (
       <div className="publicar-form__group">
         <label className="publicar-form__label" htmlFor="telefono_contacto">
           <FontAwesomeIcon icon={faPhone} /> Número de Contacto
@@ -112,6 +122,7 @@ const WizardStepDetails = ({ formData, errors, onChange }) => {
           maxLength={20}
         />
       </div>
+      )}
 
       {/* Modal de configuración de entradas */}
       <TicketModal

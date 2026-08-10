@@ -9,7 +9,7 @@ import {
 } from "../../../../lib/database";
 import { getPlansVisibility } from "../../../../lib/database/settings";
 import { supabase } from "../../../../lib/supabase";
-import { INITIAL_FORM_STATE } from "../constants";
+import { INITIAL_FORM_STATE, getEnabledFields } from "../constants";
 import {
   getCalendarModes,
   canUserPublish,
@@ -158,6 +158,25 @@ const usePublicarFormV2 = () => {
   const isEditingRef = useRef(isEditing);
   isEditingRef.current = isEditing;
 
+  // === CAMPOS HABILITADOS SEGÚN EL PLAN ELEGIDO ===
+  // El plan gratuito ('normal') expone un subconjunto del formulario; el
+  // destacado y las suscripciones activas lo exponen completo.
+  // Admin/moderador nunca se limitan.
+  const hasActiveSubscription = Boolean(
+    activeSubscription || anyPanoramaSubscription,
+  );
+
+  const enabledFields = useMemo(() => {
+    if (isAdmin || isModerator) return null;
+    return getEnabledFields({
+      tipoPublicacion: formData.tipo_publicacion,
+      hasActiveSubscription,
+    });
+  }, [formData.tipo_publicacion, hasActiveSubscription, isAdmin, isModerator]);
+
+  const enabledFieldsRef = useRef(enabledFields);
+  enabledFieldsRef.current = enabledFields;
+
   const hasSessionDraftRef = useRef(false);
   const localDraftLoadedRef = useRef(false);
 
@@ -197,6 +216,7 @@ const usePublicarFormV2 = () => {
       existingImagesCount: existingImagesLenRef.current,
       newImagesCount: newImagesLenRef.current,
       isEditing: isEditingRef.current,
+      enabledFields: enabledFieldsRef.current,
     });
     return result.isValid;
   }, [validateForm]);
@@ -640,6 +660,15 @@ const usePublicarFormV2 = () => {
   }, [clearAllImages, clearAllErrors, resetEditState]);
 
   /**
+   * Fija el plan de publicación elegido.
+   * Vive en formData para que persista en las tres capas de borrador.
+   * @param {string} tipo - PUBLICATION_TYPES.NORMAL | PUBLICATION_TYPES.DESTACADA
+   */
+  const selectPublicationType = useCallback((tipo) => {
+    setFormData((prev) => ({ ...prev, tipo_publicacion: tipo }));
+  }, []);
+
+  /**
    * Envía el formulario
    * @param {Event|Object} [e] - Evento del submit o `{ tipoPublicacion }`
    * @param {Object} [meta] - Objeto opcional con `{ tipoPublicacion }`
@@ -663,7 +692,11 @@ const usePublicarFormV2 = () => {
         existingImages,
         editEventId,
         currentDraftId: draftCurrentIdRef.current,
-        tipoPublicacion: combinedMeta.tipoPublicacion,
+        // El plan vive en formData; el meta solo lo sobreescribe cuando viene
+        // de un selector explícito (modal de tipo de publicación).
+        tipoPublicacion:
+          combinedMeta.tipoPublicacion ?? formData.tipo_publicacion,
+        enabledFields: enabledFieldsRef.current,
         onSuccess: () => {
           // Limpiar después de éxito
           resetForm();
@@ -751,6 +784,8 @@ const usePublicarFormV2 = () => {
     destacadasEnabled,
     enabledCalendarModes,
     planInfo,
+    hasActiveSubscription,
+    enabledFields,
 
     // Estado de borradores
     currentDraftId: draftManager.currentDraftId,
@@ -766,6 +801,7 @@ const usePublicarFormV2 = () => {
     handleSaveDraft,
     closeAuthModal,
     resetForm,
+    selectPublicationType,
 
     // Validación
     touchField,

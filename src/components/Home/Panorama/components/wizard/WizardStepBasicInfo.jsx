@@ -5,6 +5,7 @@ import {
   faTag,
   faChevronDown,
 } from "@fortawesome/free-solid-svg-icons";
+import { isFieldEnabled } from "../../constants";
 
 /**
  * Wizard Step 1: Información Básica
@@ -16,6 +17,7 @@ const WizardStepBasicInfo = ({
   loadingCategories,
   errors,
   onChange,
+  enabledFields = null,
 }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -63,6 +65,7 @@ const WizardStepBasicInfo = ({
       </div>
 
       {/* Organizador */}
+      {isFieldEnabled("organizador", enabledFields) && (
       <div className="publicar-form__group">
         <label className="publicar-form__label" htmlFor="organizador">
           <FontAwesomeIcon icon={faBuilding} /> Organizador
@@ -91,6 +94,7 @@ const WizardStepBasicInfo = ({
           <span className="publicar-form__error">{errors.organizador}</span>
         )}
       </div>
+      )}
 
       {/* Descripción */}
       <div className="publicar-form__group">

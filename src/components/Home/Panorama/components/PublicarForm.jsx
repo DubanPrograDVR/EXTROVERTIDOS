@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faEye,
@@ -18,7 +18,10 @@ import {
 } from "./wizard";
 import DraftPreview from "./DraftPreview";
 import FormResetButton from "../../../UI/FormResetButton";
-import { getStepMissingFields } from "../hooks/useFormValidation";
+import {
+  getStepMissingFields,
+  getVisibleWizardSteps,
+} from "../hooks/useFormValidation";
 import "../styles/draft-preview.css";
 
 const WIZARD_STEPS = [
@@ -48,6 +51,7 @@ const PublicarForm = ({
   onRemoveImage,
   onSaveDraft,
   enabledCalendarModes,
+  enabledFields = null,
   isDirty = false,
   onReset,
 }) => {
@@ -58,18 +62,34 @@ const PublicarForm = ({
   const [errorKey, setErrorKey] = useState(0);
   const [passedSteps, setPassedSteps] = useState(() => new Set());
 
+  // Pasos visibles con el plan actual: el gratuito no muestra Marketing porque
+  // ninguno de sus campos está habilitado.
+  const visibleSteps = useMemo(
+    () => getVisibleWizardSteps(WIZARD_STEPS, enabledFields),
+    [enabledFields],
+  );
+
+  // Si el plan cambia y el paso guardado deja de ser visible, se cae al primero
+  // visible. Se deriva en render (sin efecto) para no encadenar re-renders.
+  const rawStepIndex = visibleSteps.findIndex((s) => s.id === currentStep);
+  const currentStepIndex = rawStepIndex === -1 ? 0 : rawStepIndex;
+  const activeStep = visibleSteps[currentStepIndex]?.id ?? currentStep;
+  const isLastStep = currentStepIndex === visibleSteps.length - 1;
+  const isFirstStep = currentStepIndex <= 0;
+
   // Campos obligatorios faltantes del paso actual.
   // Las reglas viven en EVENT_VALIDATION_SCHEMA (única fuente de verdad,
   // compartida con la validación de submit); aquí solo se consultan.
   const getMissingFields = useCallback(
-    () => getStepMissingFields(currentStep, formData),
-    [currentStep, formData],
+    () => getStepMissingFields(activeStep, formData, { enabledFields }),
+    [activeStep, formData, enabledFields],
   );
 
   // Un paso es válido cuando no le falta ningún campo obligatorio
   const isStepValid = useCallback(
-    (stepId) => getStepMissingFields(stepId, formData).length === 0,
-    [formData],
+    (stepId) =>
+      getStepMissingFields(stepId, formData, { enabledFields }).length === 0,
+    [formData, enabledFields],
   );
 
   useEffect(() => {
@@ -88,14 +108,14 @@ const PublicarForm = ({
       setStepError("");
       setMissingFields([]);
 
-      if (step !== currentStep) {
-        setPassedSteps((prev) => new Set(prev).add(currentStep));
+      if (step !== activeStep) {
+        setPassedSteps((prev) => new Set(prev).add(activeStep));
       }
 
       setCurrentStep(step);
       window.scrollTo({ top: 300, behavior: "smooth" });
     },
-    [currentStep],
+    [activeStep],
   );
 
   const scrollToField = useCallback((fieldName) => {
@@ -109,49 +129,49 @@ const PublicarForm = ({
   }, []);
 
   // Todos los pasos con campos obligatorios están completos
-  const areAllRequiredComplete =
-    isStepValid(1) && isStepValid(2) && isStepValid(3) && isStepValid(4);
+  // (todos los visibles salvo el último, que son las imágenes)
+  const areAllRequiredComplete = visibleSteps
+    .slice(0, -1)
+    .every((step) => isStepValid(step.id));
 
   const goNext = useCallback(() => {
-    if (currentStep < WIZARD_STEPS.length) {
-      const missing = getMissingFields();
-      if (missing.length > 0) {
-        setMissingFields(missing);
-        setStepError("Campos obligatorios faltantes:");
-        setErrorKey((k) => k + 1);
-        return;
-      }
-      setStepError("");
-      setMissingFields([]);
-      goToStep(currentStep + 1);
+    if (isLastStep) return;
+
+    const missing = getMissingFields();
+    if (missing.length > 0) {
+      setMissingFields(missing);
+      setStepError("Campos obligatorios faltantes:");
+      setErrorKey((k) => k + 1);
+      return;
     }
-  }, [currentStep, goToStep, getMissingFields]);
+    setStepError("");
+    setMissingFields([]);
+    goToStep(visibleSteps[currentStepIndex + 1].id);
+  }, [isLastStep, goToStep, getMissingFields, visibleSteps, currentStepIndex]);
 
   const goPrev = useCallback(() => {
-    if (currentStep > 1) {
-      setStepError("");
-      goToStep(currentStep - 1);
-    }
-  }, [currentStep, goToStep]);
+    if (isFirstStep) return;
+    setStepError("");
+    goToStep(visibleSteps[currentStepIndex - 1].id);
+  }, [isFirstStep, goToStep, visibleSteps, currentStepIndex]);
 
   const isStepCompleted = useCallback(
     (stepId) =>
-      stepId < currentStep && (stepId !== 3 || passedSteps.has(stepId)),
-    [currentStep, passedSteps],
+      stepId < activeStep && (stepId !== 3 || passedSteps.has(stepId)),
+    [activeStep, passedSteps],
   );
 
   const shouldMarkStepValid = useCallback(
     (stepId) => {
       if (!isStepValid(stepId)) return false;
-      if (stepId === 3)
-        return passedSteps.has(stepId) && stepId !== currentStep;
+      if (stepId === 3) return passedSteps.has(stepId) && stepId !== activeStep;
       return true;
     },
-    [currentStep, isStepValid, passedSteps],
+    [activeStep, isStepValid, passedSteps],
   );
 
   const renderStep = () => {
-    switch (currentStep) {
+    switch (activeStep) {
       case 1:
         return (
           <WizardStepBasicInfo
@@ -160,6 +180,7 @@ const PublicarForm = ({
             loadingCategories={loadingCategories}
             errors={errors}
             onChange={onChange}
+            enabledFields={enabledFields}
           />
         );
       case 2:
@@ -169,6 +190,7 @@ const PublicarForm = ({
             errors={errors}
             onChange={onChange}
             enabledCalendarModes={enabledCalendarModes}
+            enabledFields={enabledFields}
           />
         );
       case 3:
@@ -177,6 +199,7 @@ const PublicarForm = ({
             formData={formData}
             errors={errors}
             onChange={onChange}
+            enabledFields={enabledFields}
           />
         );
       case 4:
@@ -209,7 +232,7 @@ const PublicarForm = ({
     <section className="publicar-form-section">
       {/* Stepper / Progress Bar */}
       <div className="wizard-stepper">
-        {WIZARD_STEPS.map((step) => {
+        {visibleSteps.map((step) => {
           const stepCompleted = isStepCompleted(step.id);
           const stepValid = shouldMarkStepValid(step.id);
 
@@ -218,7 +241,7 @@ const PublicarForm = ({
               key={step.id}
               type="button"
               className={`wizard-stepper__step ${
-                step.id === currentStep ? "wizard-stepper__step--active" : ""
+                step.id === activeStep ? "wizard-stepper__step--active" : ""
               } ${stepCompleted ? "wizard-stepper__step--completed" : ""} ${
                 stepValid ? "wizard-stepper__step--valid" : ""
               }`}
@@ -236,7 +259,12 @@ const PublicarForm = ({
         <div
           className="wizard-stepper__progress"
           style={{
-            width: `${((currentStep - 1) / (WIZARD_STEPS.length - 1)) * 100}%`,
+            width: `${
+              visibleSteps.length > 1
+                ? (Math.max(currentStepIndex, 0) / (visibleSteps.length - 1)) *
+                  100
+                : 0
+            }%`,
           }}
         />
       </div>
@@ -248,7 +276,7 @@ const PublicarForm = ({
         {/* Contenido del paso actual */}
         <div className="wizard-step-container">
           {/* Reset discreto en esquina superior derecha: solo paso 1 */}
-          {onReset && currentStep === 1 && (
+          {onReset && isFirstStep && (
             <div className="publicar-form__reset-corner">
               <FormResetButton
                 isDirty={isDirty}
@@ -301,7 +329,7 @@ const PublicarForm = ({
             type="button"
             className="wizard-nav__btn wizard-nav__btn--prev"
             onClick={goPrev}
-            disabled={currentStep === 1}>
+            disabled={isFirstStep}>
             <FontAwesomeIcon icon={faArrowLeft} />
             Anterior
           </button>
@@ -316,7 +344,7 @@ const PublicarForm = ({
             Ver Borrador
           </button>
 
-          {currentStep < WIZARD_STEPS.length && (
+          {!isLastStep && (
             <button
               type="button"
               className="wizard-nav__btn wizard-nav__btn--next"

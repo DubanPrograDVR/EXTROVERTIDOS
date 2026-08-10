@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from "react";
+import { isFieldEnabled } from "../constants";
 
 /**
  * @typedef {Object} ValidationRule
@@ -233,7 +234,8 @@ const STEP_EXTRA_CHECKS = {
       ];
     return [];
   },
-  5: (formData) => {
+  5: (formData, enabledFields) => {
+    if (!isFieldEnabled("imagenes", enabledFields)) return [];
     const hasImages =
       Array.isArray(formData.imagenes) && formData.imagenes.length > 0;
     return hasImages ? [] : [{ field: "imagenes", label: "Imágenes" }];
@@ -249,21 +251,46 @@ const STEP_EXTRA_CHECKS = {
  * @param {ValidationSchema} [schema] - Schema a usar
  * @returns {Array<{field:string,label:string}>} Campos faltantes, en orden de UI
  */
-export const getStepMissingFields = (
-  stepId,
-  formData,
-  schema = EVENT_VALIDATION_SCHEMA,
-) => {
+export const getStepMissingFields = (stepId, formData, options = {}) => {
+  const { schema = EVENT_VALIDATION_SCHEMA, enabledFields = null } = options;
   const stepFields = WIZARD_STEP_FIELDS[stepId] || [];
 
   const missing = stepFields.reduce((acc, { field, label }) => {
+    // Un campo que el plan no habilita no puede bloquear el paso: el usuario
+    // no tiene forma de completarlo.
+    if (!isFieldEnabled(field, enabledFields)) return acc;
+
     const error = evaluateRule(schema[field], formData[field], formData);
     if (error) acc.push({ field, label });
     return acc;
   }, []);
 
   const extraCheck = STEP_EXTRA_CHECKS[stepId];
-  return extraCheck ? [...missing, ...extraCheck(formData)] : missing;
+  if (!extraCheck) return missing;
+
+  return [...missing, ...extraCheck(formData, enabledFields)];
+};
+
+/**
+ * Pasos del wizard visibles con el plan actual. Un paso desaparece cuando el
+ * plan no habilita ninguno de sus campos (ej: Marketing en el plan gratuito).
+ *
+ * @param {Array<{id:number}>} steps - Definición completa de pasos
+ * @param {string[]|null} enabledFields - null = todos habilitados
+ * @returns {Array} Pasos visibles
+ */
+export const getVisibleWizardSteps = (steps, enabledFields = null) => {
+  if (enabledFields === null) return steps;
+
+  return steps.filter((step) => {
+    // Los pasos con comprobaciones propias (imágenes) siguen siendo relevantes
+    // aunque no tengan campos del schema.
+    const stepFields = WIZARD_STEP_FIELDS[step.id] || [];
+    if (stepFields.some(({ field }) => isFieldEnabled(field, enabledFields))) {
+      return true;
+    }
+    return step.id === 5 && isFieldEnabled("imagenes", enabledFields);
+  });
 };
 
 /**
@@ -317,8 +344,12 @@ const useFormValidation = (schema = EVENT_VALIDATION_SCHEMA) => {
         isEditing = false,
       } = options;
 
-      // Validar cada campo del schema
+      // Validar cada campo del schema que el plan habilite. Un campo que el
+      // formulario no muestra no puede bloquear el envío.
+      const { enabledFields = null } = options;
       Object.keys(schema).forEach((fieldName) => {
+        if (!isFieldEnabled(fieldName, enabledFields)) return;
+
         const error = validateField(fieldName, formData[fieldName], formData);
         if (error) {
           newErrors[fieldName] = error;

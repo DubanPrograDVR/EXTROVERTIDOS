@@ -48,8 +48,29 @@ export const COMUNAS_POR_PROVINCIA = {
   Cauquenes: ["Cauquenes", "Chanco", "Pelluhue"],
 };
 
+// ─────────────────────────────────────────────────
+// TIPOS DE PUBLICACIÓN
+// ─────────────────────────────────────────────────
+// Los valores deben coincidir con el CHECK constraint de events.tipo_publicacion.
+// Para agregar un nuevo tipo (ej: 'premium'):
+//   1) Actualiza el CHECK en la migración (o crea una nueva).
+//   2) Añade la entrada aquí (label + descripción).
+//   3) Si requiere pago, ajusta la lógica en useEventSubmit + create-payment.
+export const PUBLICATION_TYPES = {
+  NORMAL: "normal",
+  DESTACADA: "destacada",
+};
+
+export const DEFAULT_PUBLICATION_TYPE = PUBLICATION_TYPES.NORMAL;
+
 // Estado inicial del formulario
 export const INITIAL_FORM_STATE = {
+  // Plan elegido. Vive dentro de formData (y no en un useState aparte) para que
+  // viaje con las tres capas de persistencia de borrador: draft de servidor,
+  // sessionStorage["draftToLoad"] y localStorage["publicar_local_draft_v1"].
+  // Default: el plan más restrictivo, para que un borrador antiguo sin este
+  // campo no se convierta en uno de pago al restaurarse.
+  tipo_publicacion: DEFAULT_PUBLICATION_TYPE,
   titulo: "",
   descripcion: "",
   organizador: "",
@@ -108,16 +129,58 @@ export const IMAGE_CONFIG = {
 };
 
 // ─────────────────────────────────────────────────
-// TIPOS DE PUBLICACIÓN
+// CAMPOS HABILITADOS POR PLAN
 // ─────────────────────────────────────────────────
-// Los valores deben coincidir con el CHECK constraint de events.tipo_publicacion.
-// Para agregar un nuevo tipo (ej: 'premium'):
-//   1) Actualiza el CHECK en la migración (o crea una nueva).
-//   2) Añade la entrada aquí (label + descripción).
-//   3) Si requiere pago, ajusta la lógica en useEventSubmit + create-payment.
-export const PUBLICATION_TYPES = {
-  NORMAL: "normal",
-  DESTACADA: "destacada",
-};
+// El plan gratuito expone un subconjunto del formulario; el destacado (de pago)
+// lo expone completo. Esta lista es la ÚNICA fuente de verdad: de ella se
+// derivan los campos visibles del wizard, los pasos que se muestran, lo que
+// valida el submit y lo que se persiste.
+export const FREE_PLAN_FIELDS = [
+  "titulo",
+  "descripcion",
+  "category_id",
+  "fecha_evento",
+  "provincia",
+  "comuna",
+  "redes_sociales",
+  "imagenes",
+];
 
-export const DEFAULT_PUBLICATION_TYPE = PUBLICATION_TYPES.NORMAL;
+/** Redes sociales disponibles en el plan gratuito */
+export const FREE_PLAN_SOCIAL_NETWORKS = ["facebook", "tiktok"];
+
+/**
+ * Decide si corresponde el formulario completo.
+ *
+ * Una suscripción activa de panoramas también da acceso al formulario completo:
+ * el usuario ya pagó por publicar y limitarlo al set gratuito le quitaría algo
+ * que compró. Para que SOLO las destacadas tengan el formulario completo,
+ * elimina el segundo término de este OR.
+ *
+ * @param {Object} params
+ * @param {string} params.tipoPublicacion - PUBLICATION_TYPES.*
+ * @param {boolean} [params.hasActiveSubscription] - Si hay plan de panoramas activo
+ * @returns {boolean}
+ */
+export const isFullFormPlan = ({ tipoPublicacion, hasActiveSubscription }) =>
+  tipoPublicacion === PUBLICATION_TYPES.DESTACADA ||
+  Boolean(hasActiveSubscription);
+
+/**
+ * Lista de campos habilitados, o null si están todos.
+ * @param {Object} params - Ver isFullFormPlan
+ * @returns {string[]|null}
+ */
+export const getEnabledFields = (params) =>
+  isFullFormPlan(params) ? null : FREE_PLAN_FIELDS;
+
+/**
+ * ¿Este campo está habilitado con la lista dada?
+ * @param {string} field - Nombre del campo
+ * @param {string[]|null} [enabledFields] - null/undefined = todos habilitados
+ * @returns {boolean}
+ */
+export const isFieldEnabled = (field, enabledFields) =>
+  enabledFields === null ||
+  enabledFields === undefined ||
+  enabledFields.includes(field);

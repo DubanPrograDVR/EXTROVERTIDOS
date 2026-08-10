@@ -19,7 +19,46 @@ import {
 } from "../../../../lib/textWrap";
 import { trackPublicationCreated } from "../../../../lib/analytics";
 import { initiateDestacadaPayment } from "../../../../lib/payment";
-import { PUBLICATION_TYPES, DEFAULT_PUBLICATION_TYPE } from "../constants";
+import {
+  PUBLICATION_TYPES,
+  DEFAULT_PUBLICATION_TYPE,
+  INITIAL_FORM_STATE,
+  FREE_PLAN_SOCIAL_NETWORKS,
+} from "../constants";
+
+/**
+ * Reduce formData a lo que el plan permite antes de persistir.
+ *
+ * Sin esto, bajar de destacada a gratuito dejaría datos premium huérfanos en la
+ * BD: el formulario deja de mostrarlos y de validarlos, pero prepareEventData
+ * los seguiría enviando. Se sanea aquí, en un único punto.
+ *
+ * @param {Object} formData
+ * @param {string[]|null} enabledFields - null = todos habilitados
+ * @returns {Object} Copia saneada
+ */
+const applyPlanToFormData = (formData, enabledFields) => {
+  if (!enabledFields) return formData;
+
+  const sanitized = { ...formData };
+
+  for (const key of Object.keys(INITIAL_FORM_STATE)) {
+    if (key === "tipo_publicacion") continue;
+    if (!enabledFields.includes(key)) {
+      sanitized[key] = INITIAL_FORM_STATE[key];
+    }
+  }
+
+  // Las redes sociales están habilitadas, pero solo un subconjunto de ellas.
+  if (enabledFields.includes("redes_sociales") && formData.redes_sociales) {
+    sanitized.redes_sociales = FREE_PLAN_SOCIAL_NETWORKS.reduce((acc, red) => {
+      acc[red] = formData.redes_sociales[red] || "";
+      return acc;
+    }, {});
+  }
+
+  return sanitized;
+};
 
 /**
  * Hook especializado para manejar el proceso de envío de eventos
@@ -214,6 +253,7 @@ const useEventSubmit = ({
       editEventId = null,
       currentDraftId = null,
       tipoPublicacion = DEFAULT_PUBLICATION_TYPE,
+      enabledFields = null,
       onSuccess,
     }) => {
       // === PROTECCIÓN CONTRA DOUBLE-SUBMIT ===
@@ -254,9 +294,15 @@ const useEventSubmit = ({
       const isEditing = !!editEventId;
       const isDestacadaNew =
         !isEditing && tipoPublicacion === PUBLICATION_TYPES.DESTACADA;
+
+      // Publicación gratuita: usuario sin suscripción activa publicando normal.
+      // No consume cupo ni pasa por la validación de plan; su contrapartida es
+      // el formulario reducido (ver FREE_PLAN_FIELDS).
+      const isFreeNew = !isEditing && !isDestacadaNew && !activeSubscription;
+
       let publishResult = null;
 
-      if (!isEditing && !isDestacadaNew) {
+      if (!isEditing && !isDestacadaNew && !isFreeNew) {
         // Pre-validación rápida en frontend (UX inmediata)
         // Usa datos en cache para bloquear antes de llamar al servidor
         const quickCheck = canUserPublish({
@@ -334,8 +380,9 @@ const useEventSubmit = ({
         // 2. COMBINAR IMÁGENES
         const allImageUrls = [...existingImages, ...newImageUrls];
 
-        // 3. PREPARAR DATOS DEL EVENTO
-        const eventData = prepareEventData(formData, allImageUrls);
+        // 3. PREPARAR DATOS DEL EVENTO (saneados según el plan)
+        const planFormData = applyPlanToFormData(formData, enabledFields);
+        const eventData = prepareEventData(planFormData, allImageUrls);
 
         // 4. CREAR O ACTUALIZAR EVENTO
         if (isEditing) {

@@ -5,7 +5,11 @@ import {
   faMapMarkerAlt,
   faChevronDown,
 } from "@fortawesome/free-solid-svg-icons";
-import { PROVINCIAS, COMUNAS_POR_PROVINCIA } from "../../constants";
+import {
+  PROVINCIAS,
+  COMUNAS_POR_PROVINCIA,
+  isFieldEnabled,
+} from "../../constants";
 import DateRangePicker from "../DateRangePicker";
 
 /**
@@ -17,7 +21,12 @@ const WizardStepDateTime = ({
   errors,
   onChange,
   enabledCalendarModes,
+  enabledFields = null,
 }) => {
+  // El plan gratuito solo admite una fecha simple (sin rangos ni recurrencia)
+  const calendarModes = isFieldEnabled("es_multidia", enabledFields)
+    ? enabledCalendarModes
+    : ["single"];
   const [provOpen, setProvOpen] = useState(false);
   const [comOpen, setComOpen] = useState(false);
   const provRef = useRef(null);
@@ -66,7 +75,7 @@ const WizardStepDateTime = ({
           horaFin={formData.hora_fin}
           onChange={onChange}
           errors={errors}
-          enabledModes={enabledCalendarModes}
+          enabledModes={calendarModes}
           showSubmissionDateWarning
         />
       </div>
@@ -159,6 +168,7 @@ const WizardStepDateTime = ({
       </div>
 
       {/* Dirección */}
+      {isFieldEnabled("direccion", enabledFields) && (
       <div className="publicar-form__group">
         <label className="publicar-form__label" htmlFor="direccion">
           <FontAwesomeIcon icon={faLocationDot} /> Dirección/Lugar
@@ -177,8 +187,10 @@ const WizardStepDateTime = ({
           <span className="publicar-form__error">{errors.direccion}</span>
         )}
       </div>
+      )}
 
       {/* Ubicación en Mapa */}
+      {isFieldEnabled("ubicacion_url", enabledFields) && (
       <div className="publicar-form__group publicar-form__group--location">
         <label className="publicar-form__label">
           <span className="publicar-form__label-hint">(Opcional)</span>
@@ -201,6 +213,7 @@ const WizardStepDateTime = ({
           fácilmente.
         </p>
       </div>
+      )}
     </div>
   );
 };

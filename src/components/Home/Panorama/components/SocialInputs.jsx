@@ -10,12 +10,23 @@ import {
   faLinkedin,
 } from "@fortawesome/free-brands-svg-icons";
 import { formatChileanPhone } from "../../../../lib/textWrap";
+import { isFieldEnabled, FREE_PLAN_SOCIAL_NETWORKS } from "../constants";
 
 /**
  * Componente para inputs de redes sociales
+ *
+ * @param {Object} props
+ * @param {string[]|null} [props.enabledFields] - Campos habilitados por el plan.
+ *   null = todos. Cuando hay restricción, solo se muestran las redes de
+ *   FREE_PLAN_SOCIAL_NETWORKS.
  */
-const SocialInputs = ({ redes_sociales, sitio_web, onChange }) => {
-  const socialNetworks = [
+const SocialInputs = ({
+  redes_sociales,
+  sitio_web,
+  onChange,
+  enabledFields = null,
+}) => {
+  const allSocialNetworks = [
     {
       name: "redes_instagram",
       icon: faInstagram,
@@ -67,6 +78,16 @@ const SocialInputs = ({ redes_sociales, sitio_web, onChange }) => {
     },
   ];
 
+  // El plan gratuito solo habilita un subconjunto de redes
+  const socialNetworks =
+    enabledFields === null
+      ? allSocialNetworks
+      : allSocialNetworks.filter((network) =>
+          FREE_PLAN_SOCIAL_NETWORKS.includes(
+            network.name.replace("redes_", ""),
+          ),
+        );
+
   return (
     <div className="publicar-form__group">
       <label className="publicar-form__label publicar-form__label--social">
@@ -100,16 +121,18 @@ const SocialInputs = ({ redes_sociales, sitio_web, onChange }) => {
         ))}
 
         {/* Sitio Web */}
-        <div className="publicar-form__social-input">
-          <FontAwesomeIcon icon={faGlobe} />
-          <input
-            type="url"
-            name="sitio_web"
-            placeholder="https://www.mievento.cl"
-            value={sitio_web || ""}
-            onChange={onChange}
-          />
-        </div>
+        {isFieldEnabled("sitio_web", enabledFields) && (
+          <div className="publicar-form__social-input">
+            <FontAwesomeIcon icon={faGlobe} />
+            <input
+              type="url"
+              name="sitio_web"
+              placeholder="https://www.mievento.cl"
+              value={sitio_web || ""}
+              onChange={onChange}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
