@@ -560,6 +560,14 @@ const ALLOWED_BUSINESS_UPDATE_FIELDS = [
 ];
 
 /**
+ * Campos adicionales que solo un admin/moderador puede modificar.
+ * Mismo patrón que ADMIN_ONLY_EVENT_FIELDS en events.js: 'tipo_publicacion'
+ * queda fuera de la whitelist general para que un usuario no pueda destacar
+ * su propio negocio sin pagar editándolo.
+ */
+const ADMIN_ONLY_BUSINESS_FIELDS = ["tipo_publicacion"];
+
+/**
  * Actualiza un negocio
  * SEGURIDAD: Whitelist de campos + verificación de permisos
  * @param {string} businessId - ID del negocio
@@ -577,9 +585,14 @@ export const updateBusiness = async (
 ) => {
   const { adminOverride = false } = options;
 
+  // Determinar campos permitidos según contexto
+  const allowedFields = adminOverride
+    ? [...ALLOWED_BUSINESS_UPDATE_FIELDS, ...ADMIN_ONLY_BUSINESS_FIELDS]
+    : ALLOWED_BUSINESS_UPDATE_FIELDS;
+
   // Sanitizar: solo permitir campos seguros
   const sanitized = {};
-  for (const key of ALLOWED_BUSINESS_UPDATE_FIELDS) {
+  for (const key of allowedFields) {
     if (businessData[key] !== undefined) {
       sanitized[key] = businessData[key];
     }

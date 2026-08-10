@@ -543,8 +543,14 @@ const ALLOWED_EVENT_UPDATE_FIELDS = [
 
 /**
  * Campos adicionales que solo un admin/moderador puede modificar.
+ * 'tipo_publicacion' vive aquí y NO en la whitelist general para que un usuario
+ * no pueda auto-promocionar su publicación a destacada sin pagar.
  */
-const ADMIN_ONLY_EVENT_FIELDS = ["estado", "published_at"];
+const ADMIN_ONLY_EVENT_FIELDS = [
+  "estado",
+  "published_at",
+  "tipo_publicacion",
+];
 
 /**
  * Actualiza un evento

@@ -18,6 +18,7 @@ import {
 } from "./wizard";
 import DraftPreview from "./DraftPreview";
 import FormResetButton from "../../../UI/FormResetButton";
+import { getStepMissingFields } from "../hooks/useFormValidation";
 import "../styles/draft-preview.css";
 
 const WIZARD_STEPS = [
@@ -57,137 +58,17 @@ const PublicarForm = ({
   const [errorKey, setErrorKey] = useState(0);
   const [passedSteps, setPassedSteps] = useState(() => new Set());
 
-  // Detectar campos obligatorios faltantes por paso
-  const getMissingFields = useCallback(() => {
-    const missing = [];
-    switch (currentStep) {
-      case 1:
-        if (!formData.titulo?.trim() || formData.titulo.trim().length < 3)
-          missing.push({ field: "titulo", label: "Título" });
-        if (
-          !formData.organizador?.trim() ||
-          formData.organizador.trim().length < 3
-        )
-          missing.push({ field: "organizador", label: "Organizador" });
-        if (!formData.category_id)
-          missing.push({ field: "category_id", label: "Categoría" });
-        break;
-      case 2:
-        if (!formData.fecha_evento)
-          missing.push({ field: "fecha_evento", label: "Fecha del evento" });
-        if (!formData.provincia)
-          missing.push({ field: "provincia", label: "Provincia" });
-        if (!formData.comuna?.trim())
-          missing.push({ field: "comuna", label: "Comuna" });
-        if (!formData.direccion?.trim())
-          missing.push({ field: "direccion", label: "Dirección" });
-        if (formData.es_multidia && !formData.fecha_fin)
-          missing.push({ field: "fecha_fin", label: "Fecha de término" });
-        if (formData.es_recurrente) {
-          const recurringDatesCount = Array.isArray(formData.fechas_recurrencia)
-            ? formData.fechas_recurrencia.length
-            : 0;
+  // Campos obligatorios faltantes del paso actual.
+  // Las reglas viven en EVENT_VALIDATION_SCHEMA (única fuente de verdad,
+  // compartida con la validación de submit); aquí solo se consultan.
+  const getMissingFields = useCallback(
+    () => getStepMissingFields(currentStep, formData),
+    [currentStep, formData],
+  );
 
-          if (recurringDatesCount === 0)
-            missing.push({
-              field: "fecha_evento",
-              label: "Fechas específicas",
-            });
-
-          if (recurringDatesCount > 0 && recurringDatesCount < 2)
-            missing.push({
-              field: "fecha_evento",
-              label: "Selecciona al menos 2 fechas",
-            });
-        }
-        break;
-      case 3:
-        if (!formData.tipo_entrada)
-          missing.push({
-            field: "tipo_entrada",
-            label: "Tipo de entrada",
-          });
-        if (formData.tipo_entrada === "pagado") {
-          const precio = Number(formData.precio);
-          if (!precio || precio <= 0)
-            missing.push({ field: "precio", label: "Precio" });
-        }
-        if (
-          formData.tipo_entrada === "venta_externa" &&
-          !formData.url_venta?.trim()
-        )
-          missing.push({ field: "url_venta", label: "URL de venta" });
-        break;
-      case 4:
-        if (
-          !formData.etiqueta_directa?.trim() ||
-          formData.etiqueta_directa.trim().length < 2
-        )
-          missing.push({
-            field: "etiqueta_directa",
-            label: "Etiqueta directa",
-          });
-        break;
-      default:
-        break;
-    }
-    return missing;
-  }, [currentStep, formData]);
-
-  // Determina si un paso tiene todos sus campos obligatorios completos
+  // Un paso es válido cuando no le falta ningún campo obligatorio
   const isStepValid = useCallback(
-    (stepId) => {
-      switch (stepId) {
-        case 1:
-          return (
-            !!formData.titulo?.trim() &&
-            formData.titulo.trim().length >= 3 &&
-            !!formData.organizador?.trim() &&
-            formData.organizador.trim().length >= 3 &&
-            !!formData.category_id
-          );
-        case 2: {
-          const recurringDatesCount = Array.isArray(formData.fechas_recurrencia)
-            ? formData.fechas_recurrencia.length
-            : 0;
-
-          return (
-            !!formData.fecha_evento &&
-            !!formData.provincia &&
-            !!formData.comuna?.trim() &&
-            !!formData.direccion?.trim() &&
-            (!formData.es_multidia || !!formData.fecha_fin) &&
-            (!formData.es_recurrente ||
-              (recurringDatesCount >= 2 && recurringDatesCount <= 12))
-          );
-        }
-        case 3: {
-          // Validación por tipo de entrada
-          return (
-            !!formData.tipo_entrada &&
-            !(
-              formData.tipo_entrada === "pagado" &&
-              !(Number(formData.precio) > 0)
-            ) &&
-            !(
-              formData.tipo_entrada === "venta_externa" &&
-              !formData.url_venta?.trim()
-            )
-          );
-        }
-        case 4:
-          return (
-            !!formData.etiqueta_directa?.trim() &&
-            formData.etiqueta_directa.trim().length >= 2
-          );
-        case 5:
-          return (
-            Array.isArray(formData.imagenes) && formData.imagenes.length > 0
-          );
-        default:
-          return false;
-      }
-    },
+    (stepId) => getStepMissingFields(stepId, formData).length === 0,
     [formData],
   );
 

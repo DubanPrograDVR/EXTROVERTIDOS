@@ -137,15 +137,18 @@ const useEventSubmit = ({
     (formData, allImageUrls) => {
       const redesLimpias = normalizeSocialLinks(formData.redes_sociales || {});
 
+      // NOTA: los .trim() usan optional chaining porque no todos los planes de
+      // publicación envían todos los campos. Sin ?. un campo ausente lanza
+      // TypeError en runtime en vez de fallar la validación.
       return wrapPersistedFields({
-        titulo: formData.titulo.trim(),
-        descripcion: formData.descripcion.trim(),
+        titulo: formData.titulo?.trim() || "",
+        descripcion: formData.descripcion?.trim() || "",
         titulo_marketing: formData.titulo_marketing?.trim() || null,
         mensaje_marketing: formData.mensaje_marketing?.trim() || null,
         titulo_marketing_2: formData.titulo_marketing_2?.trim() || null,
         mensaje_marketing_2: formData.mensaje_marketing_2?.trim() || null,
         organizador:
-          formData.organizador.trim() ||
+          formData.organizador?.trim() ||
           user?.user_metadata?.full_name ||
           "Organizador",
         category_id: parseInt(formData.category_id),
@@ -169,8 +172,8 @@ const useEventSubmit = ({
         hora_inicio: formData.hora_inicio || null,
         hora_fin: formData.hora_fin || null,
         provincia: formData.provincia,
-        comuna: formData.comuna.trim(),
-        direccion: formData.direccion.trim(),
+        comuna: formData.comuna?.trim() || "",
+        direccion: formData.direccion?.trim() || null,
         ubicacion_url: formData.ubicacion_url?.trim() || null,
         tipo_entrada: formData.tipo_entrada || "sin_entrada",
         precio:

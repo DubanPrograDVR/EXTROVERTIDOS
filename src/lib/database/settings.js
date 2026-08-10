@@ -4,6 +4,10 @@
  */
 
 import { supabase } from "../supabase";
+import cache, { invalidateCache } from "./cache";
+
+/** Clave de caché para la visibilidad combinada de planes */
+const PLANS_VISIBILITY_CACHE_KEY = "settings_plansVisibility";
 
 /**
  * Obtener el valor de una configuración
@@ -54,6 +58,10 @@ export async function updateAppSetting(key, value, userId, description) {
     console.error(`Error al actualizar configuración "${key}":`, error);
     throw error;
   }
+
+  // Cualquier escritura de configuración invalida la visibilidad cacheada,
+  // para que los toggles del panel admin se reflejen de inmediato.
+  invalidateCache("settings_");
 
   return true;
 }
@@ -109,6 +117,12 @@ export async function isSuperguiaEnabled() {
  * @returns {Promise<{globalEnabled:boolean, panoramasEnabled:boolean, superguiaEnabled:boolean, panoramasVisible:boolean, superguiaVisible:boolean, anyVisible:boolean}>}
  */
 export async function getPlansVisibility() {
+  // Se invoca desde 5 sitios (Navbar, PanoramasPage, Publicar, PublicarNegocio,
+  // AdminPanel) y cada llamada dispara 4 queries a app_settings. El caché evita
+  // multiplicarlas; updateAppSetting() lo invalida al escribir cualquier toggle.
+  const cached = cache.get(PLANS_VISIBILITY_CACHE_KEY);
+  if (cached) return cached;
+
   const [globalEnabled, panoramasEnabled, superguiaEnabled, destacadasEnabled] =
     await Promise.all([
       isPlanesEnabled(),
@@ -120,7 +134,7 @@ export async function getPlansVisibility() {
   const panoramasVisible = globalEnabled || panoramasEnabled;
   const superguiaVisible = globalEnabled || superguiaEnabled;
 
-  return {
+  const visibility = {
     globalEnabled,
     panoramasEnabled,
     superguiaEnabled,
@@ -129,6 +143,9 @@ export async function getPlansVisibility() {
     superguiaVisible,
     anyVisible: panoramasVisible || superguiaVisible,
   };
+
+  cache.set(PLANS_VISIBILITY_CACHE_KEY, visibility);
+  return visibility;
 }
 
 /**
