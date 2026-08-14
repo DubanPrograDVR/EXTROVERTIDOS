@@ -1,7 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getEventById } from "../../../../lib/database";
-import { INITIAL_FORM_STATE } from "../constants";
+import {
+  INITIAL_FORM_STATE,
+  MODOS_PUBLICACION,
+  obtenerEstadoPublicacion,
+} from "../constants";
 
 const withTimeout = (promise, timeoutMs, timeoutMessage) =>
   new Promise((resolve, reject) => {
@@ -144,7 +148,14 @@ const useEventEditor = ({ user, isAuthenticated, isAdmin, showToast }) => {
         const tipoEntradaForm =
           tipoEntradaReverseMap[event.tipo_entrada] || event.tipo_entrada || "";
 
+        const estadoPublicacion = obtenerEstadoPublicacion(
+          event.modo_publicacion ||
+            (event.subscription_id ? MODOS_PUBLICACION.SUSCRIPCION : null),
+          event.tipo_publicacion,
+        );
+
         const mappedFormData = {
+          ...estadoPublicacion,
           titulo: event.titulo || "",
           descripcion: event.descripcion || "",
           titulo_marketing: event.titulo_marketing || "",
@@ -172,6 +183,7 @@ const useEventEditor = ({ user, isAuthenticated, isAdmin, showToast }) => {
           precio: event.precio || "",
           url_venta: event.url_venta || "",
           telefono_contacto: event.telefono_contacto || "",
+          sitio_web: event.sitio_web || "",
           hashtags: event.hashtags || "",
           etiqueta_directa: event.etiqueta_directa || "",
           redes_sociales: event.redes_sociales || {

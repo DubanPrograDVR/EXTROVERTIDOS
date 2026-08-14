@@ -20,7 +20,7 @@ export default function EmptyPanoramas({
       return;
     }
 
-    navigate("/publicar-panorama");
+    navigate("/crear-publicacion");
   };
 
   return (

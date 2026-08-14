@@ -21,11 +21,13 @@ import { isFieldEnabled, FREE_PLAN_SOCIAL_NETWORKS } from "../constants";
  *   FREE_PLAN_SOCIAL_NETWORKS.
  */
 const SocialInputs = ({
-  redes_sociales,
+  redes_sociales = {},
   sitio_web,
   onChange,
   enabledFields = null,
 }) => {
+  if (!isFieldEnabled("redes_sociales", enabledFields)) return null;
+
   const allSocialNetworks = [
     {
       name: "redes_instagram",

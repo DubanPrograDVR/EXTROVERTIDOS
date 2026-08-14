@@ -13,6 +13,36 @@ import {
 import DateCalendar from "./DateCalendar";
 import "./styles/FilterPanel.css";
 
+const normalizarId = (valor) => String(valor ?? "");
+
+const coincidenIds = (primero, segundo) =>
+  normalizarId(primero) === normalizarId(segundo);
+
+const normalizarUbicacion = (valor) =>
+  String(valor ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es-CL")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const coincidenUbicaciones = (primero, segundo) =>
+  normalizarUbicacion(primero) === normalizarUbicacion(segundo);
+
+const coincideCiudad = (valor, clave, ciudad) => {
+  const normalizado = normalizarUbicacion(valor);
+  return (
+    normalizado &&
+    (normalizado === normalizarUbicacion(clave) ||
+      normalizado === normalizarUbicacion(ciudad?.nombre))
+  );
+};
+
+const encontrarCiudad = (locations, valor) =>
+  Object.entries(locations).find(([clave, ciudad]) =>
+    coincideCiudad(valor, clave, ciudad),
+  );
+
 /**
  * Panel de filtros con opciones siempre visibles
  * @param {boolean} showDateFilter - Mostrar filtro de fecha (default: true)
@@ -94,29 +124,38 @@ export default function FilterPanel({
   // Memoizar labels para evitar recálculos innecesarios
   const categoryLabel = useMemo(() => {
     if (selectedSubcategory) {
-      const subcat = subcategories.find((s) => s.id === selectedSubcategory);
+      const subcat = subcategories.find((s) =>
+        coincidenIds(s.id, selectedSubcategory),
+      );
       return subcat?.nombre || "Categoría";
     }
     if (!selectedCategory) return "Categoría";
-    const cat = categories.find((c) => c.id === selectedCategory);
+    const cat = categories.find((c) => coincidenIds(c.id, selectedCategory));
     return cat?.nombre || "Categoría";
   }, [selectedCategory, selectedSubcategory, categories, subcategories]);
 
   // Filtrar subcategorías por la categoría seleccionada
   const filteredSubcategories = useMemo(() => {
     if (!selectedCategory) return [];
-    return subcategories.filter((s) => s.category_id === selectedCategory);
+    return subcategories.filter((s) =>
+      coincidenIds(s.category_id, selectedCategory),
+    );
   }, [selectedCategory, subcategories]);
+
+  const ubicacionSeleccionada = useMemo(
+    () => encontrarCiudad(locations, selectedCity),
+    [locations, selectedCity],
+  );
 
   const locationLabel = useMemo(() => {
     if (!showComunaFilter && selectedComuna) return selectedComuna;
     if (selectedCity)
       return (
-        locations[selectedCity]?.nombre ||
+        ubicacionSeleccionada?.[1]?.nombre ||
         (showComunaFilter ? "Ciudad" : "Ubicación")
       );
     return showComunaFilter ? "Ciudad" : "Ubicación";
-  }, [selectedComuna, selectedCity, locations, showComunaFilter]);
+  }, [selectedComuna, selectedCity, ubicacionSeleccionada, showComunaFilter]);
 
   const comunaLabel = useMemo(() => {
     if (selectedComuna) return selectedComuna;
@@ -151,12 +190,14 @@ export default function FilterPanel({
           <input
             type="text"
             placeholder={searchPlaceholder}
+            aria-label={searchPlaceholder}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             className="filter-panel__search-input"
           />
           {searchQuery && (
             <button
+              type="button"
               className="filter-panel__search-clear"
               onClick={() => onSearchChange("")}>
               <FontAwesomeIcon icon={faTimes} />
@@ -172,9 +213,11 @@ export default function FilterPanel({
           {/* Categoría */}
           <div className="filter-panel__dropdown-wrapper">
             <button
+              type="button"
               className={`filter-panel__filter-btn ${
                 activeDropdown === "category" ? "active" : ""
               } ${selectedCategory ? "has-value" : ""}`}
+              aria-expanded={activeDropdown === "category"}
               onClick={() => toggleDropdown("category")}>
               {categoryIcon
                 ? <img src={categoryIcon} alt="" className="filter-panel__btn-icon" />
@@ -186,13 +229,13 @@ export default function FilterPanel({
             {activeDropdown === "category" && (
               <div className="filter-panel__dropdown">
                 <div className="filter-panel__dropdown-header">
-                  <span>Seleccionar categoría</span>
-                  {(selectedCategory || selectedSubcategory) && (
-                    <button
-                      onClick={() => {
-                        onCategoryChange(null);
-                        onSubcategoryChange(null);
-                      }}>
+                    <span>Seleccionar categoría</span>
+                    {(selectedCategory || selectedSubcategory) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onCategoryChange(null);
+                        }}>
                       Limpiar
                     </button>
                   )}
@@ -200,15 +243,15 @@ export default function FilterPanel({
                 <div className="filter-panel__dropdown-list">
                   {categories.map((cat) => (
                     <button
+                      type="button"
                       key={cat.id}
                       className={`filter-panel__dropdown-item ${
-                        selectedCategory === cat.id ? "selected" : ""
+                        coincidenIds(selectedCategory, cat.id) ? "selected" : ""
                       }`}
                       onClick={() => {
                         onCategoryChange(
-                          selectedCategory === cat.id ? null : cat.id,
+                          coincidenIds(selectedCategory, cat.id) ? null : cat.id,
                         );
-                        onSubcategoryChange && onSubcategoryChange(null);
                         setActiveDropdown(null);
                       }}>
                       {categoryIcon && (
@@ -226,7 +269,7 @@ export default function FilterPanel({
                             : eventsCountByCategory[cat.id]}
                         </span>
                       )}
-                      {selectedCategory === cat.id && (
+                      {coincidenIds(selectedCategory, cat.id) && (
                         <FontAwesomeIcon icon={faCheck} className="check" />
                       )}
                     </button>
@@ -239,9 +282,11 @@ export default function FilterPanel({
           {/* Ubicación */}
           <div className="filter-panel__dropdown-wrapper">
             <button
+              type="button"
               className={`filter-panel__filter-btn ${
                 activeDropdown === "location" ? "active" : ""
               } ${selectedCity || selectedComuna ? "has-value" : ""}`}
+              aria-expanded={activeDropdown === "location"}
               onClick={() => toggleDropdown("location")}>
               <FontAwesomeIcon icon={faMapMarkerAlt} />
               <span>{locationLabel}</span>
@@ -254,9 +299,9 @@ export default function FilterPanel({
                   <span>Seleccionar ciudad</span>
                   {(selectedCity || selectedComuna) && (
                     <button
+                      type="button"
                       onClick={() => {
                         onCityChange(null);
-                        onComunaChange(null);
                       }}>
                       Limpiar
                     </button>
@@ -265,13 +310,15 @@ export default function FilterPanel({
                 <div className="filter-panel__dropdown-list">
                   {Object.entries(locations).map(([key, city]) => (
                     <button
+                      type="button"
                       key={key}
                       className={`filter-panel__dropdown-item ${
-                        selectedCity === key ? "selected" : ""
+                        coincideCiudad(selectedCity, key, city) ? "selected" : ""
                       }`}
                       onClick={() => {
-                        onCityChange(selectedCity === key ? null : key);
-                        onComunaChange(null);
+                        onCityChange(
+                          coincideCiudad(selectedCity, key, city) ? null : key,
+                        );
                         if (showComunaFilter) setActiveDropdown(null);
                       }}>
                       <span>{city.nombre}</span>
@@ -282,7 +329,7 @@ export default function FilterPanel({
                             : eventsCountByCity[key]}
                         </span>
                       )}
-                      {selectedCity === key && (
+                      {coincideCiudad(selectedCity, key, city) && (
                         <FontAwesomeIcon icon={faCheck} className="check" />
                       )}
                     </button>
@@ -295,16 +342,20 @@ export default function FilterPanel({
                         <button
                           key={comuna}
                           className={`filter-panel__dropdown-item ${
-                            selectedComuna === comuna ? "selected" : ""
+                            coincidenUbicaciones(selectedComuna, comuna)
+                              ? "selected"
+                              : ""
                           }`}
                           onClick={() => {
                             onComunaChange(
-                              selectedComuna === comuna ? null : comuna,
+                              coincidenUbicaciones(selectedComuna, comuna)
+                                ? null
+                                : comuna,
                             );
                             setActiveDropdown(null);
                           }}>
                           <span>{comuna}</span>
-                          {selectedComuna === comuna && (
+                          {coincidenUbicaciones(selectedComuna, comuna) && (
                             <FontAwesomeIcon icon={faCheck} className="check" />
                           )}
                         </button>
@@ -320,9 +371,11 @@ export default function FilterPanel({
           {showComunaFilter && availableComunas.length > 0 && (
             <div className="filter-panel__dropdown-wrapper">
               <button
+                type="button"
                 className={`filter-panel__filter-btn ${
                   activeDropdown === "comuna" ? "active" : ""
                 } ${selectedComuna ? "has-value" : ""}`}
+                aria-expanded={activeDropdown === "comuna"}
                 onClick={() => toggleDropdown("comuna")}>
                 <FontAwesomeIcon icon={faMapMarkerAlt} />
                 <span>{comunaLabel}</span>
@@ -334,21 +387,26 @@ export default function FilterPanel({
                   <div className="filter-panel__dropdown-header">
                     <span>Seleccionar comuna</span>
                     {selectedComuna && (
-                      <button onClick={() => onComunaChange(null)}>
+                      <button type="button" onClick={() => onComunaChange(null)}>
                         Limpiar
                       </button>
                     )}
                   </div>
                   <div className="filter-panel__dropdown-list">
                     {availableComunas.map((comuna) => (
-                      <button
-                        key={comuna}
+                    <button
+                      type="button"
+                      key={comuna}
                         className={`filter-panel__dropdown-item ${
-                          selectedComuna === comuna ? "selected" : ""
+                          coincidenUbicaciones(selectedComuna, comuna)
+                            ? "selected"
+                            : ""
                         }`}
                         onClick={() => {
                           onComunaChange(
-                            selectedComuna === comuna ? null : comuna,
+                            coincidenUbicaciones(selectedComuna, comuna)
+                              ? null
+                              : comuna,
                           );
                           setActiveDropdown(null);
                         }}>
@@ -360,7 +418,7 @@ export default function FilterPanel({
                               : eventsCountByComuna[comuna]}
                           </span>
                         )}
-                        {selectedComuna === comuna && (
+                        {coincidenUbicaciones(selectedComuna, comuna) && (
                           <FontAwesomeIcon icon={faCheck} className="check" />
                         )}
                       </button>
@@ -375,9 +433,11 @@ export default function FilterPanel({
           {showPriceFilter && (
             <div className="filter-panel__dropdown-wrapper">
               <button
+                type="button"
                 className={`filter-panel__filter-btn ${
                   activeDropdown === "price" ? "active" : ""
                 } ${selectedPrice ? "has-value" : ""}`}
+                aria-expanded={activeDropdown === "price"}
                 onClick={() => toggleDropdown("price")}>
                 <FontAwesomeIcon icon={faTag} />
                 <span>{priceLabel}</span>
@@ -389,7 +449,7 @@ export default function FilterPanel({
                   <div className="filter-panel__dropdown-header">
                     <span>Rango de precio</span>
                     {selectedPrice && (
-                      <button onClick={() => onPriceChange(null)}>
+                      <button type="button" onClick={() => onPriceChange(null)}>
                         Limpiar
                       </button>
                     )}
@@ -397,6 +457,7 @@ export default function FilterPanel({
                   <div className="filter-panel__dropdown-list">
                     {priceOptions.map((option) => (
                       <button
+                        type="button"
                         key={option.value}
                         className={`filter-panel__dropdown-item ${
                           selectedPrice === option.value ? "selected" : ""
@@ -426,9 +487,11 @@ export default function FilterPanel({
           {showDateFilter && (
             <div className="filter-panel__dropdown-wrapper filter-panel__dropdown-wrapper--calendar">
               <button
+                type="button"
                 className={`filter-panel__filter-btn ${
                   activeDropdown === "calendar" ? "active" : ""
                 } ${selectedDate ? "has-value" : ""}`}
+                aria-expanded={activeDropdown === "calendar"}
                 onClick={() => toggleDropdown("calendar")}>
                 <FontAwesomeIcon icon={faCalendarAlt} />
                 <span>{calendarLabel}</span>
@@ -440,7 +503,7 @@ export default function FilterPanel({
                   <div className="filter-panel__dropdown-header">
                     <span>Seleccionar fecha</span>
                     {selectedDate && (
-                      <button onClick={() => onDateChange(null)}>
+                      <button type="button" onClick={() => onDateChange(null)}>
                         Limpiar
                       </button>
                     )}
@@ -475,15 +538,18 @@ export default function FilterPanel({
             <div className="filter-panel__subcategories-list">
               {filteredSubcategories.map((subcat) => (
                 <button
+                  type="button"
                   key={subcat.id}
                   className={`filter-panel__subcat-chip ${
-                    selectedSubcategory === subcat.id
+                    coincidenIds(selectedSubcategory, subcat.id)
                       ? "filter-panel__subcat-chip--active"
                       : ""
                   }`}
                   onClick={() =>
                     onSubcategoryChange(
-                      selectedSubcategory === subcat.id ? null : subcat.id,
+                      coincidenIds(selectedSubcategory, subcat.id)
+                        ? null
+                        : subcat.id,
                     )
                   }>
                   {categoryIcon && (
@@ -503,7 +569,7 @@ export default function FilterPanel({
                         : eventsCountBySubcategory[subcat.id]}
                     </span>
                   )}
-                  {selectedSubcategory === subcat.id && (
+                  {coincidenIds(selectedSubcategory, subcat.id) && (
                     <FontAwesomeIcon
                       icon={faTimes}
                       className="filter-panel__subcat-chip-x"
@@ -522,7 +588,10 @@ export default function FilterPanel({
           {totalResults === 1 ? "evento encontrado" : "eventos encontrados"}
         </span>
         {hasActiveFilters && (
-          <button className="filter-panel__clear-all" onClick={onClearFilters}>
+          <button
+            type="button"
+            className="filter-panel__clear-all"
+            onClick={onClearFilters}>
             <FontAwesomeIcon icon={faTimes} />
             Ver todos
           </button>

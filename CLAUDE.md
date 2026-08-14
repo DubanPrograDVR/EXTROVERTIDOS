@@ -55,7 +55,7 @@ Uses Supabase Auth with PKCE flow (see comments in `src/lib/supabase.js` for why
 
 ### Routing (`src/App.jsx`)
 
-`react-router-dom` v7. Frequently-hit routes (`/`, `/superguia`) are eager; everything else is `lazy()`-loaded to keep the initial bundle small. Route guards: `ProtectedRoute` (auth required, optional `allowedRoles`) and `UserOnlyRoute` (blocks admin/moderator from user-only flows like publishing). `/auth/callback` must stay registered before other routes since it handles the OAuth PKCE code exchange.
+`react-router-dom` v7. The canonical Home route is `/`; `/home`, `/panoramas` and `/superguia` are compatibility redirects. Publication screens and other infrequent routes are `lazy()`-loaded to keep the initial bundle small. Route guards: `ProtectedRoute` (auth required, optional `allowedRoles`) and `UserOnlyRoute` (restricts profile access while allowing admin/moderator publication flows). `/auth/callback` must stay registered before other routes since it handles the OAuth PKCE code exchange.
 
 ### Database schema
 

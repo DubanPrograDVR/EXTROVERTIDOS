@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   wrapPersistedFields,
-  normalizeLineEndings,
   buildSocialUrl,
   formatChileanPhone,
   normalizeSocialLinks,
@@ -35,11 +34,9 @@ import {
   faChevronDown,
   faChevronUp,
   faCheckCircle,
-  faRoute,
   faAlignLeft,
   faAddressCard,
   faUser,
-  faExternalLinkAlt,
   faShareAlt,
   faBookmark,
   faStar,
@@ -50,6 +47,7 @@ import {
   faInfoCircle,
   faImage,
   faTrash,
+  faCrown,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faWhatsapp,
@@ -367,12 +365,8 @@ export default function BusinessModal({
     imagen_portada_url,
     galeria,
     imagenes,
-    comuna,
-    provincia,
-    region,
     direccion,
     ubicacion_url,
-    categoria,
     subcategoria,
     telefono,
     email,
@@ -395,6 +389,7 @@ export default function BusinessModal({
     mensaje_marketing,
     titulo_marketing_2,
     mensaje_marketing_2,
+    tipo_publicacion,
   } = business;
 
   // URL directa a og.php: los bots reciben OG tags con la imagen real del
@@ -681,7 +676,7 @@ export default function BusinessModal({
       // Capa defensiva: re-aplicar word-wrap (76 chars) antes de persistir.
       const dataToPersist = wrapPersistedFields(dataToSave);
 
-      await updateBusiness(business.id, dataToPersist, undefined, {
+      await updateBusiness(business.id, dataToPersist, user?.id, {
         adminOverride: canEdit,
       });
       showToast("Cambios guardados exitosamente", "success");
@@ -819,6 +814,12 @@ export default function BusinessModal({
             <span className="publication-modal__verified-badge">
               <FontAwesomeIcon icon={faCheckCircle} />
               Verificado
+            </span>
+          )}
+          {tipo_publicacion === "destacada" && (
+            <span className="publication-modal__featured-badge">
+              <FontAwesomeIcon icon={faCrown} />
+              Negocio destacado
             </span>
           )}
         </div>

@@ -15,6 +15,7 @@ import {
   faHeart as faHeartSolid,
   faBookmark as faBookmarkSolid,
   faStar,
+  faCrown,
   faShareAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import {
@@ -67,7 +68,6 @@ export default function BusinessCard({
   const {
     id,
     nombre,
-    descripcion,
     slogan,
     imagen_url,
     logo_url,
@@ -75,8 +75,6 @@ export default function BusinessCard({
     galeria,
     imagenes,
     comuna,
-    provincia,
-    direccion,
     categoria,
     subcategoria,
     telefono,
@@ -88,6 +86,7 @@ export default function BusinessCard({
     horarios,
     dias_atencion,
     verificado,
+    tipo_publicacion,
     profiles,
   } = business;
 
@@ -396,7 +395,7 @@ export default function BusinessCard({
   return (
     <article
       id={`business-card-${id}`}
-      className="business-card"
+      className={`business-card ${tipo_publicacion === "destacada" ? "business-card--featured" : ""}`}
       onClick={handleCardClick}>
       {/* Logo Superguía montado sobre la esquina superior izquierda */}
       <img
@@ -470,6 +469,14 @@ export default function BusinessCard({
             <span className="business-card__verified">
               <FontAwesomeIcon icon={faCheckCircle} />
               Verificado
+            </span>
+          )}
+
+          {/* Distintivo de negocio destacado. No sustituye a Verificado. */}
+          {tipo_publicacion === "destacada" && (
+            <span className="business-card__featured">
+              <FontAwesomeIcon icon={faCrown} />
+              Destacado
             </span>
           )}
 

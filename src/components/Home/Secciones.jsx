@@ -2,10 +2,8 @@ import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./styles/secciones.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faMapMarkedAlt, faCompass } from "@fortawesome/free-solid-svg-icons";
 
 // Imágenes servidas desde public/
-const panoramasImg = "/img/Home1.png";
 const superguiaImg = "/img/Home2.png";
 const pExtroIcon = "/img/SG_Extro_v2.png";
 
@@ -28,7 +26,7 @@ const sectionsData = [
     icon: null,
     customIcon: pExtroIcon,
     title: "Superguia Extrovertidos",
-    subtitle: "¿Un Uber, un Veterinario o un Mecánico?",
+    subtitle: "Encuentra servicios para tu día a día.",
     subtitleSecondary: "¡Encuéntralo aquí!",
     btnLabel: "Explorar Superguia",
     btnPath: "/superguia",

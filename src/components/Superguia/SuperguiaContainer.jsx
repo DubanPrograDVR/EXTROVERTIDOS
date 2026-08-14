@@ -222,7 +222,7 @@ export default function SuperguiaContainer() {
       return;
     }
 
-    navigate("/publicar-negocio");
+    navigate("/crear-publicacion");
   }, [isAuthenticated, navigate]);
 
   useEffect(() => {

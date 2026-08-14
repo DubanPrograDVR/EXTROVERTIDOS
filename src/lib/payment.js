@@ -153,6 +153,65 @@ export async function initiateDestacadaPayment({ eventId, eventTitle }) {
   redirectToTransbank(data.url, data.token);
 }
 
+/**
+ * Inicia el pago de un negocio destacado (pago único).
+ * El monto lo determina create-payment desde app_settings, nunca este cliente.
+ *
+ * @param {Object} params
+ * @param {string} params.businessId - UUID del negocio en borrador
+ * @param {string} [params.businessName] - Nombre para el registro de auditoría
+ * @returns {Promise<void>} Redirige a Webpay
+ * @throws {PaymentError}
+ */
+export async function initiateNegocioDestacadaPayment({
+  businessId,
+  businessName,
+}) {
+  if (!businessId) {
+    throw new PaymentError(
+      "Falta el identificador del negocio destacado",
+      "INVALID_ARGS",
+    );
+  }
+
+  const session = await getValidatedPaymentSession();
+
+  const { data, error } = await supabase.functions.invoke("create-payment", {
+    body: {
+      negocio_destacado: {
+        business_id: businessId,
+        nombre: businessName || "",
+      },
+    },
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  });
+
+  if (error) {
+    console.error("[Payment] Error al crear pago de negocio destacado:", error);
+    const serverError = await parseFunctionError(error);
+    const err = new PaymentError(
+      serverError?.message ||
+        error.message ||
+        "Error al iniciar el pago del negocio destacado",
+      "CREATE_FAILED",
+      serverError?.status,
+    );
+    err.dbCode = serverError?.dbCode || null;
+    throw err;
+  }
+
+  if (!data || !data.token || !data.url) {
+    throw new PaymentError(
+      "Respuesta inválida del servidor de pago",
+      "INVALID_RESPONSE",
+    );
+  }
+
+  redirectToTransbank(data.url, data.token);
+}
+
 // ──────────────────────────────────────────────
 // CONSULTAS
 // ──────────────────────────────────────────────

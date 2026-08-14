@@ -37,6 +37,7 @@ const PLAN_PRICES = {
   panorama_ilimitado: 70000,
   superguia: 15000,
   publicacion_destacada: 10000,
+  negocio_destacado: 10000,
 };
 
 // Publicaciones incluidas por plan
@@ -141,6 +142,35 @@ async function getPlanPrices(supabaseAdmin) {
     );
     return { ...PLAN_PRICES };
   }
+}
+
+async function isNegociosDestacadasEnabled(supabaseAdmin) {
+  const { data, error } = await supabaseAdmin
+    .from("app_settings")
+    .select("value")
+    .eq("key", "destacadas_negocios_enabled")
+    .maybeSingle();
+
+  if (error) {
+    console.error(
+      "[create-payment] Error leyendo flag de negocios destacados:",
+      error,
+    );
+    throw error;
+  }
+
+  return data?.value === true;
+}
+
+async function isDestacadasEnabled(supabaseAdmin) {
+  const { data, error } = await supabaseAdmin
+    .from("app_settings")
+    .select("value")
+    .eq("key", "destacadas_enabled")
+    .maybeSingle();
+
+  if (error) throw error;
+  return data?.value !== false;
 }
 
 /**
@@ -426,6 +456,238 @@ async function handleDestacadaPayment({
   });
 }
 
+/**
+ * Maneja el pago único de un negocio destacado.
+ * El negocio ya debe existir como borrador creado por su dueño. Esta rama no
+ * consume Superguía ni crea una suscripción; solo registra business_id en la
+ * transacción y deja la activación a confirm-payment.
+ */
+async function handleNegocioDestacadoPayment({
+  supabaseAdmin,
+  supabaseUrl,
+  user,
+  planPrices,
+  businessId,
+  businessName,
+}) {
+  if (!businessId) {
+    return jsonResponse(
+      { error: "Falta el identificador del negocio destacado" },
+      400,
+    );
+  }
+
+  try {
+    if (!(await isDestacadasEnabled(supabaseAdmin))) {
+      return jsonResponse(
+        { error: "Las publicaciones destacadas no están disponibles" },
+        403,
+      );
+    }
+  } catch (flagError) {
+    console.error("[create-payment] Error leyendo flag de destacadas:", flagError);
+    return jsonResponse(
+      { error: "No se pudo verificar la disponibilidad de destacados" },
+      500,
+    );
+  }
+
+  let enabled;
+  try {
+    enabled = await isNegociosDestacadasEnabled(supabaseAdmin);
+  } catch {
+    return jsonResponse(
+      { error: "No se pudo verificar la disponibilidad de destacados" },
+      500,
+    );
+  }
+
+  if (!enabled) {
+    return jsonResponse(
+      { error: "Las publicaciones destacadas de negocios no están disponibles" },
+      403,
+    );
+  }
+
+  const amount = Number(planPrices.negocio_destacado);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return jsonResponse(
+      { error: "El precio del negocio destacado no está configurado" },
+      500,
+    );
+  }
+
+  // La autorización se basa en la sesión verificada y en la fila actual, no
+  // en business_id, nombre ni monto enviados por el navegador.
+  const { data: business, error: businessError } = await supabaseAdmin
+    .from("businesses")
+    .select("id, user_id, nombre, estado, tipo_publicacion")
+    .eq("id", businessId)
+    .maybeSingle();
+
+  if (businessError) {
+    console.error(
+      "[create-payment] Error buscando negocio destacado:",
+      businessError,
+    );
+    return dbErrorResponse(
+      "Error al validar el negocio destacado",
+      businessError,
+    );
+  }
+
+  if (!business) {
+    return jsonResponse({ error: "Negocio no encontrado" }, 404);
+  }
+
+  if (business.user_id !== user.id) {
+    return jsonResponse(
+      { error: "No puedes pagar por un negocio que no te pertenece" },
+      403,
+    );
+  }
+
+  if (business.tipo_publicacion !== "destacada") {
+    return jsonResponse(
+      { error: "Este negocio no es de tipo destacado" },
+      400,
+    );
+  }
+
+  if (business.estado !== "borrador") {
+    return jsonResponse(
+      { error: "Este negocio destacado ya fue procesado" },
+      409,
+    );
+  }
+
+  const buyOrder = generateBuyOrder(user.id);
+  const sessionId = generateSessionId(user.id);
+  const nombre = businessName || business.nombre || "Negocio destacado";
+
+  const { data: transaction, error: txError } = await supabaseAdmin
+    .from("transactions")
+    .insert({
+      user_id: user.id,
+      subscription_ids: [],
+      buy_order: buyOrder,
+      session_id: sessionId,
+      amount,
+      status: "pending",
+      items: [
+        {
+          type: "negocio_destacado",
+          plan: "negocio_destacado",
+          business_id: business.id,
+          nombre,
+          amount,
+        },
+      ],
+    })
+    .select("id")
+    .single();
+
+  if (txError) {
+    console.error(
+      "[create-payment] Error creando transacción de negocio destacado:",
+      txError,
+    );
+    return dbErrorResponse("Error al registrar la transacción", txError);
+  }
+
+  let tbkConfig;
+  try {
+    tbkConfig = getTransbankConfig();
+  } catch (cfgError) {
+    console.error("[create-payment]", cfgError);
+    await supabaseAdmin
+      .from("transactions")
+      .update({
+        status: "failed",
+        error_message: "Credenciales Transbank no configuradas",
+      })
+      .eq("id", transaction.id);
+    return jsonResponse(
+      { error: "Pagos no disponibles temporalmente. Intenta más tarde." },
+      503,
+    );
+  }
+
+  const returnUrl = `${supabaseUrl}/functions/v1/confirm-payment`;
+  const tbkCreateUrl = `${tbkConfig.baseUrl}${TRANSBANK_API.transactionPath}`;
+  const controller = new AbortController();
+  const tbkTimeout = setTimeout(() => controller.abort(), 15000);
+  let tbkResponse;
+
+  try {
+    tbkResponse = await fetch(tbkCreateUrl, {
+      method: "POST",
+      headers: {
+        "Tbk-Api-Key-Id": tbkConfig.commerceCode,
+        "Tbk-Api-Key-Secret": tbkConfig.apiKeySecret,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        buy_order: buyOrder,
+        session_id: sessionId,
+        amount,
+        return_url: returnUrl,
+      }),
+      signal: controller.signal,
+    });
+  } catch (networkError) {
+    console.error("[create-payment] Red de negocio destacado:", networkError);
+    await supabaseAdmin
+      .from("transactions")
+      .update({
+        status: "failed",
+        error_message: `Network: ${networkError?.message || "timeout"}`,
+      })
+      .eq("id", transaction.id);
+    return jsonResponse(
+      { error: "No se pudo contactar al procesador de pago. Intenta nuevamente." },
+      504,
+    );
+  } finally {
+    clearTimeout(tbkTimeout);
+  }
+
+  if (!tbkResponse.ok) {
+    const errorText = await tbkResponse.text();
+    console.error(
+      `[create-payment] Error Transbank negocio destacado (${tbkResponse.status}):`,
+      errorText,
+    );
+    await supabaseAdmin
+      .from("transactions")
+      .update({
+        status: "failed",
+        error_message: `Transbank HTTP ${tbkResponse.status}: ${errorText.substring(0, 200)}`,
+      })
+      .eq("id", transaction.id);
+    return jsonResponse(
+      { error: "Error al conectar con el procesador de pago" },
+      502,
+    );
+  }
+
+  const tbkData = await tbkResponse.json();
+  await supabaseAdmin
+    .from("transactions")
+    .update({
+      token_ws: tbkData.token,
+      status: "processing",
+    })
+    .eq("id", transaction.id);
+
+  return jsonResponse({
+    token: tbkData.token,
+    url: tbkData.url,
+    buy_order: buyOrder,
+    amount,
+  });
+}
+
 // ──────────────────────────────────────────────
 // HANDLER PRINCIPAL
 // ──────────────────────────────────────────────
@@ -514,8 +776,13 @@ Deno.serve(async (req) => {
 
     // ── 2. Parsear y validar el body ──
     const body = await req.json();
-    const { panorama_plan, add_superguia, resource_id, publicacion_destacada } =
-      body;
+    const {
+      panorama_plan,
+      add_superguia,
+      resource_id,
+      publicacion_destacada,
+      negocio_destacado,
+    } = body;
 
     // ── 2b. Rama especial: PUBLICACION DESTACADA (pago único, sin suscripción) ──
     if (publicacion_destacada) {
@@ -526,6 +793,18 @@ Deno.serve(async (req) => {
         planPrices,
         eventId: publicacion_destacada.event_id,
         eventTitle: publicacion_destacada.titulo || "",
+      });
+    }
+
+    // Rama especial: negocio destacado (pago único, sin suscripción).
+    if (negocio_destacado) {
+      return await handleNegocioDestacadoPayment({
+        supabaseAdmin,
+        supabaseUrl,
+        user,
+        planPrices,
+        businessId: negocio_destacado.business_id,
+        businessName: negocio_destacado.nombre || "",
       });
     }
 

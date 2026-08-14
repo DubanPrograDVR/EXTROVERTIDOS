@@ -6,7 +6,7 @@
 import { supabase } from "../supabase";
 import cache from "./cache";
 import { isModerator, ESTADOS_PUBLICACION } from "./roles";
-import { refundPublication } from "./subscriptions";
+import { refundPublicationBySubscription } from "./subscriptions";
 
 const ADMIN_PANORAMA_DELETE_GRACE_DAYS = 10;
 
@@ -279,7 +279,9 @@ export const rejectEvent = async (eventId, adminUserId, motivo = "") => {
   // Obtener el evento para saber quién es el autor
   const { data: eventData, error: fetchError } = await supabase
     .from("events")
-    .select("user_id, titulo, revision_count")
+    .select(
+      "user_id, titulo, revision_count, origen_publicacion, subscription_id",
+    )
     .eq("id", eventId)
     .single();
 
@@ -308,9 +310,13 @@ export const rejectEvent = async (eventId, adminUserId, motivo = "") => {
 
   // Devolver cupo de publicación si aún tiene intentos de revisión
   // En el 3er rechazo (revision_count = 3) el cupo se pierde definitivamente
-  if (newRevisionCount < 3) {
+  if (
+    newRevisionCount < 3 &&
+    eventData.origen_publicacion === "suscripcion" &&
+    eventData.subscription_id
+  ) {
     try {
-      await refundPublication(eventData.user_id);
+      await refundPublicationBySubscription(eventData.subscription_id);
     } catch (refundError) {
       // No bloquear el rechazo si falla el refund (log para debugging)
       console.warn("No se pudo devolver el cupo de publicación:", refundError);

@@ -1,0 +1,98 @@
+.home-accesos {
+  padding: 1rem clamp(1rem, 5vw, 5rem);
+  background: #080808;
+}
+
+.home-accesos__grid {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, auto));
+  margin: 0;
+}
+
+.home-accesos__card {
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(255, 102, 0, 0.8);
+  border-radius: 0;
+  background: #111;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.home-accesos__card--panoramas {
+  background: #ff6600;
+  color: #080808;
+}
+
+.home-accesos__card--superbuscador {
+  background: #111;
+  color: #fff;
+}
+
+.home-accesos__card:first-child {
+  border-radius: 12px 0 0 12px;
+}
+
+.home-accesos__card:last-child {
+  border-left: 0;
+  border-radius: 0 12px 12px 0;
+}
+
+.home-accesos__card:hover,
+.home-accesos__card:focus-visible {
+  filter: brightness(1.12);
+}
+
+.home-accesos__card.is-active {
+  box-shadow: inset 0 -3px 0 #fff;
+}
+
+.home-accesos__card:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 3px solid #ffb27d;
+  outline-offset: 3px;
+}
+
+.home-accesos__logo {
+  width: 1.9rem;
+  height: 1.9rem;
+  object-fit: contain;
+}
+
+.home-accesos__title {
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+@media (max-width: 620px) {
+  .home-accesos__grid {
+    grid-template-columns: repeat(2, minmax(0, auto));
+  }
+
+  .home-accesos__card {
+    min-height: 52px;
+  }
+
+  .home-accesos__card:first-child {
+    border-radius: 12px 0 0 12px;
+  }
+
+  .home-accesos__card:last-child {
+    border-top: 1px solid rgba(255, 102, 0, 0.8);
+    border-left: 0;
+    border-radius: 0 12px 12px 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-accesos__card {
+    transition: none;
+  }
+}

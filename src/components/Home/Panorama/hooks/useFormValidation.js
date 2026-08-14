@@ -198,6 +198,7 @@ export const WIZARD_STEP_FIELDS = {
     { field: "fecha_fin", label: "Fecha de término" },
   ],
   3: [
+    { field: "redes_sociales", label: "Redes sociales" },
     { field: "tipo_entrada", label: "Tipo de entrada" },
     { field: "precio", label: "Precio" },
     { field: "url_venta", label: "URL de venta" },
@@ -214,7 +215,8 @@ const MAX_FECHAS_RECURRENCIA = 12;
  * (colecciones y estados derivados). Devuelven entradas {field, label}.
  */
 const STEP_EXTRA_CHECKS = {
-  2: (formData) => {
+  2: (formData, enabledFields) => {
+    if (!isFieldEnabled("es_recurrente", enabledFields)) return [];
     if (!formData.es_recurrente) return [];
 
     const count = Array.isArray(formData.fechas_recurrencia)
@@ -357,7 +359,11 @@ const useFormValidation = (schema = EVENT_VALIDATION_SCHEMA) => {
       });
 
       // Validación de imágenes (caso especial, no está en el schema)
-      if (checkImages && !isEditing) {
+      if (
+        checkImages &&
+        !isEditing &&
+        isFieldEnabled("imagenes", enabledFields)
+      ) {
         const totalImages = existingImagesCount + newImagesCount;
         if (totalImages === 0) {
           newErrors.imagenes = "Sube al menos una imagen";

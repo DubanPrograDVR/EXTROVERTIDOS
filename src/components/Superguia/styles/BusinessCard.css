@@ -16,6 +16,19 @@
   box-shadow: 0 10px 30px rgba(255, 102, 0, 0.2);
 }
 
+.business-card--featured {
+  border: 1px solid rgba(255, 193, 7, 0.75);
+  box-shadow:
+    0 0 0 1px rgba(255, 193, 7, 0.12),
+    0 8px 24px rgba(255, 179, 0, 0.12);
+}
+
+.business-card--featured:hover {
+  box-shadow:
+    0 0 0 1px rgba(255, 193, 7, 0.25),
+    0 12px 32px rgba(255, 179, 0, 0.24);
+}
+
 /* Logo Superguía montado sobre la esquina superior izquierda.
    translate(-50%,-50%) centra el badge en el vértice (0,0) del card. */
 .business-card__corner-badge {
@@ -159,6 +172,20 @@
   display: flex;
   align-items: center;
   gap: 5px;
+}
+
+/* Distintivo de promoción pagada, independiente de Verificado. */
+.business-card__featured {
+  padding: 6px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #ffd54a, #ffb300);
+  color: #1c1200;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
 }
 
 /* Botón favorito (corazón) en imagen */

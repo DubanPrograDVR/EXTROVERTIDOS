@@ -13,6 +13,9 @@ dist-ssr
 *.local
 .env
 
+# Credenciales PHP (nunca trackear)
+public/og_config.php
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -22,8 +22,14 @@ require_once $_configFile;
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── 2. LEER PARÁMETROS ───────────────────────────────────────────────────────
-$highlightId = isset($_GET['highlight']) ? trim($_GET['highlight']) : '';
-$type        = isset($_GET['type'])      ? trim($_GET['type'])      : 'event'; // 'event' | 'business'
+$highlightId = isset($_GET['highlight'])
+    ? trim($_GET['highlight'])
+    : (isset($_GET['p_highlight'])
+        ? trim($_GET['p_highlight'])
+        : (isset($_GET['sg_highlight']) ? trim($_GET['sg_highlight']) : ''));
+$type        = isset($_GET['type'])
+    ? trim($_GET['type'])
+    : (isset($_GET['sg_highlight']) ? 'business' : 'event'); // 'event' | 'business'
 
 // Validar UUID (previene inyección / path traversal)
 $isValidUuid = (bool) preg_match(
@@ -86,12 +92,12 @@ if ($type === 'business') {
         'nombre', 'descripcion', 'slogan', 'imagenes', 'imagen_url',
         'imagen_portada_url', 'galeria', 'comuna', 'provincia',
     ]);
-    $redirectPath = '/superguia?highlight=' . $highlightId;
+    $redirectPath = '/?sg_highlight=' . $highlightId;
 } else {
     $record = supabase_get('events', $highlightId, [
         'titulo', 'descripcion', 'imagenes', 'comuna', 'provincia',
     ]);
-    $redirectPath = '/panoramas?highlight=' . $highlightId;
+    $redirectPath = '/?p_highlight=' . $highlightId;
 }
 
 // ─── 4. PREPARAR META TAGS ────────────────────────────────────────────────────

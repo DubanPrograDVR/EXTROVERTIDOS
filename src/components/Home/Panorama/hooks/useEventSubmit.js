@@ -9,7 +9,6 @@ import {
   validateAndConsumePublication,
 } from "../../../../lib/database";
 import {
-  canUserPublish,
   interpretPublishResult,
 } from "../../../../lib/planRules";
 import {
@@ -20,10 +19,12 @@ import {
 import { trackPublicationCreated } from "../../../../lib/analytics";
 import { initiateDestacadaPayment } from "../../../../lib/payment";
 import {
-  PUBLICATION_TYPES,
+  MODOS_PUBLICACION,
   DEFAULT_PUBLICATION_TYPE,
   INITIAL_FORM_STATE,
   FREE_PLAN_SOCIAL_NETWORKS,
+  normalizarModoPublicacion,
+  obtenerTipoPublicacion,
 } from "../constants";
 
 /**
@@ -43,7 +44,7 @@ const applyPlanToFormData = (formData, enabledFields) => {
   const sanitized = { ...formData };
 
   for (const key of Object.keys(INITIAL_FORM_STATE)) {
-    if (key === "tipo_publicacion") continue;
+    if (key === "modo_publicacion" || key === "tipo_publicacion") continue;
     if (!enabledFields.includes(key)) {
       sanitized[key] = INITIAL_FORM_STATE[key];
     }
@@ -95,8 +96,6 @@ const useEventSubmit = ({
   showToast,
   validateForm,
   setShowAuthModal,
-  activeSubscription,
-  planesEnabled,
 }) => {
   const navigate = useNavigate();
 
@@ -241,8 +240,9 @@ const useEventSubmit = ({
    * @param {string[]} options.existingImages - URLs de imágenes existentes
    * @param {string|null} options.editEventId - ID del evento si estamos editando
    * @param {string|null} options.currentDraftId - ID del borrador actual
-   * @param {string} [options.tipoPublicacion] - Tipo de publicación: 'normal' | 'destacada'.
-   *   Cuando es 'destacada' se salta la validación de plan y se redirige a Webpay.
+   * @param {string} [options.modoPublicacion] - Modalidad del formulario.
+   * @param {string} [options.tipoPublicacion] - Tipo persistido como normal/destacada.
+   *   La modalidad es la fuente de verdad para decidir el flujo.
    * @param {Function} options.onSuccess - Callback en caso de éxito
    * @returns {Promise<boolean>} true si fue exitoso
    */
@@ -252,7 +252,8 @@ const useEventSubmit = ({
       existingImages = [],
       editEventId = null,
       currentDraftId = null,
-      tipoPublicacion = DEFAULT_PUBLICATION_TYPE,
+      modoPublicacion = null,
+      tipoPublicacion = null,
       enabledFields = null,
       onSuccess,
     }) => {
@@ -279,6 +280,14 @@ const useEventSubmit = ({
         return false;
       }
 
+      const modo = normalizarModoPublicacion(
+        modoPublicacion || formData?.modo_publicacion,
+        tipoPublicacion ||
+          formData?.tipo_publicacion ||
+          DEFAULT_PUBLICATION_TYPE,
+      );
+      const tipoPersistido = obtenerTipoPublicacion(modo);
+
       // === VALIDACIÓN DEL FORMULARIO ===
       if (!validateForm?.()) {
         showToastRef.current?.(
@@ -289,38 +298,28 @@ const useEventSubmit = ({
       }
 
       // === VERIFICACIÓN DE PLAN/SUSCRIPCIÓN ===
-      // Solo para creación de eventos NORMALES nuevos (no edición ni destacada).
-      // Las publicaciones destacadas pagan por publicación y no requieren plan.
+      // Solo la modalidad suscripción consume un cupo. La gratuita y la
+      // destacada no pasan por este RPC.
       const isEditing = !!editEventId;
       const isDestacadaNew =
-        !isEditing && tipoPublicacion === PUBLICATION_TYPES.DESTACADA;
-
-      // Publicación gratuita: usuario sin suscripción activa publicando normal.
-      // No consume cupo ni pasa por la validación de plan; su contrapartida es
-      // el formulario reducido (ver FREE_PLAN_FIELDS).
-      const isFreeNew = !isEditing && !isDestacadaNew && !activeSubscription;
+        !isEditing && modo === MODOS_PUBLICACION.DESTACADA;
+      const isSubscriptionNew =
+        !isEditing &&
+        modo === MODOS_PUBLICACION.SUSCRIPCION &&
+        !currentIsAdmin &&
+        !currentIsModerator;
 
       let publishResult = null;
 
-      if (!isEditing && !isDestacadaNew && !isFreeNew) {
-        // Pre-validación rápida en frontend (UX inmediata)
-        // Usa datos en cache para bloquear antes de llamar al servidor
-        const quickCheck = canUserPublish({
-          subscription: activeSubscription,
-          planesEnabled,
-          fechaEvento: formData.fecha_evento,
-          isAdmin: currentIsAdmin,
-          isModerator: currentIsModerator,
-        });
-
-        if (!quickCheck.canPublish) {
-          showToastRef.current?.(quickCheck.error, "error");
-          return false;
-        }
-
-        if (quickCheck.warning) {
-          showToastRef.current?.(quickCheck.warning, "warning");
-        }
+      if (isSubscriptionNew) {
+        // Bloquear antes del await: el RPC consume cupo y dos clics no deben
+        // reservar dos publicaciones.
+        isSubmittingRef.current = true;
+        setIsSubmitting(true);
+        const releaseSubmitLock = () => {
+          isSubmittingRef.current = false;
+          if (isMountedRef.current) setIsSubmitting(false);
+        };
 
         // Validación REAL + consumo atómico en backend (anti-bypass)
         // Esta es la validación definitiva que no se puede saltar
@@ -333,6 +332,7 @@ const useEventSubmit = ({
           publishResult = interpretPublishResult(rpcData);
 
           if (!publishResult.allowed) {
+            releaseSubmitLock();
             showToastRef.current?.(publishResult.error, "error");
             return false;
           }
@@ -343,6 +343,7 @@ const useEventSubmit = ({
               "Error al validar permisos de publicación. Intenta nuevamente.",
             "error",
           );
+          releaseSubmitLock();
           return false;
         }
       }
@@ -404,7 +405,17 @@ const useEventSubmit = ({
         } else {
           // === CREAR NUEVO EVENTO ===
           eventData.user_id = currentUser.id;
-          eventData.tipo_publicacion = tipoPublicacion;
+          eventData.tipo_publicacion = tipoPersistido;
+          eventData.origen_publicacion =
+            modo === MODOS_PUBLICACION.DESTACADA
+              ? "destacada"
+              : modo === MODOS_PUBLICACION.SUSCRIPCION && publishResult
+                ? "suscripcion"
+                : "gratuita";
+
+          if (publishResult?.subscriptionId) {
+            eventData.subscription_id = publishResult.subscriptionId;
+          }
 
           if (isDestacadaNew && !currentIsAdmin && !currentIsModerator) {
             // === FLUJO DESTACADA CON PAGO (solo usuarios normales) ===
@@ -471,11 +482,18 @@ const useEventSubmit = ({
           if (publishResult?.publicationExpiresAt) {
             eventData.publication_expires_at =
               publishResult.publicationExpiresAt;
-          } else {
+          } else if (!eventData.publication_expires_at) {
             // Para admins/mods o cuando restricciones están desactivadas
             const expiresAt = new Date();
             expiresAt.setDate(expiresAt.getDate() + 30);
             eventData.publication_expires_at = expiresAt.toISOString();
+          }
+
+          if (
+            modo === MODOS_PUBLICACION.SUSCRIPCION &&
+            publishResult?.subscriptionId
+          ) {
+            eventData.subscription_id = publishResult.subscriptionId;
           }
 
           await createEvent(eventData, {
@@ -593,8 +611,6 @@ const useEventSubmit = ({
       uploadImages,
       prepareEventData,
       navigate,
-      activeSubscription,
-      planesEnabled,
     ],
   );
 

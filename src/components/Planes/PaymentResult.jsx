@@ -116,7 +116,14 @@ export default function PaymentResult() {
   // (pago único, no suscripción). Cambia el copy de la vista de éxito.
   const isDestacadaTransaction =
     Array.isArray(serverStatus?.items) &&
-    serverStatus.items.some((item) => item?.type === "publicacion_destacada");
+    serverStatus.items.some(
+      (item) =>
+        item?.type === "publicacion_destacada" ||
+        item?.type === "negocio_destacado",
+    );
+  const isNegocioDestacadoTransaction =
+    Array.isArray(serverStatus?.items) &&
+    serverStatus.items.some((item) => item?.type === "negocio_destacado");
 
   // Estado de carga
   if (authLoading || loading) {
@@ -150,8 +157,10 @@ export default function PaymentResult() {
               {isDestacadaTransaction ? "¡Pago exitoso!" : "¡Pago exitoso!"}
             </h1>
             <p className="payment-result__subtitle">
-              {isDestacadaTransaction
-                ? "Tu publicación destacada será revisada por el equipo y aparecerá pronto en Panoramas Destacados."
+              {isNegocioDestacadoTransaction
+                ? "Tu negocio destacado será revisado por el equipo y aparecerá pronto en la Superguía."
+                : isDestacadaTransaction
+                  ? "Tu publicación destacada será revisada por el equipo y aparecerá pronto en Panoramas Destacados."
                 : "Tu plan ha sido activado correctamente."}
             </p>
 
@@ -213,9 +222,11 @@ export default function PaymentResult() {
             {serverStatus?.items && serverStatus.items.length > 0 && (
               <div className="payment-result__items">
                 <h3>
-                  {isDestacadaTransaction
-                    ? "Publicación destacada:"
-                    : "Planes activados:"}
+                  {isNegocioDestacadoTransaction
+                    ? "Negocio destacado:"
+                    : isDestacadaTransaction
+                      ? "Publicación destacada:"
+                      : "Planes activados:"}
                 </h3>
                 <ul>
                   {serverStatus.items.map((item, i) => (

@@ -412,6 +412,28 @@ export async function refundPublication(userId) {
 }
 
 /**
+ * Devuelve un cupo a la suscripcion que origino una publicacion concreta.
+ * Evita devolverlo a otra suscripcion activa del mismo usuario.
+ * @param {string} subscriptionId - UUID de la suscripcion consumida
+ * @returns {Promise<Object>}
+ */
+export async function refundPublicationBySubscription(subscriptionId) {
+  if (!subscriptionId) throw new Error("ID de suscripcion requerido");
+
+  const { data, error } = await supabase.rpc(
+    "refund_publication_by_subscription",
+    { p_subscription_id: subscriptionId },
+  );
+
+  if (error) {
+    console.error("Error al devolver cupo de suscripcion:", error);
+    throw new Error(error.message || "Error al devolver cupo de suscripcion.");
+  }
+
+  return data;
+}
+
+/**
  * Devuelve 1 cupo de publicación de negocio a la suscripción superguía del usuario.
  * Se usa cuando un negocio es rechazado para preservar el cupo (máx. 3 intentos).
  *
@@ -430,6 +452,27 @@ export async function refundBusinessPublication(userId) {
     throw new Error(
       error.message || "Error al devolver cupo de publicación de negocio.",
     );
+  }
+
+  return data;
+}
+
+/**
+ * Devuelve un cupo Superguia a la suscripcion que origino el negocio.
+ * @param {string} subscriptionId - UUID de la suscripcion consumida
+ * @returns {Promise<Object>}
+ */
+export async function refundBusinessPublicationBySubscription(subscriptionId) {
+  if (!subscriptionId) throw new Error("ID de suscripcion requerido");
+
+  const { data, error } = await supabase.rpc(
+    "refund_business_publication_by_subscription",
+    { p_subscription_id: subscriptionId },
+  );
+
+  if (error) {
+    console.error("Error al devolver cupo Superguia:", error);
+    throw new Error(error.message || "Error al devolver cupo Superguia.");
   }
 
   return data;

@@ -630,7 +630,9 @@ export const resubmitEvent = async (
   // Obtener estado actual y revision_count
   const { data: event, error: fetchError } = await supabase
     .from("events")
-    .select("estado, revision_count")
+    .select(
+      "estado, revision_count, origen_publicacion, subscription_id, tipo_publicacion",
+    )
     .eq("id", eventId)
     .single();
 
@@ -646,19 +648,23 @@ export const resubmitEvent = async (
     );
   }
 
-  // Re-consumir cupo de publicación (fue devuelto al rechazar)
-  const rpcData = await validateAndConsumePublication(
-    userId,
-    isAdmin,
-    isModerator,
-  );
-  const publishResult = interpretPublishResult(rpcData);
+  const usaSuscripcion =
+    event.origen_publicacion === "suscripcion" ||
+    (!event.origen_publicacion && event.tipo_publicacion === "normal");
+  let publishResult = null;
 
-  if (!publishResult.allowed) {
-    throw new Error(
-      publishResult.error ||
-        "No tienes cupo disponible para reenviar esta publicación",
-    );
+  if (usaSuscripcion && !isAdmin && !isModerator) {
+    // Las publicaciones gratuitas y destacadas pagadas no deben consumir un
+    // cupo al reenviarse después de una corrección.
+    const rpcData = await validateAndConsumePublication(userId, false, false);
+    publishResult = interpretPublishResult(rpcData);
+
+    if (!publishResult.allowed) {
+      throw new Error(
+        publishResult.error ||
+          "No tienes cupo disponible para reenviar esta publicación",
+      );
+    }
   }
 
   const { data, error } = await supabase
@@ -666,6 +672,12 @@ export const resubmitEvent = async (
     .update({
       estado: "en_revision",
       motivo_rechazo: null,
+      ...(publishResult?.subscriptionId
+        ? {
+            origen_publicacion: "suscripcion",
+            subscription_id: publishResult.subscriptionId,
+          }
+        : {}),
       updated_at: new Date().toISOString(),
     })
     .eq("id", eventId)

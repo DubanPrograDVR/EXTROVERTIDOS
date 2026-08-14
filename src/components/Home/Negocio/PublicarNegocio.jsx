@@ -6,16 +6,17 @@ import {
   faEye,
   faSave,
   faTimes,
-  faStore,
   faArrowLeft,
   faArrowRight,
   faCheck,
   faExclamationTriangle,
   faXmark,
   faInfoCircle,
+  faCrown,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "../../../context/AuthContext";
 import { canUserPublishBusiness } from "../../../lib/planRules";
+import { formatCLP } from "../../../lib/payment";
 import LoginAuthModal from "../../Auth/AuthModal";
 
 // Componentes modulares
@@ -68,8 +69,11 @@ const PublicarNegocio = () => {
     // Plan
     superguiaSubscription,
     planesEnabled,
+    negociosDestacadasEnabled,
+    negocioDestacadoPrice,
     loadingPlan,
     handleChange,
+    handlePublicationTypeChange,
     handleDiaChange,
     handleSaveHorarios,
     handleImageChange,
@@ -91,7 +95,12 @@ const PublicarNegocio = () => {
     });
   }, [isAdmin, isModerator, planesEnabled, superguiaSubscription]);
 
-  const needsSuperguiaPlan = !businessPublishCheck.canPublish;
+  const isStaff = isAdmin || isModerator;
+  const canChooseDestacada =
+    negociosDestacadasEnabled && (isStaff || negocioDestacadoPrice > 0);
+  const needsSuperguiaPlan = !businessPublishCheck.canPublish && !canChooseDestacada;
+  const isDestacadaSelected =
+    canChooseDestacada && formData.tipo_publicacion === "destacada";
 
   // Detectar si el formulario tiene datos (no está en blanco)
   const isDirty = useMemo(() => {
@@ -149,10 +158,6 @@ const PublicarNegocio = () => {
     return missing;
   }, [currentStep, formData]);
 
-  const validateCurrentStep = useCallback(() => {
-    return getMissingFields().length === 0;
-  }, [getMissingFields]);
-
   // Determina si un paso tiene todos sus campos obligatorios completos
   const isStepValid = useCallback(
     (stepId) => {
@@ -164,13 +169,8 @@ const PublicarNegocio = () => {
             !!formData.subcategoria
           );
         case 2:
-          // Marketing es opcional: válido sólo cuando el usuario escribió algo
-          return (
-            !!formData.titulo_marketing?.trim() ||
-            !!formData.mensaje_marketing?.trim() ||
-            !!formData.titulo_marketing_2?.trim() ||
-            !!formData.mensaje_marketing_2?.trim()
-          );
+          // Marketing es opcional: no debe dejar el stepper en estado inválido.
+          return true;
         case 3:
           return (
             !!formData.provincia &&
@@ -178,12 +178,8 @@ const PublicarNegocio = () => {
             !!formData.direccion?.trim()
           );
         case 4: {
-          // Horarios es opcional: válido cuando hay al menos un día o abierto 24h
-          if (formData.abierto_24h) return true;
-          const dias = Array.isArray(formData.dias_atencion)
-            ? formData.dias_atencion
-            : [];
-          return dias.length > 0;
+          // Horarios es opcional para el envío del formulario.
+          return true;
         }
         case 5:
           return (
@@ -205,7 +201,7 @@ const PublicarNegocio = () => {
     }, 8000);
 
     return () => window.clearTimeout(timeoutId);
-  }, [errorKey]);
+  }, [errorKey, stepError]);
 
   // Todos los pasos con campos obligatorios están completos (paso 1: info, paso 3: ubicación)
   const areAllRequiredComplete = isStepValid(1) && isStepValid(3);
@@ -316,6 +312,41 @@ const PublicarNegocio = () => {
               onFieldFocus={handleFieldFocus}
             />
 
+            {canChooseDestacada && (
+              <section className="publicar-negocio__highlight-option">
+                <label className="publicar-negocio__highlight-label">
+                  <input
+                    type="checkbox"
+                    checked={isDestacadaSelected}
+                    onChange={(event) =>
+                      handlePublicationTypeChange(event.target.checked)
+                    }
+                    disabled={isSubmitting}
+                  />
+                  <span className="publicar-negocio__highlight-card">
+                    <span className="publicar-negocio__highlight-icon">
+                      <FontAwesomeIcon icon={faCrown} />
+                    </span>
+                    <span>
+                      <strong>Destacar mi negocio</strong>
+                      <small>
+                        {isStaff
+                          ? "Publicación directa para staff"
+                          : `${formatCLP(negocioDestacadoPrice)} · Pago único vía Webpay`}
+                      </small>
+                    </span>
+                  </span>
+                </label>
+                <p className="publicar-negocio__highlight-status">
+                  {isDestacadaSelected
+                    ? isStaff
+                      ? "Se publicará directamente como negocio destacado, sin consumir cupo Superguía."
+                      : "Se creará un borrador y, tras el pago, pasará a revisión. No consume cupo Superguía."
+                    : "Sin marcar, tu negocio seguirá el flujo normal y consumirá un cupo Superguía."}
+                </p>
+              </section>
+            )}
+
             {/* Botones de acción */}
             <div className="publicar-negocio__actions">
               <button
@@ -343,10 +374,16 @@ const PublicarNegocio = () => {
                 {isSubmitting ? (
                   <>
                     <FontAwesomeIcon icon={faSpinner} spin />
-                    Publicando...
+                    {isDestacadaSelected && !isStaff
+                      ? "Preparando pago..."
+                      : "Publicando..."}
                   </>
                 ) : (
-                  "Publicar Negocio"
+                  isDestacadaSelected
+                    ? isStaff
+                      ? "Publicar destacado"
+                      : "Pagar y destacar"
+                    : "Publicar Negocio"
                 )}
               </button>
             </div>

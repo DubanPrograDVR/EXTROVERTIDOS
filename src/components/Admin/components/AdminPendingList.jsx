@@ -4,6 +4,7 @@ import {
   faTimes,
   faSpinner,
   faEye,
+  faCrown,
 } from "@fortawesome/free-solid-svg-icons";
 import { formatDate } from "../utils/formatters";
 
@@ -16,6 +17,7 @@ export default function AdminPendingList({
   onApprove,
   onReject,
   onView,
+  onToggleDestacada,
   title = "Publicaciones Pendientes de Aprobación",
   emptyMessage = "No hay publicaciones pendientes de revisar",
 }) {
@@ -35,6 +37,7 @@ export default function AdminPendingList({
               onApprove={() => onApprove(event.id)}
               onReject={() => onReject(event.id)}
               onView={() => onView?.(event.id)}
+              onToggleDestacada={() => onToggleDestacada?.(event)}
             />
           ))}
         </div>
@@ -59,7 +62,14 @@ function EmptyState({ message }) {
 /**
  * Tarjeta individual de publicación pendiente
  */
-function PendingCard({ event, isLoading, onApprove, onReject, onView }) {
+function PendingCard({
+  event,
+  isLoading,
+  onApprove,
+  onReject,
+  onView,
+  onToggleDestacada,
+}) {
   // Obtener la primera imagen del array o usar placeholder
   const imageUrl =
     Array.isArray(event.imagenes) && event.imagenes.length > 0
@@ -124,6 +134,19 @@ function PendingCard({ event, isLoading, onApprove, onReject, onView }) {
           title="Ver detalle">
           <FontAwesomeIcon icon={faEye} />
         </button>
+        {onToggleDestacada && (
+          <button
+            className="admin-pending-card__btn admin-pending-card__btn--highlight"
+            onClick={onToggleDestacada}
+            disabled={isLoading}
+            title={
+              event.tipo_publicacion === "destacada"
+                ? "Quitar destacado"
+                : "Destacar"
+            }>
+            <FontAwesomeIcon icon={faCrown} />
+          </button>
+        )}
         <button
           className="admin-pending-card__btn admin-pending-card__btn--approve"
           onClick={onApprove}

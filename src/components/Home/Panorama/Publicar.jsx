@@ -10,7 +10,7 @@ import {
   PublicarAuthModal,
   PublicationTypeModal,
 } from "./components";
-import { INITIAL_FORM_STATE, PUBLICATION_TYPES } from "./constants";
+import { INITIAL_FORM_STATE, MODOS_PUBLICACION } from "./constants";
 import "./styles/publicar.css";
 
 /**
@@ -38,6 +38,8 @@ const Publicar = () => {
     destacadasEnabled,
     enabledCalendarModes,
     enabledFields,
+    hasActiveSubscription,
+    modoFromUrl,
     isLoading,
     // Handlers
     handleFieldFocus,
@@ -48,7 +50,7 @@ const Publicar = () => {
     handleSaveDraft,
     closeAuthModal,
     resetForm,
-    selectPublicationType,
+    selectPublicationMode,
   } = usePublicarForm();
 
   // === SELECCIÓN DE PLAN ===
@@ -56,22 +58,29 @@ const Publicar = () => {
   // dependen de él (gratuito = subconjunto, destacada = formulario completo).
   // En edición no se pregunta, y si el admin desactivó las destacadas no hay
   // nada que elegir: se publica gratis.
-  const [planChosen, setPlanChosen] = useState(false);
-  const needsPlanChoice = !isEditing && !planChosen && destacadasEnabled;
+  // Si se llegó desde /crear-publicacion, el plan ya viene en la URL y no hay
+  // nada que preguntar. El modal solo cubre la entrada directa a esta ruta
+  // (links antiguos, marcadores, CTAs internos que aún no pasan por la
+  // pantalla de selección).
+  const [planChosen, setPlanChosen] = useState(Boolean(modoFromUrl));
+  const needsPlanChoice =
+    !isEditing &&
+    !planChosen &&
+    (destacadasEnabled || hasActiveSubscription);
 
   const handleSelectPublicationType = useCallback(
-    (tipo) => {
-      selectPublicationType(tipo);
+    (modo) => {
+      selectPublicationMode(modo);
       setPlanChosen(true);
     },
-    [selectPublicationType],
+    [selectPublicationMode],
   );
 
   // Cerrar sin elegir equivale a continuar con el plan gratuito
   const handleCloseTypeModal = useCallback(() => {
-    selectPublicationType(PUBLICATION_TYPES.NORMAL);
+    selectPublicationMode(MODOS_PUBLICACION.GRATUITA);
     setPlanChosen(true);
-  }, [selectPublicationType]);
+  }, [selectPublicationMode]);
 
   const handleFormSubmit = useCallback(
     (event) => {
@@ -82,10 +91,10 @@ const Publicar = () => {
         handleSubmit(event);
         return;
       }
-      // El plan ya está en formData desde la selección previa.
-      handleSubmit({ tipoPublicacion: formData.tipo_publicacion });
+      // La modalidad ya está en formData desde la selección previa.
+      handleSubmit({ modoPublicacion: formData.modo_publicacion });
     },
-    [isSubmitting, isEditing, handleSubmit, formData.tipo_publicacion],
+    [isSubmitting, isEditing, handleSubmit, formData.modo_publicacion],
   );
 
   // Detectar si el formulario tiene datos (no está en blanco).
@@ -94,7 +103,7 @@ const Publicar = () => {
   const isDirty = useMemo(() => {
     if (!formData) return false;
     const keys = Object.keys(INITIAL_FORM_STATE).filter(
-      (key) => key !== "tipo_publicacion",
+      (key) => !["modo_publicacion", "tipo_publicacion"].includes(key),
     );
     for (const key of keys) {
       const initial = INITIAL_FORM_STATE[key];
@@ -191,6 +200,8 @@ const Publicar = () => {
         onClose={handleCloseTypeModal}
         onSelect={handleSelectPublicationType}
         isSubmitting={isSubmitting}
+        hasActiveSubscription={hasActiveSubscription}
+        destacadasEnabled={destacadasEnabled}
       />
     </div>
   );

@@ -63,13 +63,57 @@ export const PUBLICATION_TYPES = {
 
 export const DEFAULT_PUBLICATION_TYPE = PUBLICATION_TYPES.NORMAL;
 
+// Modalidades del formulario. No se persisten como tipo_publicacion: solo
+// distinguen si el formulario es gratuito, usa una suscripción o es destacado.
+export const MODOS_PUBLICACION = {
+  GRATUITA: "gratuita",
+  SUSCRIPCION: "suscripcion",
+  DESTACADA: "destacada",
+};
+
+export const DEFAULT_PUBLICATION_MODE = MODOS_PUBLICACION.GRATUITA;
+
+export const esModoPublicacionValido = (modo) =>
+  Object.values(MODOS_PUBLICACION).includes(modo);
+
+/**
+ * Normaliza una modalidad existente. Un dato antiguo sin modalidad siempre
+ * cae a gratuita, salvo que conserve explícitamente el tipo destacado.
+ */
+export const normalizarModoPublicacion = (
+  modo,
+  tipoPublicacion = DEFAULT_PUBLICATION_TYPE,
+) => {
+  if (esModoPublicacionValido(modo)) return modo;
+  return tipoPublicacion === PUBLICATION_TYPES.DESTACADA
+    ? MODOS_PUBLICACION.DESTACADA
+    : DEFAULT_PUBLICATION_MODE;
+};
+
+export const obtenerTipoPublicacion = (modo) =>
+  modo === MODOS_PUBLICACION.DESTACADA
+    ? PUBLICATION_TYPES.DESTACADA
+    : DEFAULT_PUBLICATION_TYPE;
+
+export const obtenerEstadoPublicacion = (
+  modo,
+  tipoPublicacion = DEFAULT_PUBLICATION_TYPE,
+) => {
+  const modoNormalizado = normalizarModoPublicacion(modo, tipoPublicacion);
+  return {
+    modo_publicacion: modoNormalizado,
+    tipo_publicacion: obtenerTipoPublicacion(modoNormalizado),
+  };
+};
+
 // Estado inicial del formulario
 export const INITIAL_FORM_STATE = {
-  // Plan elegido. Vive dentro de formData (y no en un useState aparte) para que
+  // La modalidad vive dentro de formData (y no en un useState aparte) para que
   // viaje con las tres capas de persistencia de borrador: draft de servidor,
   // sessionStorage["draftToLoad"] y localStorage["publicar_local_draft_v1"].
-  // Default: el plan más restrictivo, para que un borrador antiguo sin este
-  // campo no se convierta en uno de pago al restaurarse.
+  // Default: la modalidad más restrictiva, para que un borrador antiguo sin
+  // este campo no se convierta en uno de pago al restaurarse.
+  modo_publicacion: DEFAULT_PUBLICATION_MODE,
   tipo_publicacion: DEFAULT_PUBLICATION_TYPE,
   titulo: "",
   descripcion: "",
@@ -129,10 +173,10 @@ export const IMAGE_CONFIG = {
 };
 
 // ─────────────────────────────────────────────────
-// CAMPOS HABILITADOS POR PLAN
+// CAMPOS HABILITADOS POR MODALIDAD
 // ─────────────────────────────────────────────────
-// El plan gratuito expone un subconjunto del formulario; el destacado (de pago)
-// lo expone completo. Esta lista es la ÚNICA fuente de verdad: de ella se
+// La modalidad gratuita expone un subconjunto del formulario; suscripción y
+// destacada lo exponen completo. Esta lista es la ÚNICA fuente de verdad: de ella se
 // derivan los campos visibles del wizard, los pasos que se muestran, lo que
 // valida el submit y lo que se persiste.
 export const FREE_PLAN_FIELDS = [
@@ -152,19 +196,29 @@ export const FREE_PLAN_SOCIAL_NETWORKS = ["facebook", "tiktok"];
 /**
  * Decide si corresponde el formulario completo.
  *
- * Una suscripción activa de panoramas también da acceso al formulario completo:
- * el usuario ya pagó por publicar y limitarlo al set gratuito le quitaría algo
- * que compró. Para que SOLO las destacadas tengan el formulario completo,
- * elimina el segundo término de este OR.
+ * Suscripción y destacada usan el formulario completo. Una modalidad gratuita
+ * explícita conserva el formulario reducido aunque el usuario tenga otro plan.
  *
  * @param {Object} params
- * @param {string} params.tipoPublicacion - PUBLICATION_TYPES.*
+ * @param {string} params.modoPublicacion - MODOS_PUBLICACION.*
+ * @param {string} [params.tipoPublicacion] - Compatibilidad con datos antiguos
  * @param {boolean} [params.hasActiveSubscription] - Si hay plan de panoramas activo
  * @returns {boolean}
  */
-export const isFullFormPlan = ({ tipoPublicacion, hasActiveSubscription }) =>
-  tipoPublicacion === PUBLICATION_TYPES.DESTACADA ||
-  Boolean(hasActiveSubscription);
+export const isFullFormPlan = ({
+  modoPublicacion,
+  tipoPublicacion,
+  hasActiveSubscription,
+}) => {
+  if (esModoPublicacionValido(modoPublicacion)) {
+    return modoPublicacion !== MODOS_PUBLICACION.GRATUITA;
+  }
+
+  return (
+    tipoPublicacion === PUBLICATION_TYPES.DESTACADA ||
+    Boolean(hasActiveSubscription)
+  );
+};
 
 /**
  * Lista de campos habilitados, o null si están todos.

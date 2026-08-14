@@ -7,11 +7,11 @@ import {
   faBars,
   faTimes,
   faSignInAlt,
-  faUserPlus,
   faSignOutAlt,
-  faCog,
   faShieldAlt,
   faExchangeAlt,
+  faPlus,
+  faCrown,
 } from "@fortawesome/free-solid-svg-icons";
 import AuthModal from "../Auth/AuthModal";
 import LoginReminderModal from "../Auth/LoginReminderModal";
@@ -24,22 +24,22 @@ const logo = "/img/E_Extro_v3.png";
 const manchaExtro = "/img/Mancha_Extro.png";
 import { useAuth } from "../../context/AuthContext";
 
-const NAV_LINKS = [
-  { href: "/panoramas", label: "Panoramas" },
-  { href: "/superguia", label: "Superguia Extrovertidos" },
-  { href: "/publicar-panorama", label: "Publicar Panorama", userOnly: true },
-  { href: "/publicar-negocio", label: "Publicar Negocio", userOnly: true },
-  {
-    href: "/activar-plan",
-    label: "Activar Plan",
-    userOnly: true,
-    highlight: true,
-    planesLink: true,
-  },
-];
+// Únicas rutas a las que navega la navbar. Los antiguos NAV_LINKS
+// (Panoramas, Superguía, Publicar Panorama, Publicar Negocio, Activar Plan)
+// se retiraron: la navegación de secciones ahora vive fuera de la navbar.
+const CREAR_PUBLICACION_PATH = "/crear-publicacion";
+const ACTIVAR_PLAN_PATH = "/activar-plan";
+const ADMIN_PATH = "/admin";
 
 export default function Navbar() {
-  const { user, isAuthenticated, isModerator, signOut, loading, loginReminder, closeLoginReminder } = useAuth();
+  const {
+    user,
+    isAuthenticated,
+    isModerator,
+    signOut,
+    loginReminder,
+    closeLoginReminder,
+  } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -70,23 +70,43 @@ export default function Navbar() {
     ? "solicitudes pendientes"
     : "notificaciones sin leer";
 
-  // Cargar estado de planes
-  // (manejado por usePlansVisibility hook)
-  const handleLinkClick = (e, href) => {
+  // El CTA principal es siempre Crear publicación. Admin/moderator conservan
+  // el acceso secundario al panel dentro del menú de usuario.
+  const showActivarPlan = !isModerator && planesVisible;
+
+  const closeAllMenus = () => {
     setIsMenuOpen(false);
-    // Si el link requiere autenticación y el usuario no está logueado,
-    // abrir modal de login en vez de navegar
-    const link = NAV_LINKS.find((l) => l.href === href);
-    if (link?.userOnly && !isAuthenticated) {
-      e.preventDefault();
+    setIsUserDropdownOpen(false);
+  };
+
+  // Botón principal de la navbar.
+  // Si el usuario no ha iniciado sesión abrimos el modal de login en vez de
+  // navegar (mismo comportamiento que tenían los links `userOnly` anteriores).
+  const handleCrearPublicacion = () => {
+    closeAllMenus();
+    if (!isAuthenticated) {
       setAuthModalMode("login");
       setIsAuthModalOpen(true);
       return;
     }
-    if (location.pathname === href) {
-      e.preventDefault();
-      window.location.href = href;
+    // Si ya estamos en la ruta, forzamos recarga para reiniciar el flujo.
+    if (location.pathname === CREAR_PUBLICACION_PATH) {
+      window.location.href = CREAR_PUBLICACION_PATH;
+      return;
     }
+    navigate(CREAR_PUBLICACION_PATH);
+  };
+
+  const goToAdmin = () => {
+    closeAllMenus();
+    navigate(ADMIN_PATH);
+  };
+
+  // Activar Plan ya no es un link de nivel superior: vive dentro del menú
+  // de usuario (dropdown en desktop, panel hamburguesa en móvil).
+  const goToActivarPlan = () => {
+    closeAllMenus();
+    navigate(ACTIVAR_PLAN_PATH);
   };
 
   const handleOverlayClick = (e) => {
@@ -104,14 +124,7 @@ export default function Navbar() {
     e.preventDefault();
     setAuthModalMode("login");
     setIsAuthModalOpen(true);
-    setIsUserDropdownOpen(false);
-  };
-
-  const openRegisterModal = (e) => {
-    e.preventDefault();
-    setAuthModalMode("register");
-    setIsAuthModalOpen(true);
-    setIsUserDropdownOpen(false);
+    closeAllMenus();
   };
 
   const closeAuthModal = () => {
@@ -125,8 +138,7 @@ export default function Navbar() {
     if (isLoggingOut) return; // Evitar múltiples clicks
 
     setIsLoggingOut(true);
-    setIsUserDropdownOpen(false);
-    setIsMenuOpen(false);
+    closeAllMenus();
 
     try {
       await signOut();
@@ -141,15 +153,13 @@ export default function Navbar() {
   };
 
   const goToProfile = () => {
-    setIsUserDropdownOpen(false);
-    setIsMenuOpen(false);
+    closeAllMenus();
     navigate("/perfil");
   };
 
   // Cambiar de cuenta: cerrar sesión y abrir modal de login
   const handleSwitchAccount = async () => {
-    setIsUserDropdownOpen(false);
-    setIsMenuOpen(false);
+    closeAllMenus();
     try {
       await signOut();
       setAuthModalMode("login");
@@ -190,6 +200,9 @@ export default function Navbar() {
           <div className="navbar-overlay" onClick={handleOverlayClick}></div>
         )}
 
+        {/* Panel lateral (solo móvil): acceso a sesión, perfil y admin.
+            En ≤768px la sección de usuario de escritorio está oculta, por lo
+            que este panel es el ÚNICO acceso a login/logout en celular. */}
         <nav className={`navbar-menu ${isMenuOpen ? "active" : ""}`}>
           {/* Logo del menú móvil */}
           <div className="navbar-menu-logo-wrapper">
@@ -199,19 +212,6 @@ export default function Navbar() {
               className="navbar-menu-logo"
             />
           </div>
-          {NAV_LINKS.filter(
-            (link) =>
-              (!link.userOnly || !isModerator) &&
-              (!link.planesLink || planesVisible),
-          ).map((link, index) => (
-            <Link
-              key={index}
-              to={link.href}
-              className={`nav-link ${link.highlight ? "nav-link--highlight" : ""}`}
-              onClick={(e) => handleLinkClick(e, link.href)}>
-              {link.label}
-            </Link>
-          ))}
 
           {/* Botones de autenticación en menú móvil */}
           <div className="navbar-mobile-auth">
@@ -248,13 +248,18 @@ export default function Navbar() {
                 </button>
                 {isModerator && (
                   <button
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      navigate("/admin");
-                    }}
+                    onClick={goToAdmin}
                     className="navbar-mobile-auth-btn navbar-mobile-auth-btn--admin">
                     <FontAwesomeIcon icon={faShieldAlt} />
                     <span>Panel Admin</span>
+                  </button>
+                )}
+                {showActivarPlan && (
+                  <button
+                    onClick={goToActivarPlan}
+                    className="navbar-mobile-auth-btn navbar-mobile-auth-btn--plan">
+                    <FontAwesomeIcon icon={faCrown} />
+                    <span>Activar Plan</span>
                   </button>
                 )}
                 <button
@@ -280,6 +285,19 @@ export default function Navbar() {
             )}
           </div>
         </nav>
+
+        {/* Botón principal: única acción de navegación de la navbar. */}
+        <div className="navbar-cta">
+          <button
+            type="button"
+            onClick={handleCrearPublicacion}
+            className="navbar-cta-btn"
+            aria-label="Crear publicación"
+            title="Crear publicación">
+            <FontAwesomeIcon icon={faPlus} className="navbar-cta-icon" />
+            <span className="navbar-cta-label">Crear publicación</span>
+          </button>
+        </div>
 
         {/* Separador y botón de usuario */}
         <div className="navbar-user-section">
@@ -344,10 +362,7 @@ export default function Navbar() {
                     </button>
                     {isModerator && (
                       <button
-                        onClick={() => {
-                          setIsUserDropdownOpen(false);
-                          navigate("/admin");
-                        }}
+                        onClick={goToAdmin}
                         className="navbar-dropdown-item navbar-dropdown-item--admin">
                         <FontAwesomeIcon
                           icon={faShieldAlt}
@@ -356,19 +371,16 @@ export default function Navbar() {
                         <span>Panel Admin</span>
                       </button>
                     )}
-                    {/* Crear Publicación solo para usuarios regulares */}
-                    {!isModerator && (
+                    {/* Activar Plan: ya no es link de navbar, vive aquí */}
+                    {showActivarPlan && (
                       <button
-                        onClick={() => {
-                          setIsUserDropdownOpen(false);
-                          navigate("/publicar-panorama");
-                        }}
-                        className="navbar-dropdown-item">
+                        onClick={goToActivarPlan}
+                        className="navbar-dropdown-item navbar-dropdown-item--plan">
                         <FontAwesomeIcon
-                          icon={faCog}
+                          icon={faCrown}
                           className="navbar-dropdown-icon"
                         />
-                        <span>Crear Publicación</span>
+                        <span>Activar Plan</span>
                       </button>
                     )}
                     <div className="navbar-dropdown-divider"></div>
@@ -430,7 +442,7 @@ export default function Navbar() {
         onClose={closeLoginReminder}
         data={loginReminder.data}
         onVerPerfil={() => navigate("/perfil")}
-        onActivarPlan={() => navigate("/activar-plan")}
+        onActivarPlan={() => navigate(ACTIVAR_PLAN_PATH)}
       />
     </header>
   );

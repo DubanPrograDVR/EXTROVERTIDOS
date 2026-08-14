@@ -33,6 +33,44 @@ RewriteRule \.(js|css|mjs|json|ico|png|jpg|jpeg|gif|svg|webp|woff|woff2|ttf|eot|
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 
+# ── Bots de redes sociales → og.php para Open Graph dinámico ─────────────────
+# Cuando Instagram, WhatsApp, Telegram u otro crawler scrapea una URL con
+# ?highlight=<uuid>, redirigimos a og.php que devuelve la imagen real del evento.
+RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|Facebot|Twitterbot|LinkedInBot|WhatsApp|TelegramBot|Slackbot|SkypeUriPreview|Pinterest|Discordbot|Googlebot|bingbot|Applebot|vkShare|W3C_Validator|redditbot|Snapchat) [NC]
+RewriteCond %{QUERY_STRING} (^|&)highlight=([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})($|&) [NC]
+RewriteRule ^panoramas$ /og.php?type=event [L,QSA]
+
+RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|Facebot|Twitterbot|LinkedInBot|WhatsApp|TelegramBot|Slackbot|SkypeUriPreview|Pinterest|Discordbot|Googlebot|bingbot|Applebot|vkShare|W3C_Validator|redditbot|Snapchat) [NC]
+RewriteCond %{QUERY_STRING} (^|&)highlight=([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})($|&) [NC]
+RewriteRule ^superguia$ /og.php?type=business [L,QSA]
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Crawlers de los deep links del Home consolidado.
+RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|Facebot|Twitterbot|LinkedInBot|WhatsApp|TelegramBot|Slackbot|SkypeUriPreview|Pinterest|Discordbot|Googlebot|bingbot|Applebot|vkShare|W3C_Validator|redditbot|Snapchat) [NC]
+RewriteCond %{QUERY_STRING} (^|&)p_highlight=([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})($|&) [NC]
+RewriteRule ^$ /og.php?type=event [L,QSA]
+
+RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|Facebot|Twitterbot|LinkedInBot|WhatsApp|TelegramBot|Slackbot|SkypeUriPreview|Pinterest|Discordbot|Googlebot|bingbot|Applebot|vkShare|W3C_Validator|redditbot|Snapchat) [NC]
+RewriteCond %{QUERY_STRING} (^|&)sg_highlight=([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})($|&) [NC]
+RewriteRule ^$ /og.php?type=business [L,QSA]
+
+# Redirect canonico de rutas antiguas. Los deep links legacy conservan el
+# resaltado con el namespace del Home consolidado.
+RewriteCond %{QUERY_STRING} (^|&)highlight=([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})($|&) [NC]
+RewriteRule ^panoramas$ /?p_highlight=%2 [R=301,L,NE]
+
+RewriteCond %{QUERY_STRING} (^|&)highlight=([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})($|&) [NC]
+RewriteRule ^superguia$ /?sg_highlight=%2 [R=301,L,NE]
+
+RewriteCond %{QUERY_STRING} (^|&)ciudad=([^&]+)(&|$) [NC]
+RewriteRule ^panoramas$ /?p_ciudad=%2 [R=301,L,NE]
+
+RewriteCond %{QUERY_STRING} (^|&)ciudad=([^&]+)(&|$) [NC]
+RewriteRule ^superguia$ /?sg_ciudad=%2 [R=301,L,NE]
+
+RewriteRule ^panoramas$ / [R=301,L]
+RewriteRule ^superguia$ / [R=301,L]
+
 # Si no existe, redirigir a index.html (React Router se encarga del routing)
 
 RewriteRule ^ /index.html [QSA,L]

@@ -18,12 +18,12 @@ import {
   faChevronDown,
 } from "@fortawesome/free-solid-svg-icons";
 import {
-  getCategories,
   getPlansVisibility,
   togglePlanesEnabled,
   togglePanoramasEnabled,
   toggleSuperguiaEnabled,
   toggleDestacadasEnabled,
+  toggleNegociosDestacadasEnabled,
 } from "../../lib/database";
 
 // Componentes modulares
@@ -82,13 +82,16 @@ export default function AdminPanel() {
     business: null,
     editMode: false,
   });
-  const [categories, setCategories] = useState([]);
   const [planesEnabled, setPlanesEnabled] = useState(true);
   const [panoramasEnabled, setPanoramasEnabled] = useState(false);
   const [superguiaEnabled, setSuperguiaEnabled] = useState(false);
   const [destacadasEnabled, setDestacadasEnabled] = useState(true);
+  const [negociosDestacadasEnabled, setNegociosDestacadasEnabled] =
+    useState(false);
   const [planesToggleLoading, setPlanesToggleLoading] = useState(false);
   const [destacadasToggleLoading, setDestacadasToggleLoading] = useState(false);
+  const [negociosDestacadasToggleLoading, setNegociosDestacadasToggleLoading] =
+    useState(false);
   const [pubsMenuOpen, setPubsMenuOpen] = useState(false);
   const [reviewMenuOpen, setReviewMenuOpen] = useState(false);
 
@@ -119,6 +122,7 @@ export default function AdminPanel() {
     handleRejectBusiness,
     handleDeleteBusiness,
     handlePauseBusiness,
+    handleUpdateBusiness,
   } = useAdminData(user, isAdmin, isModerator);
 
   // Persistir activeTab en sessionStorage para que sobreviva recargas
@@ -133,19 +137,6 @@ export default function AdminPanel() {
     }
   }, [authLoading, isModerator, navigate]);
 
-  // Cargar categorías para el modal de edición
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const cats = await getCategories();
-        setCategories(cats || []);
-      } catch (error) {
-        console.error("Error cargando categorías:", error);
-      }
-    };
-    loadCategories();
-  }, []);
-
   // Cargar estado de planes (3 toggles)
   useEffect(() => {
     const loadPlanesStatus = async () => {
@@ -155,6 +146,9 @@ export default function AdminPanel() {
         setPanoramasEnabled(visibility.panoramasEnabled);
         setSuperguiaEnabled(visibility.superguiaEnabled);
         setDestacadasEnabled(visibility.destacadasEnabled);
+        setNegociosDestacadasEnabled(
+          visibility.negociosDestacadasEnabled === true,
+        );
       } catch (error) {
         console.error("Error cargando estado de planes:", error);
       }
@@ -240,6 +234,22 @@ export default function AdminPanel() {
       setDestacadasEnabled(prev);
     } finally {
       setDestacadasToggleLoading(false);
+    }
+  };
+
+  const handleToggleNegociosDestacadas = async () => {
+    if (negociosDestacadasToggleLoading) return;
+    setNegociosDestacadasToggleLoading(true);
+    const previous = negociosDestacadasEnabled;
+    try {
+      const nextValue = !negociosDestacadasEnabled;
+      setNegociosDestacadasEnabled(nextValue);
+      await toggleNegociosDestacadasEnabled(nextValue, user.id);
+    } catch (error) {
+      console.error("Error al cambiar destacados de negocios:", error);
+      setNegociosDestacadasEnabled(previous);
+    } finally {
+      setNegociosDestacadasToggleLoading(false);
     }
   };
 
@@ -584,13 +594,13 @@ export default function AdminPanel() {
         <div className="admin-sidebar__actions">
           <button
             className="admin-sidebar__new-btn"
-            onClick={() => navigate("/publicar-panorama")}>
+            onClick={() => navigate("/crear-publicacion")}>
             <FontAwesomeIcon icon={faPlus} />
             <span>Nueva Publicación</span>
           </button>
           <button
             className="admin-sidebar__new-btn admin-sidebar__new-btn--business"
-            onClick={() => navigate("/publicar-negocio")}>
+            onClick={() => navigate("/crear-publicacion")}>
             <FontAwesomeIcon icon={faStore} />
             <span>Nuevo Negocio</span>
           </button>
@@ -627,6 +637,9 @@ export default function AdminPanel() {
             destacadasEnabled={destacadasEnabled}
             destacadasToggleLoading={destacadasToggleLoading}
             onToggleDestacadas={handleToggleDestacadas}
+            negociosDestacadasEnabled={negociosDestacadasEnabled}
+            negociosDestacadasToggleLoading={negociosDestacadasToggleLoading}
+            onToggleNegociosDestacadas={handleToggleNegociosDestacadas}
             isAdmin={isAdmin}
           />
         )}
@@ -640,6 +653,14 @@ export default function AdminPanel() {
               onApprove={onApprove}
               onReject={onRejectClick}
               onView={onViewEvent}
+              onToggleDestacada={(event) =>
+                handleUpdateEvent(event.id, {
+                  tipo_publicacion:
+                    event.tipo_publicacion === "destacada"
+                      ? "normal"
+                      : "destacada",
+                })
+              }
             />
 
             {/* Negocios pendientes */}
@@ -653,6 +674,14 @@ export default function AdminPanel() {
                   onReject={onRejectBusinessClick}
                   onDelete={handleDeleteBusiness}
                   onView={onViewBusiness}
+                  onToggleDestacada={(business) =>
+                    handleUpdateBusiness(business.id, {
+                      tipo_publicacion:
+                        business.tipo_publicacion === "destacada"
+                          ? "normal"
+                          : "destacada",
+                    })
+                  }
                   showActions={true}
                   title="Negocios Pendientes de Aprobación"
                 />
@@ -669,6 +698,14 @@ export default function AdminPanel() {
             onApprove={onApprove}
             onReject={onRejectClick}
             onView={onViewEvent}
+            onToggleDestacada={(event) =>
+              handleUpdateEvent(event.id, {
+                tipo_publicacion:
+                  event.tipo_publicacion === "destacada"
+                    ? "normal"
+                    : "destacada",
+              })
+            }
             title="Publicaciones en Revisión"
             emptyMessage="No hay publicaciones en revisión"
           />
@@ -686,6 +723,14 @@ export default function AdminPanel() {
             onPause={handlePauseBusiness}
             onView={onViewBusiness}
             onEdit={onEditBusiness}
+            onToggleDestacada={(business) =>
+              handleUpdateBusiness(business.id, {
+                tipo_publicacion:
+                  business.tipo_publicacion === "destacada"
+                    ? "normal"
+                    : "destacada",
+              })
+            }
             showActions={true}
             title="Negocios en Revisión"
             emptyMessage="No hay negocios en revisión"
@@ -702,6 +747,14 @@ export default function AdminPanel() {
             onEdit={onEditEvent}
             onDelete={handleDeleteEvent}
             onPause={handlePauseEvent}
+            onToggleDestacada={(event) =>
+              handleUpdateEvent(event.id, {
+                tipo_publicacion:
+                  event.tipo_publicacion === "destacada"
+                    ? "normal"
+                    : "destacada",
+              })
+            }
           />
         )}
 
@@ -717,6 +770,14 @@ export default function AdminPanel() {
             onPause={handlePauseBusiness}
             onView={onViewBusiness}
             onEdit={onEditBusiness}
+            onToggleDestacada={(business) =>
+              handleUpdateBusiness(business.id, {
+                tipo_publicacion:
+                  business.tipo_publicacion === "destacada"
+                    ? "normal"
+                    : "destacada",
+              })
+            }
             title="Todos los Negocios"
           />
         )}

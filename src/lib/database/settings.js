@@ -80,6 +80,8 @@ export const PLANES_ENABLED_KEY = "planes_enabled";
 export const PANORAMAS_ENABLED_KEY = "panoramas_enabled";
 export const SUPERGUIA_ENABLED_KEY = "superguia_enabled";
 export const DESTACADAS_ENABLED_KEY = "destacadas_enabled";
+export const NEGOCIOS_DESTACADAS_ENABLED_KEY =
+  "destacadas_negocios_enabled";
 
 /**
  * Verificar si los planes están habilitados (toggle global).
@@ -114,22 +116,28 @@ export async function isSuperguiaEnabled() {
 
 /**
  * Obtiene la visibilidad combinada de planes.
- * @returns {Promise<{globalEnabled:boolean, panoramasEnabled:boolean, superguiaEnabled:boolean, panoramasVisible:boolean, superguiaVisible:boolean, anyVisible:boolean}>}
+ * @returns {Promise<{globalEnabled:boolean, panoramasEnabled:boolean, superguiaEnabled:boolean, destacadasEnabled:boolean, negociosDestacadasEnabled:boolean, panoramasVisible:boolean, superguiaVisible:boolean, anyVisible:boolean}>}
  */
 export async function getPlansVisibility() {
   // Se invoca desde 5 sitios (Navbar, PanoramasPage, Publicar, PublicarNegocio,
-  // AdminPanel) y cada llamada dispara 4 queries a app_settings. El caché evita
+  // AdminPanel) y cada llamada dispara 5 queries a app_settings. El caché evita
   // multiplicarlas; updateAppSetting() lo invalida al escribir cualquier toggle.
   const cached = cache.get(PLANS_VISIBILITY_CACHE_KEY);
   if (cached) return cached;
 
-  const [globalEnabled, panoramasEnabled, superguiaEnabled, destacadasEnabled] =
-    await Promise.all([
-      isPlanesEnabled(),
-      isPanoramasEnabled(),
-      isSuperguiaEnabled(),
-      isDestacadasEnabled(),
-    ]);
+  const [
+    globalEnabled,
+    panoramasEnabled,
+    superguiaEnabled,
+    destacadasEnabled,
+    negociosDestacadasEnabled,
+  ] = await Promise.all([
+    isPlanesEnabled(),
+    isPanoramasEnabled(),
+    isSuperguiaEnabled(),
+    isDestacadasEnabled(),
+    isNegociosDestacadasEnabled(),
+  ]);
 
   const panoramasVisible = globalEnabled || panoramasEnabled;
   const superguiaVisible = globalEnabled || superguiaEnabled;
@@ -139,6 +147,7 @@ export async function getPlansVisibility() {
     panoramasEnabled,
     superguiaEnabled,
     destacadasEnabled,
+    negociosDestacadasEnabled,
     panoramasVisible,
     superguiaVisible,
     anyVisible: panoramasVisible || superguiaVisible,
@@ -234,6 +243,32 @@ export async function toggleDestacadasEnabled(enabled, userId) {
   return updateAppSetting(DESTACADAS_ENABLED_KEY, enabled, userId);
 }
 
+/**
+ * Verificar si las publicaciones destacadas de negocios están habilitadas.
+ * Default: false. La migración deja este flag apagado hasta que staff lo active.
+ * @returns {Promise<boolean>}
+ */
+export async function isNegociosDestacadasEnabled() {
+  const value = await getAppSetting(NEGOCIOS_DESTACADAS_ENABLED_KEY);
+  return value === true;
+}
+
+/**
+ * Activar o desactivar publicaciones destacadas de negocios.
+ * La autorización real debe aplicarse también en RLS/funciones backend;
+ * userId solo identifica al administrador para la auditoría de la escritura.
+ * @param {boolean} enabled
+ * @param {string} userId
+ * @returns {Promise<boolean>}
+ */
+export async function toggleNegociosDestacadasEnabled(enabled, userId) {
+  return updateAppSetting(
+    NEGOCIOS_DESTACADAS_ENABLED_KEY,
+    enabled,
+    userId,
+  );
+}
+
 // =============================
 // PRECIOS DE SUSCRIPCIONES
 // =============================
@@ -244,6 +279,7 @@ const DEFAULT_PLAN_PRICES = {
   panorama_ilimitado: 70000,
   superguia: 15000,
   publicacion_destacada: 10000,
+  negocio_destacado: 10000,
 };
 
 /**
@@ -314,6 +350,10 @@ export async function updatePlanPrices(prices, userId) {
       );
     }
   }
+
+  // Invalidar incluso si la verificación posterior falla: la escritura ya
+  // ocurrió y no debe quedar una visibilidad/precio antiguo en memoria.
+  invalidateCache("settings_");
 
   // 3. Verificar que se guardó correctamente
   const saved = await getAppSetting("plan_prices");

@@ -14,7 +14,6 @@ import {
   faTimesCircle,
   faMapMarkerAlt,
   faCalendarAlt,
-  faUser,
   faPause,
   faPlay,
   faCheckSquare,
@@ -88,9 +87,8 @@ export default function AdminPublicationsList({
   onView,
   onEdit,
   onDelete,
-  onBulkDelete,
   onPause,
-  onRefresh,
+  onToggleDestacada,
 }) {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
@@ -410,7 +408,7 @@ export default function AdminPublicationsList({
                           <button
                             className="admin-pub-btn admin-pub-btn--goto"
                             onClick={() =>
-                              navigate(`/panoramas?highlight=${event.id}`)
+                               navigate(`/?p_highlight=${event.id}`)
                             }
                             title="Ir a Panoramas">
                             <FontAwesomeIcon icon={faLocationArrow} />
@@ -422,6 +420,19 @@ export default function AdminPublicationsList({
                           title="Ver publicación">
                           <FontAwesomeIcon icon={faEye} />
                         </button>
+                        {onToggleDestacada && (
+                          <button
+                            className="admin-pub-btn admin-pub-btn--highlight"
+                            onClick={() => onToggleDestacada(event)}
+                            disabled={actionLoading === event.id}
+                            title={
+                              event.tipo_publicacion === "destacada"
+                                ? "Quitar destacado"
+                                : "Destacar"
+                            }>
+                            <FontAwesomeIcon icon={faCrown} />
+                          </button>
+                        )}
                         <button
                           className="admin-pub-btn admin-pub-btn--edit"
                           onClick={() => onEdit(event.id)}
@@ -561,7 +572,7 @@ export default function AdminPublicationsList({
                         <button
                           className="admin-pub-btn admin-pub-btn--goto"
                           onClick={() =>
-                            navigate(`/panoramas?highlight=${event.id}`)
+                             navigate(`/?p_highlight=${event.id}`)
                           }
                           title="Ir">
                           <FontAwesomeIcon icon={faLocationArrow} />

@@ -27,6 +27,7 @@ import {
   rejectBusiness,
   deleteBusiness,
   pauseBusiness,
+  updateBusiness,
 } from "../../../lib/database";
 
 /**
@@ -645,6 +646,33 @@ export const useAdminData = (user, isAdmin, isModerator) => {
     }
   };
 
+  // Destacar o degradar un negocio desde el panel. La whitelist y la
+  // proteccion SQL de negocios impiden que un usuario normal haga lo mismo.
+  const handleUpdateBusiness = async (businessId, businessData) => {
+    setActionLoading(businessId);
+    try {
+      const updated = await updateBusiness(
+        businessId,
+        businessData,
+        user.id,
+        { adminOverride: true },
+      );
+      const updateList = (list) =>
+        list.map((business) =>
+          business.id === businessId ? { ...business, ...updated } : business,
+        );
+      setAllBusinesses(updateList);
+      setPendingBusinesses(updateList);
+      setReviewBusinesses(updateList);
+      return { success: true, data: updated };
+    } catch (err) {
+      console.error("Error al actualizar negocio:", err);
+      return { success: false, error: err.message };
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   return {
     // Estado
     pendingEvents,
@@ -671,6 +699,7 @@ export const useAdminData = (user, isAdmin, isModerator) => {
     handleRejectBusiness,
     handleDeleteBusiness,
     handlePauseBusiness,
+    handleUpdateBusiness,
     // Acciones de usuarios
     handleRoleChange,
     handleBanUser,

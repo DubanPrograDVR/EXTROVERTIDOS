@@ -19,6 +19,7 @@ const INITIAL_STATE = {
   panoramasEnabled: false,
   superguiaEnabled: false,
   destacadasEnabled: true,
+  negociosDestacadasEnabled: false,
   panoramasVisible: true,
   superguiaVisible: true,
   anyVisible: true,

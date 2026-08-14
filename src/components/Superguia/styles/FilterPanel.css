@@ -1,9 +1,10 @@
 /* ===== FILTER PANEL - Filtros Siempre Visibles ===== */
 
 .filter-panel {
-  background: linear-gradient(180deg, #0d0d0d 0%, #1a1a1a 100%);
+  background: transparent;
   padding: 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
 }
 
 /* === Barra de búsqueda === */

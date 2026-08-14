@@ -2,7 +2,8 @@ import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 /**
- * Resalta una card cuando se llega con ?highlight=<id>.
+ * Resalta una card cuando se llega con el parámetro indicado (por defecto,
+ * ?highlight=<id>).
  *
  * Rastreo persistente: durante ~8 segundos, cada vez que los datos o la página
  * cambian, recalcula la posición del item y lo sigue. Si un shuffle/realtime
@@ -16,6 +17,7 @@ export function useHighlightCard({
   itemsPerPage,
   setCurrentPage,
   onResetFilters,
+  queryParam = "highlight",
   enabled = true,
 }) {
   const location = useLocation();
@@ -42,7 +44,7 @@ export function useHighlightCard({
   useEffect(() => {
     if (!enabled) return;
     const params = new URLSearchParams(location.search);
-    const id = params.get("highlight");
+    const id = params.get(queryParam);
     if (!id) return;
     if (activeIdRef.current === id) return;
     activeIdRef.current = id;
@@ -52,17 +54,17 @@ export function useHighlightCard({
     cleanupTimerRef.current = setTimeout(() => {
       activeIdRef.current = null;
       lastScrolledPageRef.current = null;
-      // Limpiar ?highlight de la URL al terminar la ventana
+          // Limpiar el parámetro de la URL al terminar la ventana
       const params2 = new URLSearchParams(window.location.search);
-      if (params2.has("highlight")) {
-        params2.delete("highlight");
+      if (params2.has(queryParam)) {
+        params2.delete(queryParam);
         const qs = params2.toString();
         navigate(`${window.location.pathname}${qs ? `?${qs}` : ""}`, {
           replace: true,
         });
       }
     }, 8000);
-  }, [enabled, location.search, navigate]);
+  }, [enabled, location.search, navigate, queryParam]);
 
   // Rastrear: recomputar posición cuando cambian datos/página
   useEffect(() => {
@@ -117,11 +119,11 @@ export function useHighlightCard({
             setTimeout(() => el.classList.remove("is-highlighted"), 2500);
             lastScrolledPageRef.current = targetPage;
           }
-          // Limpiar ?highlight de la URL inmediatamente tras resaltar
+           // Limpiar el parámetro de la URL inmediatamente tras resaltar
           // para que un refresh no vuelva a disparar el efecto.
           const p = new URLSearchParams(window.location.search);
-          if (p.has("highlight")) {
-            p.delete("highlight");
+          if (p.has(queryParam)) {
+            p.delete(queryParam);
             const qs = p.toString();
             navigate(`${window.location.pathname}${qs ? `?${qs}` : ""}`, {
               replace: true,
@@ -140,7 +142,7 @@ export function useHighlightCard({
       cancelled = true;
       if (timerId) clearTimeout(timerId);
     };
-  }, [enabled, prefix, rawItems, filteredItems, currentPage]);
+  }, [enabled, prefix, queryParam, rawItems, filteredItems, currentPage, navigate]);
 
   // Cleanup al desmontar
   useEffect(() => {

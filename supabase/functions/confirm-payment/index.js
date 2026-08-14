@@ -112,6 +112,20 @@ function getDestacadaEventId(transaction) {
 }
 
 /**
+ * Detecta una transacción de negocio destacado y extrae su negocio asociado.
+ */
+function isNegocioDestacadoTransaction(transaction) {
+  const items = Array.isArray(transaction?.items) ? transaction.items : [];
+  return items.some((item) => item?.type === "negocio_destacado");
+}
+
+function getNegocioDestacadoId(transaction) {
+  const items = Array.isArray(transaction?.items) ? transaction.items : [];
+  const item = items.find((it) => it?.type === "negocio_destacado");
+  return item?.business_id || null;
+}
+
+/**
  * Al APROBAR el pago de una publicación destacada:
  *  - Mueve el evento borrador → pendiente (para que el admin lo revise).
  *  - No activa ninguna suscripción.
@@ -149,6 +163,48 @@ async function discardDestacadaEvent(supabaseAdmin, eventId) {
   if (error) {
     console.error(
       `[confirm-payment] Error eliminando publicación destacada ${eventId}:`,
+      error,
+    );
+  }
+}
+
+/**
+ * Al aprobar, un negocio destacado pasa de borrador a pendiente para revisión.
+ * El filtro por tipo y estado mantiene la operación idempotente.
+ */
+async function activateNegocioDestacado(supabaseAdmin, businessId) {
+  if (!businessId) return;
+  const { error } = await supabaseAdmin
+    .from("businesses")
+    .update({ estado: "pendiente" })
+    .eq("id", businessId)
+    .eq("estado", "borrador")
+    .eq("tipo_publicacion", "destacada");
+
+  if (error) {
+    console.error(
+      `[confirm-payment] Error activando negocio destacado ${businessId}:`,
+      error,
+    );
+  }
+}
+
+/**
+ * Un rechazo o abandono solo elimina el borrador del negocio. Nunca toca un
+ * negocio que ya haya avanzado a pendiente/publicado.
+ */
+async function discardNegocioDestacado(supabaseAdmin, businessId) {
+  if (!businessId) return;
+  const { error } = await supabaseAdmin
+    .from("businesses")
+    .delete()
+    .eq("id", businessId)
+    .eq("estado", "borrador")
+    .eq("tipo_publicacion", "destacada");
+
+  if (error) {
+    console.error(
+      `[confirm-payment] Error eliminando negocio destacado ${businessId}:`,
       error,
     );
   }
@@ -294,6 +350,12 @@ Deno.serve(async (req) => {
           if (isDestacadaTransaction(tx)) {
             await discardDestacadaEvent(supabaseAdmin, getDestacadaEventId(tx));
           }
+          if (isNegocioDestacadoTransaction(tx)) {
+            await discardNegocioDestacado(
+              supabaseAdmin,
+              getNegocioDestacadoId(tx),
+            );
+          }
         }
       }
 
@@ -397,6 +459,12 @@ Deno.serve(async (req) => {
           getDestacadaEventId(transaction),
         );
       }
+      if (isNegocioDestacadoTransaction(transaction)) {
+        await discardNegocioDestacado(
+          supabaseAdmin,
+          getNegocioDestacadoId(transaction),
+        );
+      }
       return redirectToFrontend({
         status: "error",
         buy_order: transaction.buy_order,
@@ -430,6 +498,12 @@ Deno.serve(async (req) => {
         await discardDestacadaEvent(
           supabaseAdmin,
           getDestacadaEventId(transaction),
+        );
+      }
+      if (isNegocioDestacadoTransaction(transaction)) {
+        await discardNegocioDestacado(
+          supabaseAdmin,
+          getNegocioDestacadoId(transaction),
         );
       }
 
@@ -467,6 +541,12 @@ Deno.serve(async (req) => {
             getDestacadaEventId(transaction),
           );
         }
+        if (isNegocioDestacadoTransaction(transaction)) {
+          await discardNegocioDestacado(
+            supabaseAdmin,
+            getNegocioDestacadoId(transaction),
+          );
+        }
 
         return redirectToFrontend({
           status: "error",
@@ -493,6 +573,12 @@ Deno.serve(async (req) => {
           await discardDestacadaEvent(
             supabaseAdmin,
             getDestacadaEventId(transaction),
+          );
+        }
+        if (isNegocioDestacadoTransaction(transaction)) {
+          await discardNegocioDestacado(
+            supabaseAdmin,
+            getNegocioDestacadoId(transaction),
           );
         }
 
@@ -648,6 +734,13 @@ Deno.serve(async (req) => {
         );
       }
 
+      if (isNegocioDestacadoTransaction(transaction)) {
+        await activateNegocioDestacado(
+          supabaseAdmin,
+          getNegocioDestacadoId(transaction),
+        );
+      }
+
       // Enviar boleta por email (non-blocking)
       await sendPaymentEmail(
         supabaseAdmin,
@@ -686,6 +779,12 @@ Deno.serve(async (req) => {
       await discardDestacadaEvent(
         supabaseAdmin,
         getDestacadaEventId(transaction),
+      );
+    }
+    if (isNegocioDestacadoTransaction(transaction)) {
+      await discardNegocioDestacado(
+        supabaseAdmin,
+        getNegocioDestacadoId(transaction),
       );
     }
 

@@ -29,6 +29,22 @@
   font-style: italic;
 }
 
+/* Distintivo de promoción pagada, separado de Verificado. */
+.publication-modal__featured-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border: 1px solid rgba(255, 248, 220, 0.55);
+  border-radius: 18px;
+  background: linear-gradient(135deg, #ffd54a, #ffb300);
+  color: #1c1200;
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 5px 16px rgba(255, 179, 0, 0.22);
+}
+
 /* Mensaje de datos no disponibles */
 .publication-modal__no-data {
   color: rgba(255, 255, 255, 0.5);

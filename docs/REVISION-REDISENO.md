@@ -3,7 +3,12 @@
 Documento de revisión previa al merge. Consolida la revisión UX/UI y la revisión de arquitectura frontend, las decisiones de producto tomadas, y el plan de implementación por fases.
 
 **Fecha:** 2026-08-10
-**Estado:** revisión completada, pendiente de implementación
+**Estado:** implementación en curso; Fases 0–3 y la base de Fases 4–5 ya están en `develop`
+
+**Estado real verificado:** `/crear-publicacion`, modos gratuita/suscripción/destacada,
+Home consolidado, destacados de negocios, pagos Webpay y controles Admin tienen código
+local. Antes de desplegar Supabase hay que aplicar las migraciones nuevas y validar el
+flujo con datos reales.
 
 ---
 
@@ -121,9 +126,10 @@ Todas compatibles con datos existentes. Van en `supabase/migrations/` con timest
 | M1 | `businesses.tipo_publicacion TEXT NOT NULL DEFAULT 'normal'` + CHECK `IN ('normal','destacada')` + índice. Mismo nombre y valores que `events` para compartir lógica de render. | Segura: el DEFAULT rellena filas existentes (mismo patrón que `202607110001…:8-29`). `getPublishedBusinesses()` hace `select("*")` (`businesses.js:41-47`), así que la columna llega sola a tarjetas y modal. |
 | M2 | Merge de `negocio_destacado` en `app_settings.plan_prices`. | Segura con el patrón idempotente `COALESCE` de `202607110001…:46-51` (no pisa claves existentes). |
 | M3 | `app_settings ← destacados_negocios_enabled = false` con `ON CONFLICT DO NOTHING`. | Segura y conservadora: nada la lee aún. |
-| M4 | Tercer valor en el CHECK de `events.tipo_publicacion` si "gratuito" (D3) se modela como estado propio. | Requiere DROP + ADD del constraint (patrón ya usado en `202607110001…:12-17`) y backfill a `'normal'`. |
+| M4 | Origen de publicación en `events` y `businesses` (`gratuita`, `suscripcion`, `destacada`) + `subscription_id` para reembolsos exactos. | Mantiene `tipo_publicacion` en `normal/destacada`; los datos legacy quedan identificados como `legacy`. |
 
-**Pendiente de definir en M4:** si "gratuito" es un valor nuevo (`'gratuita'`) o se reutiliza `'normal'` relajando la validación de plan. Hoy `normal` significa "consume cupo de suscripción" (`useEventSubmit.js:256-299` llama `validateAndConsumePublication`), lo que contradice D3.
+**Decisión M4:** se conserva `tipo_publicacion = 'normal'`; la modalidad de cobro se guarda
+separada y el formulario usa `modo_publicacion` para distinguir gratuita de suscripción.
 
 ---
 
@@ -131,29 +137,29 @@ Todas compatibles con datos existentes. Van en `supabase/migrations/` con timest
 
 Cada fase es deployable y reversible por separado.
 
-### Fase 0 — Prerrequisitos (sin cambios visibles)
+### Fase 0 — Prerrequisitos (implementada parcialmente)
 1. Arreglar `PerfilBorradores.jsx:72` (`/agregar-negocio` → ruta real).
 2. Añadir `tipo_publicacion` a `ADMIN_ONLY_EVENT_FIELDS` (`events.js:547`) y crear el patrón admin-only equivalente en `businesses.js`. **(Habilita D6.)**
 3. Meter `getPlansVisibility()` bajo `cache.js` con TTL corto.
 
-### Fase 1 — Unificar la validación (sin cambio funcional)
+### Fase 1 — Unificar la validación (implementada)
 4. Derivar `getMissingFields` e `isStepValid` de `EVENT_VALIDATION_SCHEMA`, eliminando las dos copias manuales de `PublicarForm.jsx`. **Resuelve B3. Sin esto, todo lo demás triplica bugs.**
 5. Blindar `prepareEventData` (`useEventSubmit.js:136-193`) con `?.` en `organizador`, `comuna`, `direccion`, `titulo`, `descripcion`. **Resuelve el TypeError de B2.**
 
-### Fase 2 — Plan por publicación (panoramas)
+### Fase 2 — Plan por publicación (panoramas, implementada)
 6. Añadir `PUBLICATION_PLANS` a `constants/index.js` con la lista de campos por plan; `useFormValidation` recibe el plan y **filtra el schema** antes de iterar (`:214`). El motor de reglas condicionales ya existe (`:163-165`), no hay que inventarlo.
 7. El plan vive **dentro de `formData`** (persistencia gratis en las 3 capas de draft), con default gratuito, excluido del cálculo de `isDirty`.
 8. Drafts legacy sin plan: default restrictivo + re-mostrar selector.
 9. Desactivar `PlanBlockModal` para la rama gratuita (`Publicar.jsx:188-201`, `detectBlockScenario`). **Implementa D3.**
 10. Whitelist de redes sociales para el plan gratuito: `SocialInputs.jsx:18-68` hoy renderiza 7 redes + sitio web sin gating.
 
-### Fase 3 — Rutas y Navbar
+### Fase 3 — Rutas y Navbar (implementada localmente)
 11. Crear `/crear-publicacion` (lazy) con la pantalla única de 3 tarjetas (D2).
 12. Añadirla a `ADMIN_ALLOWED_PATHS` y cambiar la comparación a `startsWith`. **Resuelve B4.**
 13. **Mantener** `/publicar-panorama` y `/publicar-negocio` registradas, aceptando el plan por query o `location.state`. Preserva `?editar=`, drafts, retornos de pago y los CTAs internos (6+ referencias).
 14. Simplificar `NAV_LINKS` (`Navbar.jsx:27-39`) y el dropdown (`:359-373`), conservando en móvil la sesión y el acceso admin. **Resuelve B1. Implementa D1.**
 
-### Fase 4 — Negocios destacados
+### Fase 4 — Negocios destacados (implementada localmente; pendiente aplicar migraciones)
 15. Migraciones M1–M3.
 16. UI "Destacar mi negocio" en `PublicarNegocio` + reflejo en `BusinessCard` y `BusinessModal`.
 17. Rama `negocio_destacado` en `create-payment` (análoga a `handleDestacadaPayment`, `:219-330`) y `activate/discard` sobre `businesses` en `confirm-payment` (`:100-155`). **Implementa D5.**
@@ -161,7 +167,7 @@ Cada fase es deployable y reversible por separado.
 19. Controles por ítem en el panel admin (destacar/degradar). **Completa D6.**
 20. Corregir B7: apagar el toggle **degrada a normal**, no oculta.
 
-### Fase 5 — Home consolidado (la más arriesgada; detrás de flag)
+### Fase 5 — Home consolidado (implementada localmente; requiere validación manual)
 21. Extraer la carga de datos a un contenedor común: una sola llamada a `getPublishedEvents`/`getPublishedBusinesses` y un solo par de canales realtime.
 22. Resolver B6 con namespacing de `?highlight=` o un único resolvedor.
 23. Filtros namespaced `?p_ciudad=` / `?sg_ciudad=` (D8); retirar el `window.scrollTo` de mount de `SuperguiaContainer.jsx:135-139`.
@@ -175,7 +181,7 @@ Cada fase es deployable y reversible por separado.
 ## 8. Riesgos aceptados y pendientes
 
 - **Sin tests ni tipos.** La verificación de cada fase es manual. Se recomienda validar en navegador al cierre de cada fase, especialmente Fase 1 (refactor de validación sin cambio funcional esperado).
-- **M4 sin definir**: modelado de "gratuito" como valor propio vs `'normal'` relajado.
+- **Migraciones nuevas pendientes de aplicar**: `202608100001_add_negocios_destacados.sql` y `202608100002_add_publication_origin.sql`.
 - **Reembolso/compensación** si se apaga el toggle con contenido pagado vigente: no definido.
 - **`database/schema.sql` desactualizado**: conviene actualizarlo en una tarea aparte; hoy induce a error a quien planifique la BD.
 - **Bundle**: mantener el flujo de publicación estrictamente lazy para no arrastrar `leaflet` al arranque.

@@ -1089,6 +1089,82 @@
   margin-top: 20px;
 }
 
+/* Opción de negocio destacado, separada de la identidad de "Verificado". */
+.publicar-negocio__highlight-option {
+  margin: 20px 0;
+  padding: 18px;
+  border: 1px solid rgba(255, 193, 7, 0.45);
+  border-radius: 14px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 193, 7, 0.12),
+    rgba(255, 102, 0, 0.08)
+  );
+}
+
+.publicar-negocio__highlight-label {
+  display: block;
+  cursor: pointer;
+}
+
+.publicar-negocio__highlight-label > input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.publicar-negocio__highlight-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #fff;
+}
+
+.publicar-negocio__highlight-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  color: #1c1200;
+  background: linear-gradient(135deg, #ffd54a, #ffb300);
+  box-shadow: 0 5px 15px rgba(255, 179, 0, 0.25);
+}
+
+.publicar-negocio__highlight-card strong,
+.publicar-negocio__highlight-card small {
+  display: block;
+}
+
+.publicar-negocio__highlight-card strong {
+  font-size: 1rem;
+}
+
+.publicar-negocio__highlight-card small {
+  margin-top: 4px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.84rem;
+}
+
+.publicar-negocio__highlight-status {
+  margin: 14px 0 0 58px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.publicar-negocio__highlight-label:has(> input:checked)
+  .publicar-negocio__highlight-card {
+  color: #ffd54a;
+}
+
+@media (max-width: 480px) {
+  .publicar-negocio__highlight-status {
+    margin-left: 0;
+  }
+}
+
 /* Ver Borrador */
 .publicar-negocio__draft-btn {
   flex: 0 0 auto;

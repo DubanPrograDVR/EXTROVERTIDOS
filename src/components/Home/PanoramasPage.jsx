@@ -41,7 +41,6 @@ import {
   trackFiltersCleared,
   trackPublicationView,
   trackBusinessView,
-  trackCarouselClick,
   trackPaginationUse,
 } from "../../lib/analytics";
 import "./styles/panoramas-page.css";
@@ -151,7 +150,7 @@ export default function PanoramasPage() {
       return;
     }
 
-    navigate("/publicar-panorama");
+    navigate("/crear-publicacion");
   }, [isAuthenticated, navigate]);
 
   // Leer query params al cargar y sincronizar con CityContext y filtros

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../../../../context/AuthContext";
 import { applyWrapToInputEvent } from "../../../../lib/textWrap";
 import {
@@ -8,11 +8,17 @@ import {
   getAnyActivePanoramaSubscription,
 } from "../../../../lib/database";
 import { getPlansVisibility } from "../../../../lib/database/settings";
-import { supabase } from "../../../../lib/supabase";
-import { INITIAL_FORM_STATE, getEnabledFields } from "../constants";
+import {
+  INITIAL_FORM_STATE,
+  PUBLICATION_TYPES,
+  MODOS_PUBLICACION,
+  DEFAULT_PUBLICATION_MODE,
+  esModoPublicacionValido,
+  obtenerEstadoPublicacion,
+  getEnabledFields,
+} from "../constants";
 import {
   getCalendarModes,
-  canUserPublish,
   getPlanInfo,
 } from "../../../../lib/planRules";
 
@@ -60,7 +66,6 @@ const usePublicarFormV2 = () => {
     signInWithGooglePopup,
     showToast,
   } = useAuth();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   // === REFS ESTABLES ===
@@ -80,8 +85,27 @@ const usePublicarFormV2 = () => {
     };
   }, []);
 
+  // === MODALIDAD RECIBIDA POR URL ===
+  // /crear-publicacion usa ?plan=normal|destacada y el CTA de suscripción usa
+  // ?modo=suscripcion. La query explícita solo aplica al crear; en edición
+  // mandan la modalidad y el tipo que ya tiene el evento.
+  const editEventIdFromUrl = searchParams.get("editar");
+  const planParam = searchParams.get("plan");
+  const modoParam = searchParams.get("modo");
+  const modoFromQuery = esModoPublicacionValido(modoParam)
+    ? modoParam
+    : planParam === PUBLICATION_TYPES.NORMAL
+      ? MODOS_PUBLICACION.GRATUITA
+      : planParam === PUBLICATION_TYPES.DESTACADA
+        ? MODOS_PUBLICACION.DESTACADA
+        : null;
+  const modoFromUrl = editEventIdFromUrl ? null : modoFromQuery;
+
   // === ESTADO DEL FORMULARIO ===
-  const [formData, setFormData] = useState(INITIAL_FORM_STATE);
+  const [formData, setFormData] = useState(() => ({
+    ...INITIAL_FORM_STATE,
+    ...obtenerEstadoPublicacion(modoFromUrl || DEFAULT_PUBLICATION_MODE),
+  }));
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -162,17 +186,23 @@ const usePublicarFormV2 = () => {
   // El plan gratuito ('normal') expone un subconjunto del formulario; el
   // destacado y las suscripciones activas lo exponen completo.
   // Admin/moderador nunca se limitan.
-  const hasActiveSubscription = Boolean(
-    activeSubscription || anyPanoramaSubscription,
-  );
+  const hasActiveSubscription = Boolean(activeSubscription);
 
   const enabledFields = useMemo(() => {
-    if (isAdmin || isModerator) return null;
+    if (isEditing || isAdmin || isModerator) return null;
     return getEnabledFields({
+      modoPublicacion: formData.modo_publicacion,
       tipoPublicacion: formData.tipo_publicacion,
       hasActiveSubscription,
     });
-  }, [formData.tipo_publicacion, hasActiveSubscription, isAdmin, isModerator]);
+  }, [
+    formData.modo_publicacion,
+    formData.tipo_publicacion,
+    hasActiveSubscription,
+    isEditing,
+    isAdmin,
+    isModerator,
+  ]);
 
   const enabledFieldsRef = useRef(enabledFields);
   enabledFieldsRef.current = enabledFields;
@@ -182,8 +212,7 @@ const usePublicarFormV2 = () => {
 
   const buildLocalDraftData = useCallback((data) => {
     if (!data) return null;
-    const { imagenes, ...rest } = data;
-    return { ...rest, imagenes: [] };
+    return { ...data, imagenes: [] };
   }, []);
 
   const clearLocalDraft = useCallback(() => {
@@ -227,7 +256,6 @@ const usePublicarFormV2 = () => {
     uploadProgress,
     handleSubmit: submitEvent,
     cancelSubmit,
-    cleanup: cleanupSubmit,
   } = useEventSubmit({
     user,
     isAuthenticated,
@@ -236,8 +264,6 @@ const usePublicarFormV2 = () => {
     showToast,
     validateForm: validateFormForSubmit,
     setShowAuthModal,
-    activeSubscription,
-    planesEnabled,
   });
 
   // === CARGAR PLAN ACTIVO DEL USUARIO ===
@@ -280,13 +306,31 @@ const usePublicarFormV2 = () => {
 
   // === MODOS DE CALENDARIO SEGÚN PLAN ===
   const enabledCalendarModes = useMemo(() => {
-    if (isAdmin || isModerator) return null; // null = sin restricciones
+    if (isEditing || isAdmin || isModerator) return null; // null = sin restricciones
+
+    if (formData.modo_publicacion === MODOS_PUBLICACION.GRATUITA) {
+      return ["single"];
+    }
+
+    // La destacada se paga por publicación y no depende de los límites de un
+    // plan de suscripción; conserva el calendario completo.
+    if (formData.modo_publicacion === MODOS_PUBLICACION.DESTACADA) {
+      return null;
+    }
+
     const { enabledModes } = getCalendarModes(
       activeSubscription?.plan || null,
       planesEnabled,
     );
     return enabledModes;
-  }, [activeSubscription?.plan, planesEnabled, isAdmin, isModerator]);
+  }, [
+    activeSubscription?.plan,
+    formData.modo_publicacion,
+    planesEnabled,
+    isEditing,
+    isAdmin,
+    isModerator,
+  ]);
 
   // === INFO DEL PLAN PARA UI ===
   const planInfo = useMemo(
@@ -346,12 +390,25 @@ const usePublicarFormV2 = () => {
 
   // === CARGAR BORRADOR DESDE STORAGE ===
   useEffect(() => {
+    if (isEditing) return;
+
     const draft = loadFromStorageRef.current();
     if (draft?.data) {
       hasSessionDraftRef.current = true;
+      const modoBorrador = esModoPublicacionValido(
+        draft.data.modo_publicacion,
+      )
+        ? draft.data.modo_publicacion
+        : DEFAULT_PUBLICATION_MODE;
+      const modo = modoFromUrl || modoBorrador;
       setFormData((prev) => ({
         ...prev,
         ...draft.data,
+        redes_sociales: {
+          ...prev.redes_sociales,
+          ...(draft.data.redes_sociales || {}),
+        },
+        ...obtenerEstadoPublicacion(modo),
         imagenes: [], // Las imágenes se manejan separadamente
       }));
 
@@ -363,7 +420,7 @@ const usePublicarFormV2 = () => {
 
       showToastRef.current?.("Borrador cargado exitosamente", "success");
     }
-  }, []); // Solo ejecutar al montar
+  }, [isEditing, modoFromUrl]); // Solo ejecutar al montar
 
   // === CARGAR AUTO-GUARDADO LOCAL ===
   useEffect(() => {
@@ -390,9 +447,20 @@ const usePublicarFormV2 = () => {
 
       const localDraft = JSON.parse(localDraftJson);
       if (localDraft?.data) {
+        const modoBorrador = esModoPublicacionValido(
+          localDraft.data.modo_publicacion,
+        )
+          ? localDraft.data.modo_publicacion
+          : DEFAULT_PUBLICATION_MODE;
+        const modo = modoFromUrl || modoBorrador;
         setFormData((prev) => ({
           ...prev,
           ...localDraft.data,
+          redes_sociales: {
+            ...prev.redes_sociales,
+            ...(localDraft.data.redes_sociales || {}),
+          },
+          ...obtenerEstadoPublicacion(modo),
           imagenes: [],
         }));
       }
@@ -401,14 +469,23 @@ const usePublicarFormV2 = () => {
     } finally {
       localDraftLoadedRef.current = true;
     }
-  }, [isEditing, draftManager.loadedDraft, LOCAL_DRAFT_KEY]);
+  }, [isEditing, draftManager.loadedDraft, LOCAL_DRAFT_KEY, modoFromUrl]);
 
   // === SINCRONIZAR DATOS DE EVENTO EN EDICIÓN ===
   useEffect(() => {
     if (eventFormData) {
+      const estadoPublicacion = obtenerEstadoPublicacion(
+        eventFormData.modo_publicacion,
+        eventFormData.tipo_publicacion,
+      );
       setFormData({
         ...INITIAL_FORM_STATE,
         ...eventFormData,
+        ...estadoPublicacion,
+        redes_sociales: {
+          ...INITIAL_FORM_STATE.redes_sociales,
+          ...(eventFormData.redes_sociales || {}),
+        },
       });
     }
   }, [eventFormData]);
@@ -652,7 +729,13 @@ const usePublicarFormV2 = () => {
    * Resetea el formulario
    */
   const resetForm = useCallback(() => {
-    setFormData(INITIAL_FORM_STATE);
+    // Limpiar los campos no debe cambiar una modalidad que el usuario eligió
+    // explícitamente; el botón ya exige confirmación antes de llegar aquí.
+    const estadoPublicacion = obtenerEstadoPublicacion(
+      formDataRef.current.modo_publicacion,
+      formDataRef.current.tipo_publicacion,
+    );
+    setFormData({ ...INITIAL_FORM_STATE, ...estadoPublicacion });
     clearAllImages();
     clearAllErrors();
     draftResetRef.current?.();
@@ -660,42 +743,49 @@ const usePublicarFormV2 = () => {
   }, [clearAllImages, clearAllErrors, resetEditState]);
 
   /**
-   * Fija el plan de publicación elegido.
-   * Vive en formData para que persista en las tres capas de borrador.
-   * @param {string} tipo - PUBLICATION_TYPES.NORMAL | PUBLICATION_TYPES.DESTACADA
+   * Fija la modalidad elegida. Vive en formData para que persista en las tres
+   * capas de borrador y mantiene sincronizado el tipo que irá a events.
+   * @param {string} modo - MODOS_PUBLICACION.*
    */
-  const selectPublicationType = useCallback((tipo) => {
-    setFormData((prev) => ({ ...prev, tipo_publicacion: tipo }));
+  const selectPublicationMode = useCallback((modo) => {
+    setFormData((prev) => ({
+      ...prev,
+      ...obtenerEstadoPublicacion(modo, prev.tipo_publicacion),
+    }));
   }, []);
 
   /**
    * Envía el formulario
-   * @param {Event|Object} [e] - Evento del submit o `{ tipoPublicacion }`
-   * @param {Object} [meta] - Objeto opcional con `{ tipoPublicacion }`
+   * @param {Event|Object} [e] - Evento del submit o metadata de modalidad
+   * @param {Object} [meta] - Objeto opcional con `{ modoPublicacion }`
    */
   const handleSubmit = useCallback(
     async (e, meta = {}) => {
       if (e?.preventDefault) e.preventDefault();
 
-      // Si `e` es un objeto sin preventDefault, se asume que es meta ({ tipoPublicacion })
+      // Si `e` es un objeto sin preventDefault, se asume que es metadata.
       const combinedMeta =
         e && typeof e === "object" && !e.preventDefault
           ? { ...e, ...meta }
           : meta;
 
+      const estadoPublicacion = obtenerEstadoPublicacion(
+        combinedMeta.modoPublicacion ?? formData.modo_publicacion,
+        combinedMeta.tipoPublicacion ?? formData.tipo_publicacion,
+      );
+
       // Preparar datos para submit
       const submitResult = await submitEvent({
         formData: {
           ...formData,
+          ...estadoPublicacion,
           imagenes: newImages,
         },
         existingImages,
         editEventId,
         currentDraftId: draftCurrentIdRef.current,
-        // El plan vive en formData; el meta solo lo sobreescribe cuando viene
-        // de un selector explícito (modal de tipo de publicación).
-        tipoPublicacion:
-          combinedMeta.tipoPublicacion ?? formData.tipo_publicacion,
+        modoPublicacion: estadoPublicacion.modo_publicacion,
+        tipoPublicacion: estadoPublicacion.tipo_publicacion,
         enabledFields: enabledFieldsRef.current,
         onSuccess: () => {
           // Limpiar después de éxito
@@ -786,6 +876,9 @@ const usePublicarFormV2 = () => {
     planInfo,
     hasActiveSubscription,
     enabledFields,
+    // Si la modalidad vino por URL, la elección ya está hecha y no hay que
+    // preguntar.
+    modoFromUrl,
 
     // Estado de borradores
     currentDraftId: draftManager.currentDraftId,
@@ -801,7 +894,7 @@ const usePublicarFormV2 = () => {
     handleSaveDraft,
     closeAuthModal,
     resetForm,
-    selectPublicationType,
+    selectPublicationMode,
 
     // Validación
     touchField,
