@@ -6,6 +6,8 @@ import {
   faMapMarkerAlt,
   faCalendarAlt,
   faClock,
+  faRepeat,
+  faCalendarDays,
 } from "@fortawesome/free-solid-svg-icons";
 
 /**
@@ -397,6 +399,15 @@ export default function Carousel({
                       e.target.src = "/img/Home1.png";
                     }}
                   />
+                  {item.es_recurrente ? (
+                    <span className="carousel__date-badge">
+                      <FontAwesomeIcon icon={faRepeat} /> Varias fechas
+                    </span>
+                  ) : (item.es_multidia || (item.fecha_fin && item.fecha_evento && item.fecha_fin !== item.fecha_evento)) ? (
+                    <span className="carousel__date-badge">
+                      <FontAwesomeIcon icon={faCalendarDays} /> Varios días
+                    </span>
+                  ) : null}
                 </div>
               </div>
             </div>

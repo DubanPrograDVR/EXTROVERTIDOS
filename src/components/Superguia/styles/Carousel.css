@@ -224,6 +224,32 @@
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
 }
 
+/* ===== DATE BADGE ===== */
+.carousel__date-badge {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 10;
+  pointer-events: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.carousel__date-badge svg {
+  color: #ff6600;
+  font-size: 0.8rem;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1200px) {
   .carousel__item {
