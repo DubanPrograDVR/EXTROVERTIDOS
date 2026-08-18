@@ -288,7 +288,7 @@ export default function HomeSuperguia({
       <div className="home-consolidado__section-heading">
         <div>
           <p className="home-consolidado__eyebrow">Servicios y negocios locales</p>
-          <h2 id="home-superguia-title">Superguía</h2>
+          <h2 id="home-superguia-title">Superbuscador</h2>
           <p>Busca negocios por rubro, ciudad y comuna, con resultados en un solo lugar.</p>
         </div>
         <button
