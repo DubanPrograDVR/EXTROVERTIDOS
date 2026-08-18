@@ -370,7 +370,7 @@ export default function Carousel({
               className="carousel__item"
               aria-hidden={slotIndex >= totalItems}
               onClick={() => onPublicationClick && onPublicationClick(item)}>
-              <div className="carousel__card">
+              <div className={`carousel__card ${item.tipo_publicacion === "destacada" ? "carousel__card--destacada" : ""}`}>
                 {badgeUrl && (
                   <img
                     src={badgeUrl}
