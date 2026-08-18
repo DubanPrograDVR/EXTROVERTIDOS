@@ -147,16 +147,6 @@ export default function FilterPanel({
     [locations, selectedCity],
   );
 
-  const locationLabel = useMemo(() => {
-    if (!showComunaFilter && selectedComuna) return selectedComuna;
-    if (selectedCity)
-      return (
-        ubicacionSeleccionada?.[1]?.nombre ||
-        (showComunaFilter ? "Ciudad" : "Ubicación")
-      );
-    return showComunaFilter ? "Ciudad" : "Ubicación";
-  }, [selectedComuna, selectedCity, ubicacionSeleccionada, showComunaFilter]);
-
   const comunaLabel = useMemo(() => {
     if (selectedComuna) return selectedComuna;
     return "Comuna";
@@ -206,8 +196,29 @@ export default function FilterPanel({
         </div>
       </div>
 
-      {/* Fila de filtros y calendario */}
+      {/* Fila principal: Filtros + Calendario */}
       <div className="filter-panel__main">
+        {/* === Barra de ciudades (Pills) === */}
+        <div className="filter-panel__cities-bar">
+          <button
+            type="button"
+            className={`filter-panel__city-pill ${!selectedCity ? "active" : ""}`}
+            onClick={() => onCityChange(null)}>
+            Todas
+          </button>
+          {Object.entries(locations).map(([key, city]) => (
+            <button
+              type="button"
+              key={key}
+              className={`filter-panel__city-pill ${
+                coincideCiudad(selectedCity, key, city) ? "active" : ""
+              }`}
+              onClick={() => onCityChange(key)}>
+              {city.nombre}
+            </button>
+          ))}
+        </div>
+
         {/* Filtros dropdown */}
         <div className="filter-panel__filters">
           {/* Categoría */}
@@ -219,9 +230,11 @@ export default function FilterPanel({
               } ${selectedCategory ? "has-value" : ""}`}
               aria-expanded={activeDropdown === "category"}
               onClick={() => toggleDropdown("category")}>
-              {categoryIcon
-                ? <img src={categoryIcon} alt="" className="filter-panel__btn-icon" />
-                : <FontAwesomeIcon icon={faLayerGroup} />}
+              {categoryIcon ? (
+                <img src={categoryIcon} alt="" className="filter-panel__btn-icon" />
+              ) : (
+                <FontAwesomeIcon icon={faLayerGroup} />
+              )}
               <span>{categoryLabel}</span>
               <FontAwesomeIcon icon={faChevronDown} className="chevron" />
             </button>
@@ -229,13 +242,13 @@ export default function FilterPanel({
             {activeDropdown === "category" && (
               <div className="filter-panel__dropdown">
                 <div className="filter-panel__dropdown-header">
-                    <span>Seleccionar categoría</span>
-                    {(selectedCategory || selectedSubcategory) && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onCategoryChange(null);
-                        }}>
+                  <span>Seleccionar categoría</span>
+                  {(selectedCategory || selectedSubcategory) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onCategoryChange(null);
+                      }}>
                       Limpiar
                     </button>
                   )}
@@ -279,96 +292,8 @@ export default function FilterPanel({
             )}
           </div>
 
-          {/* Ubicación */}
-          <div className="filter-panel__dropdown-wrapper">
-            <button
-              type="button"
-              className={`filter-panel__filter-btn ${
-                activeDropdown === "location" ? "active" : ""
-              } ${selectedCity || selectedComuna ? "has-value" : ""}`}
-              aria-expanded={activeDropdown === "location"}
-              onClick={() => toggleDropdown("location")}>
-              <FontAwesomeIcon icon={faMapMarkerAlt} />
-              <span>{locationLabel}</span>
-              <FontAwesomeIcon icon={faChevronDown} className="chevron" />
-            </button>
-
-            {activeDropdown === "location" && (
-              <div className="filter-panel__dropdown">
-                <div className="filter-panel__dropdown-header">
-                  <span>Seleccionar ciudad</span>
-                  {(selectedCity || selectedComuna) && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onCityChange(null);
-                      }}>
-                      Limpiar
-                    </button>
-                  )}
-                </div>
-                <div className="filter-panel__dropdown-list">
-                  {Object.entries(locations).map(([key, city]) => (
-                    <button
-                      type="button"
-                      key={key}
-                      className={`filter-panel__dropdown-item ${
-                        coincideCiudad(selectedCity, key, city) ? "selected" : ""
-                      }`}
-                      onClick={() => {
-                        onCityChange(
-                          coincideCiudad(selectedCity, key, city) ? null : key,
-                        );
-                        if (showComunaFilter) setActiveDropdown(null);
-                      }}>
-                      <span>{city.nombre}</span>
-                      {shouldShowCountBadge(eventsCountByCity[key]) && (
-                        <span className="filter-panel__count-badge">
-                          {eventsCountByCity[key] >= 100
-                            ? "+99"
-                            : eventsCountByCity[key]}
-                        </span>
-                      )}
-                      {coincideCiudad(selectedCity, key, city) && (
-                        <FontAwesomeIcon icon={faCheck} className="check" />
-                      )}
-                    </button>
-                  ))}
-
-                  {!showComunaFilter && availableComunas.length > 0 && (
-                    <>
-                      <p className="filter-panel__dropdown-label">Comuna</p>
-                      {availableComunas.map((comuna) => (
-                        <button
-                          key={comuna}
-                          className={`filter-panel__dropdown-item ${
-                            coincidenUbicaciones(selectedComuna, comuna)
-                              ? "selected"
-                              : ""
-                          }`}
-                          onClick={() => {
-                            onComunaChange(
-                              coincidenUbicaciones(selectedComuna, comuna)
-                                ? null
-                                : comuna,
-                            );
-                            setActiveDropdown(null);
-                          }}>
-                          <span>{comuna}</span>
-                          {coincidenUbicaciones(selectedComuna, comuna) && (
-                            <FontAwesomeIcon icon={faCheck} className="check" />
-                          )}
-                        </button>
-                      ))}
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Comuna (filtro separado) */}
-          {showComunaFilter && availableComunas.length > 0 && (
+          {/* Comuna (filtro separado, siempre visible si hay comunas) */}
+          {availableComunas.length > 0 && (
             <div className="filter-panel__dropdown-wrapper">
               <button
                 type="button"

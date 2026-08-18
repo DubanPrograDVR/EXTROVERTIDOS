@@ -75,6 +75,50 @@
   margin: 0 auto;
 }
 
+/* === Barra de ciudades (Pills) === */
+.filter-panel__cities-bar {
+  display: flex;
+  overflow-x: auto;
+  gap: 0.75rem;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+  scrollbar-width: none; /* Firefox */
+}
+
+.filter-panel__cities-bar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.filter-panel__city-pill {
+  flex: 0 0 auto;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50px;
+  padding: 0.6rem 1.25rem;
+  color: #ccc;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-panel__city-pill:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.filter-panel__city-pill.active {
+  background: #ff6b35; /* Color principal de la paleta */
+  border-color: #ff6b35;
+  color: #fff;
+}
+
 /* === Contenedor de filtros dropdown === */
 .filter-panel__filters {
   display: flex;
