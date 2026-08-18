@@ -341,6 +341,10 @@ export default function PanoramasPage() {
 
   // Handlers para el modal
   const handleEventClick = useCallback(async (event) => {
+    if (event.isBanner) {
+      navigate("/publicar-panorama");
+      return;
+    }
     setSelectedEvent(event);
     trackPublicationView(event);
     if (event?.id) {
@@ -830,10 +834,19 @@ export default function PanoramasPage() {
   // Panoramas destacados para el mini carrusel superior (modo tren).
   // Respeta los filtros activos. En modo tren se repiten automáticamente
   // cuando hay pocos elementos.
-  const destacadaEvents = useMemo(
-    () => filteredEvents.filter((e) => e.tipo_publicacion === "destacada"),
-    [filteredEvents],
-  );
+  const destacadaEvents = useMemo(() => {
+    let destacadas = filteredEvents.filter((e) => e.tipo_publicacion === "destacada").slice(0, 20);
+    if (destacadas.length < 5) {
+      destacadas.push({
+        id: "banner-destaca-panorama",
+        isBanner: true,
+        titulo: "¡Destaca tu Panorama!",
+        imagen_url: "/img/banner_destaca_panorama.png",
+        tipo_publicacion: "destacada",
+      });
+    }
+    return destacadas;
+  }, [filteredEvents]);
 
   // Resaltar card cuando venimos con ?highlight=<id>
   useHighlightCard({

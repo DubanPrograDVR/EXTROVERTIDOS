@@ -76,10 +76,28 @@ export default function HomeSuperguia({
   const debeDesplazarRef = useRef(false);
 
   const carruselLleno = useMemo(() => {
-    if (!carouselItems || carouselItems.length === 0) return [];
-    let items = [...carouselItems];
+    if (!carouselItems) return [];
+    
+    // Filtrar solo panoramas destacados y limitar a 20
+    let destacados = carouselItems
+      .filter((item) => item.tipo_publicacion === "destacada")
+      .slice(0, 20);
+
+    // Si hay menos de 5, agregar un banner dummy
+    if (destacados.length < 5) {
+      destacados.push({
+        id: "banner-destaca-panorama",
+        isBanner: true,
+        titulo: "¡Destaca tu Panorama!",
+        imagen_url: "/img/banner_destaca_panorama.png",
+        tipo_publicacion: "destacada",
+      });
+    }
+
+    // Llenar para el efecto tren si aún hay menos de 5
+    let items = [...destacados];
     while (items.length > 0 && items.length < 5) {
-      items = [...items, ...carouselItems];
+      items = [...items, ...destacados];
     }
     return items;
   }, [carouselItems]);

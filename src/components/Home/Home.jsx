@@ -127,6 +127,10 @@ export default function Home() {
   );
 
   const abrirPanorama = useCallback(async (panorama) => {
+    if (panorama?.isBanner) {
+      navigate("/publicar-panorama");
+      return;
+    }
     setPanoramaSeleccionado(panorama);
     setModalPanoramaAbierto(true);
 
@@ -138,7 +142,7 @@ export default function Home() {
     } catch (cargaError) {
       console.error("Error cargando detalle del panorama:", cargaError);
     }
-  }, []);
+  }, [navigate]);
 
   const cerrarPanorama = useCallback(() => {
     setModalPanoramaAbierto(false);
@@ -146,9 +150,13 @@ export default function Home() {
   }, []);
 
   const abrirNegocio = useCallback((negocio) => {
+    if (negocio?.isBanner) {
+      navigate("/publicar-negocio");
+      return;
+    }
     setNegocioSeleccionado(negocio);
     setModalNegocioAbierto(true);
-  }, []);
+  }, [navigate]);
 
   const cerrarNegocio = useCallback(() => {
     setModalNegocioAbierto(false);
