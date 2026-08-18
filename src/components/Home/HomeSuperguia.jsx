@@ -7,6 +7,7 @@ import Pagination from "../Superguia/Pagination";
 import Carousel from "../Superguia/Carousel";
 import { LOCATIONS } from "../Superguia/data";
 import { useHighlightCard } from "../../hooks/useHighlightCard";
+import { usePlansVisibility } from "../../hooks/usePlansVisibility";
 import { crearSubcategorias, filtrarNegocios } from "./homeUtils";
 
 const ITEMS_PER_PAGE = 16;
@@ -71,6 +72,7 @@ export default function HomeSuperguia({
   onPublicar,
   semillaOrden = 0,
 }) {
+  const { negociosDestacadasEnabled } = usePlansVisibility();
   const [paginaActual, setPaginaActual] = useState(1);
   const referenciaFiltros = useRef(null);
   const debeDesplazarRef = useRef(false);
@@ -78,13 +80,13 @@ export default function HomeSuperguia({
   const carruselLleno = useMemo(() => {
     if (!carouselItems) return [];
     
-    // Filtrar solo negocios destacados y limitar a 20
+    // Filtrar destacados (o todos si los destacados están desactivados) y limitar a 20
     let destacados = carouselItems
-      .filter((item) => item.tipo_publicacion === "destacada")
+      .filter((item) => negociosDestacadasEnabled ? item.tipo_publicacion === "destacada" : true)
       .slice(0, 20);
 
-    // Si hay menos de 5, agregar un banner dummy
-    if (destacados.length < 5) {
+    // Si hay menos de 5 y los planes están habilitados, agregar un banner dummy
+    if (destacados.length < 5 && negociosDestacadasEnabled) {
       destacados.push({
         id: "banner-destaca-negocio",
         isBanner: true,
@@ -101,7 +103,7 @@ export default function HomeSuperguia({
       items = [...items, ...destacados];
     }
     return items;
-  }, [carouselItems]);
+  }, [carouselItems, negociosDestacadasEnabled]);
 
   const subcategorias = useMemo(() => crearSubcategorias(categorias), [categorias]);
   const filtros = useMemo(

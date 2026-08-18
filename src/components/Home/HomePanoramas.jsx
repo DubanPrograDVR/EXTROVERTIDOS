@@ -73,13 +73,13 @@ export default function HomePanoramas({
   const carruselLleno = useMemo(() => {
     if (!carouselItems) return [];
     
-    // Filtrar solo panoramas destacados y limitar a 20
+    // Filtrar destacados (o todos si los planes destacados están desactivados) y limitar a 20
     let destacados = carouselItems
-      .filter((item) => item.tipo_publicacion === "destacada")
+      .filter((item) => destacadasEnabled ? item.tipo_publicacion === "destacada" : true)
       .slice(0, 20);
 
-    // Si hay menos de 5, agregar un banner dummy
-    if (destacados.length < 5) {
+    // Si hay menos de 5 y los planes están habilitados, agregar un banner dummy
+    if (destacados.length < 5 && destacadasEnabled) {
       destacados.push({
         id: "banner-destaca-panorama",
         isBanner: true,
@@ -96,7 +96,7 @@ export default function HomePanoramas({
       items = [...items, ...destacados];
     }
     return items;
-  }, [carouselItems]);
+  }, [carouselItems, destacadasEnabled]);
 
 
   const filtros = useMemo(
