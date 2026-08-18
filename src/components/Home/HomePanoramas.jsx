@@ -73,7 +73,7 @@ export default function HomePanoramas({
   const carruselLleno = useMemo(() => {
     if (!carouselItems) return [];
     
-    // Filtrar solo negocios destacados y limitar a 20
+    // Filtrar solo panoramas destacados y limitar a 20
     let destacados = carouselItems
       .filter((item) => item.tipo_publicacion === "destacada")
       .slice(0, 20);
@@ -81,11 +81,11 @@ export default function HomePanoramas({
     // Si hay menos de 5, agregar un banner dummy
     if (destacados.length < 5) {
       destacados.push({
-        id: "banner-destaca-negocio",
+        id: "banner-destaca-panorama",
         isBanner: true,
-        titulo: "¡Destaca tu Negocio!",
-        nombre: "¡Destaca tu Negocio!",
-        imagen_url: "/img/banner_destaca_negocio.png",
+        titulo: "¡Destaca tu Panorama!",
+        nombre: "¡Destaca tu Panorama!",
+        imagen_url: "/img/banner_destaca_panorama.png",
         tipo_publicacion: "destacada",
       });
     }
@@ -97,6 +97,7 @@ export default function HomePanoramas({
     }
     return items;
   }, [carouselItems]);
+
 
   const filtros = useMemo(
     () => ({
@@ -288,8 +289,8 @@ export default function HomePanoramas({
       {carruselLleno.length > 0 && (
         <Carousel
           publications={carruselLleno}
-          onPublicationClick={onNegocioClick}
-          badgeUrl="/img/SG_Extro_v2.png"
+          onPublicationClick={onEventoClick}
+          badgeUrl="/img/P_Extro_v2.png"
         />
       )}
 

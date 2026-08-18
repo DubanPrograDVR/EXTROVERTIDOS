@@ -219,7 +219,7 @@ export default function Home() {
           recargar={recargar}
           onEventoClick={abrirPanorama}
           onNegocioClick={abrirNegocio}
-          carouselItems={negociosParaVista}
+          carouselItems={eventosParaVista}
           onPublicar={() => publicar("/crear-publicacion")}
           semillaOrden={semillaOrden}
         />
@@ -236,7 +236,7 @@ export default function Home() {
           recargar={recargar}
           onNegocioClick={abrirNegocio}
           onEventoClick={abrirPanorama}
-          carouselItems={eventosParaVista}
+          carouselItems={negociosParaVista}
           onPublicar={() => publicar("/crear-publicacion")}
           semillaOrden={semillaOrden}
         />
