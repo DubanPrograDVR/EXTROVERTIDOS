@@ -61,7 +61,7 @@ BEGIN
 
   IF TG_OP = 'INSERT'
      AND NEW.tipo_publicacion = 'destacada'
-     AND COALESCE(NEW.estado, '') <> 'borrador' THEN
+     AND COALESCE(NEW.estado::text, '') <> 'borrador' THEN
     RAISE EXCEPTION 'Un usuario solo puede iniciar una destacada como borrador';
   END IF;
 
@@ -69,7 +69,7 @@ BEGIN
      AND NEW.tipo_publicacion = 'destacada'
      AND (
        OLD.tipo_publicacion <> 'destacada'
-       OR (OLD.estado = 'borrador' AND COALESCE(NEW.estado, '') <> 'borrador')
+       OR (OLD.estado = 'borrador' AND COALESCE(NEW.estado::text, '') <> 'borrador')
      ) THEN
     RAISE EXCEPTION 'La activacion de un panorama destacado requiere el pago confirmado';
   END IF;
