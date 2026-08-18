@@ -75,7 +75,7 @@ const WizardStepDateTime = ({
           horaFin={formData.hora_fin}
           onChange={onChange}
           errors={errors}
-          enabledModes={calendarModes}
+          enabledModes={["single"]}
           showSubmissionDateWarning
         />
       </div>

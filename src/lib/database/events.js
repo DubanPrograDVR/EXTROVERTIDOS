@@ -268,10 +268,9 @@ export const getPublishedEvents = async () => {
     )
     .eq("estado", "publicado")
     .eq("is_paused", false)
-    // Vigentes por fecha_fin O recurrentes (su vigencia real se filtra en cliente
     // según fechas_recurrencia, ya que fecha_fin puede ser la primera fecha).
     .or(`fecha_fin.gte.${today},es_recurrente.eq.true`)
-    .order("fecha_evento", { ascending: true });
+    .order("created_at", { ascending: true });
 
   if (error) {
     console.error("Error al obtener eventos:", error);

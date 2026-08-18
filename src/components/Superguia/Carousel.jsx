@@ -10,108 +10,7 @@ import {
   faCalendarDays,
 } from "@fortawesome/free-solid-svg-icons";
 
-const DIAS_PLURAL = [
-  "domingos",
-  "lunes",
-  "martes",
-  "miércoles",
-  "jueves",
-  "viernes",
-  "sábados",
-];
 
-const DIAS_CORTO = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-
-const getCarouselBadgeInfo = (item) => {
-  if (!item) return null;
-
-  // 1. Recurrente (se repite días específicos)
-  const isRecurring = Boolean(
-    item.es_recurrente && (
-      (item.cantidad_repeticiones && item.cantidad_repeticiones > 1) ||
-      (Array.isArray(item.fechas_recurrencia) && item.fechas_recurrencia.length > 1) ||
-      item.dia_recurrencia
-    )
-  );
-
-  if (isRecurring) {
-    let fechas = Array.isArray(item.fechas_recurrencia)
-      ? item.fechas_recurrencia.filter(Boolean)
-      : [];
-
-    if (fechas.length === 0 && item.fecha_evento) {
-      fechas = [item.fecha_evento];
-    }
-
-    if (fechas.length > 0) {
-      const diasUnicos = [
-        ...new Set(
-          fechas.map((f) => new Date(f + "T00:00:00").getDay())
-        ),
-      ];
-
-      if (diasUnicos.length === 1 && !isNaN(diasUnicos[0])) {
-        const nombreDia = DIAS_PLURAL[diasUnicos[0]];
-        return {
-          icon: faRepeat,
-          text: `Todos los ${nombreDia}`,
-        };
-      } else if (diasUnicos.length > 1 && diasUnicos.length <= 3) {
-        const nombres = diasUnicos
-          .filter((d) => !isNaN(d))
-          .sort((a, b) => a - b)
-          .map((d) => DIAS_CORTO[d]);
-        return {
-          icon: faRepeat,
-          text: `Cada ${nombres.join(", ")}`,
-        };
-      }
-    }
-
-    if (item.dia_recurrencia) {
-      const diaLower = item.dia_recurrencia.toLowerCase().trim();
-      const plural = diaLower.endsWith("s") ? diaLower : `${diaLower}s`;
-      return {
-        icon: faRepeat,
-        text: `Todos los ${plural}`,
-      };
-    }
-
-    return {
-      icon: faRepeat,
-      text: "Evento recurrente",
-    };
-  }
-
-  // 2. Multidía (dura varios días continuos)
-  const isMultiDay = Boolean(
-    item.es_multidia ||
-    (item.fecha_fin && item.fecha_evento && item.fecha_fin !== item.fecha_evento)
-  );
-
-  if (isMultiDay && item.fecha_evento && item.fecha_fin) {
-    const inicio = new Date(item.fecha_evento + "T00:00:00");
-    const fin = new Date(item.fecha_fin + "T00:00:00");
-    const diffTime = Math.abs(fin - inicio);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-
-    if (diffDays > 1) {
-      return {
-        icon: faCalendarDays,
-        text: `Dura ${diffDays} días`,
-      };
-    }
-  }
-
-  if (isMultiDay) {
-    return {
-      icon: faCalendarDays,
-      text: "Varios días",
-    };
-  }
-
-  return null;
-};
 
 /**
  * Carrusel con efecto "tren": los items se desplazan de forma continua
@@ -502,15 +401,6 @@ export default function Carousel({
                       e.target.src = "/img/Home1.png";
                     }}
                   />
-                  {(() => {
-                    const badgeInfo = getCarouselBadgeInfo(item);
-                    if (!badgeInfo) return null;
-                    return (
-                      <span className="carousel__date-badge">
-                        <FontAwesomeIcon icon={badgeInfo.icon} /> {badgeInfo.text}
-                      </span>
-                    );
-                  })()}
                 </div>
               </div>
             </div>

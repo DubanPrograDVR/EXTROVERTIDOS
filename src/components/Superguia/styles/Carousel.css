@@ -89,19 +89,24 @@
 }
 
 .carousel__card--destacada {
-  border: 2px solid #ffd700;
+  border: 3.5px solid #ffd700;
   background: linear-gradient(160deg, #1a1206 0%, #111 60%);
   box-shadow:
-    0 0 0 1px rgba(255, 215, 0, 0.25),
-    0 8px 22px rgba(255, 215, 0, 0.18);
+    0 0 14px rgba(255, 215, 0, 0.35),
+    0 8px 24px rgba(255, 215, 0, 0.2);
+}
+
+.carousel__card--destacada .carousel__image-container {
+  border-radius: 12px;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .carousel__item:hover .carousel__card--destacada {
+    border-color: #ffe033;
     box-shadow:
-      0 0 0 1px rgba(255, 215, 0, 0.4),
-      0 12px 28px rgba(255, 215, 0, 0.32),
-      0 20px 40px rgba(0, 0, 0, 0.4);
+      0 0 20px rgba(255, 215, 0, 0.55),
+      0 12px 30px rgba(255, 215, 0, 0.35),
+      0 20px 40px rgba(0, 0, 0, 0.5);
   }
 }
 
@@ -222,38 +227,6 @@
 
 .carousel__date span {
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
-}
-
-/* ===== DATE BADGE ===== */
-.carousel__date-badge {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
-  background: rgba(15, 15, 15, 0.78);
-  backdrop-filter: blur(6px);
-  color: #fff;
-  padding: 5px 11px;
-  border-radius: 20px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  z-index: 10;
-  pointer-events: none;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-  max-width: calc(100% - 20px);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.carousel__date-badge svg {
-  color: #ff6600;
-  font-size: 0.78rem;
-  flex-shrink: 0;
 }
 
 /* ===== RESPONSIVE ===== */
