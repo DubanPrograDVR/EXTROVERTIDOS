@@ -191,7 +191,7 @@ export const FREE_PLAN_FIELDS = [
 ];
 
 /** Redes sociales disponibles en el plan gratuito */
-export const FREE_PLAN_SOCIAL_NETWORKS = ["facebook", "tiktok"];
+export const FREE_PLAN_SOCIAL_NETWORKS = ["instagram", "facebook", "tiktok"];
 
 /**
  * Decide si corresponde el formulario completo.
