@@ -175,7 +175,10 @@ export const filtrarEventos = (
       filtrosActivos.categoria &&
       String(evento.category_id) !== String(filtrosActivos.categoria)
     ) {
-      return false;
+      // Los panoramas destacados ignoran el filtro de categoría y siempre se muestran
+      if (evento.tipo_publicacion !== "destacada") {
+        return false;
+      }
     }
 
     if (
@@ -217,26 +220,6 @@ export const ordenarEventos = (
   destacadasHabilitadas = true,
   semillaOrden = 0,
 ) => {
-  const fechaHoy = formatDateKey(new Date());
-  const ordenarGrupo = (grupo, grupoSemilla) => {
-    const gruposPorFecha = new Map();
-    grupo.forEach((evento) => {
-      const fecha = obtenerFechaOrden(evento, fechaHoy) || "9999-12-31";
-      const eventosFecha = gruposPorFecha.get(fecha) || [];
-      eventosFecha.push(evento);
-      gruposPorFecha.set(fecha, eventosFecha);
-    });
-
-    return [...gruposPorFecha.keys()]
-      .sort()
-      .flatMap((fecha) =>
-        mezclarConSemilla(
-          gruposPorFecha.get(fecha),
-          grupoSemilla ^ hashTexto(fecha),
-        ),
-      );
-  };
-
   const destacadas = destacadasHabilitadas
     ? eventos.filter((evento) => evento.tipo_publicacion === "destacada")
     : [];
@@ -245,8 +228,8 @@ export const ordenarEventos = (
   );
 
   return [
-    ...ordenarGrupo(destacadas, semillaOrden ^ 0x51f15e),
-    ...ordenarGrupo(normales, semillaOrden ^ 0xa7c3d9),
+    ...mezclarConSemilla(destacadas, semillaOrden ^ 0x51f15e),
+    ...mezclarConSemilla(normales, semillaOrden ^ 0xa7c3d9),
   ];
 };
 
