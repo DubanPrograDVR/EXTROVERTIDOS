@@ -189,7 +189,7 @@ const usePublicarFormV2 = () => {
   const hasActiveSubscription = Boolean(activeSubscription);
 
   const enabledFields = useMemo(() => {
-    if (isEditing || isAdmin || isModerator) return null;
+    if (isEditing) return null;
     return getEnabledFields({
       modoPublicacion: formData.modo_publicacion,
       tipoPublicacion: formData.tipo_publicacion,
@@ -200,8 +200,6 @@ const usePublicarFormV2 = () => {
     formData.tipo_publicacion,
     hasActiveSubscription,
     isEditing,
-    isAdmin,
-    isModerator,
   ]);
 
   const enabledFieldsRef = useRef(enabledFields);
