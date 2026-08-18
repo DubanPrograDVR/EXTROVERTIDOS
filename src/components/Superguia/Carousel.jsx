@@ -401,6 +401,9 @@ export default function Carousel({
                       e.target.src = "/img/Home1.png";
                     }}
                   />
+                  <div className="carousel__hover-overlay">
+                    <span className="carousel__ver-mas">Ver más</span>
+                  </div>
                 </div>
               </div>
             </div>
