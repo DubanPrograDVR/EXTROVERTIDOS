@@ -58,7 +58,7 @@
 
 /* ===== ITEMS ===== */
 .carousel__item {
-  flex: 0 0 280px;
+  flex: 0 0 240px;
   cursor: pointer;
   transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -106,12 +106,7 @@
 }
 
 
-/* Imagen envuelta en un contenedor que mantiene las esquinas redondeadas. */
-.carousel__image-container {
-  overflow: hidden;
-  border-radius: 16px 16px 0 0;
-  position: relative;
-}
+
 
 /* Logo de esquina centrado sobre el vértice superior izquierdo del card.
    Mismo patrón que publication-card__corner-badge y business-card__corner-badge. */
@@ -133,29 +128,24 @@
   }
 }
 
+/* Gradient overlay removido para que se vea solo la imagen */
 .carousel__card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 100%;
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    transparent 40%,
-    rgba(0, 0, 0, 0.7) 70%,
-    rgba(0, 0, 0, 0.95) 100%
-  );
-  z-index: 1;
-  pointer-events: none;
+  display: none;
 }
 
 /* ===== IMAGEN ===== */
+.carousel__image-container {
+  overflow: hidden;
+  border-radius: 16px;
+  position: relative;
+  height: 100%;
+}
+
 .carousel__image-container .carousel__image {
   display: block;
   width: 100%;
-  aspect-ratio: 3/4;
+  height: 100%;
+  aspect-ratio: 1 / 1;
   object-fit: cover;
   transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -361,7 +351,7 @@
 }
 
 .carousel--mini .carousel__image-container .carousel__image {
-  aspect-ratio: 4/5;
+  aspect-ratio: 1 / 1;
 }
 
 .carousel--mini .carousel__info {

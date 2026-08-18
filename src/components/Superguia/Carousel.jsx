@@ -398,66 +398,6 @@ export default function Carousel({
                     }}
                   />
                 </div>
-                <div className="carousel__info">
-                  <h3 className="carousel__title">
-                    {item.titulo || item.nombre}
-                  </h3>
-                  {!item.isBanner && (
-                    <div className="carousel__meta">
-                      <div className="carousel__location">
-                        <FontAwesomeIcon icon={faMapMarkerAlt} />
-                        <span>
-                          {item.comuna || item.ciudad}
-                          {item.provincia ? `, ${item.provincia}` : ""}
-                        </span>
-                      </div>
-                      {item.fecha_evento && (
-                        <div className="carousel__date">
-                          <FontAwesomeIcon icon={faCalendarAlt} />
-                          <span>
-                            {new Date(item.fecha_evento).toLocaleDateString(
-                              "es-CL",
-                              {
-                                day: "numeric",
-                                month: "short",
-                              },
-                            )}
-                          </span>
-                        </div>
-                      )}
-                      {!item.fecha_evento && item.horarios && (
-                        <div className="carousel__date">
-                          <FontAwesomeIcon icon={faClock} />
-                          <span>
-                            {item.horarios.abierto_24h
-                              ? "Abierto 24h"
-                              : (() => {
-                                  const diasNombres = [
-                                    "Domingo",
-                                    "Lunes",
-                                    "Martes",
-                                    "Miércoles",
-                                    "Jueves",
-                                    "Viernes",
-                                    "Sábado",
-                                  ];
-                                  const hoy = diasNombres[new Date().getDay()];
-                                  const h = item.horarios[hoy];
-                                  if (!h) return "Cerrado hoy";
-                                  if (Array.isArray(h) && h[0]?.apertura) {
-                                    return `${h[0].apertura} - ${h[0].cierre}`;
-                                  }
-                                  if (h.apertura) {
-                                    return `${h.apertura} - ${h.cierre}`;
-                                  }
-                                  return "Cerrado hoy";
-                                })()}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
           ))}
