@@ -1107,17 +1107,19 @@
   cursor: pointer;
 }
 
-.publicar-negocio__highlight-label > input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
 .publicar-negocio__highlight-card {
   display: flex;
   align-items: center;
   gap: 14px;
   color: #fff;
+}
+
+.publicar-negocio__highlight-card--active {
+  color: #ffd54a;
+}
+
+.publicar-negocio__highlight-text {
+  flex: 1;
 }
 
 .publicar-negocio__highlight-icon {
@@ -1147,16 +1149,51 @@
   font-size: 0.84rem;
 }
 
+/* Toggle switch for highlighted card */
+.publicar-negocio__toggle {
+  position: relative;
+  width: 52px;
+  height: 28px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  background: #333;
+  transition: background 0.3s ease;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.publicar-negocio__toggle--active {
+  background: #ff6600;
+}
+
+.publicar-negocio__toggle:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.publicar-negocio__toggle-knob {
+  position: absolute;
+  left: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.3s ease;
+  pointer-events: none;
+}
+
+.publicar-negocio__toggle--active .publicar-negocio__toggle-knob {
+  transform: translateX(24px);
+}
+
 .publicar-negocio__highlight-status {
   margin: 14px 0 0 58px;
   color: rgba(255, 255, 255, 0.72);
   font-size: 0.84rem;
   line-height: 1.45;
-}
-
-.publicar-negocio__highlight-label:has(> input:checked)
-  .publicar-negocio__highlight-card {
-  color: #ffd54a;
 }
 
 @media (max-width: 480px) {

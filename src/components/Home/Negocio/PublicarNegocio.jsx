@@ -314,20 +314,19 @@ const PublicarNegocio = () => {
 
             {canChooseDestacada && (
               <section className="publicar-negocio__highlight-option">
-                <label className="publicar-negocio__highlight-label">
-                  <input
-                    type="checkbox"
-                    checked={isDestacadaSelected}
-                    onChange={(event) =>
-                      handlePublicationTypeChange(event.target.checked)
-                    }
-                    disabled={isSubmitting}
-                  />
-                  <span className="publicar-negocio__highlight-card">
+                <div 
+                  className="publicar-negocio__highlight-label"
+                  onClick={(e) => {
+                    // Prevent double firing if clicking directly on button
+                    if (e.target.closest('button')) return;
+                    if (!isSubmitting) handlePublicationTypeChange(!isDestacadaSelected);
+                  }}
+                >
+                  <span className={`publicar-negocio__highlight-card ${isDestacadaSelected ? "publicar-negocio__highlight-card--active" : ""}`}>
                     <span className="publicar-negocio__highlight-icon">
                       <FontAwesomeIcon icon={faCrown} />
                     </span>
-                    <span>
+                    <span className="publicar-negocio__highlight-text">
                       <strong>Destacar mi negocio</strong>
                       <small>
                         {isStaff
@@ -335,8 +334,16 @@ const PublicarNegocio = () => {
                           : `${formatCLP(negocioDestacadoPrice)} · Pago único vía Webpay`}
                       </small>
                     </span>
+                    <button
+                      type="button"
+                      className={`publicar-negocio__toggle ${isDestacadaSelected ? "publicar-negocio__toggle--active" : ""}`}
+                      onClick={() => handlePublicationTypeChange(!isDestacadaSelected)}
+                      disabled={isSubmitting}
+                    >
+                      <span className="publicar-negocio__toggle-knob" />
+                    </button>
                   </span>
-                </label>
+                </div>
                 <p className="publicar-negocio__highlight-status">
                   {isDestacadaSelected
                     ? isStaff
