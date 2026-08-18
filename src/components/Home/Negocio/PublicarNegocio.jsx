@@ -312,47 +312,7 @@ const PublicarNegocio = () => {
               onFieldFocus={handleFieldFocus}
             />
 
-            {canChooseDestacada && (
-              <section className="publicar-negocio__highlight-option">
-                <div 
-                  className="publicar-negocio__highlight-label"
-                  onClick={(e) => {
-                    // Prevent double firing if clicking directly on button
-                    if (e.target.closest('button')) return;
-                    if (!isSubmitting) handlePublicationTypeChange(!isDestacadaSelected);
-                  }}
-                >
-                  <span className={`publicar-negocio__highlight-card ${isDestacadaSelected ? "publicar-negocio__highlight-card--active" : ""}`}>
-                    <span className="publicar-negocio__highlight-icon">
-                      <FontAwesomeIcon icon={faCrown} />
-                    </span>
-                    <span className="publicar-negocio__highlight-text">
-                      <strong>Destacar mi negocio</strong>
-                      <small>
-                        {isStaff
-                          ? "Publicación directa para staff"
-                          : `${formatCLP(negocioDestacadoPrice)} · Pago único vía Webpay`}
-                      </small>
-                    </span>
-                    <button
-                      type="button"
-                      className={`publicar-negocio__toggle ${isDestacadaSelected ? "publicar-negocio__toggle--active" : ""}`}
-                      onClick={() => handlePublicationTypeChange(!isDestacadaSelected)}
-                      disabled={isSubmitting}
-                    >
-                      <span className="publicar-negocio__toggle-knob" />
-                    </button>
-                  </span>
-                </div>
-                <p className="publicar-negocio__highlight-status">
-                  {isDestacadaSelected
-                    ? isStaff
-                      ? "Se publicará directamente como negocio destacado, sin consumir cupo Superguía."
-                      : "Se creará un borrador y, tras el pago, pasará a revisión. No consume cupo Superguía."
-                    : "Sin marcar, tu negocio seguirá el flujo normal y consumirá un cupo Superguía."}
-                </p>
-              </section>
-            )}
+
 
             {/* Botones de acción */}
             <div className="publicar-negocio__actions">
@@ -627,6 +587,51 @@ const PublicarNegocio = () => {
           )}
           {renderStep()}
         </div>
+
+        {/* Toggle destacado siempre visible (Sticky) */}
+        {canChooseDestacada && (
+          <div className="publicar-negocio__sticky-highlight">
+            <section className="publicar-negocio__highlight-option">
+              <div 
+                className="publicar-negocio__highlight-label"
+                onClick={(e) => {
+                  // Prevent double firing if clicking directly on button
+                  if (e.target.closest('button')) return;
+                  if (!isSubmitting) handlePublicationTypeChange(!isDestacadaSelected);
+                }}
+              >
+                <span className={`publicar-negocio__highlight-card ${isDestacadaSelected ? "publicar-negocio__highlight-card--active" : ""}`}>
+                  <span className="publicar-negocio__highlight-icon">
+                    <FontAwesomeIcon icon={faCrown} />
+                  </span>
+                  <span className="publicar-negocio__highlight-text">
+                    <strong>Destacar mi negocio</strong>
+                    <small>
+                      {isStaff
+                        ? "Publicación directa para staff"
+                        : `${formatCLP(negocioDestacadoPrice)} · Pago único vía Webpay`}
+                    </small>
+                  </span>
+                  <button
+                    type="button"
+                    className={`publicar-negocio__toggle ${isDestacadaSelected ? "publicar-negocio__toggle--active" : ""}`}
+                    onClick={() => handlePublicationTypeChange(!isDestacadaSelected)}
+                    disabled={isSubmitting}
+                  >
+                    <span className="publicar-negocio__toggle-knob" />
+                  </button>
+                </span>
+              </div>
+              <p className="publicar-negocio__highlight-status">
+                {isDestacadaSelected
+                  ? isStaff
+                    ? "Se publicará directamente como negocio destacado, sin consumir cupo Superguía."
+                    : "Se creará un borrador y, tras el pago, pasará a revisión. No consume cupo Superguía."
+                  : "Sin marcar, tu negocio seguirá el flujo normal y consumirá un cupo Superguía."}
+              </p>
+            </section>
+          </div>
+        )}
 
         {/* Mensaje de validación */}
         {stepError && (

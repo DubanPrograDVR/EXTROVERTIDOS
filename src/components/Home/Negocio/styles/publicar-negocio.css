@@ -1089,17 +1089,26 @@
   margin-top: 20px;
 }
 
-/* Opción de negocio destacado, separada de la identidad de "Verificado". */
+/* Toggle switch and highlight option */
+.publicar-negocio__sticky-highlight {
+  position: sticky;
+  bottom: 0;
+  z-index: 50;
+  background: var(--bg-color, #0f0f0f);
+  padding: 10px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
 .publicar-negocio__highlight-option {
-  margin: 20px 0;
-  padding: 18px;
-  border: 1px solid rgba(255, 193, 7, 0.45);
-  border-radius: 14px;
   background: linear-gradient(
-    135deg,
+    145deg,
     rgba(255, 193, 7, 0.12),
     rgba(255, 102, 0, 0.08)
   );
+  border: 1px solid rgba(255, 152, 0, 0.3);
+  border-radius: 16px;
+  padding: 20px;
+  /* margin-bottom is handled by sticky-highlight padding */
 }
 
 .publicar-negocio__highlight-label {
