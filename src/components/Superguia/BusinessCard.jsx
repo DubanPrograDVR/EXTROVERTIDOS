@@ -96,41 +96,18 @@ export default function BusinessCard({
   const [isFavorited, setIsFavorited] = useState(initialIsFavorite);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
   const [favoriteCount, setFavoriteCount] = useState(0);
-  const [isLiked, setIsLiked] = useState(likeState?.isLiked ?? false);
-  const [likeCount, setLikeCount] = useState(likeState?.count ?? 0);
-  const [isTogglingLike, setIsTogglingLike] = useState(false);
   const [shareCount, setShareCount] = useState(business?.share_count ?? 0);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
-  const hasExternalLikeState = likeState !== undefined && likeState !== null;
-  const externalIsLiked = likeState?.isLiked;
-  const externalCount = likeState?.count;
-
-  // Cargar estado de likes y favoritos al montar.
-  // Si el grid ya provee likeState batched, omitimos las queries de likes
-  // y solo cargamos el favorito del usuario actual.
+  // Cargar estado de favoritos al montar.
   const loadInteractions = async () => {
     try {
-      if (!hasExternalLikeState) {
-        const count = await getBusinessLikesCount(id);
-        setLikeCount(count);
-      }
-
       const favCount = await getBusinessFavoritesCount(id);
       setFavoriteCount(favCount);
 
       if (user) {
-        if (hasExternalLikeState) {
-          const favorited = await isBusinessFavorite(user.id, id);
-          setIsFavorited(favorited);
-        } else {
-          const [liked, favorited] = await Promise.all([
-            hasUserLikedBusiness(user.id, id),
-            isBusinessFavorite(user.id, id),
-          ]);
-          setIsLiked(liked);
-          setIsFavorited(favorited);
-        }
+        const favorited = await isBusinessFavorite(user.id, id);
+        setIsFavorited(favorited);
       }
     } catch (error) {
       console.error("Error cargando interacciones de negocio:", error);
@@ -140,23 +117,7 @@ export default function BusinessCard({
   useEffect(() => {
     if (id) loadInteractions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, user, hasExternalLikeState]);
-
-  // Sincronizar con el estado batched provisto por el padre.
-  useEffect(() => {
-    if (!hasExternalLikeState) return;
-    setIsLiked(!!externalIsLiked);
-    setLikeCount(Number(externalCount) || 0);
-  }, [hasExternalLikeState, externalIsLiked, externalCount]);
-
-  // Tiempo real: solo si la card es autónoma (sin batched state del padre).
-  useRealtimeRefetch({
-    table: "business_likes",
-    event: "*",
-    filter: id ? `business_id=eq.${id}` : undefined,
-    enabled: Boolean(id) && !hasExternalLikeState,
-    onChange: () => loadInteractions(),
-  });
+  }, [id, user]);
 
   // Tiempo real: actualizar share_count cuando otro usuario comparte.
   useRealtimeRefetch({
@@ -367,30 +328,7 @@ export default function BusinessCard({
     }
   };
 
-  // Toggle like
-  const handleLikeClick = async (e) => {
-    e.stopPropagation();
-    if (!user) {
-      setShowAuthModal(true);
-      return;
-    }
-    if (isTogglingLike) return;
 
-    setIsTogglingLike(true);
-    try {
-      const result = await toggleBusinessLike(user.id, id);
-      setIsLiked(result.isLiked);
-      setLikeCount(result.count);
-      if (onLikeChange) {
-        onLikeChange(id, result);
-      }
-    } catch (error) {
-      console.error("Error al cambiar like:", error);
-      showToast?.("Error al procesar tu like", "error");
-    } finally {
-      setIsTogglingLike(false);
-    }
-  };
 
   return (
     <article
@@ -609,14 +547,7 @@ export default function BusinessCard({
 
         {/* Botones Recomendado / Guardar / Compartir */}
         <div className="business-card__interaction-buttons">
-          <button
-            className={`business-card__interaction-btn business-card__interaction-btn--recommend ${isLiked ? "business-card__interaction-btn--active" : ""}`}
-            onClick={handleLikeClick}
-            disabled={isTogglingLike}
-            aria-label={isLiked ? "Quitar recomendación" : "Recomendar"}>
-            <FontAwesomeIcon icon={faStar} />
-            {likeCount > 0 && <span>{likeCount}</span>}
-          </button>
+
           <button
             className={`business-card__interaction-btn ${isFavorited ? "business-card__interaction-btn--active" : ""}`}
             onClick={handleFavoriteClick}

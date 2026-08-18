@@ -138,31 +138,11 @@ export default function PublicationCard({
   const [isFavorited, setIsFavorited] = useState(initialIsFavorite);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
   const [favoriteCount, setFavoriteCount] = useState(0);
-  const [isLiked, setIsLiked] = useState(likeState?.isLiked ?? false);
-  const [likeCount, setLikeCount] = useState(likeState?.count ?? 0);
-  const [isTogglingLike, setIsTogglingLike] = useState(false);
   const [shareCount, setShareCount] = useState(publication?.share_count ?? 0);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Si el padre provee likeState (batched), úsalo como fuente de verdad.
   const hasExternalLikeState = likeState !== undefined && likeState !== null;
-  const externalIsLiked = likeState?.isLiked;
-  const externalCount = likeState?.count;
-
-  // Cargar estado de likes al montar (solo si NO viene del padre).
-  const loadLikeState = async () => {
-    try {
-      const count = await getLikesCount(id);
-      setLikeCount(count);
-
-      if (user) {
-        const liked = await hasUserLiked(user.id, id);
-        setIsLiked(liked);
-      }
-    } catch (error) {
-      console.error("Error cargando likes:", error);
-    }
-  };
 
   // Cargar contador de favoritos por evento al montar.
   useEffect(() => {
@@ -171,29 +151,6 @@ export default function PublicationCard({
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
-
-  useEffect(() => {
-    if (hasExternalLikeState) return;
-    loadLikeState();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, user, hasExternalLikeState]);
-
-  // Sincronizar con el estado batched provisto por el padre.
-  useEffect(() => {
-    if (!hasExternalLikeState) return;
-    setIsLiked(!!externalIsLiked);
-    setLikeCount(Number(externalCount) || 0);
-  }, [hasExternalLikeState, externalIsLiked, externalCount]);
-
-  // Tiempo real: actualizar likes cuando cualquier usuario reacciona.
-  // Solo se activa si la card es autónoma (sin batched state del padre).
-  useRealtimeRefetch({
-    table: "event_likes",
-    event: "*",
-    filter: id ? `event_id=eq.${id}` : undefined,
-    enabled: Boolean(id) && !hasExternalLikeState,
-    onChange: () => loadLikeState(),
-  });
 
   // Tiempo real: actualizar share_count cuando otro usuario comparte.
   useRealtimeRefetch({
@@ -433,31 +390,7 @@ export default function PublicationCard({
     }
   };
 
-  // Manejar like
-  const handleLikeClick = async (e) => {
-    e.stopPropagation();
-    if (!user) {
-      setShowAuthModal(true);
-      return;
-    }
-    if (isTogglingLike) return;
 
-    setIsTogglingLike(true);
-    try {
-      const result = await toggleLike(user.id, id);
-      setIsLiked(result.isLiked);
-      setLikeCount(result.count);
-      // Notificar al grid (si maneja batched state) para actualizar el mapa.
-      if (onLikeChange) {
-        onLikeChange(id, result);
-      }
-    } catch (error) {
-      console.error("Error al cambiar like:", error);
-      showToast?.("Error al procesar tu like", "error");
-    } finally {
-      setIsTogglingLike(false);
-    }
-  };
 
   const horarioShort = getHorarioShort();
   const entradaText = getEntradaText();
@@ -622,14 +555,7 @@ export default function PublicationCard({
 
         {/* Botones de acción */}
         <div className="publication-card__actions">
-          <button
-            className={`publication-card__action-btn publication-card__action-btn--fire ${isLiked ? "publication-card__action-btn--fire-active" : ""}`}
-            onClick={handleLikeClick}
-            disabled={isTogglingLike}
-            aria-label={isLiked ? "Quitar imperdible" : "Imperdible"}>
-            <FontAwesomeIcon icon={faFire} />
-            {likeCount > 0 && <span>{likeCount}</span>}
-          </button>
+
           <button
             className={`publication-card__action-btn ${isFavorited ? "publication-card__action-btn--active" : ""}`}
             onClick={handleFavoriteClick}

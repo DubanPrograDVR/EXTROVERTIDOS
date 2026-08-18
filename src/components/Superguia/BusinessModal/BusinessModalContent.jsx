@@ -1740,33 +1740,7 @@ export default function BusinessModal({
 
             {/* Botones CTA */}
             <div className="publication-modal__cta-section">
-              <button
-                className={`publication-modal__cta-btn publication-modal__cta-btn--outline ${isLiked ? "publication-modal__cta-btn--liked" : ""}`}
-                onClick={async () => {
-                  if (!user) {
-                    setShowAuthModal(true);
-                    return;
-                  }
-                  if (isTogglingLike) return;
-                  setIsTogglingLike(true);
-                  try {
-                    const result = await toggleBusinessLike(
-                      user.id,
-                      business.id,
-                    );
-                    setIsLiked(result.isLiked);
-                    setLikeCount(result.count);
-                  } catch (error) {
-                    console.error("Error al recomendar:", error);
-                    showToast("Error al procesar tu recomendación", "error");
-                  } finally {
-                    setIsTogglingLike(false);
-                  }
-                }}
-                disabled={isTogglingLike}>
-                <FontAwesomeIcon icon={faStar} />
-                {likeCount > 0 ? `${likeCount} Recomendado` : "Recomendado"}
-              </button>
+
               <button
                 className="publication-modal__cta-btn publication-modal__cta-btn--secondary"
                 onClick={() => {

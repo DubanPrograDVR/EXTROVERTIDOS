@@ -2236,13 +2236,7 @@ export default function PublicationModal({
                   Editar
                 </button>
               )}
-              <button
-                className={`publication-modal__cta-btn publication-modal__cta-btn--imperdible ${isLiked ? "publication-modal__cta-btn--imperdible-active" : ""}`}
-                onClick={handleLikeClick}
-                disabled={isTogglingLike}>
-                <FontAwesomeIcon icon={faFire} />
-                {likeCount > 0 ? likeCount : ""} Imperdible
-              </button>
+
               <button
                 className="publication-modal__cta-btn publication-modal__cta-btn--secondary"
                 onClick={() => {
