@@ -727,8 +727,8 @@ const DateRangePicker = ({
     <div className="drp-calendar" id="fecha_evento">
       {showSubmissionDateWarning && (
         <div className="drp-calendar__submission-warning" role="note">
-          Selecciona correctamente la fecha y duración de tu evento; esta acción
-          no se podrá editar luego de crear tu publicación.
+          Selecciona correctamente la duración de tu evento. Esta acción no se
+          podrá editar luego de crear tu publicación.
         </div>
       )}
 
