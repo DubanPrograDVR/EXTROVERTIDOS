@@ -1090,12 +1090,9 @@
 }
 
 /* Toggle switch and highlight option */
-.publicar-negocio__sticky-highlight {
-  position: sticky;
-  bottom: 0;
-  z-index: 50;
-  background: var(--bg-color, #0f0f0f);
-  padding: 10px 0;
+.publicar-negocio__persistent-highlight {
+  margin-top: 30px;
+  padding-top: 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 

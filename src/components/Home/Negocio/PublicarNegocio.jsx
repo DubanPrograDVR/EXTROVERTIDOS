@@ -588,9 +588,9 @@ const PublicarNegocio = () => {
           {renderStep()}
         </div>
 
-        {/* Toggle destacado siempre visible (Sticky) */}
+        {/* Toggle destacado siempre visible al final de cada paso */}
         {canChooseDestacada && (
-          <div className="publicar-negocio__sticky-highlight">
+          <div className="publicar-negocio__persistent-highlight">
             <section className="publicar-negocio__highlight-option">
               <div 
                 className="publicar-negocio__highlight-label"
