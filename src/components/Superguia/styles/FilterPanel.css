@@ -78,6 +78,7 @@
 /* === Barra de ciudades (Pills) === */
 .filter-panel__cities-bar {
   display: flex;
+  justify-content: center;
   overflow-x: auto;
   gap: 0.75rem;
   padding-bottom: 0.5rem;
@@ -602,5 +603,9 @@
   .filter-panel__filter-btn {
     padding: 0.75rem 0.875rem;
     font-size: 0.85rem;
+  }
+
+  .filter-panel__cities-bar {
+    justify-content: flex-start;
   }
 }
