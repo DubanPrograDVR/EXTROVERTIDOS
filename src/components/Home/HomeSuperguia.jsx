@@ -4,6 +4,7 @@ import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import FilterPanel from "../Superguia/FilterPanel";
 import BusinessGrid from "../Superguia/BusinessGrid";
 import Pagination from "../Superguia/Pagination";
+import Carousel from "../Superguia/Carousel";
 import { LOCATIONS } from "../Superguia/data";
 import { useHighlightCard } from "../../hooks/useHighlightCard";
 import { crearSubcategorias, filtrarNegocios } from "./homeUtils";
@@ -65,12 +66,23 @@ export default function HomeSuperguia({
   error,
   recargar,
   onNegocioClick,
+  onEventoClick,
+  carouselItems = [],
   onPublicar,
   semillaOrden = 0,
 }) {
   const [paginaActual, setPaginaActual] = useState(1);
   const referenciaFiltros = useRef(null);
   const debeDesplazarRef = useRef(false);
+
+  const carruselLleno = useMemo(() => {
+    if (!carouselItems || carouselItems.length === 0) return [];
+    let items = [...carouselItems];
+    while (items.length > 0 && items.length < 5) {
+      items = [...items, ...carouselItems];
+    }
+    return items;
+  }, [carouselItems]);
 
   const subcategorias = useMemo(() => crearSubcategorias(categorias), [categorias]);
   const filtros = useMemo(
@@ -287,6 +299,14 @@ export default function HomeSuperguia({
           Publicar negocio
         </button>
       </div>
+
+      {carruselLleno.length > 0 && (
+        <Carousel
+          publications={carruselLleno}
+          onPublicationClick={onEventoClick}
+          badgeUrl="/img/P_Extro_v2.png"
+        />
+      )}
 
       <div ref={referenciaFiltros} className="home-consolidado__filters">
         <FilterPanel

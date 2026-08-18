@@ -5,6 +5,7 @@ import FilterPanel from "../Superguia/FilterPanel";
 import EmptyPanoramas from "../Superguia/EmptyPanoramas";
 import Pagination from "../Superguia/Pagination";
 import PublicationGrid from "../Superguia/PublicationGrid";
+import Carousel from "../Superguia/Carousel";
 import { LOCATIONS } from "../Superguia/data";
 import { formatDateKey } from "../Superguia/DateCalendar";
 import { useHighlightCard } from "../../hooks/useHighlightCard";
@@ -59,6 +60,8 @@ export default function HomePanoramas({
   error,
   recargar,
   onEventoClick,
+  onNegocioClick,
+  carouselItems = [],
   onPublicar,
   semillaOrden = 0,
 }) {
@@ -66,6 +69,15 @@ export default function HomePanoramas({
   const [paginaActual, setPaginaActual] = useState(1);
   const referenciaFiltros = useRef(null);
   const debeDesplazarRef = useRef(false);
+
+  const carruselLleno = useMemo(() => {
+    if (!carouselItems || carouselItems.length === 0) return [];
+    let items = [...carouselItems];
+    while (items.length > 0 && items.length < 5) {
+      items = [...items, ...carouselItems];
+    }
+    return items;
+  }, [carouselItems]);
 
   const filtros = useMemo(
     () => ({
@@ -253,6 +265,14 @@ export default function HomePanoramas({
           Publicar panorama
         </button>
       </div>
+
+      {carruselLleno.length > 0 && (
+        <Carousel
+          publications={carruselLleno}
+          onPublicationClick={onNegocioClick}
+          badgeUrl="/img/SG_Extro_v2.png"
+        />
+      )}
 
       <div ref={referenciaFiltros} className="home-consolidado__filters">
         <FilterPanel
