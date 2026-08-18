@@ -65,10 +65,10 @@ export default function LoginReminderModal({ isOpen, onClose, data, onVerPerfil,
         {expired ? (
           <>
             <div className="login-reminder-card__icon login-reminder-card__icon--expired">
-              <img src="/img/SG_Extro_v2.png" alt="Superguía" className="login-reminder-card__sg-icon" />
+              <img src="/img/SG_Extro_v2.png" alt="Super buscador" className="login-reminder-card__sg-icon" />
             </div>
             <h2 className="login-reminder-card__title">
-              Tu Publicación de Negocio en la superguía ha terminado
+              Tu Publicación de Negocio en la super buscador ha terminado
             </h2>
             <p className="login-reminder-card__subtitle">
               Renueva tu plan ahora

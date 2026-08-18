@@ -239,11 +239,11 @@ const CrearPublicacion = () => {
       to: "/publicar-negocio",
       variant: "negocio",
       icon: faStore,
-      eyebrow: "Superguía",
+      eyebrow: "Super buscador",
       title: "Publicar un negocio",
-      price: superguiaVisible ? "Plan Superguía" : "Disponible",
+      price: superguiaVisible ? "Plan Super buscador" : "Disponible",
       description:
-        "Crea la ficha de tu negocio en la Superguía para que te encuentren durante todo el año, no solo el día del evento.",
+        "Crea la ficha de tu negocio en la Super buscador para que te encuentren durante todo el año, no solo el día del evento.",
       featuresTitle: "La ficha incluye:",
       features: [
         "Horarios de atención y ubicación",
@@ -251,8 +251,8 @@ const CrearPublicacion = () => {
         "Categorías y búsqueda por comuna",
       ],
       note: superguiaVisible
-        ? "Se activa con tu plan Superguía y el equipo la revisa antes de publicarla."
-        : "El equipo revisará tu publicación antes de mostrarla en la Superguía.",
+        ? "Se activa con tu plan Super buscador y el equipo la revisa antes de publicarla."
+        : "El equipo revisará tu publicación antes de mostrarla en la Super buscador.",
       cta: "Publicar mi negocio",
     });
 

@@ -246,7 +246,7 @@ export default function PerfilNotificaciones({
                       onClick={(e) => handleGoTo(e, notification)}
                       title={
                         notification.businessId
-                          ? "Ver en Superguía"
+                          ? "Ver en Super buscador"
                           : "Ver en Panoramas"
                       }>
                       <FontAwesomeIcon icon={faLocationArrow} />

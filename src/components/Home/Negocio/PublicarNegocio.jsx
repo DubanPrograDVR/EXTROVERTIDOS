@@ -85,7 +85,7 @@ const PublicarNegocio = () => {
     resetForm,
   } = useNegocioForm();
 
-  // Detectar si el usuario necesita plan superguía
+  // Detectar si el usuario necesita plan super buscador
   const businessPublishCheck = useMemo(() => {
     return canUserPublishBusiness({
       subscription: superguiaSubscription,
@@ -392,7 +392,7 @@ const PublicarNegocio = () => {
     );
   }
 
-  // Modal si no tiene plan superguía
+  // Modal si no tiene plan super buscador
   if (needsSuperguiaPlan) {
     const reason = businessPublishCheck.reason;
     const fechaFin = businessPublishCheck.fechaFin;
@@ -407,7 +407,7 @@ const PublicarNegocio = () => {
     const scenarioConfig = {
       no_plan: {
         title: "¡Estás a un paso de publicar tu negocio!",
-        message: "Adquiere una nueva suscripción a Superguía para publicar",
+        message: "Adquiere una nueva suscripción a Super buscador para publicar",
         btnLabel: "Ver planes",
       },
       plan_expired: {
@@ -418,7 +418,7 @@ const PublicarNegocio = () => {
       quota_exceeded: {
         title: "¡Negocio publicado!",
         message:
-          "Ya utilizaste tu cupo para publicar en la Superguía\n\nTe invitamos a publicar todos tus negocios en\n¡Extrovertidos!",
+          "Ya utilizaste tu cupo para publicar en la Super buscador\n\nTe invitamos a publicar todos tus negocios en\n¡Extrovertidos!",
         btnLabel: "Volver a suscribirme",
         secondaryLabel: "Cancelar",
       },
@@ -455,7 +455,7 @@ const PublicarNegocio = () => {
             <div className="plan-block-modal__icon">
               <img
                 src="/img/SG_Extro_v2.png"
-                alt="Superguía"
+                alt="Super buscador"
                 style={{
                   width: "160px",
                   height: "auto",
@@ -625,9 +625,9 @@ const PublicarNegocio = () => {
               <p className="publicar-negocio__highlight-status">
                 {isDestacadaSelected
                   ? isStaff
-                    ? "Se publicará directamente como negocio destacado, sin consumir cupo Superguía."
-                    : "Se creará un borrador y, tras el pago, pasará a revisión. No consume cupo Superguía."
-                  : "Sin marcar, tu negocio seguirá el flujo normal y consumirá un cupo Superguía."}
+                    ? "Se publicará directamente como negocio destacado, sin consumir cupo Super buscador."
+                    : "Se creará un borrador y, tras el pago, pasará a revisión. No consume cupo Super buscador."
+                  : "Sin marcar, tu negocio seguirá el flujo normal y consumirá un cupo Super buscador."}
               </p>
             </section>
           </div>

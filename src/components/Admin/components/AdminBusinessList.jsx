@@ -411,7 +411,7 @@ export default function AdminBusinessList({
                               onClick={() =>
                                 navigate(`/?sg_highlight=${business.id}`)
                               }
-                              title="Ir a Superguía">
+                              title="Ir a Super buscador">
                               <FontAwesomeIcon icon={faLocationArrow} />
                             </button>
                           )}

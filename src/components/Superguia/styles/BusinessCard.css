@@ -29,7 +29,7 @@
     0 12px 32px rgba(255, 179, 0, 0.24);
 }
 
-/* Logo Superguía montado sobre la esquina superior izquierda.
+/* Logo Super buscador montado sobre la esquina superior izquierda.
    translate(-50%,-50%) centra el badge en el vértice (0,0) del card. */
 .business-card__corner-badge {
   position: absolute;

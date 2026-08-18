@@ -25,7 +25,7 @@ const sectionsData = [
     id: 2,
     icon: null,
     customIcon: pExtroIcon,
-    title: "Superguia Extrovertidos",
+    title: "Super buscador Extrovertidos",
     subtitle: "Encuentra servicios para tu día a día.",
     subtitleSecondary: "¡Encuéntralo aquí!",
     btnLabel: "Explorar Superguia",

@@ -43,7 +43,7 @@ const socialLinks = [
 const navLinks = [
   { to: "/", label: "Inicio" },
   { to: "/panoramas", label: "Panoramas" },
-  { to: "/superguia", label: "Superguia Extrovertidos" },
+  { to: "/superguia", label: "Super buscador Extrovertidos" },
 ];
 
 const legalLinks = [

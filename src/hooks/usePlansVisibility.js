@@ -1,6 +1,6 @@
 /**
  * @fileoverview Hook React para obtener la visibilidad combinada de planes.
- * Lee los tres toggles (global, Panoramas, Superguía) desde app_settings y
+ * Lee los tres toggles (global, Panoramas, Super buscador) desde app_settings y
  * expone la visibilidad efectiva ya derivada según la invariante mutuamente
  * excluyente:
  *

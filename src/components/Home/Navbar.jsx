@@ -25,7 +25,7 @@ const manchaExtro = "/img/Mancha_Extro.png";
 import { useAuth } from "../../context/AuthContext";
 
 // Únicas rutas a las que navega la navbar. Los antiguos NAV_LINKS
-// (Panoramas, Superguía, Publicar Panorama, Publicar Negocio, Activar Plan)
+// (Panoramas, Super buscador, Publicar Panorama, Publicar Negocio, Activar Plan)
 // se retiraron: la navegación de secciones ahora vive fuera de la navbar.
 const CREAR_PUBLICACION_PATH = "/crear-publicacion";
 const ACTIVAR_PLAN_PATH = "/activar-plan";

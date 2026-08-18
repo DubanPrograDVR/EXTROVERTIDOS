@@ -68,7 +68,7 @@ export default function PerfilNegocios() {
       const info = await getActiveSuperguiaWithQuota(user.id);
       setSuperguiaQuota(info);
     } catch (err) {
-      console.error("Error cargando suscripción superguía:", err);
+      console.error("Error cargando suscripción super buscador:", err);
     }
   }, [user]);
 
@@ -117,7 +117,7 @@ export default function PerfilNegocios() {
     onChange: () => reloadBusinesses(),
   });
 
-  // Tiempo real: refrescar cupo de suscripción superguía en vivo
+  // Tiempo real: refrescar cupo de suscripción super buscador en vivo
   useRealtimeRefetch({
     table: "subscriptions",
     event: "*",
@@ -179,7 +179,7 @@ export default function PerfilNegocios() {
       if (showToast) {
         showToast(
           willPause
-            ? "Negocio pausado. Ya no es visible en Superguía."
+            ? "Negocio pausado. Ya no es visible en Super buscador."
             : "Negocio reactivado y visible nuevamente.",
           "success",
         );
@@ -220,7 +220,7 @@ export default function PerfilNegocios() {
     }
   };
 
-  // Llevar al usuario a la página de planes para reactivar/comprar Superguía.
+  // Llevar al usuario a la página de planes para reactivar/comprar Super buscador.
   const handleGoActivarPlan = (business) => {
     navigate(`/activar-plan?reactivar=${business.id}`);
   };
@@ -377,7 +377,7 @@ export default function PerfilNegocios() {
                         onClick={() =>
                            navigate(`/?sg_highlight=${business.id}`)
                         }
-                        title="Ver en Superguía">
+                        title="Ver en Super buscador">
                         <FontAwesomeIcon icon={faLocationArrow} />
                         Ir
                       </button>
@@ -405,7 +405,7 @@ export default function PerfilNegocios() {
                   {expired && (
                     <div className="perfil-business-card__expired-block">
                       <p className="perfil-business-card__expired-msg">
-                        Tu Publicación de Negocio en la Superguía ha terminado.
+                        Tu Publicación de Negocio en la Super buscador ha terminado.
                         <br />
                         Haz click en Reactivar plan para publicarlo nuevamente.
                       </p>

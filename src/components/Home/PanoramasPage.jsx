@@ -1103,7 +1103,7 @@ export default function PanoramasPage() {
         )}
       </section>
 
-      {/* Panel de filtros de Superguia */}
+      {/* Panel de filtros de Super buscador */}
       <div ref={filterRef}>
         <FilterPanel
           categoryIcon="/img/P_Extro_v2.png"
@@ -1193,7 +1193,7 @@ export default function PanoramasPage() {
           />
         ) : (
           <>
-            {/* Grid de publicaciones usando el componente de Superguia */}
+            {/* Grid de publicaciones usando el componente de Super buscador */}
             <PublicationGrid
               publications={paginatedEvents}
               onPublicationClick={handleEventClick}

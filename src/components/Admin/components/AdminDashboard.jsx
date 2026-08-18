@@ -275,7 +275,7 @@ export default function AdminDashboard({
             </button>
           </div>
 
-          {/* Toggle SUPERGUÍA */}
+          {/* Toggle SUPER BUSCADOR */}
           <div className="admin-setting-row">
             <div className="admin-setting-row__info">
               <FontAwesomeIcon
@@ -284,10 +284,10 @@ export default function AdminDashboard({
               />
               <div>
                 <span className="admin-setting-row__label">
-                  Activar Superguía
+                  Activar Super buscador
                 </span>
                 <span className="admin-setting-row__description">
-                  Muestra únicamente la Superguía. Al activar, se desactiva el
+                  Muestra únicamente la Super buscador. Al activar, se desactiva el
                   toggle global.
                 </span>
               </div>
@@ -297,7 +297,7 @@ export default function AdminDashboard({
               onClick={onToggleSuperguia}
               disabled={planesToggleLoading}
               title={
-                superguiaEnabled ? "Desactivar Superguía" : "Activar Superguía"
+                superguiaEnabled ? "Desactivar Super buscador" : "Activar Super buscador"
               }>
               {planesToggleLoading ? (
                 <FontAwesomeIcon icon={faSpinner} spin />
@@ -386,7 +386,7 @@ export default function AdminDashboard({
                 </span>
                 <span className="admin-setting-row__description">
                   Permite destacar negocios mediante pago Webpay y conservar su
-                  distintivo en Superguía.
+                  distintivo en Super buscador.
                 </span>
               </div>
             </div>

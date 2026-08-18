@@ -200,7 +200,7 @@ export default function AdminPanel() {
     }
   };
 
-  // Toggle SUPERGUÍA: al activar, apaga el global.
+  // Toggle SUPER BUSCADOR: al activar, apaga el global.
   const handleToggleSuperguia = async () => {
     if (planesToggleLoading) return;
     setPlanesToggleLoading(true);
@@ -211,7 +211,7 @@ export default function AdminPanel() {
       if (newValue) setPlanesEnabled(false);
       await toggleSuperguiaEnabled(newValue, user.id);
     } catch (error) {
-      console.error("Error al cambiar estado de Superguía:", error);
+      console.error("Error al cambiar estado de Super buscador:", error);
       setPlanesEnabled(prev.planesEnabled);
       setPanoramasEnabled(prev.panoramasEnabled);
       setSuperguiaEnabled(prev.superguiaEnabled);

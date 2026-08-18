@@ -87,9 +87,9 @@ export default function PerfilNegociosFavoritos() {
         <div className="perfil-section__empty">
           <FontAwesomeIcon icon={faStore} />
           <h3>No tienes negocios guardados</h3>
-          <p>Explora la Superguía y guarda los negocios que te interesen</p>
+          <p>Explora la Super buscador y guarda los negocios que te interesen</p>
           <button onClick={() => navigate("/superguia")}>
-            Explorar Superguía
+            Explorar Super buscador
           </button>
         </div>
       </div>

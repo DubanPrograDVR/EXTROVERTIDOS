@@ -335,10 +335,10 @@ export default function BusinessCard({
       id={`business-card-${id}`}
       className={`business-card ${tipo_publicacion === "destacada" ? "business-card--featured" : ""}`}
       onClick={handleCardClick}>
-      {/* Logo Superguía montado sobre la esquina superior izquierda */}
+      {/* Logo Super buscador montado sobre la esquina superior izquierda */}
       <img
         src="/img/SG_Extro_v2.png"
-        alt="Superguía Extrovertidos"
+        alt="Super buscador Extrovertidos"
         className="business-card__corner-badge"
         loading="lazy"
       />

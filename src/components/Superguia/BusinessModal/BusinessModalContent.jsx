@@ -750,11 +750,11 @@ export default function BusinessModal({
           <div className="publication-modal__brand-group">
             <img
               src="/img/SG_Extro_v2.png"
-              alt="Superguia extrovertidos"
+              alt="Super buscador extrovertidos"
               className="publication-modal__brand-logo"
             />
             <span className="publication-modal__brand-text">
-              Superguia extrovertidos
+              Super buscador extrovertidos
             </span>
           </div>
           {!isEditMode && subcategoria && (

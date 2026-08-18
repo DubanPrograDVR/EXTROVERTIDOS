@@ -59,7 +59,7 @@ export const useNegocioForm = () => {
   formDataRef.current = formData;
   const sessionDraftLoadedRef = useRef(false);
 
-  // Cargar plan superguía del usuario
+  // Cargar plan super buscador del usuario
   useEffect(() => {
     let isCancelled = false;
     const loadPlanData = async () => {
@@ -85,7 +85,7 @@ export const useNegocioForm = () => {
           );
         }
       } catch (error) {
-        console.error("Error cargando datos de plan superguía:", error);
+        console.error("Error cargando datos de plan super buscador:", error);
       } finally {
         if (!isCancelled) setLoadingPlan(false);
       }
