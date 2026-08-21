@@ -15,6 +15,7 @@ import {
   faStore,
   faLayerGroup,
   faMoneyBillWave,
+  faRobot,
   faChevronDown,
 } from "@fortawesome/free-solid-svg-icons";
 import {
@@ -38,6 +39,7 @@ import AdminLoading from "./components/AdminLoading";
 import AdminProfile from "./components/AdminProfile";
 import AdminCategoryManager from "./components/AdminCategoryManager";
 import AdminPriceManager from "./components/AdminPriceManager";
+import AdminImportIA from "./components/AdminImportIA";
 import PublicationModal from "../Superguia/PublicationModal";
 import BusinessModal from "../Superguia/BusinessModal";
 
@@ -459,7 +461,7 @@ export default function AdminPanel() {
       ],
     },
     {
-      id: "users",
+      id: "import-ia", label: "Importar con IA", icon: faRobot, show: isAdmin }, { id: "users",
       label: "Usuarios",
       icon: faUsers,
       show: isAdmin,
@@ -783,6 +785,9 @@ export default function AdminPanel() {
         )}
 
         {/* Gestión de usuarios (solo admin) */}
+        {/* Importacion IA */}
+        {activeTab === "import-ia" && isAdmin && <AdminImportIA />}
+
         {activeTab === "users" && isAdmin && (
           <AdminUserList
             users={users}
