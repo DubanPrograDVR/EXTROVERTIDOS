@@ -2,10 +2,11 @@
 // EDGE FUNCTION: analyze-instagram
 // POST /functions/v1/analyze-instagram
 //
-// Extrae informacion de una URL de Instagram y 
-// devuelve la informacion extraida en crudo (sin IA aun).
+// Extrae informacin de una URL de Instagram y 
+// devuelve la informacin estructurada usando Gemini.
 // 
 // Requiere: JWT de Supabase Auth (usuario debe ser admin/moderador)
+// Requiere: Secreto GEMINI_API_KEY en Supabase
 // ============================================
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -24,8 +25,114 @@ function jsonResponse(data, status = 200) {
   });
 }
 
+// ----------------------------------------------------
+// LLAMADA A GEMINI
+// ----------------------------------------------------
+async function analyzeWithGemini(extractedText, originalUrl, imageUrl) {
+  const apiKey = Deno.env.get("GEMINI_API_KEY");
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY no est configurada en Supabase.");
+  }
+
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+  const prompt = `
+Eres un asistente experto en identificar y estructurar eventos y panoramas a partir de publicaciones de redes sociales.
+El usuario te proporcionar el texto crudo extrado de una publicacin de Instagram.
+
+TU OBJETIVO:
+Extraer la informacin del panorama y estructurarla en el JSON solicitado.
+
+REGLAS IMPORTANTES:
+1. IDENTIFICACIN: Si la publicacin NO es un evento o panorama (por ejemplo: un meme, una foto personal sin actividad asociada, o una noticia genrica), pon "es_panorama": false, y en "motivo_rechazo" explica por qu.
+2. FECHA Y HORA: Formatea la fecha como DD/MM/YYYY y las horas como HH:MM si es posible deducirlas. Si no, djalas vacas.
+3. CONFIANZA: Asigna un porcentaje (0 a 100). 100 = datos perfectos. Baja la puntuacin si faltan campos clave (fecha, ubicacin) o el texto es muy confuso.
+4. FALTANTES: En el array "informacion_faltante" lista qu datos importantes (como hora, precio, ubicacin) no estaban en el texto.
+5. DATOS BASE: Completa "url_original" con la URL dada. Completa "imagen_url" con la imagen dada si hay, de lo contrario un string vaco.
+
+URL Original: ${originalUrl}
+Imagen encontrada: ${imageUrl || "Ninguna"}
+
+Texto extrado de la publicacin:
+--------------------------------
+${extractedText}
+--------------------------------
+`;
+
+  // Esquema estricto para forzar la salida a ser un JSON con los tipos correctos.
+  const schema = {
+    type: "OBJECT",
+    properties: {
+      es_panorama: { type: "BOOLEAN" },
+      titulo: { type: "STRING" },
+      descripcion: { type: "STRING" },
+      fecha: { type: "STRING" },
+      hora_inicio: { type: "STRING" },
+      hora_fin: { type: "STRING" },
+      ubicacion: { type: "STRING" },
+      comuna: { type: "STRING" },
+      region: { type: "STRING" },
+      categoria: { type: "STRING" },
+      precio: { type: "STRING" },
+      organizador: { type: "STRING" },
+      telefono: { type: "STRING" },
+      instagram: { type: "STRING" },
+      imagen_url: { type: "STRING" },
+      url_original: { type: "STRING" },
+      confianza: { type: "INTEGER" },
+      informacion_faltante: {
+        type: "ARRAY",
+        items: { type: "STRING" }
+      },
+      motivo_rechazo: { type: "STRING" }
+    },
+    required: [
+      "es_panorama", "titulo", "descripcion", "fecha", "hora_inicio", "hora_fin", 
+      "ubicacion", "comuna", "region", "categoria", "precio", "organizador", 
+      "telefono", "instagram", "imagen_url", "url_original", "confianza", 
+      "informacion_faltante", "motivo_rechazo"
+    ]
+  };
+
+  const body = {
+    contents: [
+      {
+        parts: [{ text: prompt }]
+      }
+    ],
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: schema,
+      temperature: 0.2 // Baja temperatura para mayor precisin extrayendo
+    }
+  };
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error("Gemini API Error:", errText);
+    throw new Error(`Error en la API de Gemini: ${response.status}`);
+  }
+
+  const result = await response.json();
+  const textResponse = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+  
+  if (!textResponse) {
+    throw new Error("Respuesta vaca de Gemini");
+  }
+
+  return JSON.parse(textResponse);
+}
+
+// ----------------------------------------------------
+// HANDLER
+// ----------------------------------------------------
 Deno.serve(async (req) => {
-  // 1. Manejo de CORS
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: CORS_HEADERS });
   }
@@ -53,7 +160,6 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Invalid token" }, 401);
     }
 
-    // Verificar si es admin/moderator
     const { data: profile } = await supabaseClient
       .from("profiles")
       .select("rol")
@@ -68,11 +174,10 @@ Deno.serve(async (req) => {
     const { url } = body;
 
     if (!url || typeof url !== "string" || !url.includes("instagram.com")) {
-      return jsonResponse({ error: "URL de Instagram invalida" }, 400);
+      return jsonResponse({ error: "URL de Instagram invlida" }, 400);
     }
 
-    // 2. Extraer informacion de Instagram
-    // Utilizaremos fetch estandar con un User-Agent comun para intentar obtener og:tags
+    // 1. EXTRAER INFO
     let extractedText = "";
     let extractedImage = "";
     
@@ -87,7 +192,6 @@ Deno.serve(async (req) => {
       
       const html = await igResponse.text();
       
-      // Intentar extraer og:description y og:image
       const descMatch = html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i);
       const titleMatch = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i);
       const imgMatch = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i);
@@ -100,12 +204,30 @@ Deno.serve(async (req) => {
       console.error("Error fetching Instagram URL:", fetchError);
     }
 
-    // Por ahora, solo devolver lo extraido. La integracion con IA va en la Fase 4.
+    if (!extractedText.trim()) {
+      return jsonResponse({ 
+        success: false, 
+        error: "No se pudo extraer informacin de la publicacin. Instagram podra estar bloqueando el acceso o es privada."
+      }, 400);
+    }
+
+    // 2. ENVIAR A GEMINI
+    let iaResult;
+    try {
+      iaResult = await analyzeWithGemini(extractedText, url, extractedImage);
+    } catch (aiError) {
+      return jsonResponse({ 
+        success: false, 
+        error: "Error analizando el contenido con la Inteligencia Artificial",
+        details: aiError.message
+      }, 500);
+    }
+
+    // Retornamos el resultado estructurado al frontend
+    // (Falta integrar la validacion de comuna/region en el backend en la Fase 5)
     return jsonResponse({ 
       success: true, 
-      extracted_text: extractedText,
-      extracted_image: extractedImage,
-      message: extractedText ? "Extraccion exitosa" : "No se pudo extraer informacion de la URL, Instagram podria haber bloqueado el acceso."
+      data: iaResult 
     }, 200);
 
   } catch (error) {
