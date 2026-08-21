@@ -224,7 +224,34 @@ Deno.serve(async (req) => {
     }
 
     // Retornamos el resultado estructurado al frontend
-    // (Falta integrar la validacion de comuna/region en el backend en la Fase 5)
+    
+    // ----------------------------------------------------
+    // FASE 5: VALIDACION GEOGRAFICA (REGION DEL MAULE)
+    // ----------------------------------------------------
+    const comunasMaule = [
+      // Curic�
+      "curico", "molina", "romeral", "teno", "rauco", "sagrada familia", "hualane", "licanten", "vichuquen",
+      // Talca
+      "talca", "san clemente", "maule", "pelarco", "pencahue", "rio claro", "constitucion", "empedrado", "curepto", "san rafael",
+      // Linares
+      "linares", "colbun", "longavi", "parral", "retiro", "yerbas buenas", "villa alegre", "san javier",
+      // Cauquenes
+      "cauquenes", "chanco", "pelluhue"
+    ];
+
+    if (iaResult.es_panorama && iaResult.comuna) {
+      // Normalize to remove accents and lowercase
+      const comunaNormalizada = iaResult.comuna.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      
+      const isMaule = comunasMaule.some(c => comunaNormalizada.includes(c));
+      
+      if (!isMaule) {
+        iaResult.es_panorama = false;
+        iaResult.motivo_rechazo = "Este panorama no pertenece a la Región del Maule.";
+        iaResult.confianza = Math.min(iaResult.confianza, 10);
+      }
+    }
+
     return jsonResponse({ 
       success: true, 
       data: iaResult 
