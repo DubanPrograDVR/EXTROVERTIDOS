@@ -120,6 +120,10 @@ export const INITIAL_FORM_STATE = {
   organizador: "",
   category_id: "",
   // Campos de fecha
+  // IA Fields
+  fuente_url: "",
+  generado_por_ia: false,
+  ia_confianza: 0,
   fecha_evento: "",
   fecha_fin: "", // Nueva: fecha de finalización para eventos multi-día
   es_multidia: false, // Nueva: indica si el evento dura más de un día

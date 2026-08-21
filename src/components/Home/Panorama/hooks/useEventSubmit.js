@@ -228,6 +228,9 @@ const useEventSubmit = ({
         etiqueta_directa: formData.etiqueta_directa?.trim() || null,
         redes_sociales: redesLimpias,
         imagenes: allImageUrls,
+        fuente_url: formData.fuente_url || null,
+        generado_por_ia: formData.generado_por_ia || false,
+        ia_confianza: formData.ia_confianza || null,
       });
     },
     [user],

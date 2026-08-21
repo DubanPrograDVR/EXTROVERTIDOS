@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useLocation } from "react-router-dom";
 import { useAuth } from "../../../../context/AuthContext";
 import { applyWrapToInputEvent } from "../../../../lib/textWrap";
 import {
@@ -101,11 +101,35 @@ const usePublicarFormV2 = () => {
         : null;
   const modoFromUrl = editEventIdFromUrl ? null : modoFromQuery;
 
+
+  const location = useLocation();
+  const iaData = location.state?.iaData || null;
+
   // === ESTADO DEL FORMULARIO ===
-  const [formData, setFormData] = useState(() => ({
-    ...INITIAL_FORM_STATE,
-    ...obtenerEstadoPublicacion(modoFromUrl || DEFAULT_PUBLICATION_MODE),
-  }));
+  const [formData, setFormData] = useState(() => {
+    const base = {
+      ...INITIAL_FORM_STATE,
+      ...obtenerEstadoPublicacion(modoFromUrl || DEFAULT_PUBLICATION_MODE),
+    };
+    
+    if (iaData && iaData.es_panorama) {
+      base.titulo = iaData.titulo || "";
+      base.descripcion = iaData.descripcion || "";
+      base.fecha_evento = iaData.fecha || "";
+      base.hora_inicio = iaData.hora_inicio || "";
+      base.hora_fin = iaData.hora_fin || "";
+      base.ubicacion = iaData.ubicacion || "";
+      base.comuna = iaData.comuna || "";
+      base.organizador = iaData.organizador || "";
+      
+      // We will store AI fields inside formData so they get sent to the DB
+      base.fuente_url = iaData.url_original || "";
+      base.generado_por_ia = true;
+      base.ia_confianza = iaData.confianza || 0;
+    }
+    
+    return base;
+  });
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
