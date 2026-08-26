@@ -1,12 +1,19 @@
 .home-accesos {
-  padding: 1rem clamp(1rem, 5vw, 5rem);
+  display: flex;
+  justify-content: center;
+  padding: clamp(0.85rem, 2vw, 1.35rem) clamp(1rem, 5vw, 5rem)
+    clamp(1.1rem, 2.5vw, 1.65rem);
   background: #080808;
 }
 
 .home-accesos__grid {
-  display: inline-grid;
-  grid-template-columns: repeat(2, minmax(0, auto));
-  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: min(100%, 560px);
+  overflow: hidden;
+  border: 1px solid rgba(255, 102, 0, 0.5);
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
 }
 
 .home-accesos__card {
@@ -14,15 +21,12 @@
   min-height: 56px;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border: 1px solid rgba(255, 102, 0, 0.8);
-  border-radius: 0;
-  background: #111;
-  color: #fff;
+  gap: 0.55rem;
+  padding: 0.6rem 1rem;
+  border: 0;
   font: inherit;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
+  transition: opacity 0.2s ease, filter 0.2s ease;
 }
 
 .home-accesos__card--panoramas {
@@ -31,33 +35,29 @@
 }
 
 .home-accesos__card--superbuscador {
-  background: #111;
+  background: #141414;
   color: #fff;
+  border-left: 1px solid rgba(255, 102, 0, 0.5);
 }
 
-.home-accesos__card:first-child {
-  border-radius: 12px 0 0 12px;
-}
-
-.home-accesos__card:last-child {
-  border-left: 0;
-  border-radius: 0 12px 12px 0;
+/* El apartado inactivo se atenúa; el activo queda a plena intensidad. No se
+   cambia el fondo porque cada logo (negro / naranja) solo contrasta con el
+   suyo. */
+.home-accesos__card:not(.is-active) {
+  opacity: 0.5;
 }
 
 .home-accesos__card:hover,
 .home-accesos__card:focus-visible {
-  filter: brightness(1.12);
-}
-
-.home-accesos__card.is-active {
-  box-shadow: inset 0 -3px 0 #fff;
+  opacity: 1;
+  filter: brightness(1.08);
 }
 
 .home-accesos__card:focus-visible {
   position: relative;
   z-index: 1;
   outline: 3px solid #ffb27d;
-  outline-offset: 3px;
+  outline-offset: -3px;
 }
 
 .home-accesos__logo {
@@ -72,22 +72,21 @@
 }
 
 @media (max-width: 620px) {
+  .home-accesos {
+    padding-inline: clamp(0.75rem, 4vw, 1.5rem);
+  }
+
   .home-accesos__grid {
-    grid-template-columns: repeat(2, minmax(0, auto));
+    width: 100%;
   }
 
   .home-accesos__card {
-    min-height: 52px;
+    min-height: 50px;
+    padding-inline: 0.6rem;
   }
 
-  .home-accesos__card:first-child {
-    border-radius: 12px 0 0 12px;
-  }
-
-  .home-accesos__card:last-child {
-    border-top: 1px solid rgba(255, 102, 0, 0.8);
-    border-left: 0;
-    border-radius: 0 12px 12px 0;
+  .home-accesos__title {
+    font-size: 0.9rem;
   }
 }
 

@@ -115,8 +115,17 @@ const getConfidenceLevel = (score) => {
  * @returns {{url: string}|{error: string}}
  */
 const normalizarUrlInstagram = (rawUrl) => {
-  const value = (rawUrl || "").trim().replace(/^[<"'\s]+|[>"'\s.,]+$/g, "");
-  if (!value) return { error: "Pega el enlace de una publicación de Instagram." };
+  const bruto = (rawUrl || "").trim();
+  if (!bruto) return { error: "Pega el enlace de una publicación de Instagram." };
+
+  // El texto pegado suele traer saltos de línea o frases alrededor del enlace
+  // ("Mira esto: https://..."). Se rescata la primera URL de Instagram que
+  // aparezca en vez de exigir que venga sola.
+  const enTexto = bruto.match(
+    /https?:\/\/[^\s"'<>]*(?:instagram\.com|instagr\.am)\/[^\s"'<>]*/i,
+  )?.[0];
+
+  const value = (enTexto || bruto).replace(/^[<"'\s]+|[>"'\s.,]+$/g, "");
 
   let parsed;
   try {
@@ -286,29 +295,36 @@ export default function AdminImportIA({ onGoToPublications } = {}) {
       const token = sessionData?.session?.access_token;
       if (!token) throw new Error("No hay sesión activa. Vuelve a iniciar sesión.");
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-instagram`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ url: normalizada.url }),
-          signal: controller.signal,
-        },
-      );
-
+      // 1 intento normal + 1 auto-reintento silencioso: cuando Instagram
+      // bloquea por límite de peticiones (fallo pasajero, no del enlace), un
+      // segundo intento a los pocos segundos suele pasar sin molestar al admin.
+      const MAX_INTENTOS = 2;
       let data;
-      try {
-        data = await response.json();
-      } catch {
-        throw new Error(
-          `El servidor respondió de forma inesperada (código ${response.status}).`,
-        );
-      }
 
-      if (!response.ok || !data?.success) {
+      for (let intento = 1; intento <= MAX_INTENTOS; intento++) {
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-instagram`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ url: normalizada.url }),
+            signal: controller.signal,
+          },
+        );
+
+        try {
+          data = await response.json();
+        } catch {
+          throw new Error(
+            `El servidor respondió de forma inesperada (código ${response.status}).`,
+          );
+        }
+
+        if (response.ok && data?.success) break;
+
         // Detalle técnico del backend (p. ej. el error real de GLM). Se envía a
         // consola para diagnóstico sin ensuciar el mensaje que ve el usuario.
         if (data?.detalle) {
@@ -321,6 +337,13 @@ export default function AdminImportIA({ onGoToPublications } = {}) {
         // reintentar) y "Instagram o la IA fallaron" (502/429, sí sirve).
         fallo.codigo = data?.codigo || "";
         fallo.reintentable = CODIGOS_REINTENTABLES.has(fallo.codigo);
+
+        // Bloqueo pasajero de Instagram: se reintenta una única vez de forma
+        // transparente antes de mostrar el error.
+        if (fallo.codigo === "instagram_no_disponible" && intento < MAX_INTENTOS) {
+          await new Promise((r) => setTimeout(r, 1500));
+          continue;
+        }
         throw fallo;
       }
 
@@ -600,7 +623,8 @@ export default function AdminImportIA({ onGoToPublications } = {}) {
         <label className="admin-import-ia__label" htmlFor="ia-url">
           URL de la publicación
           <span className="admin-import-ia__hint">
-            Debe ser un post o reel público, por ejemplo
+            Sirve el enlace de un post o reel público, ya sea desde el botón
+            Compartir, la barra del navegador o la app móvil. Ejemplo:
             https://www.instagram.com/p/AbC123/
           </span>
         </label>

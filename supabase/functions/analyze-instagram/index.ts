@@ -192,9 +192,15 @@ function extraerMeta(html, prop) {
 }
 
 // Instagram devuelve un muro de login a los navegadores sin sesión, pero SÍ
-// entrega el contenido a los crawlers sociales reconocidos.
-const UA_CRAWLER =
-  "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)";
+// entrega el contenido a los crawlers sociales reconocidos. Se mantiene una
+// lista y se rota entre ellos: el límite de Instagram es por IP y User-Agent, así
+// que cuando a un crawler le devuelve el muro de login, otro suele pasar.
+const UA_CRAWLERS = [
+  "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
+  "WhatsApp/2.23.20.0",
+  "Twitterbot/1.0",
+  "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+];
 
 /** Máximo de saltos de redirección a seguir. */
 const MAX_REDIRECCIONES = 5;
@@ -211,7 +217,7 @@ const MAX_REDIRECCIONES = 5;
  *
  * @returns {{ok: boolean, status: number, html: string, urlFinal: string}}
  */
-async function descargarHtml(urlInicial) {
+async function descargarHtml(urlInicial, userAgent = UA_CRAWLERS[0]) {
   let actual = urlInicial;
 
   for (let salto = 0; salto <= MAX_REDIRECCIONES; salto++) {
@@ -221,7 +227,7 @@ async function descargarHtml(urlInicial) {
     try {
       const response = await fetch(actual, {
         headers: {
-          "User-Agent": UA_CRAWLER,
+          "User-Agent": userAgent,
           Accept: "text/html,application/xhtml+xml",
           "Accept-Language": "es-CL,es;q=0.9,en;q=0.8",
         },
@@ -358,7 +364,8 @@ const urlEmbed = (codigo) =>
  * que un único intento contra una sola URL falla de manera intermitente. Aquí
  * se prueba primero la página de incrustación (la más permisiva y la que trae
  * el pie de foto completo) y, si no da nada, la página normal con las
- * etiquetas Open Graph. Cada vía reintenta una vez ante un fallo pasajero.
+ * etiquetas Open Graph. Cada vía reintenta varias veces rotando el User-Agent
+ * ante un fallo pasajero o un muro de login (respuesta 200 sin texto útil).
  */
 async function obtenerContenido(destino) {
   let shortcode = destino.shortcode;
@@ -375,61 +382,81 @@ async function obtenerContenido(destino) {
   if (shortcode) agregar(urlEmbed(shortcode));
   agregar(destino.url);
 
+  const MAX_INTENTOS_IG = 3;
   let ultimoStatus = 0;
 
   for (let i = 0; i < candidatas.length; i++) {
     const url = candidatas[i];
-    let res = await descargarHtml(url);
 
-    if (!res.ok && (res.status === 0 || ESTADOS_TRANSITORIOS.has(res.status))) {
-      await new Promise((r) => setTimeout(r, 700));
-      res = await descargarHtml(url);
-    }
+    for (let intento = 0; intento < MAX_INTENTOS_IG; intento++) {
+      const ua = UA_CRAWLERS[intento % UA_CRAWLERS.length];
+      const res = await descargarHtml(url, ua);
 
-    if (res.status) ultimoStatus = res.status;
+      if (res.status) ultimoStatus = res.status;
 
-    if (!res.ok) {
-      console.warn("[analyze-instagram] Sin contenido", url, "status", res.status);
-      continue;
-    }
+      const transitorio =
+        res.status === 0 || ESTADOS_TRANSITORIOS.has(res.status);
 
-    // Si el enlace era de tipo /share/, la redirección ya reveló el código real:
-    // se aprovecha para poder probar también la página de incrustación.
-    if (!shortcode) {
-      const encontrado = res.urlFinal.match(
-        /\/(?:p|reel|reels|tv)\/([A-Za-z0-9_-]+)/,
-      )?.[1];
-      if (encontrado) {
-        shortcode = encontrado;
-        agregar(urlEmbed(shortcode));
+      // Retroceso creciente con jitter: golpear a Instagram en cadencia fija
+      // dispara más bloqueos que espaciar los intentos.
+      const esperar = () =>
+        new Promise((r) =>
+          setTimeout(r, 700 * (intento + 1) + Math.floor(Math.random() * 400)),
+        );
+
+      if (!res.ok) {
+        console.warn("[analyze-instagram] Sin contenido", url, "status", res.status);
+        if (transitorio && intento < MAX_INTENTOS_IG - 1) {
+          await esperar();
+          continue;
+        }
+        break;
+      }
+
+      // Si el enlace era de tipo /share/, la redirección ya reveló el código real:
+      // se aprovecha para poder probar también la página de incrustación.
+      if (!shortcode) {
+        const encontrado = res.urlFinal.match(
+          /\/(?:p|reel|reels|tv)\/([A-Za-z0-9_-]+)/,
+        )?.[1];
+        if (encontrado) {
+          shortcode = encontrado;
+          agregar(urlEmbed(shortcode));
+        }
+      }
+
+      const embed = url.includes("/embed")
+        ? extraerDeEmbed(res.html)
+        : { texto: "", usuario: "", imagen: "" };
+
+      const ogDescripcion = extraerMeta(res.html, "og:description");
+      const ogTitulo = extraerMeta(res.html, "og:title");
+      const ogImagen = extraerMeta(res.html, "og:image");
+
+      // El pie de foto del embed es más completo que el og:description, que viene
+      // recortado; se usa el og solo como respaldo.
+      const partes = [];
+      if (embed.usuario) partes.push(`Cuenta de Instagram: @${embed.usuario}`);
+      if (embed.texto) partes.push(embed.texto);
+      else if (ogDescripcion) partes.push(ogDescripcion);
+      if (ogTitulo) partes.push(ogTitulo);
+
+      const texto = partes.join("\n").trim();
+      const imagen =
+        [embed.imagen, ogImagen].find((v) => v && /^https:\/\//i.test(v)) || "";
+
+      if (texto) {
+        return { ok: true, texto, imagen, shortcode, status: res.status };
+      }
+
+      // 200 pero sin texto útil = muro de login servido a este User-Agent;
+      // reintentar con otro crawler suele desbloquearlo.
+      console.warn("[analyze-instagram] Respuesta sin texto util:", url);
+      if (intento < MAX_INTENTOS_IG - 1) {
+        await esperar();
+        continue;
       }
     }
-
-    const embed = url.includes("/embed")
-      ? extraerDeEmbed(res.html)
-      : { texto: "", usuario: "", imagen: "" };
-
-    const ogDescripcion = extraerMeta(res.html, "og:description");
-    const ogTitulo = extraerMeta(res.html, "og:title");
-    const ogImagen = extraerMeta(res.html, "og:image");
-
-    // El pie de foto del embed es más completo que el og:description, que viene
-    // recortado; se usa el og solo como respaldo.
-    const partes = [];
-    if (embed.usuario) partes.push(`Cuenta de Instagram: @${embed.usuario}`);
-    if (embed.texto) partes.push(embed.texto);
-    else if (ogDescripcion) partes.push(ogDescripcion);
-    if (ogTitulo) partes.push(ogTitulo);
-
-    const texto = partes.join("\n").trim();
-    const imagen =
-      [embed.imagen, ogImagen].find((v) => v && /^https:\/\//i.test(v)) || "";
-
-    if (texto) {
-      return { ok: true, texto, imagen, shortcode, status: res.status };
-    }
-
-    console.warn("[analyze-instagram] Respuesta sin texto util:", url);
   }
 
   return { ok: false, texto: "", imagen: "", shortcode, status: ultimoStatus };
