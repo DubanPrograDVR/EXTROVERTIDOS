@@ -13,9 +13,11 @@ import {
   PUBLICATION_TYPES,
   MODOS_PUBLICACION,
   DEFAULT_PUBLICATION_MODE,
+  IA_METADATA_FIELDS,
   esModoPublicacionValido,
   obtenerEstadoPublicacion,
   getEnabledFields,
+  resolverUbicacionPorComuna,
 } from "../constants";
 import {
   getCalendarModes,
@@ -118,16 +120,59 @@ const usePublicarFormV2 = () => {
       base.fecha_evento = iaData.fecha || "";
       base.hora_inicio = iaData.hora_inicio || "";
       base.hora_fin = iaData.hora_fin || "";
-      base.ubicacion = iaData.ubicacion || "";
-      base.comuna = iaData.comuna || "";
       base.organizador = iaData.organizador || "";
-      
-      // We will store AI fields inside formData so they get sent to the DB
-      base.fuente_url = iaData.url_original || "";
-      base.generado_por_ia = true;
+      // La IA llama "ubicacion" a lo que el formulario llama "direccion".
+      // Asignarlo a `ubicacion` creaba una clave fantasma que nadie leía.
+      base.direccion = iaData.ubicacion || "";
+      base.telefono_contacto = iaData.telefono || "";
+      base.redes_sociales = {
+        ...INITIAL_FORM_STATE.redes_sociales,
+        instagram: iaData.instagram || "",
+      };
+
+      // El selector de comuna del wizard se habilita a partir de la provincia y
+      // solo acepta valores exactos de COMUNAS_POR_PROVINCIA. Sin resolver la
+      // provincia, la comuna se ve pero no se puede editar, y al elegir
+      // provincia el handler la borra.
+      const ubicacion = resolverUbicacionPorComuna(iaData.comuna);
+      base.comuna = ubicacion?.comuna || "";
+      base.provincia = ubicacion?.provincia || "";
+
+      // El afiche ya viene subido al storage desde el importador: llega como
+      // URL pública, no como base64. Antes esta imagen se perdía entera y el
+      // admin tenía que buscarla y subirla a mano, que es la parte más lenta
+      // del trabajo y justo lo que la importación debía evitar.
+      if (iaData.imagen_subida) {
+        base.imagenes = [iaData.imagen_subida];
+      }
+
+      // La categoría elegida a mano en el importador manda sobre el match
+      // difuso que este hook haría por su cuenta con el texto de la IA.
+      if (iaData.category_id_elegida) {
+        base.category_id = String(iaData.category_id_elegida);
+      }
+
+      // El precio se descartaba: el admin lo corregía y no llegaba a la BD.
+      const precioNumero = Number(iaData.precio_numero);
+      if (Number.isFinite(precioNumero) && precioNumero > 0) {
+        base.tipo_entrada = "pagado";
+        base.precio = String(Math.round(precioNumero));
+      } else if (Number.isFinite(precioNumero) && precioNumero === 0) {
+        base.tipo_entrada = "gratuito";
+      } else if (iaData.precio?.trim()) {
+        base.tipo_entrada = "info_descripcion";
+      }
+
+      // Metadatos de procedencia que se persisten en la tabla events.
+      // Solo se marca como generado por IA si hay origen: la columna tiene un
+      // CHECK que exige fuente_url cuando generado_por_ia es true, y una cadena
+      // vacía acaba llegando como NULL y rompe el insert entero.
+      const fuente = (iaData.url_original || "").trim();
+      base.fuente_url = fuente;
+      base.generado_por_ia = Boolean(fuente);
       base.ia_confianza = iaData.confianza || 0;
     }
-    
+
     return base;
   });
   const [categories, setCategories] = useState([]);
@@ -232,9 +277,18 @@ const usePublicarFormV2 = () => {
   const hasSessionDraftRef = useRef(false);
   const localDraftLoadedRef = useRef(false);
 
+  // Precargar desde IA es una acción explícita del admin: manda por encima de
+  // cualquier borrador restaurado automáticamente.
+  const hasIaPrefillRef = useRef(Boolean(iaData?.es_panorama));
+
   const buildLocalDraftData = useCallback((data) => {
     if (!data) return null;
-    return { ...data, imagenes: [] };
+    const limpio = { ...data, imagenes: [] };
+    // La procedencia no se guarda en el borrador: si se guardara, un borrador
+    // restaurado marcaría como "generada por IA" una publicación escrita a mano
+    // (la clave de localStorage es global, ni siquiera por usuario).
+    for (const campo of IA_METADATA_FIELDS) delete limpio[campo];
+    return limpio;
   }, []);
 
   const clearLocalDraft = useCallback(() => {
@@ -413,6 +467,9 @@ const usePublicarFormV2 = () => {
   // === CARGAR BORRADOR DESDE STORAGE ===
   useEffect(() => {
     if (isEditing) return;
+    // El borrador se aplica con spread después del estado inicial, así que
+    // pisaría por completo los datos que vinieron de la importación con IA.
+    if (hasIaPrefillRef.current) return;
 
     const draft = loadFromStorageRef.current();
     if (draft?.data) {
@@ -449,6 +506,14 @@ const usePublicarFormV2 = () => {
     if (localDraftLoadedRef.current) return;
     if (isEditing) {
       localDraftLoadedRef.current = true;
+      return;
+    }
+    // Mismo motivo que arriba: la precarga IA gana. Además se descarta el
+    // borrador viejo para que el auto-guardado no lo resucite en el próximo
+    // intento de importación.
+    if (hasIaPrefillRef.current) {
+      localDraftLoadedRef.current = true;
+      clearLocalDraft();
       return;
     }
     if (hasSessionDraftRef.current) {
@@ -491,7 +556,45 @@ const usePublicarFormV2 = () => {
     } finally {
       localDraftLoadedRef.current = true;
     }
-  }, [isEditing, draftManager.loadedDraft, LOCAL_DRAFT_KEY, modoFromUrl]);
+  }, [
+    isEditing,
+    draftManager.loadedDraft,
+    LOCAL_DRAFT_KEY,
+    modoFromUrl,
+    clearLocalDraft,
+  ]);
+
+  // === MAPEAR LA CATEGORÍA SUGERIDA POR LA IA ===
+  // La IA devuelve `categoria` como texto libre, pero el formulario necesita el
+  // `category_id` numérico. Las categorías llegan de forma asíncrona, así que
+  // esto no puede resolverse en el inicializador de estado.
+  const iaCategoryMappedRef = useRef(false);
+  useEffect(() => {
+    if (iaCategoryMappedRef.current) return;
+    if (!iaData?.es_panorama || !iaData.categoria) return;
+    if (categories.length === 0) return;
+
+    iaCategoryMappedRef.current = true;
+    if (formDataRef.current.category_id) return; // no pisar una elección manual
+
+    const normalizar = (valor) =>
+      (valor || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
+
+    const objetivo = normalizar(iaData.categoria);
+    const match =
+      categories.find((c) => normalizar(c.nombre) === objetivo) ||
+      categories.find((c) => normalizar(c.nombre).includes(objetivo)) ||
+      categories.find((c) => objetivo.includes(normalizar(c.nombre)));
+
+    if (match) {
+      // String: el wizard compara con String(cat.id) y el submit hace parseInt.
+      setFormData((prev) => ({ ...prev, category_id: String(match.id) }));
+    }
+  }, [categories, iaData]);
 
   // === SINCRONIZAR DATOS DE EVENTO EN EDICIÓN ===
   useEffect(() => {

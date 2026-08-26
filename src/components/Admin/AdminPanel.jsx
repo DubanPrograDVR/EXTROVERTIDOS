@@ -461,7 +461,13 @@ export default function AdminPanel() {
       ],
     },
     {
-      id: "import-ia", label: "Importar con IA", icon: faRobot, show: isAdmin }, { id: "users",
+      id: "import-ia",
+      label: "Importar con IA",
+      icon: faRobot,
+      show: isAdmin,
+    },
+    {
+      id: "users",
       label: "Usuarios",
       icon: faUsers,
       show: isAdmin,
@@ -784,10 +790,14 @@ export default function AdminPanel() {
           />
         )}
 
-        {/* Gestión de usuarios (solo admin) */}
-        {/* Importacion IA */}
-        {activeTab === "import-ia" && isAdmin && <AdminImportIA />}
+        {/* Importar panorama con IA (solo admin) */}
+        {activeTab === "import-ia" && isAdmin && (
+          <AdminImportIA
+            onGoToPublications={() => setActiveTab("publications")}
+          />
+        )}
 
+        {/* Gestión de usuarios (solo admin) */}
         {activeTab === "users" && isAdmin && (
           <AdminUserList
             users={users}

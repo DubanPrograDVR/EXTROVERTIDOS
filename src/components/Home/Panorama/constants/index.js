@@ -119,11 +119,12 @@ export const INITIAL_FORM_STATE = {
   descripcion: "",
   organizador: "",
   category_id: "",
-  // Campos de fecha
-  // IA Fields
+  // Metadatos de importación con IA (procedencia, no contenido del formulario).
+  // Ver IA_METADATA_FIELDS: quedan fuera del saneado por plan.
   fuente_url: "",
   generado_por_ia: false,
   ia_confianza: 0,
+  // Campos de fecha
   fecha_evento: "",
   fecha_fin: "", // Nueva: fecha de finalización para eventos multi-día
   es_multidia: false, // Nueva: indica si el evento dura más de un día
@@ -196,6 +197,68 @@ export const FREE_PLAN_FIELDS = [
 
 /** Redes sociales disponibles en el plan gratuito */
 export const FREE_PLAN_SOCIAL_NETWORKS = ["instagram", "facebook", "tiktok"];
+
+/**
+ * Metadatos de procedencia de la importación con IA.
+ *
+ * NO son campos de contenido y por eso NO entran en FREE_PLAN_FIELDS: describen
+ * de dónde salió la publicación, no qué puede escribir el usuario según su plan.
+ * El saneado por plan (`applyPlanToFormData`) debe ignorarlos, o una importación
+ * publicada en modalidad gratuita perdería su trazabilidad.
+ */
+export const IA_METADATA_FIELDS = [
+  "fuente_url",
+  "generado_por_ia",
+  "ia_confianza",
+];
+
+/** Normaliza texto para comparar: minúsculas, sin tildes y sin espacios extra. */
+const normalizarTexto = (valor) =>
+  (valor || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+/**
+ * Resuelve la provincia a partir de una comuna escrita en texto libre.
+ *
+ * La IA devuelve la comuna sin normalizar ("talca", "Villa Alegre, Maule"), pero
+ * el wizard necesita la comuna EXACTA de COMUNAS_POR_PROVINCIA y su provincia:
+ * sin provincia el selector de comuna queda deshabilitado y el dato se pierde.
+ *
+ * @param {string} comunaLibre - Comuna tal como la devolvió la IA
+ * @returns {{provincia: string, comuna: string}|null} null si no es del Maule
+ */
+export const resolverUbicacionPorComuna = (comunaLibre) => {
+  const objetivo = normalizarTexto(comunaLibre);
+  if (!objetivo) return null;
+
+  // Coincidencia exacta primero; solo si falla se acepta la comuna como parte
+  // de un texto mayor ("Plaza de Villa Alegre"), y de más larga a más corta
+  // para que "Villa Alegre" gane sobre "Maule".
+  const entradas = Object.entries(COMUNAS_POR_PROVINCIA);
+
+  for (const [provincia, comunas] of entradas) {
+    const exacta = comunas.find((c) => normalizarTexto(c) === objetivo);
+    if (exacta) return { provincia, comuna: exacta };
+  }
+
+  const candidatas = entradas
+    .flatMap(([provincia, comunas]) =>
+      comunas.map((comuna) => ({ provincia, comuna })),
+    )
+    .sort((a, b) => b.comuna.length - a.comuna.length);
+
+  const parcial = candidatas.find(({ comuna }) => {
+    const n = normalizarTexto(comuna);
+    // \b evita que "Maule" haga match dentro de "Talcahuano" o "Region del Maule"
+    return new RegExp(`(^|[^a-z])${n}([^a-z]|$)`).test(objetivo);
+  });
+
+  return parcial || null;
+};
 
 /**
  * Decide si corresponde el formulario completo.

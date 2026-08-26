@@ -196,6 +196,12 @@ const useEventEditor = ({ user, isAuthenticated, isAdmin, showToast }) => {
             linkedin: "",
           },
           imagenes: [], // Las nuevas imágenes se agregan aquí
+          // Procedencia de la importación con IA. Se recupera para que el
+          // formulario pueda mostrarla al revisor; `updateEvent` no la persiste
+          // (no está en ALLOWED_EVENT_UPDATE_FIELDS), así que editar no la pisa.
+          fuente_url: event.fuente_url || "",
+          generado_por_ia: event.generado_por_ia || false,
+          ia_confianza: event.ia_confianza ?? 0,
         };
 
         setEventFormData(mappedFormData);

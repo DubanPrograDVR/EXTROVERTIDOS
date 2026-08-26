@@ -23,6 +23,7 @@ import {
   DEFAULT_PUBLICATION_TYPE,
   INITIAL_FORM_STATE,
   FREE_PLAN_SOCIAL_NETWORKS,
+  IA_METADATA_FIELDS,
   normalizarModoPublicacion,
   obtenerTipoPublicacion,
 } from "../constants";
@@ -45,6 +46,10 @@ const applyPlanToFormData = (formData, enabledFields) => {
 
   for (const key of Object.keys(INITIAL_FORM_STATE)) {
     if (key === "modo_publicacion" || key === "tipo_publicacion") continue;
+    // Los metadatos de IA son procedencia, no contenido sujeto al plan. Sin esta
+    // excepción una importación publicada en modalidad gratuita perdería
+    // `generado_por_ia` y `fuente_url`, y quedaría sin trazabilidad.
+    if (IA_METADATA_FIELDS.includes(key)) continue;
     if (!enabledFields.includes(key)) {
       sanitized[key] = INITIAL_FORM_STATE[key];
     }
@@ -178,7 +183,7 @@ const useEventSubmit = ({
       // NOTA: los .trim() usan optional chaining porque no todos los planes de
       // publicación envían todos los campos. Sin ?. un campo ausente lanza
       // TypeError en runtime en vez de fallar la validación.
-      return wrapPersistedFields({
+      const payload = wrapPersistedFields({
         titulo: formData.titulo?.trim() || "",
         descripcion: formData.descripcion?.trim() || "",
         titulo_marketing: formData.titulo_marketing?.trim() || null,
@@ -228,10 +233,31 @@ const useEventSubmit = ({
         etiqueta_directa: formData.etiqueta_directa?.trim() || null,
         redes_sociales: redesLimpias,
         imagenes: allImageUrls,
-        fuente_url: formData.fuente_url || null,
-        generado_por_ia: formData.generado_por_ia || false,
-        ia_confianza: formData.ia_confianza || null,
       });
+
+      // Las columnas de IA solo viajan cuando la publicación viene realmente de
+      // una importación. Enviarlas siempre acopla TODA publicación (también las
+      // manuales) a que la migración 202608210001 esté aplicada: si no lo está,
+      // PostgREST rechaza el insert con PGRST204 y no se puede publicar nada.
+      // Sin origen no se marca la procedencia: el CHECK events_ia_coherente
+      // exige fuente_url NOT NULL cuando generado_por_ia es true, así que
+      // marcarlo sin URL haría fallar el insert y se perdería el panorama
+      // entero. Mejor publicar sin la marca que no publicar.
+      const fuenteUrl = formData.fuente_url?.trim() || null;
+
+      if (formData.generado_por_ia && fuenteUrl) {
+        const confianza = Number(formData.ia_confianza);
+        payload.fuente_url = fuenteUrl;
+        payload.generado_por_ia = true;
+        // La BD tiene CHECK (ia_confianza BETWEEN 0 AND 100): un valor fuera de
+        // rango alucinado por la IA haría fallar el insert completo.
+        payload.ia_confianza = Number.isFinite(confianza)
+          ? Math.min(100, Math.max(0, Math.round(confianza)))
+          : null;
+        payload.ia_fecha_analisis = new Date().toISOString();
+      }
+
+      return payload;
     },
     [user],
   );

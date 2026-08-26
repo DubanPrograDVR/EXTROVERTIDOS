@@ -26,3 +26,12 @@ public/og_config.php
 *.njsproj
 *.sln
 *.sw?
+
+# Supabase CLI (estado local, no versionar)
+supabase/.temp/
+
+# Scripts de parcheo puntuales y artefactos de prueba
+update*.cjs
+update*.js
+test_ig.js
+dist.zip
