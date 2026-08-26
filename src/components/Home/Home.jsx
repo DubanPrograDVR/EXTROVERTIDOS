@@ -190,15 +190,17 @@ export default function Home() {
 
   return (
     <main className="home-consolidado">
-      {seccionActiva !== "superbuscador" && (
-        <HomeHero
-          eventos={eventosParaVista}
-          ciudad={parametros.get("p_ciudad")}
-          comuna={parametros.get("p_comuna")}
-          cargando={cargando}
-          error={error}
-          onEventoClick={abrirPanorama}
-          semillaOrden={semillaOrden}
+      {seccionActiva !== "superbuscador" ? (
+        <img 
+          src="/img/banner_panoramas.png" 
+          alt="Banner Panoramas" 
+          className="home-consolidado__banner-hero"
+        />
+      ) : (
+        <img 
+          src="/img/Banner_Super_Buscador.png" 
+          alt="Banner Super Buscador" 
+          className="home-consolidado__banner-hero"
         />
       )}
 
