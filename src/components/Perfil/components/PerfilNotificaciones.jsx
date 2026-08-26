@@ -44,9 +44,9 @@ export default function PerfilNotificaciones({
   const handleGoTo = (e, notification) => {
     e.stopPropagation();
     if (notification.businessId) {
-      navigate(`/superguia?highlight=${notification.businessId}`);
+      navigate(`/?sg_highlight=${notification.businessId}`);
     } else if (notification.eventId) {
-      navigate(`/panoramas?highlight=${notification.eventId}`);
+      navigate(`/?p_highlight=${notification.eventId}`);
     }
   };
 
@@ -246,7 +246,7 @@ export default function PerfilNotificaciones({
                       onClick={(e) => handleGoTo(e, notification)}
                       title={
                         notification.businessId
-                          ? "Ver en Superguía"
+                          ? "Ver en Super buscador"
                           : "Ver en Panoramas"
                       }>
                       <FontAwesomeIcon icon={faLocationArrow} />

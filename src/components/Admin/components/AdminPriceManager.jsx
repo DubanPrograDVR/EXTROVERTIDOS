@@ -9,6 +9,7 @@ const PLAN_LABELS = [
   { key: "panorama_ilimitado", label: "Publica Sin Limite" },
   { key: "superguia", label: "Superguia Extrovertidos" },
   { key: "publicacion_destacada", label: "Publicacion Destacada (pago unico)" },
+  { key: "negocio_destacado", label: "Negocio Destacado (pago unico)" },
 ];
 
 const formatCLP = (amount) =>

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCalendarDays,
@@ -179,6 +179,7 @@ const DateRangePicker = ({
 
   // === Selection mode: "single" | "range" | "specific" ===
   const [selectionMode, setSelectionMode] = useState(() => {
+    if (enabledModes && enabledModes.length === 1) return enabledModes[0];
     if (esRecurrente && fechasRecurrencia?.length > 0) return "specific";
     if (esMultidia && fechaFin) return "range";
     return "single";
@@ -222,9 +223,13 @@ const DateRangePicker = ({
 
   // Sync mode from props on mount/draft load
   useEffect(() => {
-    if (esRecurrente && fechasRecurrencia?.length > 0)
-      setSelectionMode("specific");
-    else if (esMultidia && fechaFin) setSelectionMode("range");
+    if (enabledModes && enabledModes.length === 1 && enabledModes[0] === "single") {
+      setSelectionMode("single");
+    } else {
+      if (esRecurrente && fechasRecurrencia?.length > 0)
+        setSelectionMode("specific");
+      else if (esMultidia && fechaFin) setSelectionMode("range");
+    }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ===== MODE SWITCHING =====
@@ -722,8 +727,8 @@ const DateRangePicker = ({
     <div className="drp-calendar" id="fecha_evento">
       {showSubmissionDateWarning && (
         <div className="drp-calendar__submission-warning" role="note">
-          Selecciona correctamente la fecha y duración de tu evento; esta acción
-          no se podrá editar luego de crear tu publicación.
+          Selecciona correctamente la duración de tu evento. Esta acción no se
+          podrá editar luego de crear tu publicación.
         </div>
       )}
 
@@ -749,9 +754,10 @@ const DateRangePicker = ({
       </div>
 
       {/* MODE SELECTOR */}
-      <div className="drp-calendar__mode-bar">
-        <span className="drp-calendar__mode-label">¿Cómo dura tu evento?</span>
-        <div className="drp-calendar__mode-options">
+      {(!enabledModes || enabledModes.length > 1) && (
+        <div className="drp-calendar__mode-bar">
+          <span className="drp-calendar__mode-label">¿Cómo dura tu evento?</span>
+          <div className="drp-calendar__mode-options">
           {(!enabledModes || enabledModes.includes("single")) && (
             <button
               type="button"
@@ -781,6 +787,7 @@ const DateRangePicker = ({
           )}
         </div>
       </div>
+      )}
 
       {/* CONTEXT HINT */}
       <div className="drp-calendar__mode-hint">

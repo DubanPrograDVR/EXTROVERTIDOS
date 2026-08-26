@@ -12,7 +12,7 @@ export const FAQ_DATA = [
     categoria: "general",
     pregunta: "¿Es gratis usar Extrovertidos?",
     respuesta:
-      "¡Sí! Navegar y descubrir eventos en Extrovertidos es completamente gratis. Puedes explorar la Superguía, ver detalles de eventos y guardar tus favoritos sin ningún costo. Solo necesitas crear una cuenta gratuita para publicar tus propios eventos.",
+      "¡Sí! Navegar y descubrir eventos en Extrovertidos es completamente gratis. Puedes explorar la Super buscador, ver detalles de eventos y guardar tus favoritos sin ningún costo. Solo necesitas crear una cuenta gratuita para publicar tus propios eventos.",
   },
   {
     id: 3,
@@ -33,7 +33,7 @@ export const FAQ_DATA = [
     categoria: "publicar",
     pregunta: "¿Puedo publicar eventos que duran varios días?",
     respuesta:
-      "¡Sí! Al crear tu evento, marca la opción '¿Tu panorama dura más de un día?' y selecciona las fechas de inicio y fin. Esto es ideal para festivales, ferias, exposiciones y eventos que se extienden por múltiples jornadas. Tu evento aparecerá en la Superguía durante todas las fechas seleccionadas.",
+      "¡Sí! Al crear tu evento, marca la opción '¿Tu panorama dura más de un día?' y selecciona las fechas de inicio y fin. Esto es ideal para festivales, ferias, exposiciones y eventos que se extienden por múltiples jornadas. Tu evento aparecerá en la Super buscador durante todas las fechas seleccionadas.",
   },
   {
     id: 6,
@@ -68,14 +68,14 @@ export const FAQ_DATA = [
     categoria: "eventos",
     pregunta: "¿Cómo encuentro eventos cerca de mí?",
     respuesta:
-      "En la Superguía puedes filtrar eventos por ubicación seleccionando tu provincia (Talca, Curicó, Linares o Cauquenes) y comuna. También puedes usar el buscador para encontrar eventos específicos por nombre o tipo de actividad.",
+      "En la Super buscador puedes filtrar eventos por ubicación seleccionando tu provincia (Talca, Curicó, Linares o Cauquenes) y comuna. También puedes usar el buscador para encontrar eventos específicos por nombre o tipo de actividad.",
   },
   {
     id: 11,
     categoria: "eventos",
     pregunta: "¿Puedo filtrar eventos por categoría?",
     respuesta:
-      "¡Por supuesto! En la Superguía encontrarás filtros por categoría como: Conciertos, Fiestas, Deportes, Gastronomía, Arte y Cultura, Talleres, Ferias, y más. También puedes filtrar por fecha, rango de precios y tipo de entrada (gratis o pagado).",
+      "¡Por supuesto! En la Super buscador encontrarás filtros por categoría como: Conciertos, Fiestas, Deportes, Gastronomía, Arte y Cultura, Talleres, Ferias, y más. También puedes filtrar por fecha, rango de precios y tipo de entrada (gratis o pagado).",
   },
   {
     id: 12,

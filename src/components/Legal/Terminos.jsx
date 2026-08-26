@@ -145,7 +145,7 @@ export default function Terminos() {
               evento publicado.
             </p>
             <h3 className="terminos-clause__subtitle">
-              Sección Superguia Extrovertidos
+              Sección Super buscador Extrovertidos
             </h3>
             <p>
               Directorio comercial con vigencia de 30 días desde su
@@ -153,7 +153,7 @@ export default function Terminos() {
               automáticamente.
             </p>
             <p>
-              La sección Superguia Extrovertidos cuenta con un botón llamado
+              La sección Super buscador Extrovertidos cuenta con un botón llamado
               &quot;Recomendado&quot; solo con fines de informar interés. Esta
               reacción no compromete participación, ni compromiso frente a la
               publicación señalada.
@@ -308,7 +308,7 @@ export default function Terminos() {
                 durante el periodo de 30 días de vigencia del plan.
               </li>
               <li>
-                <strong>Plan Superguia Extrovertidos:</strong> Vigencia de 30
+                <strong>Plan Super buscador Extrovertidos:</strong> Vigencia de 30
                 días. Permite edición ilimitada de la publicación aprobada.
               </li>
             </ul>
@@ -350,11 +350,11 @@ export default function Terminos() {
               ni reembolsos.
             </p>
             <h3 className="terminos-clause__subtitle">
-              8.3. Ediciones Post-Aprobación (Plan Superguía)
+              8.3. Ediciones Post-Aprobación (Plan Super buscador)
             </h3>
             <p>
               Una vez obtenida la aprobación inicial, los usuarios del Plan
-              Superguía podrán editar su contenido ilimitadamente durante el
+              Super buscador podrán editar su contenido ilimitadamente durante el
               período de vigencia de 30 días. Cada edición volverá a revisión
               obligatoria bajo los mismos estándares de la Cláusula 6.
             </p>

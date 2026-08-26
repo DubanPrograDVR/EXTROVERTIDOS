@@ -69,7 +69,7 @@ export default function PerfilBorradores() {
 
     // Navegar al formulario correspondiente
     if (draft.tipo === "negocio") {
-      navigate("/agregar-negocio");
+      navigate("/publicar-negocio");
     } else {
       navigate("/publicar-panorama");
     }

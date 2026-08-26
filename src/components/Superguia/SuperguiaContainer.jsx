@@ -222,7 +222,7 @@ export default function SuperguiaContainer() {
       return;
     }
 
-    navigate("/publicar-negocio");
+    navigate("/crear-publicacion");
   }, [isAuthenticated, navigate]);
 
   useEffect(() => {
@@ -243,7 +243,7 @@ export default function SuperguiaContainer() {
     return () => window.clearTimeout(timeoutId);
   }, [weekRefreshKey]);
 
-  // Cargar negocios primero: esta consulta define cuándo Superguía puede mostrarse.
+  // Cargar negocios primero: esta consulta define cuándo Super buscador puede mostrarse.
   const loadBusinesses = useCallback(async ({ silent = false } = {}) => {
     if (!silent) setLoading(true);
     setError(null);
@@ -712,7 +712,7 @@ export default function SuperguiaContainer() {
               alt="Extrovertidos"
               className="superguia__hero-logo"
             />
-            <h1 className="superguia__hero-title">Superguia extrovertidos</h1>
+            <h1 className="superguia__hero-title">Super buscador extrovertidos</h1>
             <p className="superguia__hero-subtitle">
               Explora los mejores Negocios y Servicios de tu Ciudad
             </p>
@@ -807,7 +807,7 @@ export default function SuperguiaContainer() {
                 <div className="superguia__empty">
                   {/* Logo SG */}
                   <div className="superguia__empty-logo">
-                    <img src="/img/SG_Extro_v2.png" alt="Superguía" />
+                    <img src="/img/SG_Extro_v2.png" alt="Super buscador" />
                   </div>
 
                   <h2 className="superguia__empty-title">

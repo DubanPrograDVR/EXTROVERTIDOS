@@ -10,16 +10,20 @@ import {
 import { trackBusinessCreated } from "../../../../../lib/analytics";
 import {
   createBusiness,
+  createDestacadaBusinessDraft,
   uploadBusinessImage,
   saveDraft,
   deleteDraft,
+  deleteOwnBusiness,
   getBusinessCategories,
   getActiveSuperguiaSubscription,
   validateAndConsumeBusinessPublication,
   refundBusinessPublication,
+  getPlansVisibility,
+  getPlanPrices,
 } from "../../../../../lib/database";
-import { getPlansVisibility } from "../../../../../lib/database/settings";
 import { canUserPublishBusiness } from "../../../../../lib/planRules";
+import { initiateNegocioDestacadaPayment } from "../../../../../lib/payment";
 import { INITIAL_FORM_STATE, IMAGE_CONFIG } from "../constants";
 
 const LOCAL_DRAFT_KEY = "negocio_local_draft_v1";
@@ -43,6 +47,9 @@ export const useNegocioForm = () => {
   // Plan/suscripción
   const [superguiaSubscription, setSuperguiaSubscription] = useState(null);
   const [planesEnabled, setPlanesEnabled] = useState(true);
+  const [negociosDestacadasEnabled, setNegociosDestacadasEnabled] =
+    useState(false);
+  const [negocioDestacadoPrice, setNegocioDestacadoPrice] = useState(null);
   const [loadingPlan, setLoadingPlan] = useState(true);
 
   // Borrador
@@ -50,25 +57,35 @@ export const useNegocioForm = () => {
   const [currentDraftId, setCurrentDraftId] = useState(null);
   const formDataRef = useRef(formData);
   formDataRef.current = formData;
+  const sessionDraftLoadedRef = useRef(false);
 
-  // Cargar plan superguía del usuario
+  // Cargar plan super buscador del usuario
   useEffect(() => {
     let isCancelled = false;
     const loadPlanData = async () => {
       try {
-        const [visibility, sub] = await Promise.all([
+        const [visibility, sub, prices] = await Promise.all([
           getPlansVisibility(),
           user?.id
             ? getActiveSuperguiaSubscription(user.id)
             : Promise.resolve(null),
+          getPlanPrices(),
         ]);
         const enabled = visibility.superguiaVisible;
         if (!isCancelled) {
           setPlanesEnabled(enabled);
           setSuperguiaSubscription(sub);
+          setNegociosDestacadasEnabled(
+            visibility.negociosDestacadasEnabled === true,
+          );
+          setNegocioDestacadoPrice(
+            Number(prices?.negocio_destacado) > 0
+              ? Number(prices.negocio_destacado)
+              : null,
+          );
         }
       } catch (error) {
-        console.error("Error cargando datos de plan superguía:", error);
+        console.error("Error cargando datos de plan super buscador:", error);
       } finally {
         if (!isCancelled) setLoadingPlan(false);
       }
@@ -101,8 +118,32 @@ export const useNegocioForm = () => {
         ?.subcategorias || []
     : [];
 
+  // === CARGAR BORRADOR ENTREGADO DESDE PERFIL ===
+  useEffect(() => {
+    try {
+      const draftJson = sessionStorage.getItem("draftToLoad");
+      if (!draftJson) return;
+
+      const draft = JSON.parse(draftJson);
+      if (!draft?.data || draft.tipo !== "negocio") return;
+
+      sessionStorage.removeItem("draftToLoad");
+      sessionDraftLoadedRef.current = true;
+      setCurrentDraftId(draft.id || null);
+      setFormData((prev) => ({
+        ...prev,
+        ...draft.data,
+        imagenes: [],
+      }));
+    } catch (error) {
+      console.warn("Error cargando borrador de negocio desde Perfil:", error);
+    }
+  }, []);
+
   // === CARGAR AUTO-GUARDADO LOCAL al montar ===
   useEffect(() => {
+    if (sessionDraftLoadedRef.current) return;
+
     try {
       const localDraftJson = localStorage.getItem(LOCAL_DRAFT_KEY);
       if (!localDraftJson) return;
@@ -128,11 +169,13 @@ export const useNegocioForm = () => {
     if (!hasMinData) {
       try {
         localStorage.removeItem(LOCAL_DRAFT_KEY);
-      } catch {}
+      } catch (error) {
+        console.warn("No se pudo limpiar el borrador local de negocio:", error);
+      }
       return;
     }
 
-    const { imagenes, ...dataToSave } = formData;
+    const dataToSave = { ...formData, imagenes: [] };
     const saveTimer = setTimeout(() => {
       try {
         localStorage.setItem(
@@ -161,12 +204,14 @@ export const useNegocioForm = () => {
 
       if (!hasMinData) {
         try {
-          localStorage.removeItem(LOCAL_DRAFT_KEY);
-        } catch {}
+        localStorage.removeItem(LOCAL_DRAFT_KEY);
+      } catch (error) {
+        console.warn("No se pudo limpiar el borrador local:", error);
+      }
         return;
       }
 
-      const { imagenes, ...dataToSave } = currentData;
+      const dataToSave = { ...currentData, imagenes: [] };
       try {
         localStorage.setItem(
           LOCAL_DRAFT_KEY,
@@ -175,7 +220,9 @@ export const useNegocioForm = () => {
             savedAt: Date.now(),
           }),
         );
-      } catch {}
+      } catch (error) {
+        console.warn("No se pudo guardar el borrador local:", error);
+      }
     };
 
     const handleVisibilityChange = () => {
@@ -194,7 +241,9 @@ export const useNegocioForm = () => {
   const clearLocalDraft = useCallback(() => {
     try {
       localStorage.removeItem(LOCAL_DRAFT_KEY);
-    } catch {}
+    } catch (error) {
+      console.warn("No se pudo limpiar el borrador local:", error);
+    }
   }, []);
 
   // Verificar autenticación al hacer foco en campos
@@ -232,6 +281,13 @@ export const useNegocioForm = () => {
 
     // Limpiar error del campo
     setErrors((prev) => ({ ...prev, [name]: "" }));
+  }, []);
+
+  const handlePublicationTypeChange = useCallback((isDestacada) => {
+    setFormData((prev) => ({
+      ...prev,
+      tipo_publicacion: isDestacada ? "destacada" : "normal",
+    }));
   }, []);
 
   // Manejar cambio de días de atención (toggle)
@@ -376,7 +432,7 @@ export const useNegocioForm = () => {
         (c) => c.id === parseInt(formData.category_id),
       );
 
-      const { imagenes, ...dataWithoutImages } = formData;
+      const dataWithoutImages = { ...formData, imagenes: [] };
 
       const savedDraft = await saveDraft({
         userId: user.id,
@@ -423,6 +479,11 @@ export const useNegocioForm = () => {
 
       let publishResult = null;
       let createdBusiness = null;
+      const isStaff = isAdmin || isModerator;
+      const isDestacadaRequested =
+        formData.tipo_publicacion === "destacada" &&
+        negociosDestacadasEnabled;
+      const requiresDestacadaPayment = isDestacadaRequested && !isStaff;
 
       try {
         // NOTA: NO llamar getSession()/refreshSession() aquí.
@@ -431,7 +492,7 @@ export const useNegocioForm = () => {
 
         // 0. Consumir cupo de publicación ANTES de crear el negocio
         // (anti-bypass: validación + consumo atómico en backend)
-        if (!isAdmin && !isModerator) {
+        if (!isStaff && !requiresDestacadaPayment) {
           const quickCheck = canUserPublishBusiness({
             subscription: superguiaSubscription,
             planesEnabled,
@@ -501,7 +562,8 @@ export const useNegocioForm = () => {
         }
 
         // 2. Preparar datos del negocio
-        // Si es admin, se publica automáticamente sin revisión
+        // Staff publica directamente; el negocio destacado de un usuario
+        // permanece en borrador hasta la confirmación de Webpay.
 
         // Construir JSONB de horarios para la BD
         const horarios = {};
@@ -549,18 +611,65 @@ export const useNegocioForm = () => {
           ubicacion_url: formData.ubicacion_url.trim() || null,
           imagen_url: imageUrls[0] || null,
           imagenes: imageUrls,
-          estado: isAdmin ? "publicado" : "pendiente",
+          estado: requiresDestacadaPayment
+            ? "borrador"
+            : isStaff
+              ? "publicado"
+              : "pendiente",
+          origen_publicacion: requiresDestacadaPayment
+            ? "destacada"
+            : "suscripcion",
+          subscription_id: publishResult?.subscription_id || null,
           titulo_marketing: formData.titulo_marketing?.trim() || null,
           mensaje_marketing: formData.mensaje_marketing?.trim() || null,
           titulo_marketing_2: formData.titulo_marketing_2?.trim() || null,
           mensaje_marketing_2: formData.mensaje_marketing_2?.trim() || null,
         });
 
-        // 3. Crear negocio en la BD
-        createdBusiness = await createBusiness(businessData);
+        // 3. Crear negocio en la BD. La whitelist ignora cualquier tipo
+        // enviado dentro de businessData; el tipo se entrega por contrato.
+        createdBusiness = requiresDestacadaPayment
+          ? await createDestacadaBusinessDraft(businessData)
+          : await createBusiness(businessData, {
+              publicationType: isDestacadaRequested ? "destacada" : "normal",
+            });
+
+        if (requiresDestacadaPayment) {
+          if (showToast) {
+            showToast("Redirigiendo a la pasarela de pago...", "info");
+          }
+
+          try {
+            await initiateNegocioDestacadaPayment({
+              businessId: createdBusiness.id,
+              businessName: createdBusiness.nombre,
+            });
+            // La función redirige vía form.submit(). Se conserva el borrador
+            // del formulario para poder reintentar si el pago se abandona.
+            return true;
+          } catch (paymentError) {
+            console.error("Error iniciando pago de negocio destacado:", paymentError);
+            try {
+              await deleteOwnBusiness(createdBusiness.id, user.id);
+            } catch (cleanupError) {
+              console.warn(
+                "No se pudo limpiar el borrador de negocio tras fallo de pago:",
+                cleanupError,
+              );
+            }
+            if (showToast) {
+              showToast(
+                paymentError?.message ||
+                  "No se pudo iniciar el pago. Intenta nuevamente.",
+                "error",
+              );
+            }
+            return false;
+          }
+        }
 
         // Crear notificación in-app de "en revisión" (solo usuarios normales)
-        if (!isAdmin && createdBusiness?.id) {
+        if (!isStaff && createdBusiness?.id) {
           try {
             await supabase.from("notifications").insert([
               {
@@ -579,7 +688,7 @@ export const useNegocioForm = () => {
         }
 
         // Enviar email de negocio pendiente (solo usuarios normales)
-        if (!isAdmin && user?.email) {
+        if (!isStaff && user?.email) {
           supabase.functions
             .invoke("send-email", {
               body: {
@@ -601,7 +710,7 @@ export const useNegocioForm = () => {
 
         if (showToast)
           showToast(
-            isAdmin
+            isStaff
               ? "¡Negocio publicado exitosamente!"
               : "¡Negocio creado exitosamente! Será revisado pronto.",
             "success",
@@ -658,6 +767,7 @@ export const useNegocioForm = () => {
       isAuthenticated,
       isAdmin,
       isModerator,
+      negociosDestacadasEnabled,
       formData,
       user,
       showToast,
@@ -687,10 +797,13 @@ export const useNegocioForm = () => {
     // Plan
     superguiaSubscription,
     planesEnabled,
+    negociosDestacadasEnabled,
+    negocioDestacadoPrice,
     loadingPlan,
 
     // Acciones
     handleChange,
+    handlePublicationTypeChange,
     handleDiaChange,
     handleSaveHorarios,
     handleImageChange,

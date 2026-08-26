@@ -107,9 +107,9 @@ export default function PerfilFavoritos() {
         <div className="perfil-section__empty">
           <FontAwesomeIcon icon={faHeart} />
           <h3>No tienes favoritos aún</h3>
-          <p>Explora la Superguía y guarda tus eventos y negocios favoritos</p>
+          <p>Explora la Super buscador y guarda tus eventos y negocios favoritos</p>
           <button onClick={() => navigate("/superguia")}>
-            Explorar Superguía
+            Explorar Super buscador
           </button>
         </div>
       </div>

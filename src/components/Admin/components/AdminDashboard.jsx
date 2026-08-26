@@ -49,6 +49,9 @@ export default function AdminDashboard({
   destacadasEnabled,
   destacadasToggleLoading,
   onToggleDestacadas,
+  negociosDestacadasEnabled,
+  negociosDestacadasToggleLoading,
+  onToggleNegociosDestacadas,
   isAdmin,
 }) {
   if (!stats) return null;
@@ -272,7 +275,7 @@ export default function AdminDashboard({
             </button>
           </div>
 
-          {/* Toggle SUPERGUÍA */}
+          {/* Toggle SUPER BUSCADOR */}
           <div className="admin-setting-row">
             <div className="admin-setting-row__info">
               <FontAwesomeIcon
@@ -281,10 +284,10 @@ export default function AdminDashboard({
               />
               <div>
                 <span className="admin-setting-row__label">
-                  Activar Superguía
+                  Activar Super buscador
                 </span>
                 <span className="admin-setting-row__description">
-                  Muestra únicamente la Superguía. Al activar, se desactiva el
+                  Muestra únicamente la Super buscador. Al activar, se desactiva el
                   toggle global.
                 </span>
               </div>
@@ -294,7 +297,7 @@ export default function AdminDashboard({
               onClick={onToggleSuperguia}
               disabled={planesToggleLoading}
               title={
-                superguiaEnabled ? "Desactivar Superguía" : "Activar Superguía"
+                superguiaEnabled ? "Desactivar Super buscador" : "Activar Super buscador"
               }>
               {planesToggleLoading ? (
                 <FontAwesomeIcon icon={faSpinner} spin />
@@ -345,12 +348,11 @@ export default function AdminDashboard({
               />
               <div>
                 <span className="admin-setting-row__label">
-                  Publicaciones Destacadas
+                   Destacados de Panoramas
                 </span>
                 <span className="admin-setting-row__description">
-                  Si está activo, se muestra la pestaña “Panoramas Destacados” y
-                  la opción de pago en el formulario. Si se desactiva, solo hay
-                  publicaciones gratuitas.
+                   Controla la opción de pago y la visibilidad destacada de los
+                   panoramas. Al desactivar, se muestran como normales.
                 </span>
               </div>
             </div>
@@ -364,6 +366,40 @@ export default function AdminDashboard({
                   : "Activar publicaciones destacadas"
               }>
               {destacadasToggleLoading ? (
+                <FontAwesomeIcon icon={faSpinner} spin />
+              ) : (
+                <span className="admin-toggle__knob" />
+              )}
+            </button>
+          </div>
+
+          {/* Toggle de negocios destacados */}
+          <div className="admin-setting-row">
+            <div className="admin-setting-row__info">
+              <FontAwesomeIcon
+                icon={faStar}
+                className="admin-setting-row__icon"
+              />
+              <div>
+                <span className="admin-setting-row__label">
+                  Destacados de Negocios
+                </span>
+                <span className="admin-setting-row__description">
+                  Permite destacar negocios mediante pago Webpay y conservar su
+                  distintivo en Super buscador.
+                </span>
+              </div>
+            </div>
+            <button
+              className={`admin-toggle ${negociosDestacadasEnabled ? "admin-toggle--active" : ""}`}
+              onClick={onToggleNegociosDestacadas}
+              disabled={negociosDestacadasToggleLoading}
+              title={
+                negociosDestacadasEnabled
+                  ? "Desactivar destacados de negocios"
+                  : "Activar destacados de negocios"
+              }>
+              {negociosDestacadasToggleLoading ? (
                 <FontAwesomeIcon icon={faSpinner} spin />
               ) : (
                 <span className="admin-toggle__knob" />

@@ -41,7 +41,6 @@ import {
   trackFiltersCleared,
   trackPublicationView,
   trackBusinessView,
-  trackCarouselClick,
   trackPaginationUse,
 } from "../../lib/analytics";
 import "./styles/panoramas-page.css";
@@ -151,7 +150,7 @@ export default function PanoramasPage() {
       return;
     }
 
-    navigate("/publicar-panorama");
+    navigate("/crear-publicacion");
   }, [isAuthenticated, navigate]);
 
   // Leer query params al cargar y sincronizar con CityContext y filtros
@@ -342,6 +341,10 @@ export default function PanoramasPage() {
 
   // Handlers para el modal
   const handleEventClick = useCallback(async (event) => {
+    if (event.isBanner) {
+      navigate("/publicar-panorama");
+      return;
+    }
     setSelectedEvent(event);
     trackPublicationView(event);
     if (event?.id) {
@@ -831,10 +834,19 @@ export default function PanoramasPage() {
   // Panoramas destacados para el mini carrusel superior (modo tren).
   // Respeta los filtros activos. En modo tren se repiten automáticamente
   // cuando hay pocos elementos.
-  const destacadaEvents = useMemo(
-    () => filteredEvents.filter((e) => e.tipo_publicacion === "destacada"),
-    [filteredEvents],
-  );
+  const destacadaEvents = useMemo(() => {
+    let destacadas = filteredEvents.filter((e) => e.tipo_publicacion === "destacada").slice(0, 20);
+    if (destacadas.length < 5) {
+      destacadas.push({
+        id: "banner-destaca-panorama",
+        isBanner: true,
+        titulo: "¡Destaca tu Panorama!",
+        imagen_url: "/img/banner_destaca_panorama.png",
+        tipo_publicacion: "destacada",
+      });
+    }
+    return destacadas;
+  }, [filteredEvents]);
 
   // Resaltar card cuando venimos con ?highlight=<id>
   useHighlightCard({
@@ -1091,7 +1103,7 @@ export default function PanoramasPage() {
         )}
       </section>
 
-      {/* Panel de filtros de Superguia */}
+      {/* Panel de filtros de Super buscador */}
       <div ref={filterRef}>
         <FilterPanel
           categoryIcon="/img/P_Extro_v2.png"
@@ -1181,7 +1193,7 @@ export default function PanoramasPage() {
           />
         ) : (
           <>
-            {/* Grid de publicaciones usando el componente de Superguia */}
+            {/* Grid de publicaciones usando el componente de Super buscador */}
             <PublicationGrid
               publications={paginatedEvents}
               onPublicationClick={handleEventClick}

@@ -41,7 +41,7 @@ export default function Panoramas() {
 
             {/* Subtítulo */}
             <p className="panoramas__subtitle">
-              ¡Descubre y Encuentra lo que más te gusta!
+              Explora actividades y eventos cerca de ti.
             </p>
 
             {/* Botón de acción */}

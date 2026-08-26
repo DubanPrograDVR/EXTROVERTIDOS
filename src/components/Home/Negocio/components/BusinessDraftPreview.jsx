@@ -246,11 +246,11 @@ const BusinessDraftPreview = ({ isOpen, onClose, formData, previewImages }) => {
           <div className="publication-modal__brand-group">
             <img
               src="/img/SG_Extro_v2.png"
-              alt="Superguia"
+              alt="Super buscador"
               className="publication-modal__brand-logo"
             />
             <span className="publication-modal__brand-text">
-              Superguia Extrovertidos
+              Super buscador Extrovertidos
             </span>
           </div>
           {hasSubcategory && (

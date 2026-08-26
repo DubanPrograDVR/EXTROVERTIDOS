@@ -7,19 +7,93 @@ import { supabase } from "../supabase";
 import { isModerator } from "./roles";
 import {
   refundBusinessPublication,
+  refundBusinessPublicationBySubscription,
   validateAndConsumeBusinessPublication,
 } from "./subscriptions";
 import { MAX_DURACION_NEGOCIO } from "../planRules";
 
 /**
- * Crea un nuevo negocio
+ * Campos aceptados al crear un negocio. El tipo de publicación no se toma
+ * desde businessData para evitar que un usuario lo inyecte en un insert normal.
+ */
+const ALLOWED_BUSINESS_CREATE_FIELDS = [
+  "user_id",
+  "nombre",
+  "descripcion",
+  "categoria",
+  "subcategoria",
+  "provincia",
+  "comuna",
+  "direccion",
+  "telefono",
+  "email",
+  "sitio_web",
+  "horarios",
+  "redes_sociales",
+  "instagram",
+  "facebook",
+  "whatsapp",
+  "tiktok",
+  "twitter",
+  "youtube",
+  "linkedin",
+  "ubicacion_url",
+  "imagen_url",
+  "imagenes",
+  "estado",
+  "titulo_marketing",
+  "mensaje_marketing",
+  "titulo_marketing_2",
+  "mensaje_marketing_2",
+  "origen_publicacion",
+  "subscription_id",
+];
+
+/**
+ * Crea un nuevo negocio.
+ *
+ * `publicationType: "destacada"` solo permite un borrador explícito para el
+ * flujo Webpay. La autorización definitiva no vive en este cliente: las Edge
+ * Functions deben validar ownership, estado, tipo y pago antes de activarlo.
+ * Para un negocio destacado ya publicado se exige además un rol staff como
+ * defensa local; RLS/backend siguen siendo la frontera de seguridad.
+ *
  * @param {Object} businessData - Datos del negocio
+ * @param {Object} [options]
+ * @param {"normal"|"destacada"} [options.publicationType="normal"]
+ * @param {boolean} [options.allowDestacadaDraft=false]
  * @returns {Promise<Object>} Negocio creado
  */
-export const createBusiness = async (businessData) => {
+export const createBusiness = async (
+  businessData,
+  { publicationType = "normal", allowDestacadaDraft = false } = {},
+) => {
+  if (!["normal", "destacada"].includes(publicationType)) {
+    throw new Error("Tipo de publicación de negocio inválido");
+  }
+
+  const sanitized = {};
+  for (const key of ALLOWED_BUSINESS_CREATE_FIELDS) {
+    if (businessData?.[key] !== undefined) {
+      sanitized[key] = businessData[key];
+    }
+  }
+
+  if (publicationType === "destacada") {
+    if (sanitized.estado === "borrador") {
+      if (!allowDestacadaDraft) {
+        throw new Error("El borrador destacado debe iniciar desde el flujo de pago");
+      }
+    } else if (!(await isModerator(sanitized.user_id))) {
+      throw new Error("Solo staff puede crear un negocio destacado publicado");
+    }
+  }
+
+  sanitized.tipo_publicacion = publicationType;
+
   const { data, error } = await supabase
     .from("businesses")
-    .insert([businessData])
+    .insert([sanitized])
     .select()
     .single();
 
@@ -30,6 +104,17 @@ export const createBusiness = async (businessData) => {
 
   return data;
 };
+
+/**
+ * Crea exclusivamente el borrador que precede al pago de un negocio
+ * destacado. El backend vuelve a validar este contrato antes de generar la
+ * transacción y antes de moverlo a pendiente.
+ */
+export const createDestacadaBusinessDraft = (businessData) =>
+  createBusiness(
+    { ...businessData, estado: "borrador" },
+    { publicationType: "destacada", allowDestacadaDraft: true },
+  );
 
 /**
  * Obtiene todos los negocios publicados con información del autor
@@ -44,6 +129,7 @@ export const getPublishedBusinesses = async () => {
     .eq("estado", "publicado")
     .eq("is_paused", false)
     .or(`publication_expires_at.is.null,publication_expires_at.gt.${nowIso}`)
+    .order("tipo_publicacion", { ascending: false })
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -333,7 +419,7 @@ export const rejectBusiness = async (businessId, adminId, reason = "") => {
   // Obtener revision_count actual y user_id para devolver cupo
   const { data: bizData, error: fetchError } = await supabase
     .from("businesses")
-    .select("revision_count, user_id")
+    .select("revision_count, user_id, origen_publicacion, subscription_id")
     .eq("id", businessId)
     .single();
 
@@ -382,9 +468,13 @@ export const rejectBusiness = async (businessId, adminId, reason = "") => {
 
   // Devolver cupo de publicación si aún tiene intentos de revisión
   // En el 3er rechazo (revision_count = 3) el cupo se pierde definitivamente
-  if (newRevisionCount < 3) {
+  if (
+    newRevisionCount < 3 &&
+    bizData.origen_publicacion === "suscripcion" &&
+    bizData.subscription_id
+  ) {
     try {
-      await refundBusinessPublication(bizData.user_id);
+      await refundBusinessPublicationBySubscription(bizData.subscription_id);
     } catch (refundError) {
       // No bloquear el rechazo si falla el refund (log para debugging)
       console.warn(
@@ -443,6 +533,8 @@ export const resubmitBusiness = async (businessId) => {
     .update({
       estado: "en_revision",
       motivo_rechazo: null,
+      origen_publicacion: "suscripcion",
+      subscription_id: publishResult.subscription_id || null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", businessId)
@@ -556,7 +648,19 @@ const ALLOWED_BUSINESS_UPDATE_FIELDS = [
   "mensaje_marketing",
   "titulo_marketing_2",
   "mensaje_marketing_2",
+];
+
+/**
+ * Campos adicionales que solo un admin/moderador puede modificar.
+ * Mismo patrón que ADMIN_ONLY_EVENT_FIELDS en events.js: 'tipo_publicacion'
+ * queda fuera de la whitelist general para que un usuario no pueda destacar
+ * su propio negocio sin pagar editándolo.
+ */
+const ADMIN_ONLY_BUSINESS_FIELDS = [
+  "tipo_publicacion",
   "publication_expires_at",
+  "subscription_id",
+  "origen_publicacion",
 ];
 
 /**
@@ -566,7 +670,7 @@ const ALLOWED_BUSINESS_UPDATE_FIELDS = [
  * @param {Object} businessData - Datos a actualizar
  * @param {string} [userId] - ID del usuario que actualiza
  * @param {Object} [options]
- * @param {boolean} [options.adminOverride=false] - Si es admin/moderador (no auto-revierte estado)
+ * @param {boolean} [options.adminOverride=false] - Indicación de UI; el rol se verifica antes de aceptar campos admin
  * @returns {Promise<Object>} Negocio actualizado
  */
 export const updateBusiness = async (
@@ -577,9 +681,20 @@ export const updateBusiness = async (
 ) => {
   const { adminOverride = false } = options;
 
+  // No basta con que el cliente envíe adminOverride. Verificamos el rol antes
+  // de aceptar campos administrativos; el backend/RLS debe repetir esta regla.
+  if (adminOverride && !(await isModerator(userId))) {
+    throw new Error("No tienes permisos para modificar campos administrativos");
+  }
+
+  // Determinar campos permitidos según contexto
+  const allowedFields = adminOverride
+    ? [...ALLOWED_BUSINESS_UPDATE_FIELDS, ...ADMIN_ONLY_BUSINESS_FIELDS]
+    : ALLOWED_BUSINESS_UPDATE_FIELDS;
+
   // Sanitizar: solo permitir campos seguros
   const sanitized = {};
-  for (const key of ALLOWED_BUSINESS_UPDATE_FIELDS) {
+  for (const key of allowedFields) {
     if (businessData[key] !== undefined) {
       sanitized[key] = businessData[key];
     }

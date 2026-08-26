@@ -78,6 +78,7 @@ export const MINUTES = Array.from({ length: 60 }, (_, i) =>
 
 // Estado inicial del formulario
 export const INITIAL_FORM_STATE = {
+  tipo_publicacion: "normal",
   nombre: "",
   descripcion: "",
   category_id: "",

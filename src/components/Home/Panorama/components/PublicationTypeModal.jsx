@@ -8,7 +8,7 @@ import {
   faCrown,
   faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
-import { PUBLICATION_TYPES } from "../constants";
+import { MODOS_PUBLICACION } from "../constants";
 import { getPlanPrices } from "../../../../lib/database";
 import { useAuth } from "../../../../context/AuthContext";
 import "../styles/publication-type-modal.css";
@@ -27,13 +27,15 @@ const formatCLP = (amount) =>
  *
  * Diseñado para ser escalable: si en el futuro se agregan más tipos
  * (Premium, Patrocinada, Urgente, etc.), basta con agregar una entrada en el
- * arreglo `options` y su valor correspondiente en `PUBLICATION_TYPES`.
+ * arreglo `options` y su valor correspondiente en `MODOS_PUBLICACION`.
  */
 export default function PublicationTypeModal({
   isOpen,
   onClose,
   onSelect,
   isSubmitting = false,
+  hasActiveSubscription = false,
+  destacadasEnabled = true,
 }) {
   const { isAdmin, isModerator } = useAuth();
   const isAdminOrMod = isAdmin || isModerator;
@@ -46,7 +48,6 @@ export default function PublicationTypeModal({
     if (!isOpen) return undefined;
     let cancelled = false;
 
-    setLoadingPrice(true);
     getPlanPrices()
       .then((prices) => {
         if (!cancelled) {
@@ -66,7 +67,10 @@ export default function PublicationTypeModal({
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen) setPendingType(null);
+    if (isOpen) return undefined;
+
+    const resetTimer = window.setTimeout(() => setPendingType(null), 0);
+    return () => window.clearTimeout(resetTimer);
   }, [isOpen]);
 
   useEffect(() => {
@@ -78,12 +82,12 @@ export default function PublicationTypeModal({
     return () => document.removeEventListener("keydown", handleKey);
   }, [isOpen, isSubmitting, onClose]);
 
-  const options = useMemo(
-    () => [
+  const options = useMemo(() => {
+    const options = [
       {
-        type: PUBLICATION_TYPES.NORMAL,
+        type: MODOS_PUBLICACION.GRATUITA,
         icon: faBullhorn,
-        title: "Publicación Normal",
+        title: "Panorama gratuito",
         priceLabel: "Gratis",
         description:
           "Tu publicación aparecerá en la sección de Panoramas después de la revisión del equipo.",
@@ -92,9 +96,9 @@ export default function PublicationTypeModal({
         variant: "normal",
       },
       {
-        type: PUBLICATION_TYPES.DESTACADA,
+        type: MODOS_PUBLICACION.DESTACADA,
         icon: faCrown,
-        title: "Publicación Destacada",
+        title: "Panorama destacado",
         priceLabel: isAdminOrMod
           ? null
           : loadingPrice
@@ -116,13 +120,40 @@ export default function PublicationTypeModal({
               "Aparece en Panoramas Destacados",
               "Pago único vía Webpay",
             ],
-        ctaLabel: isAdminOrMod ? "Publicar panorama destacado" : "Ir a pagar",
+        ctaLabel: "Continuar con destacado",
         variant: "destacada",
         featured: true,
       },
-    ],
-    [isAdminOrMod, loadingPrice, precioDestacada],
-  );
+    ];
+
+    if (!destacadasEnabled) options.splice(1, 1);
+
+    if (hasActiveSubscription) {
+      options.splice(1, 0, {
+        type: MODOS_PUBLICACION.SUSCRIPCION,
+        icon: faStar,
+        title: "Usar mi plan",
+        priceLabel: "Con tu suscripción",
+        description:
+          "Publica con tu cupo disponible y accede al formulario completo.",
+        highlights: [
+          "Formulario completo",
+          "Usa un cupo de tu plan",
+          "Sin pago adicional",
+        ],
+        ctaLabel: "Publicar con mi plan",
+        variant: "suscripcion",
+      });
+    }
+
+    return options;
+  }, [
+    hasActiveSubscription,
+    destacadasEnabled,
+    isAdminOrMod,
+    loadingPrice,
+    precioDestacada,
+  ]);
 
   const handleSelect = (type) => {
     if (isSubmitting || pendingType) return;
@@ -184,7 +215,7 @@ export default function PublicationTypeModal({
                 disabled={
                   isSubmitting ||
                   (!isAdminOrMod &&
-                    option.type === PUBLICATION_TYPES.DESTACADA &&
+                    option.type === MODOS_PUBLICACION.DESTACADA &&
                     !precioDestacada &&
                     !loadingPrice)
                 }

@@ -94,7 +94,7 @@ export default function PerfilPublicaciones({
 
   // Ir a la publicación en la página pública con resaltado
   const handleGoToPublication = (publication) => {
-    navigate(`/panoramas?highlight=${publication.id}`);
+    navigate(`/?p_highlight=${publication.id}`);
   };
 
   // Cerrar modal de ver
@@ -224,7 +224,7 @@ export default function PerfilPublicaciones({
         <h2>Mis Panoramas</h2>
         <button
           className="perfil-section__btn"
-          onClick={() => navigate("/publicar-panorama")}>
+          onClick={() => navigate("/crear-publicacion")}>
           <FontAwesomeIcon icon={faPlus} />
           Nueva Publicación
         </button>
@@ -240,7 +240,7 @@ export default function PerfilPublicaciones({
           <FontAwesomeIcon icon={faNewspaper} />
           <h3>No tienes publicaciones aún</h3>
           <p>¡Crea tu primera publicación y compártela con la comunidad!</p>
-          <button onClick={() => navigate("/publicar-panorama")}>
+          <button onClick={() => navigate("/crear-publicacion")}>
             Crear Publicación
           </button>
         </div>

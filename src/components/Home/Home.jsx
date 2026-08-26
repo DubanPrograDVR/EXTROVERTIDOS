@@ -1,130 +1,266 @@
-import { useNavigate } from "react-router-dom";
-import { useCity } from "../../context/CityContext";
-import "./styles/home.css";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faMapMarkerAlt,
-  faChevronLeft,
-  faChevronRight,
-  faSearch,
-  faCompass,
-  faMapMarkedAlt,
-} from "@fortawesome/free-solid-svg-icons";
-import Secciones from "./Secciones";
-
-// Imágenes servidas desde public/
-const logo = "/img/Logo_con_r_v3.png";
-import Panoramas from "./Panoramas";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import AuthModal from "../Auth/AuthModal";
+import BusinessModal from "../Superguia/BusinessModal";
+import PublicationModal from "../Superguia/PublicationModal";
+import { getEventById } from "../../lib/database";
+import { useAuth } from "../../context/AuthContext";
+import { usePlansVisibility } from "../../hooks/usePlansVisibility";
+import useHomeContent from "../../hooks/useHomeContent";
+import { LOCATIONS } from "../Superguia/data";
 import Footer from "./Footer";
+import HomeAccesos from "./HomeAccesos";
+import HomeHero from "./HomeHero";
+import HomePanoramas from "./HomePanoramas";
+import HomeSuperguia from "./HomeSuperguia";
+import "./styles/home-consolidado.css";
 
 export default function Home() {
   const navigate = useNavigate();
-  const { cityName, prevCity, nextCity } = useCity();
+  const [parametros, setParametros] = useSearchParams();
+  const { isAuthenticated } = useAuth();
+  const { destacadasEnabled, negociosDestacadasEnabled } =
+    usePlansVisibility();
+  const {
+    eventos,
+    negocios,
+    categoriasPanoramas,
+    categoriasNegocios,
+    cargando,
+    error,
+    recargar,
+    semillaOrden,
+  } = useHomeContent();
+  const [modalAuthAbierto, setModalAuthAbierto] = useState(false);
+  const [modalPanoramaAbierto, setModalPanoramaAbierto] = useState(false);
+  const [modalNegocioAbierto, setModalNegocioAbierto] = useState(false);
+  const [panoramaSeleccionado, setPanoramaSeleccionado] = useState(null);
+  const [negocioSeleccionado, setNegocioSeleccionado] = useState(null);
+  const [seccionActiva, setSeccionActiva] = useState("panoramas");
 
-  const navigateWithScrollTop = (path) => {
-    navigate(path);
-    window.scrollTo({ top: 0, behavior: "auto" });
-  };
+  const eventosParaVista = destacadasEnabled
+    ? eventos
+    : eventos.map((evento) =>
+        evento.tipo_publicacion === "destacada"
+          ? { ...evento, tipo_publicacion: "normal" }
+          : evento,
+      );
+  const negociosParaVista = negociosDestacadasEnabled
+    ? negocios
+    : negocios.map((negocio) =>
+        negocio.tipo_publicacion === "destacada"
+          ? { ...negocio, tipo_publicacion: "normal" }
+          : negocio,
+      );
 
-  // Buscar panoramas por ciudad seleccionada
-  const handleSearch = () => {
-    navigateWithScrollTop(`/panoramas?ciudad=${encodeURIComponent(cityName)}`);
-  };
+  const actualizarParametros = useCallback(
+    (cambios) => {
+      setParametros(
+        (actuales) => {
+          const siguientes = new URLSearchParams(actuales);
+          Object.entries(cambios).forEach(([parametro, valor]) => {
+            if (valor === null || valor === undefined || valor === "") {
+              siguientes.delete(parametro);
+            } else {
+              siguientes.set(parametro, String(valor));
+            }
+          });
+          return siguientes;
+        },
+        { replace: true },
+      );
+    },
+    [setParametros],
+  );
 
-  // Ir a panoramas con la ciudad seleccionada
-  const handlePanoramasClick = () => {
-    navigateWithScrollTop(`/panoramas?ciudad=${encodeURIComponent(cityName)}`);
-  };
+  // Compatibilidad con enlaces del Home anterior que usaban ?ciudad=.
+  useEffect(() => {
+    const ciudadLegacy = parametros.get("ciudad");
+    const highlightLegacy = parametros.get("highlight");
+    if (!ciudadLegacy && !highlightLegacy) return;
 
-  // Ir a superguía
-  const handleSuperguiaClick = () => {
-    navigateWithScrollTop("/superguia");
-  };
+    let ciudadKey = null;
+    if (ciudadLegacy) {
+      const normalizada = ciudadLegacy
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLocaleLowerCase("es-CL")
+        .trim();
+      ciudadKey = Object.entries(LOCATIONS).find(
+        ([clave, ciudad]) =>
+          normalizada === clave ||
+          normalizada ===
+            ciudad.nombre
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .toLocaleLowerCase("es-CL") ||
+          ciudad.comunas.some(
+            (comuna) =>
+              normalizada ===
+              comuna
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toLocaleLowerCase("es-CL"),
+          ),
+      )?.[0];
+    }
+
+    actualizarParametros({
+      ciudad: null,
+      highlight: null,
+      p_ciudad: ciudadLegacy ? ciudadKey || null : null,
+      p_busqueda: ciudadLegacy && !ciudadKey ? ciudadLegacy : null,
+      p_highlight: highlightLegacy,
+    });
+  }, [actualizarParametros, parametros]);
+
+  const publicar = useCallback(
+    (ruta) => {
+      if (!isAuthenticated) {
+        setModalAuthAbierto(true);
+        return;
+      }
+
+      navigate(ruta);
+    },
+    [isAuthenticated, navigate],
+  );
+
+  const abrirPanorama = useCallback(async (panorama) => {
+    if (panorama?.isBanner) {
+      navigate("/publicar-panorama");
+      return;
+    }
+    setPanoramaSeleccionado(panorama);
+    setModalPanoramaAbierto(true);
+
+    if (!panorama?.id) return;
+
+    try {
+      const panoramaCompleto = await getEventById(panorama.id);
+      setPanoramaSeleccionado(panoramaCompleto || panorama);
+    } catch (cargaError) {
+      console.error("Error cargando detalle del panorama:", cargaError);
+    }
+  }, [navigate]);
+
+  const cerrarPanorama = useCallback(() => {
+    setModalPanoramaAbierto(false);
+    setPanoramaSeleccionado(null);
+  }, []);
+
+  const abrirNegocio = useCallback((negocio) => {
+    if (negocio?.isBanner) {
+      navigate("/publicar-negocio");
+      return;
+    }
+    setNegocioSeleccionado(negocio);
+    setModalNegocioAbierto(true);
+  }, [navigate]);
+
+  const cerrarNegocio = useCallback(() => {
+    setModalNegocioAbierto(false);
+    setNegocioSeleccionado(null);
+  }, []);
+
+  const seleccionarPanoramas = useCallback(() => {
+    setSeccionActiva("panoramas");
+    actualizarParametros({
+      p_ciudad: null,
+      p_comuna: null,
+      p_categoria: null,
+      p_busqueda: null,
+      p_fecha: null,
+      p_precio: null,
+      p_highlight: null,
+    });
+  }, [actualizarParametros]);
+
+  const seleccionarSuperbuscador = useCallback(() => {
+    setSeccionActiva("superbuscador");
+    actualizarParametros({
+      sg_ciudad: null,
+      sg_comuna: null,
+      sg_categoria: null,
+      sg_subcategoria: null,
+      sg_busqueda: null,
+      sg_highlight: null,
+    });
+  }, [actualizarParametros]);
 
   return (
-    <>
-      <section className="home-section">
-        <div className="home-container">
-          {/* Título Principal */}
-          <div className="home-header">
-            <h1 className="home-title">
-              <span className="title-highlight">¡Encuentra!</span>
-              <span className="title-main title-main--orange">
-                Los Panoramas, Actividades y Eventos
-              </span>
-              <span className="title-main" style={{ textAlign: "center" }}>
-                de tu Ciudad
-              </span>
-            </h1>
-          </div>
+    <main className="home-consolidado">
+      {seccionActiva !== "superbuscador" ? (
+        <img 
+          src="/img/banner_panoramas.png" 
+          alt="Banner Panoramas" 
+          className="home-consolidado__banner-hero"
+        />
+      ) : (
+        <img 
+          src="/img/Banner_Super_Buscador.png" 
+          alt="Banner Super Buscador" 
+          className="home-consolidado__banner-hero"
+        />
+      )}
 
-          {/* Logo Central */}
-          <div className="home-logo">
-            <img src={logo} alt="Extrovertidos" className="logo-main" />
-          </div>
+      <HomeAccesos
+        seccionActiva={seccionActiva}
+        onPanoramas={seleccionarPanoramas}
+        onSuperbuscador={seleccionarSuperbuscador}
+      />
 
-          {/* Selector de Ciudad */}
-          <div className="city-selector">
-            <p className="city-question">¿En qué Ciudad te Encuentras?</p>
-            <div className="city-picker">
-              <button
-                className="city-arrow"
-                onClick={prevCity}
-                aria-label="Ciudad anterior">
-                <FontAwesomeIcon icon={faChevronLeft} />
-              </button>
+      {seccionActiva !== "superbuscador" && (
+        <HomePanoramas
+          eventos={eventosParaVista}
+          categorias={categoriasPanoramas}
+          parametros={parametros}
+          actualizarParametros={actualizarParametros}
+          cargando={cargando}
+          error={error}
+          recargar={recargar}
+          onEventoClick={abrirPanorama}
+          onNegocioClick={abrirNegocio}
+          carouselItems={eventosParaVista}
+          onPublicar={() => publicar("/crear-publicacion")}
+          semillaOrden={semillaOrden}
+        />
+      )}
 
-              <div className="city-display">
-                <FontAwesomeIcon icon={faMapMarkerAlt} className="city-icon" />
-                <span className="city-name">{cityName}</span>
-              </div>
+      {seccionActiva !== "panoramas" && (
+        <HomeSuperguia
+          negocios={negociosParaVista}
+          categorias={categoriasNegocios}
+          parametros={parametros}
+          actualizarParametros={actualizarParametros}
+          cargando={cargando}
+          error={error}
+          recargar={recargar}
+          onNegocioClick={abrirNegocio}
+          onEventoClick={abrirPanorama}
+          carouselItems={negociosParaVista}
+          onPublicar={() => publicar("/crear-publicacion")}
+          semillaOrden={semillaOrden}
+        />
+      )}
 
-              <button
-                className="city-arrow"
-                onClick={nextCity}
-                aria-label="Ciudad siguiente">
-                <FontAwesomeIcon icon={faChevronRight} />
-              </button>
-
-              <button
-                className="search-btn"
-                onClick={handleSearch}
-                aria-label="Buscar">
-                <FontAwesomeIcon icon={faSearch} />
-              </button>
-            </div>
-          </div>
-
-          {/* Botones de Acción */}
-          <div className="action-buttons">
-            <button
-              className="action-btn btn-panoramas"
-              onClick={handlePanoramasClick}>
-              <FontAwesomeIcon icon={faMapMarkedAlt} className="btn-icon" />
-              <span>Panoramas</span>
-            </button>
-            <button
-              className="action-btn btn-superguia"
-              onClick={handleSuperguiaClick}>
-              <FontAwesomeIcon icon={faCompass} className="btn-icon" />
-              <span>Superguía Extrovertidos</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Elementos decorativos */}
-        <div className="bg-decoration decoration-1"></div>
-        <div className="bg-decoration decoration-2"></div>
-        <div className="bg-decoration decoration-3"></div>
-
-        {/* Secciones principales */}
-      </section>
-
-      <Panoramas />
-
-      <Secciones />
+      <PublicationModal
+        publication={panoramaSeleccionado}
+        isOpen={modalPanoramaAbierto}
+        onClose={cerrarPanorama}
+        modalVariant="panoramas"
+      />
+      <BusinessModal
+        business={negocioSeleccionado}
+        isOpen={modalNegocioAbierto}
+        onClose={cerrarNegocio}
+      />
+      <AuthModal
+        isOpen={modalAuthAbierto}
+        onClose={() => setModalAuthAbierto(false)}
+      />
 
       <Footer />
-    </>
+    </main>
   );
 }

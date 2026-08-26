@@ -4,8 +4,14 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import "./styles/protected-route.css";
 
-// Rutas de publicación donde los admins SÍ pueden acceder
-const ADMIN_ALLOWED_PATHS = ["/publicar-panorama", "/publicar-negocio"];
+// Rutas de publicación donde los admins SÍ pueden acceder.
+// Las subrutas se permiten solo cuando el prefijo termina en un segmento
+// completo; /publicar-panorama-falso no debe pasar este guard.
+const ADMIN_ALLOWED_PATHS = [
+  "/crear-publicacion",
+  "/publicar-panorama",
+  "/publicar-negocio",
+];
 
 /**
  * Componente para rutas exclusivas de usuarios regulares
@@ -29,7 +35,10 @@ export default function UserOnlyRoute({ children }) {
   }
 
   // Verificar si la ruta actual está permitida para admins
-  const isAdminAllowedPath = ADMIN_ALLOWED_PATHS.includes(location.pathname);
+  const isAdminAllowedPath = ADMIN_ALLOWED_PATHS.some(
+    (path) =>
+      location.pathname === path || location.pathname.startsWith(`${path}/`),
+  );
 
   // Si es admin o moderador Y NO está en una ruta permitida, redirigir al panel admin
   if (user && isModerator && !isAdminAllowedPath) {

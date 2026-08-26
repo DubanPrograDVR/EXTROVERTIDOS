@@ -8,11 +8,9 @@ import {
   PublicarInfo,
   PublicarForm,
   PublicarAuthModal,
-  PlanBlockModal,
   PublicationTypeModal,
-  detectBlockScenario,
 } from "./components";
-import { INITIAL_FORM_STATE, PUBLICATION_TYPES } from "./constants";
+import { INITIAL_FORM_STATE, MODOS_PUBLICACION } from "./constants";
 import "./styles/publicar.css";
 
 /**
@@ -21,7 +19,7 @@ import "./styles/publicar.css";
  * Soporta creación y edición de eventos
  */
 const Publicar = () => {
-  const { isAdmin, isModerator, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const {
     // Estados
@@ -36,12 +34,12 @@ const Publicar = () => {
     isEditing,
     isSavingDraft,
     // Plan
-    activeSubscription,
-    anyPanoramaSubscription,
     planesEnabled,
     destacadasEnabled,
     enabledCalendarModes,
-    planInfo,
+    enabledFields,
+    hasActiveSubscription,
+    modoFromUrl,
     isLoading,
     // Handlers
     handleFieldFocus,
@@ -52,16 +50,37 @@ const Publicar = () => {
     handleSaveDraft,
     closeAuthModal,
     resetForm,
+    selectPublicationMode,
   } = usePublicarForm();
 
-  // === MODAL DE TIPO DE PUBLICACIÓN ===
-  // Al presionar "Publicar" en una publicación nueva, se muestra un modal para
-  // elegir entre Normal (gratis) o Destacada (paga vía Webpay). Para ediciones
-  // se omite el modal y se guarda directamente.
-  const [showTypeModal, setShowTypeModal] = useState(false);
-  // Cuando el usuario está bloqueado por plan pero elige la ruta Destacada,
-  // se salta la validación de plan y se envía directo como destacada.
-  const [forceDestacada, setForceDestacada] = useState(false);
+  // === SELECCIÓN DE PLAN ===
+  // El plan se elige ANTES del formulario, no al enviarlo: los campos visibles
+  // dependen de él (gratuito = subconjunto, destacada = formulario completo).
+  // En edición no se pregunta, y si el admin desactivó las destacadas no hay
+  // nada que elegir: se publica gratis.
+  // Si se llegó desde /crear-publicacion, el plan ya viene en la URL y no hay
+  // nada que preguntar. El modal solo cubre la entrada directa a esta ruta
+  // (links antiguos, marcadores, CTAs internos que aún no pasan por la
+  // pantalla de selección).
+  const [planChosen, setPlanChosen] = useState(Boolean(modoFromUrl));
+  const needsPlanChoice =
+    !isEditing &&
+    !planChosen &&
+    (destacadasEnabled || hasActiveSubscription);
+
+  const handleSelectPublicationType = useCallback(
+    (modo) => {
+      selectPublicationMode(modo);
+      setPlanChosen(true);
+    },
+    [selectPublicationMode],
+  );
+
+  // Cerrar sin elegir equivale a continuar con el plan gratuito
+  const handleCloseTypeModal = useCallback(() => {
+    selectPublicationMode(MODOS_PUBLICACION.GRATUITA);
+    setPlanChosen(true);
+  }, [selectPublicationMode]);
 
   const handleFormSubmit = useCallback(
     (event) => {
@@ -72,70 +91,20 @@ const Publicar = () => {
         handleSubmit(event);
         return;
       }
-      if (forceDestacada) {
-        // El usuario llegó vía el CTA de destacada desde PlanBlockModal:
-        // se salta la selección y se envía como destacada directamente.
-        handleSubmit({ tipoPublicacion: PUBLICATION_TYPES.DESTACADA });
-        return;
-      }
-      if (!destacadasEnabled) {
-        // Destacadas desactivadas globalmente por el admin: sin modal,
-        // se publica directamente como normal (gratis).
-        handleSubmit({ tipoPublicacion: PUBLICATION_TYPES.NORMAL });
-        return;
-      }
-      setShowTypeModal(true);
+      // La modalidad ya está en formData desde la selección previa.
+      handleSubmit({ modoPublicacion: formData.modo_publicacion });
     },
-    [isSubmitting, isEditing, handleSubmit, forceDestacada, destacadasEnabled],
+    [isSubmitting, isEditing, handleSubmit, formData.modo_publicacion],
   );
 
-  const handleSelectPublicationType = useCallback(
-    async (tipo) => {
-      const result = await handleSubmit({ tipoPublicacion: tipo });
-      setShowTypeModal(false);
-      return result;
-    },
-    [handleSubmit],
-  );
-
-  const handleCloseTypeModal = useCallback(() => {
-    if (isSubmitting) return;
-    setShowTypeModal(false);
-  }, [isSubmitting]);
-
-  const handlePublishDestacadaFromBlock = useCallback(() => {
-    setForceDestacada(true);
-  }, []);
-
-  // Detectar si el usuario está bloqueado para publicar
-  // (solo aplica para nuevas publicaciones, no edición)
-  // Si el usuario eligió "Publicar como Destacada" desde el bloque, se ignora
-  // el escenario ya que destacada no requiere plan.
-  const blockScenario = useMemo(() => {
-    if (isEditing) return null; // Editar siempre permitido
-    if (forceDestacada) return null;
-    return detectBlockScenario({
-      subscription: activeSubscription || anyPanoramaSubscription,
-      planesEnabled,
-      planInfo,
-      isAdmin,
-      isModerator,
-    });
-  }, [
-    isEditing,
-    forceDestacada,
-    activeSubscription,
-    anyPanoramaSubscription,
-    planesEnabled,
-    planInfo,
-    isAdmin,
-    isModerator,
-  ]);
-
-  // Detectar si el formulario tiene datos (no está en blanco)
+  // Detectar si el formulario tiene datos (no está en blanco).
+  // 'tipo_publicacion' se excluye: elegir plan no es "escribir" en el
+  // formulario y no debe activar el botón de "Limpiar todo".
   const isDirty = useMemo(() => {
     if (!formData) return false;
-    const keys = Object.keys(INITIAL_FORM_STATE);
+    const keys = Object.keys(INITIAL_FORM_STATE).filter(
+      (key) => !["modo_publicacion", "tipo_publicacion"].includes(key),
+    );
     for (const key of keys) {
       const initial = INITIAL_FORM_STATE[key];
       const current = formData[key];
@@ -184,22 +153,6 @@ const Publicar = () => {
     );
   }
 
-  // === MODAL INTERCEPTOR: bloquear si no puede publicar ===
-  if (blockScenario) {
-    return (
-      <div className="publicar-page">
-        <PublicarHeader />
-        <PlanBlockModal
-          scenario={blockScenario}
-          subscription={activeSubscription || anyPanoramaSubscription}
-          onPublishDestacada={
-            destacadasEnabled ? handlePublishDestacadaFromBlock : null
-          }
-        />
-      </div>
-    );
-  }
-
   return (
     <div className="publicar-page">
       {/* Header con logo */}
@@ -233,6 +186,7 @@ const Publicar = () => {
         onRemoveImage={removeImage}
         onSaveDraft={handleSaveDraft}
         enabledCalendarModes={enabledCalendarModes}
+        enabledFields={enabledFields}
         isDirty={isDirty && !isEditing}
         onReset={resetForm}
       />
@@ -240,12 +194,14 @@ const Publicar = () => {
       {/* Modal de autenticación */}
       <PublicarAuthModal isOpen={showAuthModal} onClose={closeAuthModal} />
 
-      {/* Modal de tipo de publicación (Normal / Destacada) */}
+      {/* Selección de plan (Gratuito / Destacada) antes del formulario */}
       <PublicationTypeModal
-        isOpen={showTypeModal && !isEditing && destacadasEnabled}
+        isOpen={needsPlanChoice}
         onClose={handleCloseTypeModal}
         onSelect={handleSelectPublicationType}
         isSubmitting={isSubmitting}
+        hasActiveSubscription={hasActiveSubscription}
+        destacadasEnabled={destacadasEnabled}
       />
     </div>
   );

@@ -9,7 +9,6 @@ import {
   validateAndConsumePublication,
 } from "../../../../lib/database";
 import {
-  canUserPublish,
   interpretPublishResult,
 } from "../../../../lib/planRules";
 import {
@@ -19,7 +18,53 @@ import {
 } from "../../../../lib/textWrap";
 import { trackPublicationCreated } from "../../../../lib/analytics";
 import { initiateDestacadaPayment } from "../../../../lib/payment";
-import { PUBLICATION_TYPES, DEFAULT_PUBLICATION_TYPE } from "../constants";
+import {
+  MODOS_PUBLICACION,
+  DEFAULT_PUBLICATION_TYPE,
+  INITIAL_FORM_STATE,
+  FREE_PLAN_SOCIAL_NETWORKS,
+  IA_METADATA_FIELDS,
+  normalizarModoPublicacion,
+  obtenerTipoPublicacion,
+} from "../constants";
+
+/**
+ * Reduce formData a lo que el plan permite antes de persistir.
+ *
+ * Sin esto, bajar de destacada a gratuito dejaría datos premium huérfanos en la
+ * BD: el formulario deja de mostrarlos y de validarlos, pero prepareEventData
+ * los seguiría enviando. Se sanea aquí, en un único punto.
+ *
+ * @param {Object} formData
+ * @param {string[]|null} enabledFields - null = todos habilitados
+ * @returns {Object} Copia saneada
+ */
+const applyPlanToFormData = (formData, enabledFields) => {
+  if (!enabledFields) return formData;
+
+  const sanitized = { ...formData };
+
+  for (const key of Object.keys(INITIAL_FORM_STATE)) {
+    if (key === "modo_publicacion" || key === "tipo_publicacion") continue;
+    // Los metadatos de IA son procedencia, no contenido sujeto al plan. Sin esta
+    // excepción una importación publicada en modalidad gratuita perdería
+    // `generado_por_ia` y `fuente_url`, y quedaría sin trazabilidad.
+    if (IA_METADATA_FIELDS.includes(key)) continue;
+    if (!enabledFields.includes(key)) {
+      sanitized[key] = INITIAL_FORM_STATE[key];
+    }
+  }
+
+  // Las redes sociales están habilitadas, pero solo un subconjunto de ellas.
+  if (enabledFields.includes("redes_sociales") && formData.redes_sociales) {
+    sanitized.redes_sociales = FREE_PLAN_SOCIAL_NETWORKS.reduce((acc, red) => {
+      acc[red] = formData.redes_sociales[red] || "";
+      return acc;
+    }, {});
+  }
+
+  return sanitized;
+};
 
 /**
  * Hook especializado para manejar el proceso de envío de eventos
@@ -56,8 +101,6 @@ const useEventSubmit = ({
   showToast,
   validateForm,
   setShowAuthModal,
-  activeSubscription,
-  planesEnabled,
 }) => {
   const navigate = useNavigate();
 
@@ -137,15 +180,18 @@ const useEventSubmit = ({
     (formData, allImageUrls) => {
       const redesLimpias = normalizeSocialLinks(formData.redes_sociales || {});
 
-      return wrapPersistedFields({
-        titulo: formData.titulo.trim(),
-        descripcion: formData.descripcion.trim(),
+      // NOTA: los .trim() usan optional chaining porque no todos los planes de
+      // publicación envían todos los campos. Sin ?. un campo ausente lanza
+      // TypeError en runtime en vez de fallar la validación.
+      const payload = wrapPersistedFields({
+        titulo: formData.titulo?.trim() || "",
+        descripcion: formData.descripcion?.trim() || "",
         titulo_marketing: formData.titulo_marketing?.trim() || null,
         mensaje_marketing: formData.mensaje_marketing?.trim() || null,
         titulo_marketing_2: formData.titulo_marketing_2?.trim() || null,
         mensaje_marketing_2: formData.mensaje_marketing_2?.trim() || null,
         organizador:
-          formData.organizador.trim() ||
+          formData.organizador?.trim() ||
           user?.user_metadata?.full_name ||
           "Organizador",
         category_id: parseInt(formData.category_id),
@@ -169,8 +215,8 @@ const useEventSubmit = ({
         hora_inicio: formData.hora_inicio || null,
         hora_fin: formData.hora_fin || null,
         provincia: formData.provincia,
-        comuna: formData.comuna.trim(),
-        direccion: formData.direccion.trim(),
+        comuna: formData.comuna?.trim() || "",
+        direccion: formData.direccion?.trim() || null,
         ubicacion_url: formData.ubicacion_url?.trim() || null,
         tipo_entrada: formData.tipo_entrada || "sin_entrada",
         precio:
@@ -188,6 +234,30 @@ const useEventSubmit = ({
         redes_sociales: redesLimpias,
         imagenes: allImageUrls,
       });
+
+      // Las columnas de IA solo viajan cuando la publicación viene realmente de
+      // una importación. Enviarlas siempre acopla TODA publicación (también las
+      // manuales) a que la migración 202608210001 esté aplicada: si no lo está,
+      // PostgREST rechaza el insert con PGRST204 y no se puede publicar nada.
+      // Sin origen no se marca la procedencia: el CHECK events_ia_coherente
+      // exige fuente_url NOT NULL cuando generado_por_ia es true, así que
+      // marcarlo sin URL haría fallar el insert y se perdería el panorama
+      // entero. Mejor publicar sin la marca que no publicar.
+      const fuenteUrl = formData.fuente_url?.trim() || null;
+
+      if (formData.generado_por_ia && fuenteUrl) {
+        const confianza = Number(formData.ia_confianza);
+        payload.fuente_url = fuenteUrl;
+        payload.generado_por_ia = true;
+        // La BD tiene CHECK (ia_confianza BETWEEN 0 AND 100): un valor fuera de
+        // rango alucinado por la IA haría fallar el insert completo.
+        payload.ia_confianza = Number.isFinite(confianza)
+          ? Math.min(100, Math.max(0, Math.round(confianza)))
+          : null;
+        payload.ia_fecha_analisis = new Date().toISOString();
+      }
+
+      return payload;
     },
     [user],
   );
@@ -199,8 +269,9 @@ const useEventSubmit = ({
    * @param {string[]} options.existingImages - URLs de imágenes existentes
    * @param {string|null} options.editEventId - ID del evento si estamos editando
    * @param {string|null} options.currentDraftId - ID del borrador actual
-   * @param {string} [options.tipoPublicacion] - Tipo de publicación: 'normal' | 'destacada'.
-   *   Cuando es 'destacada' se salta la validación de plan y se redirige a Webpay.
+   * @param {string} [options.modoPublicacion] - Modalidad del formulario.
+   * @param {string} [options.tipoPublicacion] - Tipo persistido como normal/destacada.
+   *   La modalidad es la fuente de verdad para decidir el flujo.
    * @param {Function} options.onSuccess - Callback en caso de éxito
    * @returns {Promise<boolean>} true si fue exitoso
    */
@@ -210,7 +281,9 @@ const useEventSubmit = ({
       existingImages = [],
       editEventId = null,
       currentDraftId = null,
-      tipoPublicacion = DEFAULT_PUBLICATION_TYPE,
+      modoPublicacion = null,
+      tipoPublicacion = null,
+      enabledFields = null,
       onSuccess,
     }) => {
       // === PROTECCIÓN CONTRA DOUBLE-SUBMIT ===
@@ -236,6 +309,14 @@ const useEventSubmit = ({
         return false;
       }
 
+      const modo = normalizarModoPublicacion(
+        modoPublicacion || formData?.modo_publicacion,
+        tipoPublicacion ||
+          formData?.tipo_publicacion ||
+          DEFAULT_PUBLICATION_TYPE,
+      );
+      const tipoPersistido = obtenerTipoPublicacion(modo);
+
       // === VALIDACIÓN DEL FORMULARIO ===
       if (!validateForm?.()) {
         showToastRef.current?.(
@@ -246,32 +327,28 @@ const useEventSubmit = ({
       }
 
       // === VERIFICACIÓN DE PLAN/SUSCRIPCIÓN ===
-      // Solo para creación de eventos NORMALES nuevos (no edición ni destacada).
-      // Las publicaciones destacadas pagan por publicación y no requieren plan.
+      // Solo la modalidad suscripción consume un cupo. La gratuita y la
+      // destacada no pasan por este RPC.
       const isEditing = !!editEventId;
       const isDestacadaNew =
-        !isEditing && tipoPublicacion === PUBLICATION_TYPES.DESTACADA;
+        !isEditing && modo === MODOS_PUBLICACION.DESTACADA;
+      const isSubscriptionNew =
+        !isEditing &&
+        modo === MODOS_PUBLICACION.SUSCRIPCION &&
+        !currentIsAdmin &&
+        !currentIsModerator;
+
       let publishResult = null;
 
-      if (!isEditing && !isDestacadaNew) {
-        // Pre-validación rápida en frontend (UX inmediata)
-        // Usa datos en cache para bloquear antes de llamar al servidor
-        const quickCheck = canUserPublish({
-          subscription: activeSubscription,
-          planesEnabled,
-          fechaEvento: formData.fecha_evento,
-          isAdmin: currentIsAdmin,
-          isModerator: currentIsModerator,
-        });
-
-        if (!quickCheck.canPublish) {
-          showToastRef.current?.(quickCheck.error, "error");
-          return false;
-        }
-
-        if (quickCheck.warning) {
-          showToastRef.current?.(quickCheck.warning, "warning");
-        }
+      if (isSubscriptionNew) {
+        // Bloquear antes del await: el RPC consume cupo y dos clics no deben
+        // reservar dos publicaciones.
+        isSubmittingRef.current = true;
+        setIsSubmitting(true);
+        const releaseSubmitLock = () => {
+          isSubmittingRef.current = false;
+          if (isMountedRef.current) setIsSubmitting(false);
+        };
 
         // Validación REAL + consumo atómico en backend (anti-bypass)
         // Esta es la validación definitiva que no se puede saltar
@@ -284,6 +361,7 @@ const useEventSubmit = ({
           publishResult = interpretPublishResult(rpcData);
 
           if (!publishResult.allowed) {
+            releaseSubmitLock();
             showToastRef.current?.(publishResult.error, "error");
             return false;
           }
@@ -294,6 +372,7 @@ const useEventSubmit = ({
               "Error al validar permisos de publicación. Intenta nuevamente.",
             "error",
           );
+          releaseSubmitLock();
           return false;
         }
       }
@@ -331,8 +410,9 @@ const useEventSubmit = ({
         // 2. COMBINAR IMÁGENES
         const allImageUrls = [...existingImages, ...newImageUrls];
 
-        // 3. PREPARAR DATOS DEL EVENTO
-        const eventData = prepareEventData(formData, allImageUrls);
+        // 3. PREPARAR DATOS DEL EVENTO (saneados según el plan)
+        const planFormData = applyPlanToFormData(formData, enabledFields);
+        const eventData = prepareEventData(planFormData, allImageUrls);
 
         // 4. CREAR O ACTUALIZAR EVENTO
         if (isEditing) {
@@ -354,7 +434,17 @@ const useEventSubmit = ({
         } else {
           // === CREAR NUEVO EVENTO ===
           eventData.user_id = currentUser.id;
-          eventData.tipo_publicacion = tipoPublicacion;
+          eventData.tipo_publicacion = tipoPersistido;
+          eventData.origen_publicacion =
+            modo === MODOS_PUBLICACION.DESTACADA
+              ? "destacada"
+              : modo === MODOS_PUBLICACION.SUSCRIPCION && publishResult
+                ? "suscripcion"
+                : "gratuita";
+
+          if (publishResult?.subscriptionId) {
+            eventData.subscription_id = publishResult.subscriptionId;
+          }
 
           if (isDestacadaNew && !currentIsAdmin && !currentIsModerator) {
             // === FLUJO DESTACADA CON PAGO (solo usuarios normales) ===
@@ -421,11 +511,18 @@ const useEventSubmit = ({
           if (publishResult?.publicationExpiresAt) {
             eventData.publication_expires_at =
               publishResult.publicationExpiresAt;
-          } else {
+          } else if (!eventData.publication_expires_at) {
             // Para admins/mods o cuando restricciones están desactivadas
             const expiresAt = new Date();
             expiresAt.setDate(expiresAt.getDate() + 30);
             eventData.publication_expires_at = expiresAt.toISOString();
+          }
+
+          if (
+            modo === MODOS_PUBLICACION.SUSCRIPCION &&
+            publishResult?.subscriptionId
+          ) {
+            eventData.subscription_id = publishResult.subscriptionId;
           }
 
           await createEvent(eventData, {
@@ -543,8 +640,6 @@ const useEventSubmit = ({
       uploadImages,
       prepareEventData,
       navigate,
-      activeSubscription,
-      planesEnabled,
     ],
   );
 

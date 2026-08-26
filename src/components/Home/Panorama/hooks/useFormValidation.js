@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from "react";
+import { isFieldEnabled } from "../constants";
 
 /**
  * @typedef {Object} ValidationRule
@@ -47,7 +48,11 @@ export const EVENT_VALIDATION_SCHEMA = {
     message: "La fecha de inicio es obligatoria",
   },
   fecha_fin: {
-    required: false,
+    // required + condition = "obligatorio solo cuando la condición se cumple".
+    // Antes era required:false y la obligatoriedad se apoyaba en validate(), que
+    // nunca corre con valor vacío → un evento multi-día podía enviarse sin fecha
+    // de fin. El wizard sí lo bloqueaba, de ahí la divergencia.
+    required: true,
     condition: (formData) => formData.es_multidia,
     message: "La fecha de fin es obligatoria para eventos multi-día",
     validate: (value, formData) => {
@@ -96,7 +101,8 @@ export const EVENT_VALIDATION_SCHEMA = {
     message: "Selecciona un tipo de entrada",
   },
   precio: {
-    required: false,
+    // Ver nota en fecha_fin: obligatorio solo si tipo_entrada === "pagado".
+    required: true,
     condition: (formData) => formData.tipo_entrada === "pagado",
     message: "Indica el precio del evento",
     validate: (value, formData) => {
@@ -113,7 +119,8 @@ export const EVENT_VALIDATION_SCHEMA = {
     validateMessage: "La etiqueta debe tener al menos 2 caracteres",
   },
   url_venta: {
-    required: false,
+    // Ver nota en fecha_fin: obligatorio solo si tipo_entrada === "venta_externa".
+    required: true,
     condition: (formData) => formData.tipo_entrada === "venta_externa",
     message: "Proporciona el enlace de venta de entradas",
     validate: (value, formData) => {
@@ -127,6 +134,165 @@ export const EVENT_VALIDATION_SCHEMA = {
     },
     validateMessage: "Proporciona una URL válida",
   },
+};
+
+/**
+ * Evalúa una regla del schema contra un valor. Función pura para que la misma
+ * lógica sirva al hook (submit) y al wizard (avance de paso), sin duplicarla.
+ *
+ * @param {ValidationRule} rule - Regla del schema
+ * @param {*} value - Valor del campo
+ * @param {Object} formData - Datos completos (para reglas condicionales)
+ * @returns {string|null} Mensaje de error o null si es válido
+ */
+export const evaluateRule = (rule, value, formData = {}) => {
+  if (!rule) return null;
+
+  // La condición se evalúa primero: si no aplica, la regla se ignora por completo.
+  if (rule.condition && !rule.condition(formData)) {
+    return null;
+  }
+
+  if (rule.required) {
+    const isEmpty =
+      value === undefined ||
+      value === null ||
+      value === "" ||
+      (typeof value === "string" && !value.trim());
+
+    if (isEmpty) {
+      return rule.message;
+    }
+  }
+
+  if (rule.validate && value) {
+    const isValid = rule.validate(value, formData);
+    if (!isValid) {
+      return rule.validateMessage || rule.message;
+    }
+  }
+
+  return null;
+};
+
+/**
+ * Campos obligatorios que gobierna cada paso del wizard, en el orden en que se
+ * muestran al usuario. Es el ÚNICO lugar donde vive el reparto paso → campos;
+ * las reglas de cada campo salen de EVENT_VALIDATION_SCHEMA.
+ *
+ * Nota: 'cantidad_repeticiones' y 'fecha_evento_recurrente' existen en el schema
+ * pero no se listan aquí porque el wizard nunca los ha bloqueado por paso; se
+ * siguen validando solo en el submit.
+ */
+export const WIZARD_STEP_FIELDS = {
+  1: [
+    { field: "titulo", label: "Título" },
+    { field: "organizador", label: "Organizador" },
+    { field: "category_id", label: "Categoría" },
+  ],
+  2: [
+    { field: "fecha_evento", label: "Fecha del evento" },
+    { field: "provincia", label: "Provincia" },
+    { field: "comuna", label: "Comuna" },
+    { field: "direccion", label: "Dirección" },
+    { field: "fecha_fin", label: "Fecha de término" },
+  ],
+  3: [
+    { field: "redes_sociales", label: "Redes sociales" },
+    { field: "tipo_entrada", label: "Tipo de entrada" },
+    { field: "precio", label: "Precio" },
+    { field: "url_venta", label: "URL de venta" },
+  ],
+  4: [{ field: "etiqueta_directa", label: "Etiqueta directa" }],
+  5: [],
+};
+
+/** Máximo de fechas específicas admitidas en un evento recurrente */
+const MAX_FECHAS_RECURRENCIA = 12;
+
+/**
+ * Comprobaciones de paso que no corresponden a un campo del schema
+ * (colecciones y estados derivados). Devuelven entradas {field, label}.
+ */
+const STEP_EXTRA_CHECKS = {
+  2: (formData, enabledFields) => {
+    if (!isFieldEnabled("es_recurrente", enabledFields)) return [];
+    if (!formData.es_recurrente) return [];
+
+    const count = Array.isArray(formData.fechas_recurrencia)
+      ? formData.fechas_recurrencia.length
+      : 0;
+
+    if (count === 0)
+      return [{ field: "fecha_evento", label: "Fechas específicas" }];
+    if (count < 2)
+      return [{ field: "fecha_evento", label: "Selecciona al menos 2 fechas" }];
+    if (count > MAX_FECHAS_RECURRENCIA)
+      return [
+        {
+          field: "fecha_evento",
+          label: `Máximo ${MAX_FECHAS_RECURRENCIA} fechas`,
+        },
+      ];
+    return [];
+  },
+  5: (formData, enabledFields) => {
+    if (!isFieldEnabled("imagenes", enabledFields)) return [];
+    const hasImages =
+      Array.isArray(formData.imagenes) && formData.imagenes.length > 0;
+    return hasImages ? [] : [{ field: "imagenes", label: "Imágenes" }];
+  },
+};
+
+/**
+ * Devuelve los campos obligatorios faltantes de un paso del wizard,
+ * derivados de EVENT_VALIDATION_SCHEMA.
+ *
+ * @param {number} stepId - Número de paso (1-5)
+ * @param {Object} formData - Datos del formulario
+ * @param {ValidationSchema} [schema] - Schema a usar
+ * @returns {Array<{field:string,label:string}>} Campos faltantes, en orden de UI
+ */
+export const getStepMissingFields = (stepId, formData, options = {}) => {
+  const { schema = EVENT_VALIDATION_SCHEMA, enabledFields = null } = options;
+  const stepFields = WIZARD_STEP_FIELDS[stepId] || [];
+
+  const missing = stepFields.reduce((acc, { field, label }) => {
+    // Un campo que el plan no habilita no puede bloquear el paso: el usuario
+    // no tiene forma de completarlo.
+    if (!isFieldEnabled(field, enabledFields)) return acc;
+
+    const error = evaluateRule(schema[field], formData[field], formData);
+    if (error) acc.push({ field, label });
+    return acc;
+  }, []);
+
+  const extraCheck = STEP_EXTRA_CHECKS[stepId];
+  if (!extraCheck) return missing;
+
+  return [...missing, ...extraCheck(formData, enabledFields)];
+};
+
+/**
+ * Pasos del wizard visibles con el plan actual. Un paso desaparece cuando el
+ * plan no habilita ninguno de sus campos (ej: Marketing en el plan gratuito).
+ *
+ * @param {Array<{id:number}>} steps - Definición completa de pasos
+ * @param {string[]|null} enabledFields - null = todos habilitados
+ * @returns {Array} Pasos visibles
+ */
+export const getVisibleWizardSteps = (steps, enabledFields = null) => {
+  if (enabledFields === null) return steps;
+
+  return steps.filter((step) => {
+    // Los pasos con comprobaciones propias (imágenes) siguen siendo relevantes
+    // aunque no tengan campos del schema.
+    const stepFields = WIZARD_STEP_FIELDS[step.id] || [];
+    if (stepFields.some(({ field }) => isFieldEnabled(field, enabledFields))) {
+      return true;
+    }
+    return step.id === 5 && isFieldEnabled("imagenes", enabledFields);
+  });
 };
 
 /**
@@ -155,38 +321,8 @@ const useFormValidation = (schema = EVENT_VALIDATION_SCHEMA) => {
    * @returns {string|null} Mensaje de error o null si es válido
    */
   const validateField = useCallback(
-    (fieldName, value, formData = {}) => {
-      const rule = schema[fieldName];
-      if (!rule) return null;
-
-      // Verificar si la regla aplica (condición)
-      if (rule.condition && !rule.condition(formData)) {
-        return null;
-      }
-
-      // Validar requerido
-      if (rule.required) {
-        const isEmpty =
-          value === undefined ||
-          value === null ||
-          value === "" ||
-          (typeof value === "string" && !value.trim());
-
-        if (isEmpty) {
-          return rule.message;
-        }
-      }
-
-      // Validación personalizada
-      if (rule.validate && value) {
-        const isValid = rule.validate(value, formData);
-        if (!isValid) {
-          return rule.validateMessage || rule.message;
-        }
-      }
-
-      return null;
-    },
+    (fieldName, value, formData = {}) =>
+      evaluateRule(schema[fieldName], value, formData),
     [schema],
   );
 
@@ -210,8 +346,12 @@ const useFormValidation = (schema = EVENT_VALIDATION_SCHEMA) => {
         isEditing = false,
       } = options;
 
-      // Validar cada campo del schema
+      // Validar cada campo del schema que el plan habilite. Un campo que el
+      // formulario no muestra no puede bloquear el envío.
+      const { enabledFields = null } = options;
       Object.keys(schema).forEach((fieldName) => {
+        if (!isFieldEnabled(fieldName, enabledFields)) return;
+
         const error = validateField(fieldName, formData[fieldName], formData);
         if (error) {
           newErrors[fieldName] = error;
@@ -219,7 +359,11 @@ const useFormValidation = (schema = EVENT_VALIDATION_SCHEMA) => {
       });
 
       // Validación de imágenes (caso especial, no está en el schema)
-      if (checkImages && !isEditing) {
+      if (
+        checkImages &&
+        !isEditing &&
+        isFieldEnabled("imagenes", enabledFields)
+      ) {
         const totalImages = existingImagesCount + newImagesCount;
         if (totalImages === 0) {
           newErrors.imagenes = "Sube al menos una imagen";

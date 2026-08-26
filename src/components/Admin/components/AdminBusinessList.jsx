@@ -16,6 +16,7 @@ import {
   faSquare,
   faSpinner,
   faLocationArrow,
+  faCrown,
 } from "@fortawesome/free-solid-svg-icons";
 import AdminDeleteConfirmModal from "./AdminDeleteConfirmModal";
 
@@ -45,6 +46,7 @@ export default function AdminBusinessList({
   showActions = true,
   title = "Negocios",
   emptyMessage,
+  onToggleDestacada,
 }) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
@@ -407,9 +409,9 @@ export default function AdminBusinessList({
                             <button
                               className="admin-table__action admin-table__action--goto"
                               onClick={() =>
-                                navigate(`/superguia?highlight=${business.id}`)
+                                navigate(`/?sg_highlight=${business.id}`)
                               }
-                              title="Ir a Superguía">
+                              title="Ir a Super buscador">
                               <FontAwesomeIcon icon={faLocationArrow} />
                             </button>
                           )}
@@ -430,6 +432,20 @@ export default function AdminBusinessList({
                               onClick={() => onEdit(business.id)}
                               title="Editar negocio">
                               <FontAwesomeIcon icon={faPencil} />
+                            </button>
+                          )}
+
+                          {onToggleDestacada && (
+                            <button
+                              className="admin-table__action admin-table__action--highlight"
+                              onClick={() => onToggleDestacada(business)}
+                              disabled={actionLoading === business.id}
+                              title={
+                                business.tipo_publicacion === "destacada"
+                                  ? "Quitar destacado"
+                                  : "Destacar negocio"
+                              }>
+                              <FontAwesomeIcon icon={faCrown} />
                             </button>
                           )}
 
@@ -616,7 +632,7 @@ export default function AdminBusinessList({
                           <button
                             className="admin-pub-btn admin-pub-btn--goto"
                             onClick={() =>
-                              navigate(`/superguia?highlight=${business.id}`)
+                              navigate(`/?sg_highlight=${business.id}`)
                             }
                             title="Ir">
                             <FontAwesomeIcon icon={faLocationArrow} />
@@ -636,6 +652,19 @@ export default function AdminBusinessList({
                             onClick={() => onEdit(business.id)}
                             title="Editar">
                             <FontAwesomeIcon icon={faPencil} />
+                          </button>
+                        )}
+                        {onToggleDestacada && (
+                          <button
+                            className="admin-pub-btn admin-pub-btn--highlight"
+                            onClick={() => onToggleDestacada(business)}
+                            disabled={actionLoading === business.id}
+                            title={
+                              business.tipo_publicacion === "destacada"
+                                ? "Quitar destacado"
+                                : "Destacar"
+                            }>
+                            <FontAwesomeIcon icon={faCrown} />
                           </button>
                         )}
                         {showActions &&

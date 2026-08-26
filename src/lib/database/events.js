@@ -268,10 +268,9 @@ export const getPublishedEvents = async () => {
     )
     .eq("estado", "publicado")
     .eq("is_paused", false)
-    // Vigentes por fecha_fin O recurrentes (su vigencia real se filtra en cliente
     // según fechas_recurrencia, ya que fecha_fin puede ser la primera fecha).
     .or(`fecha_fin.gte.${today},es_recurrente.eq.true`)
-    .order("fecha_evento", { ascending: true });
+    .order("created_at", { ascending: true });
 
   if (error) {
     console.error("Error al obtener eventos:", error);
@@ -543,8 +542,14 @@ const ALLOWED_EVENT_UPDATE_FIELDS = [
 
 /**
  * Campos adicionales que solo un admin/moderador puede modificar.
+ * 'tipo_publicacion' vive aquí y NO en la whitelist general para que un usuario
+ * no pueda auto-promocionar su publicación a destacada sin pagar.
  */
-const ADMIN_ONLY_EVENT_FIELDS = ["estado", "published_at"];
+const ADMIN_ONLY_EVENT_FIELDS = [
+  "estado",
+  "published_at",
+  "tipo_publicacion",
+];
 
 /**
  * Actualiza un evento
@@ -624,7 +629,9 @@ export const resubmitEvent = async (
   // Obtener estado actual y revision_count
   const { data: event, error: fetchError } = await supabase
     .from("events")
-    .select("estado, revision_count")
+    .select(
+      "estado, revision_count, origen_publicacion, subscription_id, tipo_publicacion",
+    )
     .eq("id", eventId)
     .single();
 
@@ -640,19 +647,23 @@ export const resubmitEvent = async (
     );
   }
 
-  // Re-consumir cupo de publicación (fue devuelto al rechazar)
-  const rpcData = await validateAndConsumePublication(
-    userId,
-    isAdmin,
-    isModerator,
-  );
-  const publishResult = interpretPublishResult(rpcData);
+  const usaSuscripcion =
+    event.origen_publicacion === "suscripcion" ||
+    (!event.origen_publicacion && event.tipo_publicacion === "normal");
+  let publishResult = null;
 
-  if (!publishResult.allowed) {
-    throw new Error(
-      publishResult.error ||
-        "No tienes cupo disponible para reenviar esta publicación",
-    );
+  if (usaSuscripcion && !isAdmin && !isModerator) {
+    // Las publicaciones gratuitas y destacadas pagadas no deben consumir un
+    // cupo al reenviarse después de una corrección.
+    const rpcData = await validateAndConsumePublication(userId, false, false);
+    publishResult = interpretPublishResult(rpcData);
+
+    if (!publishResult.allowed) {
+      throw new Error(
+        publishResult.error ||
+          "No tienes cupo disponible para reenviar esta publicación",
+      );
+    }
   }
 
   const { data, error } = await supabase
@@ -660,6 +671,12 @@ export const resubmitEvent = async (
     .update({
       estado: "en_revision",
       motivo_rechazo: null,
+      ...(publishResult?.subscriptionId
+        ? {
+            origen_publicacion: "suscripcion",
+            subscription_id: publishResult.subscriptionId,
+          }
+        : {}),
       updated_at: new Date().toISOString(),
     })
     .eq("id", eventId)

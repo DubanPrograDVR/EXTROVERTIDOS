@@ -46,6 +46,7 @@ export {
   updateEvent,
   deleteEvent,
   pauseEvent,
+  resubmitEvent,
   incrementShareCount,
   getEventShareCount,
 } from "./events";
@@ -67,6 +68,7 @@ export { getProfile, upsertProfile, ensureProfileExists } from "./profiles";
 // ============ NEGOCIOS ============
 export {
   createBusiness,
+  createDestacadaBusinessDraft,
   getPublishedBusinesses,
   getBusinessesByUser,
   getPendingBusinesses,
@@ -80,6 +82,9 @@ export {
   updateBusiness,
   hasUserPendingBusiness,
   republishBusiness,
+  resubmitBusiness,
+  isBusinessExpired,
+  getDiasRestantesNegocio,
 } from "./businesses";
 
 // ============ ROLES Y PERMISOS ============
@@ -194,6 +199,8 @@ export {
   validateAndConsumePublication,
   validateAndConsumeBusinessPublication,
   refundBusinessPublication,
+  refundPublicationBySubscription,
+  refundBusinessPublicationBySubscription,
 } from "./subscriptions";
 
 // ============ CONFIGURACIONES DE LA APP ============
@@ -210,5 +217,7 @@ export {
   toggleSuperguiaEnabled,
   isDestacadasEnabled,
   toggleDestacadasEnabled,
+  isNegociosDestacadasEnabled,
+  toggleNegociosDestacadasEnabled,
   getPlansVisibility,
 } from "./settings";

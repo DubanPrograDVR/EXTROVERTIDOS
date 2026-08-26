@@ -123,10 +123,10 @@ function getPublishWindowInfo(subscription) {
   return {
     daysLeft,
     type: isSuperguia ? "superguia" : "panorama",
-    label: isSuperguia ? "Superguía" : "Panoramas",
+    label: isSuperguia ? "Super buscador" : "Panoramas",
     unit: daysLeft === 1 ? "día restante" : "días restantes",
     description: isSuperguia
-      ? "Para publicar tu negocio en la Superguía."
+      ? "Para publicar tu negocio en la Super buscador."
       : "Para publicar tus panoramas.",
   };
 }
@@ -230,7 +230,7 @@ export default function PerfilPlan() {
       !isExpired(s) &&
       hasRemainingQuota(s),
   );
-  // Verificar si ya tiene superguía activa con cupo
+  // Verificar si ya tiene super buscador activa con cupo
   const hasActiveSuperguiaWithQuota = subscriptions.some(
     (s) =>
       s.plan === "superguia" &&
@@ -369,7 +369,7 @@ export default function PerfilPlan() {
                     </div>
                   )}
 
-                  {/* Mostrar cupos para plan Superguía */}
+                  {/* Mostrar cupos para plan Super buscador */}
                   {plan.key === "superguia" &&
                     Number(activeSub.publicaciones_total ?? 0) > 0 && (
                       <div className="perfil-plan__card-quota">

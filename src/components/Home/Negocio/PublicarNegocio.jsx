@@ -6,16 +6,17 @@ import {
   faEye,
   faSave,
   faTimes,
-  faStore,
   faArrowLeft,
   faArrowRight,
   faCheck,
   faExclamationTriangle,
   faXmark,
   faInfoCircle,
+  faCrown,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "../../../context/AuthContext";
 import { canUserPublishBusiness } from "../../../lib/planRules";
+import { formatCLP } from "../../../lib/payment";
 import LoginAuthModal from "../../Auth/AuthModal";
 
 // Componentes modulares
@@ -68,8 +69,11 @@ const PublicarNegocio = () => {
     // Plan
     superguiaSubscription,
     planesEnabled,
+    negociosDestacadasEnabled,
+    negocioDestacadoPrice,
     loadingPlan,
     handleChange,
+    handlePublicationTypeChange,
     handleDiaChange,
     handleSaveHorarios,
     handleImageChange,
@@ -81,7 +85,7 @@ const PublicarNegocio = () => {
     resetForm,
   } = useNegocioForm();
 
-  // Detectar si el usuario necesita plan superguía
+  // Detectar si el usuario necesita plan super buscador
   const businessPublishCheck = useMemo(() => {
     return canUserPublishBusiness({
       subscription: superguiaSubscription,
@@ -91,7 +95,12 @@ const PublicarNegocio = () => {
     });
   }, [isAdmin, isModerator, planesEnabled, superguiaSubscription]);
 
-  const needsSuperguiaPlan = !businessPublishCheck.canPublish;
+  const isStaff = isAdmin || isModerator;
+  const canChooseDestacada =
+    negociosDestacadasEnabled && (isStaff || negocioDestacadoPrice > 0);
+  const needsSuperguiaPlan = !businessPublishCheck.canPublish && !canChooseDestacada;
+  const isDestacadaSelected =
+    canChooseDestacada && formData.tipo_publicacion === "destacada";
 
   // Detectar si el formulario tiene datos (no está en blanco)
   const isDirty = useMemo(() => {
@@ -149,10 +158,6 @@ const PublicarNegocio = () => {
     return missing;
   }, [currentStep, formData]);
 
-  const validateCurrentStep = useCallback(() => {
-    return getMissingFields().length === 0;
-  }, [getMissingFields]);
-
   // Determina si un paso tiene todos sus campos obligatorios completos
   const isStepValid = useCallback(
     (stepId) => {
@@ -164,13 +169,8 @@ const PublicarNegocio = () => {
             !!formData.subcategoria
           );
         case 2:
-          // Marketing es opcional: válido sólo cuando el usuario escribió algo
-          return (
-            !!formData.titulo_marketing?.trim() ||
-            !!formData.mensaje_marketing?.trim() ||
-            !!formData.titulo_marketing_2?.trim() ||
-            !!formData.mensaje_marketing_2?.trim()
-          );
+          // Marketing es opcional: no debe dejar el stepper en estado inválido.
+          return true;
         case 3:
           return (
             !!formData.provincia &&
@@ -178,12 +178,8 @@ const PublicarNegocio = () => {
             !!formData.direccion?.trim()
           );
         case 4: {
-          // Horarios es opcional: válido cuando hay al menos un día o abierto 24h
-          if (formData.abierto_24h) return true;
-          const dias = Array.isArray(formData.dias_atencion)
-            ? formData.dias_atencion
-            : [];
-          return dias.length > 0;
+          // Horarios es opcional para el envío del formulario.
+          return true;
         }
         case 5:
           return (
@@ -205,7 +201,7 @@ const PublicarNegocio = () => {
     }, 8000);
 
     return () => window.clearTimeout(timeoutId);
-  }, [errorKey]);
+  }, [errorKey, stepError]);
 
   // Todos los pasos con campos obligatorios están completos (paso 1: info, paso 3: ubicación)
   const areAllRequiredComplete = isStepValid(1) && isStepValid(3);
@@ -316,6 +312,8 @@ const PublicarNegocio = () => {
               onFieldFocus={handleFieldFocus}
             />
 
+
+
             {/* Botones de acción */}
             <div className="publicar-negocio__actions">
               <button
@@ -343,10 +341,16 @@ const PublicarNegocio = () => {
                 {isSubmitting ? (
                   <>
                     <FontAwesomeIcon icon={faSpinner} spin />
-                    Publicando...
+                    {isDestacadaSelected && !isStaff
+                      ? "Preparando pago..."
+                      : "Publicando..."}
                   </>
                 ) : (
-                  "Publicar Negocio"
+                  isDestacadaSelected
+                    ? isStaff
+                      ? "Publicar destacado"
+                      : "Pagar y destacar"
+                    : "Publicar Negocio"
                 )}
               </button>
             </div>
@@ -388,7 +392,7 @@ const PublicarNegocio = () => {
     );
   }
 
-  // Modal si no tiene plan superguía
+  // Modal si no tiene plan super buscador
   if (needsSuperguiaPlan) {
     const reason = businessPublishCheck.reason;
     const fechaFin = businessPublishCheck.fechaFin;
@@ -403,7 +407,7 @@ const PublicarNegocio = () => {
     const scenarioConfig = {
       no_plan: {
         title: "¡Estás a un paso de publicar tu negocio!",
-        message: "Adquiere una nueva suscripción a Superguía para publicar",
+        message: "Adquiere una nueva suscripción a Super buscador para publicar",
         btnLabel: "Ver planes",
       },
       plan_expired: {
@@ -414,7 +418,7 @@ const PublicarNegocio = () => {
       quota_exceeded: {
         title: "¡Negocio publicado!",
         message:
-          "Ya utilizaste tu cupo para publicar en la Superguía\n\nTe invitamos a publicar todos tus negocios en\n¡Extrovertidos!",
+          "Ya utilizaste tu cupo para publicar en la Super buscador\n\nTe invitamos a publicar todos tus negocios en\n¡Extrovertidos!",
         btnLabel: "Volver a suscribirme",
         secondaryLabel: "Cancelar",
       },
@@ -451,7 +455,7 @@ const PublicarNegocio = () => {
             <div className="plan-block-modal__icon">
               <img
                 src="/img/SG_Extro_v2.png"
-                alt="Superguía"
+                alt="Super buscador"
                 style={{
                   width: "160px",
                   height: "auto",
@@ -583,6 +587,51 @@ const PublicarNegocio = () => {
           )}
           {renderStep()}
         </div>
+
+        {/* Toggle destacado siempre visible al final de cada paso */}
+        {canChooseDestacada && (
+          <div className="publicar-negocio__persistent-highlight">
+            <section className="publicar-negocio__highlight-option">
+              <div 
+                className="publicar-negocio__highlight-label"
+                onClick={(e) => {
+                  // Prevent double firing if clicking directly on button
+                  if (e.target.closest('button')) return;
+                  if (!isSubmitting) handlePublicationTypeChange(!isDestacadaSelected);
+                }}
+              >
+                <span className={`publicar-negocio__highlight-card ${isDestacadaSelected ? "publicar-negocio__highlight-card--active" : ""}`}>
+                  <span className="publicar-negocio__highlight-icon">
+                    <FontAwesomeIcon icon={faCrown} />
+                  </span>
+                  <span className="publicar-negocio__highlight-text">
+                    <strong>Destacar mi negocio</strong>
+                    <small>
+                      {isStaff
+                        ? "Publicación directa para staff"
+                        : `${formatCLP(negocioDestacadoPrice)} · Pago único vía Webpay`}
+                    </small>
+                  </span>
+                  <button
+                    type="button"
+                    className={`publicar-negocio__toggle ${isDestacadaSelected ? "publicar-negocio__toggle--active" : ""}`}
+                    onClick={() => handlePublicationTypeChange(!isDestacadaSelected)}
+                    disabled={isSubmitting}
+                  >
+                    <span className="publicar-negocio__toggle-knob" />
+                  </button>
+                </span>
+              </div>
+              <p className="publicar-negocio__highlight-status">
+                {isDestacadaSelected
+                  ? isStaff
+                    ? "Se publicará directamente como negocio destacado, sin consumir cupo Super buscador."
+                    : "Se creará un borrador y, tras el pago, pasará a revisión. No consume cupo Super buscador."
+                  : "Sin marcar, tu negocio seguirá el flujo normal y consumirá un cupo Super buscador."}
+              </p>
+            </section>
+          </div>
+        )}
 
         {/* Mensaje de validación */}
         {stepError && (

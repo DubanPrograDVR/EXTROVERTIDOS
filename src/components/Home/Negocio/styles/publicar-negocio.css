@@ -1089,6 +1089,125 @@
   margin-top: 20px;
 }
 
+/* Toggle switch and highlight option */
+.publicar-negocio__persistent-highlight {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.publicar-negocio__highlight-option {
+  background: linear-gradient(
+    145deg,
+    rgba(255, 193, 7, 0.12),
+    rgba(255, 102, 0, 0.08)
+  );
+  border: 1px solid rgba(255, 152, 0, 0.3);
+  border-radius: 16px;
+  padding: 20px;
+  /* margin-bottom is handled by sticky-highlight padding */
+}
+
+.publicar-negocio__highlight-label {
+  display: block;
+  cursor: pointer;
+}
+
+.publicar-negocio__highlight-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #fff;
+}
+
+.publicar-negocio__highlight-card--active {
+  color: #ffd54a;
+}
+
+.publicar-negocio__highlight-text {
+  flex: 1;
+}
+
+.publicar-negocio__highlight-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  color: #1c1200;
+  background: linear-gradient(135deg, #ffd54a, #ffb300);
+  box-shadow: 0 5px 15px rgba(255, 179, 0, 0.25);
+}
+
+.publicar-negocio__highlight-card strong,
+.publicar-negocio__highlight-card small {
+  display: block;
+}
+
+.publicar-negocio__highlight-card strong {
+  font-size: 1rem;
+}
+
+.publicar-negocio__highlight-card small {
+  margin-top: 4px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.84rem;
+}
+
+/* Toggle switch for highlighted card */
+.publicar-negocio__toggle {
+  position: relative;
+  width: 52px;
+  height: 28px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  background: #333;
+  transition: background 0.3s ease;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.publicar-negocio__toggle--active {
+  background: #ff6600;
+}
+
+.publicar-negocio__toggle:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.publicar-negocio__toggle-knob {
+  position: absolute;
+  left: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.3s ease;
+  pointer-events: none;
+}
+
+.publicar-negocio__toggle--active .publicar-negocio__toggle-knob {
+  transform: translateX(24px);
+}
+
+.publicar-negocio__highlight-status {
+  margin: 14px 0 0 58px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 480px) {
+  .publicar-negocio__highlight-status {
+    margin-left: 0;
+  }
+}
+
 /* Ver Borrador */
 .publicar-negocio__draft-btn {
   flex: 0 0 auto;

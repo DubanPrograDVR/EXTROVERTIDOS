@@ -278,7 +278,7 @@
   color: #f59e0b;
 }
 
-/* ═══ Superguía deshabilitada ═══ */
+/* ═══ Super buscador deshabilitada ═══ */
 .activar-plan__superguia--disabled.activar-plan__superguia--own-active {
   opacity: 1;
   pointer-events: none;
@@ -296,7 +296,7 @@
   filter: grayscale(0.3);
 }
 
-/* Superguía bloqueada por publicación pendiente */
+/* Super buscador bloqueada por publicación pendiente */
 .activar-plan__superguia--pending {
   opacity: 1;
   pointer-events: none;
@@ -477,7 +477,7 @@
   box-shadow: 0 0 20px rgba(255, 102, 0, 0.4);
 }
 
-/* ===== SUPERGUÍA SECTION ===== */
+/* ===== SUPER BUSCADOR SECTION ===== */
 .activar-plan__superguia {
   background: #111;
   border: 2px solid rgba(255, 255, 255, 0.1);

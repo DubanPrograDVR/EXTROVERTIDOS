@@ -145,15 +145,12 @@
     0 2px 10px rgba(0, 0, 0, 0.8);
 }
 
-/* ===== MENU ===== */
+/* ===== MENÚ LATERAL (SOLO MÓVIL) ===== */
+/* La navbar ya no expone links de secciones. Este panel sobrevive únicamente
+   porque en ≤768px `.navbar-user-section` está oculta y el panel es el ÚNICO
+   acceso a iniciar/cerrar sesión, perfil y Panel Admin en celular. */
 .navbar-menu {
-  display: flex;
-  align-items: center;
-  gap: var(--space-8);
-  position: relative;
-  margin-left: auto;
-  padding: 0;
-  flex-shrink: 0;
+  display: none;
 }
 
 /* Ocultar botones de auth móvil en desktop */
@@ -166,95 +163,78 @@
   display: none;
 }
 
-.nav-link {
-  color: var(--color-text-primary);
-  text-decoration: none;
-  font-weight: var(--font-semibold);
-  font-size: 1.05rem;
-  padding: var(--space-2) 0;
-  transition: all var(--transition-base);
-  white-space: nowrap;
-  position: relative;
-  letter-spacing: 0.01em;
-  text-transform: none;
+/* ===== BOTÓN PRINCIPAL (CREAR PUBLICACIÓN / PANEL ADMIN) ===== */
+.navbar-cta {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
-.nav-link::before {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 2px;
+.navbar-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  border: none;
+  border-radius: var(--radius-full);
   background: linear-gradient(
-    90deg,
-    var(--color-primary),
-    var(--color-primary-light)
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-primary-light) 50%,
+    var(--color-primary-lighter) 100%
   );
-  border-radius: 3px;
-  transition: width var(--transition-base);
-}
-
-.nav-link::after {
-  content: "";
-  position: absolute;
-  bottom: -2px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 4px;
-  background: rgba(255, 102, 0, 0.4);
-  filter: blur(4px);
-  border-radius: 50%;
-  transition: width var(--transition-base);
-}
-
-.nav-link:hover {
-  color: var(--color-primary);
-}
-
-.nav-link:hover::before {
-  width: 100%;
-}
-
-.nav-link:hover::after {
-  width: 80%;
-}
-
-.nav-link.active {
-  color: var(--color-primary);
-}
-
-.nav-link.active::before {
-  width: 100%;
-}
-
-.nav-link.active::after {
-  width: 80%;
-}
-
-/* Activar Plan - highlighted */
-.nav-link--highlight {
-  color: #ff6600;
-  font-weight: var(--font-semibold);
-  text-transform: none;
+  color: #000;
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: var(--font-bold);
+  line-height: 1;
   letter-spacing: 0.01em;
-  font-size: 0.935rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: 0 4px 18px rgba(255, 102, 0, 0.35);
 }
 
-.nav-link--highlight::before {
-  width: 100%;
-  background: linear-gradient(90deg, #ff6600, #ffaa00);
-  opacity: 0.5;
+.navbar-cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 26px rgba(255, 102, 0, 0.55),
+    0 0 30px rgba(255, 102, 0, 0.25);
 }
 
-.nav-link--highlight:hover {
-  color: #ffaa00;
+.navbar-cta-btn:active {
+  transform: translateY(0);
 }
 
-.nav-link--highlight:hover::before {
-  opacity: 1;
+.navbar-cta-btn:focus-visible {
+  outline: 2px solid var(--color-primary-lighter);
+  outline-offset: 3px;
+}
+
+.navbar-cta-icon {
+  font-size: 0.95em;
+  transition: transform var(--transition-base);
+}
+
+.navbar-cta-btn:hover .navbar-cta-icon {
+  transform: scale(1.15);
+}
+
+/* Variante admin/moderador: no pueden publicar (UserOnlyRoute), el botón
+   principal los lleva al Panel Admin. */
+.navbar-cta-btn--admin {
+  background: transparent;
+  border: 2px solid var(--color-primary);
+  color: var(--color-primary);
+  box-shadow: 0 0 15px rgba(255, 102, 0, 0.2);
+}
+
+.navbar-cta-btn--admin:hover {
+  background: rgba(255, 102, 0, 0.12);
+  border-color: var(--color-primary-lighter);
+  color: var(--color-primary-lighter);
 }
 
 /* ===== SECCIÓN DE USUARIO (SEPARADOR + BOTÓN) ===== */
@@ -552,6 +532,24 @@
   color: #ff6600;
 }
 
+/* Activar Plan dentro del menú de usuario */
+.navbar-dropdown-item--plan {
+  color: var(--color-primary-lighter);
+}
+
+.navbar-dropdown-item--plan:hover {
+  background: rgba(255, 170, 0, 0.12);
+  color: var(--color-primary-lighter);
+}
+
+.navbar-dropdown-item--plan .navbar-dropdown-icon {
+  color: var(--color-primary-lighter);
+}
+
+.navbar-dropdown-item--plan::before {
+  background: var(--color-primary-lighter);
+}
+
 .navbar-dropdown-item--switch {
   color: #4fc3f7;
 }
@@ -690,13 +688,9 @@
 
 /* Tablets */
 @media (max-width: 1024px) {
-  .navbar-menu {
-    gap: 1.5rem;
-    padding: 0.5rem 1.5rem;
-  }
-
-  .nav-link {
+  .navbar-cta-btn {
     font-size: 0.9rem;
+    padding: var(--space-3) var(--space-5);
   }
 
   .navbar-user-section {
@@ -717,6 +711,7 @@
 
   .navbar-container {
     padding: 1rem;
+    gap: var(--space-3);
     flex-wrap: nowrap;
     position: relative;
   }
@@ -775,6 +770,31 @@
   }
 
   .menu-toggle:active {
+    transform: scale(0.95);
+  }
+
+  /* Botón principal compacto: solo icono, para no comprimir el logo
+     ni el slogan en pantallas angostas. El texto sigue disponible
+     como aria-label/title. */
+  .navbar-cta-label {
+    display: none;
+  }
+
+  .navbar-cta-btn {
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border-radius: 12px;
+    font-size: 1.3rem;
+    box-shadow: 0 4px 15px rgba(255, 102, 0, 0.35);
+  }
+
+  .navbar-cta-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(255, 102, 0, 0.5);
+  }
+
+  .navbar-cta-btn:active {
     transform: scale(0.95);
   }
 
@@ -882,54 +902,14 @@
     }
   }
 
-  .nav-link {
-    width: 100%;
-    justify-content: flex-start;
-    padding: 1.5rem 2rem;
-    border-radius: 0;
-    border-bottom: 1px solid rgba(255, 102, 0, 0.1);
-    gap: 1.2rem;
-    opacity: 0;
-    transform: translateX(50px);
-    transition:
-      all 0.3s ease,
-      opacity 0.4s ease,
-      transform 0.4s ease;
-  }
-
-  .navbar-menu.active .nav-link {
-    opacity: 1;
-    transform: translateX(0);
-  }
-
-  .navbar-menu.active .nav-link:nth-child(1) {
-    transition-delay: 0.1s;
-  }
-
-  .navbar-menu.active .nav-link:nth-child(2) {
-    transition-delay: 0.15s;
-  }
-
-  .navbar-menu.active .nav-link:nth-child(3) {
-    transition-delay: 0.2s;
-  }
-
-  .navbar-menu.active .nav-link:nth-child(4) {
-    transition-delay: 0.25s;
-  }
-
-  .navbar-menu.active .nav-link:nth-child(5) {
-    transition-delay: 0.3s;
-  }
-
   /* ===== BOTONES DE AUTH EN MENÚ MÓVIL ===== */
+  /* Único acceso a sesión en móvil: el separador superior lo aporta ya
+     `.navbar-menu-logo-wrapper`, por eso aquí no repetimos el borde. */
   .navbar-mobile-auth {
     display: flex;
     flex-direction: column;
     gap: 12px;
     padding: 1.5rem 2rem;
-    margin-top: 1rem;
-    border-top: 1px solid rgba(255, 102, 0, 0.2);
     opacity: 0;
     transform: translateY(20px);
     transition: all 0.4s ease;
@@ -938,7 +918,7 @@
   .navbar-menu.active .navbar-mobile-auth {
     opacity: 1;
     transform: translateY(0);
-    transition-delay: 0.35s;
+    transition-delay: 0.15s;
   }
 
   .navbar-mobile-auth-btn {
@@ -1042,6 +1022,18 @@
     box-shadow: 0 4px 12px rgba(255, 102, 0, 0.3);
   }
 
+  /* Activar Plan dentro del panel móvil (ya no es link de navbar) */
+  .navbar-mobile-auth-btn--plan {
+    background: transparent;
+    border: 2px solid var(--color-primary-lighter);
+    color: var(--color-primary-lighter);
+  }
+
+  .navbar-mobile-auth-btn--plan:hover {
+    background: rgba(255, 170, 0, 0.12);
+    transform: translateY(-2px);
+  }
+
   .navbar-mobile-auth-btn--logout {
     background: transparent;
     border: 2px solid var(--color-error, #ff4444);
@@ -1066,56 +1058,8 @@
 
   @media (max-width: 480px) {
     .navbar-container {
-      padding: 0.75rem 1rem;
-    }
-
-    .logo {
-      height: 45px;
-    }
-
-    .navbar-slogan {
-      max-width: 152px;
-      font-size: 15px;
-    }
-
-    .menu-toggle {
-      width: 44px;
-      height: 44px;
-      font-size: 1.2rem;
-      border-radius: 10px;
-    }
-
-    .navbar-menu {
-      width: 85%;
-      max-width: 280px;
-      padding: 5rem 0 2rem 0;
-    }
-
-    .nav-link {
-      padding: 1.5rem 1.5rem;
-      font-size: 1rem;
-      gap: 1.2rem;
-    }
-
-    .nav-link:hover {
-      padding-left: 2.3rem;
-    }
-
-    .nav-link.active {
-      padding-left: calc(1.5rem - 5px);
-    }
-
-    .nav-link::before {
-      right: 1.5rem;
-    }
-
-    .nav-icon {
-      font-size: 1.3rem;
-    }
-  }
-  @media (max-width: 480px) {
-    .navbar-container {
       padding: 0.75rem;
+      gap: var(--space-2);
     }
 
     .logo {
@@ -1131,15 +1075,20 @@
       width: 38px;
       height: 38px;
       font-size: 1rem;
+      border-radius: 10px;
     }
 
-    .nav-link {
-      padding: 1rem 1.5rem;
-      font-size: 0.9rem;
+    .navbar-cta-btn {
+      width: 38px;
+      height: 38px;
+      font-size: 1rem;
+      border-radius: 10px;
     }
 
-    .nav-icon {
-      font-size: 1.1rem;
+    .navbar-menu {
+      width: 85%;
+      max-width: 280px;
+      padding: 5rem 0 2rem 0;
     }
   }
 }

@@ -1,5 +1,11 @@
 import { lazy, Suspense, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { CityProvider } from "./context/CityContext";
 import { ToastProvider } from "./context/ToastContext";
@@ -9,19 +15,21 @@ import UserOnlyRoute from "./components/Auth/UserOnlyRoute";
 import AuthCallback from "./components/Auth/AuthCallback";
 import Navbar from "./components/Home/Navbar";
 import Home from "./components/Home/Home";
-import { SuperguiaContainer } from "./components/Superguia";
 import WelcomeSplash from "./components/WelcomeSplash";
 import AccessGate from "./components/WelcomeSplash/AccessGate";
 import { ACCESS_ROUTE } from "./components/WelcomeSplash/WelcomeSplash";
 import { cleanAuthTokensFromUrl } from "./lib/supabase";
 import useAnalytics from "./hooks/useAnalytics";
+import { LOCATIONS } from "./components/Superguia/data";
 
 // Lazy loading de rutas menos frecuentes para optimizar bundle inicial
+const CrearPublicacion = lazy(
+  () => import("./components/Home/CrearPublicacion/CrearPublicacion"),
+);
 const Publicar = lazy(() => import("./components/Home/Panorama/Publicar"));
 const PublicarNegocio = lazy(
   () => import("./components/Home/Negocio/PublicarNegocio"),
 );
-const PanoramasPage = lazy(() => import("./components/Home/PanoramasPage"));
 const Perfil = lazy(() => import("./components/Perfil/Perfil"));
 const AdminPanel = lazy(() => import("./components/Admin/AdminPanel"));
 const FAQ = lazy(() => import("./components/FAQ/FAQ"));
@@ -37,6 +45,57 @@ const PageLoader = () => (
     <p>Cargando...</p>
   </div>
 );
+
+const normalizarRuta = (valor) =>
+  String(valor || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es-CL")
+    .trim();
+
+const encontrarUbicacion = (valor) => {
+  const buscado = normalizarRuta(valor);
+  return Object.entries(LOCATIONS).find(
+    ([clave, ciudad]) =>
+      buscado === normalizarRuta(clave) ||
+      buscado === normalizarRuta(ciudad.nombre) ||
+      ciudad.comunas.some((comuna) => normalizarRuta(comuna) === buscado),
+  )?.[0];
+};
+
+/** Traduce deep links antiguos al namespace de cada sección del Home. */
+const LegacyHomeRedirect = ({ namespace }) => {
+  const location = useLocation();
+  const parametros = new URLSearchParams(location.search);
+  const ciudad = parametros.get("ciudad");
+  const ciudadKey = ciudad ? encontrarUbicacion(ciudad) : null;
+  const prefijo = namespace === "p" ? "p_" : "sg_";
+
+  if (ciudad) {
+    parametros.delete("ciudad");
+    parametros.set(
+      `${prefijo}${ciudadKey ? "ciudad" : "busqueda"}`,
+      ciudadKey || ciudad,
+    );
+  }
+
+  const highlight = parametros.get("highlight");
+  if (highlight) {
+    parametros.delete("highlight");
+    parametros.set(`${prefijo}highlight`, highlight);
+  }
+
+  return (
+    <Navigate
+      replace
+      to={{
+        pathname: "/",
+        search: parametros.toString() ? `?${parametros.toString()}` : "",
+        hash: location.hash,
+      }}
+    />
+  );
+};
 
 /**
  * Componente wrapper que limpia tokens de URL al montar.
@@ -79,10 +138,33 @@ function App() {
 
                     {/* Rutas públicas frecuentes */}
                     <Route path="/" element={<Home />} />
-                    <Route path="/superguia" element={<SuperguiaContainer />} />
+                    {/* Alias compatible: el Home canónico continúa siendo /. */}
+                    <Route
+                      path="/home"
+                      element={<LegacyHomeRedirect namespace="p" />}
+                    />
 
-                    {/* Rutas públicas menos frecuentes (lazy loaded) */}
-                    <Route path="/panoramas" element={<PanoramasPage />} />
+                    {/* Rutas antiguas: el contenido vive ahora en el Home. */}
+                    <Route
+                      path="/panoramas"
+                      element={<LegacyHomeRedirect namespace="p" />}
+                    />
+                    <Route
+                      path="/superguia"
+                      element={<LegacyHomeRedirect namespace="sg" />}
+                    />
+
+                    {/* Pantalla única de selección: panorama gratuito,
+                        panorama destacado o negocio. Navega a las rutas de
+                        formulario con el plan ya resuelto en la query. */}
+                    <Route
+                      path="/crear-publicacion"
+                      element={
+                        <UserOnlyRoute>
+                          <CrearPublicacion />
+                        </UserOnlyRoute>
+                      }
+                    />
                     <Route
                       path="/publicar-panorama"
                       element={
