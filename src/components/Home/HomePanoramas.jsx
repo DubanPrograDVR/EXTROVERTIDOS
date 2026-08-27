@@ -52,6 +52,7 @@ const leerFecha = (valor) => {
 };
 
 export default function HomePanoramas({
+  selector = null,
   eventos,
   categorias,
   parametros,
@@ -271,6 +272,8 @@ export default function HomePanoramas({
       id="panoramas"
       className="home-consolidado__section home-consolidado__section--panoramas"
       aria-labelledby="home-panoramas-title">
+      {selector}
+
       <div className="home-consolidado__section-heading">
         <div>
           <p className="home-consolidado__eyebrow">Cartelera local</p>

@@ -204,14 +204,15 @@ export default function Home() {
         />
       )}
 
-      <HomeAccesos
-        seccionActiva={seccionActiva}
-        onPanoramas={seleccionarPanoramas}
-        onSuperbuscador={seleccionarSuperbuscador}
-      />
-
       {seccionActiva !== "superbuscador" && (
         <HomePanoramas
+          selector={
+            <HomeAccesos
+              seccionActiva={seccionActiva}
+              onPanoramas={seleccionarPanoramas}
+              onSuperbuscador={seleccionarSuperbuscador}
+            />
+          }
           eventos={eventosParaVista}
           categorias={categoriasPanoramas}
           parametros={parametros}
@@ -229,6 +230,13 @@ export default function Home() {
 
       {seccionActiva !== "panoramas" && (
         <HomeSuperguia
+          selector={
+            <HomeAccesos
+              seccionActiva={seccionActiva}
+              onPanoramas={seleccionarPanoramas}
+              onSuperbuscador={seleccionarSuperbuscador}
+            />
+          }
           negocios={negociosParaVista}
           categorias={categoriasNegocios}
           parametros={parametros}

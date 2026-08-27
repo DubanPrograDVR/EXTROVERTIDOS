@@ -59,6 +59,7 @@ const coincideSubcategoria = (negocio, subcategoria) => {
 };
 
 export default function HomeSuperguia({
+  selector = null,
   negocios,
   categorias,
   parametros,
@@ -306,6 +307,8 @@ export default function HomeSuperguia({
       id="superguia"
       className="home-consolidado__section home-consolidado__section--superguia"
       aria-labelledby="home-superguia-title">
+      {selector}
+
       <div className="home-consolidado__section-heading">
         <div>
           <p className="home-consolidado__eyebrow">Servicios y negocios locales</p>

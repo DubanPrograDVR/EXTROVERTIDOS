@@ -1,9 +1,8 @@
 .home-accesos {
   display: flex;
   justify-content: center;
-  padding: clamp(0.85rem, 2vw, 1.35rem) clamp(1rem, 5vw, 5rem)
-    clamp(1.1rem, 2.5vw, 1.65rem);
-  background: #080808;
+  padding: 0 0 clamp(0.9rem, 2vw, 1.4rem);
+  background: transparent;
 }
 
 .home-accesos__grid {
@@ -72,10 +71,6 @@
 }
 
 @media (max-width: 620px) {
-  .home-accesos {
-    padding-inline: clamp(0.75rem, 4vw, 1.5rem);
-  }
-
   .home-accesos__grid {
     width: 100%;
   }

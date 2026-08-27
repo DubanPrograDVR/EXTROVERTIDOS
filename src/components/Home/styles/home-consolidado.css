@@ -211,9 +211,15 @@
 }
 
 .home-consolidado__section {
-  width: min(100%, 1440px);
-  margin: 0 auto;
-  padding: clamp(3rem, 7vw, 6rem) clamp(1rem, 3vw, 2.5rem);
+  /* Fondo a todo el ancho, pero el contenido se centra topado a 1440px: el
+     padding lateral crece hasta absorber el sobrante en pantallas anchas. Antes
+     la sección entera se topaba a 1440px y quedaban franjas del fondo de página
+     a los lados, y el fondo del superbuscador las hacía ver como una caja
+     angosta. El padding superior es menor que el inferior para no dejar una
+     banda negra muerta entre el toggle y el contenido. */
+  width: 100%;
+  padding-block: clamp(1.25rem, 3vw, 2.25rem) clamp(3rem, 7vw, 6rem);
+  padding-inline: max(clamp(1rem, 3vw, 2.5rem), calc((100% - 1440px) / 2));
 }
 
 .home-consolidado__section--panoramas {
