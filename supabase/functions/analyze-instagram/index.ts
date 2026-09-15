@@ -13,8 +13,16 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 /** Tiempo máximo esperando a Instagram. */
 const IG_TIMEOUT_MS = 10000;
-/** Tiempo máximo esperando a la IA. Con el afiche adjunto tarda más. */
-const IA_TIMEOUT_MS = 40000;
+/** Tiempo máximo por intento contra la IA. */
+const IA_TIMEOUT_MS = 30000;
+/**
+ * Presupuesto total de la función, con margen bajo el muro de ~150s de
+ * Supabase. Los reintentos de GLM se acotan a lo que quede de este presupuesto
+ * (ya descontado el tiempo gastado leyendo Instagram y la imagen), para no
+ * pasar el muro y convertir un 502 reintentable en un corte opaco de la
+ * plataforma.
+ */
+const HARD_BUDGET_MS = 135000;
 /** Tope de bytes leídos del HTML: el <head> con los og: cabe de sobra. */
 const MAX_HTML_BYTES = 512 * 1024;
 /** Tope de texto enviado al modelo. */
@@ -581,6 +589,269 @@ const COMUNAS_MAULE = new Map([
   ["pelluhue", "Pelluhue"],
 ]);
 
+// Mapa exhaustivo de localidades, sectores, pueblos, cerros, balnearios y parques del Maule con su Comuna oficial
+const LOCALIDADES_MAULE = new Map([
+  // === PROVINCIA DE CURICÓ ===
+  // Curicó
+  ["los niches", "Curicó"],
+  ["sarmiento", "Curicó"],
+  ["tutuquen", "Curicó"],
+  ["cordillerilla", "Curicó"],
+  ["potrero grande", "Curicó"],
+  ["chequenlemu", "Curicó"],
+  ["zapallar", "Curicó"],
+  ["convento viejo", "Curicó"],
+  ["cerro condell", "Curicó"],
+  ["isla de marchant", "Curicó"],
+  ["upeo", "Curicó"],
+  ["parque muvisa", "Curicó"],
+  // Molina
+  ["santa lucia", "Molina"],
+  ["mx santa lucia", "Molina"],
+  ["santalucia", "Molina"],
+  ["radal", "Molina"],
+  ["siete tazas", "Molina"],
+  ["radal siete tazas", "Molina"],
+  ["parque ingles", "Molina"],
+  ["itahue", "Molina"],
+  ["casablanca", "Molina"],
+  ["buena fe", "Molina"],
+  ["pichingal", "Molina"],
+  ["tres esquinas", "Molina"],
+  ["el yacal", "Molina"],
+  ["agua fria", "Molina"],
+  ["alupenhue", "Molina"],
+  // Hualañé
+  ["la huerta", "Hualañé"],
+  ["la huerta de mataquito", "Hualañé"],
+  ["barba rubia", "Hualañé"],
+  ["mira rios", "Hualañé"],
+  ["espinalillo", "Hualañé"],
+  ["los sauces", "Hualañé"],
+  ["canadilla", "Hualañé"],
+  ["rinconada hualane", "Hualañé"],
+  // Licantén
+  ["iloca", "Licantén"],
+  ["duao", "Licantén"],
+  ["lipimavida", "Licantén"],
+  ["lora", "Licantén"],
+  ["rancura", "Licantén"],
+  ["la pesca", "Licantén"],
+  ["idahue", "Licantén"],
+  ["placilla", "Licantén"],
+  // Vichuquén
+  ["llico", "Vichuquén"],
+  ["boyeruca", "Vichuquén"],
+  ["aquilpo", "Vichuquén"],
+  ["lago vichuquen", "Vichuquén"],
+  ["paula vichuquen", "Vichuquén"],
+  ["rarin", "Vichuquén"],
+  ["las garzas", "Vichuquén"],
+  ["playa linda", "Vichuquén"],
+  // Rauco
+  ["majadilla", "Rauco"],
+  ["palquibudi", "Rauco"],
+  ["el parron", "Rauco"],
+  ["quetrequen", "Rauco"],
+  ["tahuinco", "Rauco"],
+  ["el llano rauco", "Rauco"],
+  // Romeral
+  ["los quenes", "Romeral"],
+  ["los queñes", "Romeral"],
+  ["los maitenes romeral", "Romeral"],
+  ["el pumal", "Romeral"],
+  ["quilvo", "Romeral"],
+  // Sagrada Familia
+  ["peteroa", "Sagrada Familia"],
+  ["villa prat", "Sagrada Familia"],
+  ["santa rosa sagrada familia", "Sagrada Familia"],
+  ["la isla sagrada familia", "Sagrada Familia"],
+  ["trapiche", "Sagrada Familia"],
+  // Teno
+  ["la montana", "Teno"],
+  ["comalle", "Teno"],
+  ["morza", "Teno"],
+  ["monterilla", "Teno"],
+  ["huemul", "Teno"],
+  ["viluco", "Teno"],
+
+  // === PROVINCIA DE TALCA ===
+  // Talca
+  ["huilquilemu", "Talca"],
+  ["las rastras", "Talca"],
+  ["panguilemo", "Talca"],
+  ["san valentin", "Talca"],
+  ["aurora talca", "Talca"],
+  ["culenar", "Talca"],
+  ["chorrillos talca", "Talca"],
+  ["el boldo talca", "Talca"],
+  // San Clemente
+  ["vilches", "San Clemente"],
+  ["vilches alto", "San Clemente"],
+  ["vilches bajo", "San Clemente"],
+  ["altos de vilches", "San Clemente"],
+  ["armerillo", "San Clemente"],
+  ["paso nevado", "San Clemente"],
+  ["laguna del maule", "San Clemente"],
+  ["pehuenche", "San Clemente"],
+  ["paso pehuenche", "San Clemente"],
+  ["la suiza", "San Clemente"],
+  ["mariposas", "San Clemente"],
+  ["el colorado", "San Clemente"],
+  ["corralones", "San Clemente"],
+  ["bramadero", "San Clemente"],
+  // Constitución
+  ["putu", "Constitución"],
+  ["dunas de putu", "Constitución"],
+  ["pellines", "Constitución"],
+  ["los pellines", "Constitución"],
+  ["maguillines", "Constitución"],
+  ["las canas", "Constitución"],
+  ["quivolgo", "Constitución"],
+  ["calabocillos", "Constitución"],
+  ["costa blanca", "Constitución"],
+  ["piedra de la iglesia", "Constitución"],
+  ["santa olga", "Constitución"],
+  // Curepto
+  ["gualleco", "Curepto"],
+  ["deuca", "Curepto"],
+  ["calpun", "Curepto"],
+  ["docamavida", "Curepto"],
+  ["tonlemo", "Curepto"],
+  ["limavida", "Curepto"],
+  ["llongocura", "Curepto"],
+  // Empedrado
+  ["pellomenco", "Empedrado"],
+  ["sauces empedrado", "Empedrado"],
+  // Maule
+  ["chacarillas", "Maule"],
+  ["colin", "Maule"],
+  ["duao maule", "Maule"],
+  ["santa rosa de lavaderos", "Maule"],
+  ["quinipeumo", "Maule"],
+  // Pelarco
+  ["santa rita", "Pelarco"],
+  ["huencuecho", "Pelarco"],
+  ["el manzano pelarco", "Pelarco"],
+  ["lo figueroa", "Pelarco"],
+  ["astillero", "Pelarco"],
+  // Pencahue
+  ["botalcura", "Pencahue"],
+  ["toconey", "Pencahue"],
+  ["corinto", "Pencahue"],
+  ["curtiduria", "Pencahue"],
+  ["gonzalez bastias", "Pencahue"],
+  ["tapihue", "Pencahue"],
+  ["batuco", "Pencahue"],
+  // Río Claro
+  ["cumpeo", "Río Claro"],
+  ["los robles", "Río Claro"],
+  ["camarico", "Río Claro"],
+  ["odessa", "Río Claro"],
+  ["porvenir rio claro", "Río Claro"],
+  ["el bolsico", "Río Claro"],
+  // San Rafael
+  ["alto pangue", "San Rafael"],
+  ["pangue arriba", "San Rafael"],
+  ["los maquis", "San Rafael"],
+
+  // === PROVINCIA DE LINARES ===
+  // Linares
+  ["achibueno", "Linares"],
+  ["cajon del achibueno", "Linares"],
+  ["ancoa", "Linares"],
+  ["embalse ancoa", "Linares"],
+  ["robleria", "Linares"],
+  ["pejerrey", "Linares"],
+  ["monte oscuro", "Linares"],
+  ["vega ancoa", "Linares"],
+  ["llepo", "Linares"],
+  ["san antonio de encina", "Linares"],
+  ["vara gruesa", "Linares"],
+  ["san victor alamos", "Linares"],
+  // Colbún
+  ["panimavida", "Colbún"],
+  ["quinamavida", "Colbún"],
+  ["termas de panimavida", "Colbún"],
+  ["termas de quinamavida", "Colbún"],
+  ["lago colbun", "Colbún"],
+  ["machicura", "Colbún"],
+  ["rari", "Colbún"],
+  ["san dionisio", "Colbún"],
+  ["santa elena colbun", "Colbún"],
+  ["paso rari", "Colbún"],
+  // Longaví
+  ["la sexta", "Longaví"],
+  ["loma de vasquez", "Longaví"],
+  ["mesamavida", "Longaví"],
+  ["miraflores longavi", "Longaví"],
+  ["vega del molino", "Longaví"],
+  ["liguay", "Longaví"],
+  ["los cristales", "Longaví"],
+  // Parral
+  ["catillo", "Parral"],
+  ["termas de catillo", "Parral"],
+  ["digua", "Parral"],
+  ["embalse digua", "Parral"],
+  ["perquilauquen", "Parral"],
+  ["villa baviera", "Parral"],
+  ["talquita", "Parral"],
+  // Retiro
+  ["copihue", "Retiro"],
+  ["villaseca", "Retiro"],
+  ["romeral de retiro", "Retiro"],
+  ["san camilo retiro", "Retiro"],
+  ["las camelias retiro", "Retiro"],
+  ["quillaimo", "Retiro"],
+  // San Javier
+  ["melozal", "San Javier"],
+  ["huerta de maule", "San Javier"],
+  ["caliboro", "San Javier"],
+  ["nirivilo", "San Javier"],
+  ["vaqueria", "San Javier"],
+  ["bobadilla", "San Javier"],
+  ["carrizal san javier", "San Javier"],
+  ["arbolillo", "San Javier"],
+  // Villa Alegre
+  ["putagan", "Villa Alegre"],
+  ["estacion villa alegre", "Villa Alegre"],
+  ["la arena", "Villa Alegre"],
+  ["cunaco", "Villa Alegre"],
+  ["coibungo", "Villa Alegre"],
+  // Yerbas Buenas
+  ["santa ana de queri", "Yerbas Buenas"],
+  ["abranquil", "Yerbas Buenas"],
+  ["orilla de maule", "Yerbas Buenas"],
+  ["semillero", "Yerbas Buenas"],
+  ["maitencillo yerbas buenas", "Yerbas Buenas"],
+
+  // === PROVINCIA DE CAUQUENES ===
+  // Cauquenes
+  ["quella", "Cauquenes"],
+  ["sauzal", "Cauquenes"],
+  ["pocillas", "Cauquenes"],
+  ["coronel de maule", "Cauquenes"],
+  ["pilen", "Cauquenes"],
+  ["tutuven", "Cauquenes"],
+  ["san granel", "Cauquenes"],
+  ["name", "Cauquenes"],
+  // Chanco
+  ["pahuil", "Chanco"],
+  ["reloca", "Chanco"],
+  ["loanco", "Chanco"],
+  ["carreras cortas", "Chanco"],
+  ["reserva federico albert", "Chanco"],
+  // Pelluhue
+  ["curanipe", "Pelluhue"],
+  ["tregualemu", "Pelluhue"],
+  ["mariscadero", "Pelluhue"],
+  ["chovellen", "Pelluhue"],
+  ["cardonal", "Pelluhue"],
+  ["quilicura pelluhue", "Pelluhue"],
+  ["los quebrachos", "Pelluhue"],
+  ["piedra rota", "Pelluhue"],
+]);
+
 function normalizarComuna(valor) {
   return String(valor || "")
     .toLowerCase()
@@ -589,6 +860,363 @@ function normalizarComuna(valor) {
     .replace(/[^a-z\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+// ----------------------------------------------------
+// MANEJO DE FECHAS Y RECURRENCIA (ZONA CHILE)
+// ----------------------------------------------------
+const TIMEZONE_CHILE = "America/Santiago";
+
+const DIAS_NOMBRE_MAP = {
+  domingo: 0,
+  domingos: 0,
+  lunes: 1,
+  martes: 2,
+  miercoles: 3,
+  miércoles: 3,
+  jueves: 4,
+  viernes: 5,
+  sabado: 6,
+  sábado: 6,
+  fin_de_semana: 6,
+  "fin de semana": 6,
+  "fines de semana": 6,
+};
+
+const PATRONES_RECURRENCIA = [
+  // Combinaciones múltiples
+  {
+    regex: /\b(?:todos\s+los\s+)?viernes\s+y\s+s[aá]bados?\b/i,
+    dias: [5, 6],
+    dia: "viernes",
+    label: "Viernes y sábados",
+  },
+  {
+    regex: /\b(?:todos\s+los\s+)?s[aá]bados?\s+y\s+domingos?\b/i,
+    dias: [6, 0],
+    dia: "fin_de_semana",
+    label: "Sábados y domingos",
+  },
+  {
+    regex: /\b(?:de\s+)?jueves\s+a\s+domingo\b/i,
+    dias: [4, 5, 6, 0],
+    dia: "jueves",
+    label: "Jueves a domingo",
+  },
+
+  // Sábado / Fines de semana
+  {
+    regex:
+      /\b(?:todos\s+los\s+s[aá]bados?|cada\s+s[aá]bado|este\s+s[aá]bado|s[aá]bados\s+de\b|los\s+d[ií]as\s+s[aá]bados?)\b/i,
+    dias: [6],
+    dia: "sabado",
+    label: "Todos los sábados",
+  },
+  {
+    regex:
+      /\b(?:todos\s+los\s+fines\s+de\s+semana|cada\s+fin\s+de\s+semana|este\s+fin\s+de\s+semana|los\s+fines\s+de\s+semana|fines\s+de\s+semana)\b/i,
+    dias: [6],
+    dia: "fin_de_semana",
+    label: "Todos los fines de semana",
+  },
+
+  // Viernes
+  {
+    regex:
+      /\b(?:todos\s+los\s+viernes|cada\s+viernes|este\s+viernes|viernes\s+de\b|los\s+d[ií]as\s+viernes)\b/i,
+    dias: [5],
+    dia: "viernes",
+    label: "Todos los viernes",
+  },
+
+  // Domingo
+  {
+    regex:
+      /\b(?:todos\s+los\s+domingos?|cada\s+domingo|este\s+domingo|domingos\s+de\b|los\s+d[ií]as\s+domingos?)\b/i,
+    dias: [0],
+    dia: "domingo",
+    label: "Cada domingo",
+  },
+
+  // Jueves
+  {
+    regex:
+      /\b(?:todos\s+los\s+jueves|cada\s+jueves|este\s+jueves|jueves\s+de\b|los\s+d[ií]as\s+jueves)\b/i,
+    dias: [4],
+    dia: "jueves",
+    label: "Todos los jueves",
+  },
+
+  // Miércoles
+  {
+    regex:
+      /\b(?:todos\s+los\s+mi[eé]rcoles|cada\s+mi[eé]rcoles|este\s+mi[eé]rcoles|mi[eé]rcoles\s+de\b|los\s+d[ií]as\s+mi[eé]rcoles)\b/i,
+    dias: [3],
+    dia: "miercoles",
+    label: "Todos los miércoles",
+  },
+
+  // Martes
+  {
+    regex:
+      /\b(?:todos\s+los\s+martes|cada\s+martes|este\s+martes|martes\s+de\b|los\s+d[ií]as\s+martes)\b/i,
+    dias: [2],
+    dia: "martes",
+    label: "Todos los martes",
+  },
+
+  // Lunes
+  {
+    regex:
+      /\b(?:todos\s+los\s+lunes|cada\s+lunes|este\s+lunes|lunes\s+de\b|los\s+d[ií]as\s+lunes)\b/i,
+    dias: [1],
+    dia: "lunes",
+    label: "Todos los lunes",
+  },
+];
+
+function obtenerFechaHoraChile(baseDate = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: TIMEZONE_CHILE,
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+    hour12: false,
+    weekday: "long",
+  }).formatToParts(baseDate);
+
+  const p = {};
+  for (const part of parts) {
+    p[part.type] = part.value;
+  }
+
+  const year = parseInt(p.year, 10);
+  const month = parseInt(p.month, 10);
+  const day = parseInt(p.day, 10);
+  const hour = parseInt(p.hour, 10);
+  const minute = parseInt(p.minute, 10);
+
+  const hoyStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  const horaActualStr = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+
+  const diasEspanol = [
+    "domingo",
+    "lunes",
+    "martes",
+    "miércoles",
+    "jueves",
+    "viernes",
+    "sábado",
+  ];
+  const baseUtc = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+  const dow = baseUtc.getUTCDay();
+  const diaSemana = diasEspanol[dow];
+
+  return {
+    year,
+    month,
+    day,
+    hour,
+    minute,
+    hoyStr,
+    horaActualStr,
+    diaSemana,
+    dow,
+    baseUtc,
+  };
+}
+
+function generarCalendarioReferencia(chileTime) {
+  const { baseUtc, dow, hoyStr, horaActualStr, diaSemana } = chileTime;
+
+  const nombresDias = [
+    { nombre: "domingo", num: 0 },
+    { nombre: "lunes", num: 1 },
+    { nombre: "martes", num: 2 },
+    { nombre: "miércoles", num: 3 },
+    { nombre: "jueves", num: 4 },
+    { nombre: "viernes", num: 5 },
+    { nombre: "sábado", num: 6 },
+  ];
+
+  const proximosDias = nombresDias.map((d) => {
+    let diasHasta = (d.num - dow + 7) % 7;
+    const fechaProxima = new Date(baseUtc.getTime() + diasHasta * 86400000)
+      .toISOString()
+      .slice(0, 10);
+    const fechaSemanaSiguiente = new Date(
+      baseUtc.getTime() + (diasHasta + 7) * 86400000,
+    )
+      .toISOString()
+      .slice(0, 10);
+    return {
+      nombre: d.nombre,
+      num: d.num,
+      esHoy: diasHasta === 0,
+      fecha: fechaProxima,
+      fechaSiguiente: fechaSemanaSiguiente,
+    };
+  });
+
+  const proxSabado = proximosDias.find((d) => d.num === 6)?.fecha || hoyStr;
+  const proxDomingo = proximosDias.find((d) => d.num === 0)?.fecha || hoyStr;
+
+  return {
+    hoyStr,
+    horaActualStr,
+    diaSemana,
+    proximosDias,
+    proxSabado,
+    proxDomingo,
+  };
+}
+
+function calcularProximaFechaDias(diasSemana, chileTime, horaInicioStr) {
+  const { baseUtc, dow, hour, minute } = chileTime;
+  let menorDias = 999;
+  let mejorDiaNum = diasSemana[0];
+
+  for (const dNum of diasSemana) {
+    let diasHasta = (dNum - dow + 7) % 7;
+    if (diasHasta === 0) {
+      if (horaInicioStr && /^(\d{1,2}):(\d{2})$/.test(horaInicioStr)) {
+        const [, h, m] = horaInicioStr.match(/^(\d{1,2}):(\d{2})$/);
+        const evH = parseInt(h, 10);
+        const evM = parseInt(m, 10);
+        if (hour > evH || (hour === evH && minute >= evM)) {
+          diasHasta = 7;
+        }
+      } else if (hour >= 21) {
+        diasHasta = 7;
+      }
+    }
+    if (diasHasta < menorDias) {
+      menorDias = diasHasta;
+      mejorDiaNum = dNum;
+    }
+  }
+
+  const targetDate = new Date(baseUtc.getTime() + menorDias * 86400000);
+  return {
+    fecha: targetDate.toISOString().slice(0, 10),
+    diaNum: mejorDiaNum,
+    diasHasta: menorDias,
+  };
+}
+
+function calcularListaFechasRecurrencia(fechaInicialStr, repeticiones = 4) {
+  const [y, m, d] = fechaInicialStr.split("-").map(Number);
+  const baseUtc = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+  const fechas = [];
+  for (let i = 0; i < repeticiones; i++) {
+    const nextDate = new Date(baseUtc.getTime() + i * 7 * 86400000);
+    fechas.push(nextDate.toISOString().slice(0, 10));
+  }
+  return fechas;
+}
+
+function procesarFechaYRecurrencia(iaResult, extractedText, chileTime) {
+  const textoCompleto = `${iaResult.titulo || ""} ${iaResult.descripcion || ""} ${extractedText || ""}`;
+
+  let patronMatch = PATRONES_RECURRENCIA.find((p) => p.regex.test(textoCompleto));
+
+  let diasLista = null;
+  let diaNombre = null;
+  let labelRecurrencia = null;
+
+  if (patronMatch) {
+    diasLista = patronMatch.dias;
+    diaNombre = patronMatch.dia;
+    labelRecurrencia = patronMatch.label;
+  } else if (iaResult.es_recurrente && iaResult.dia_recurrencia) {
+    const norm = String(iaResult.dia_recurrencia).toLowerCase().trim();
+    if (DIAS_NOMBRE_MAP[norm] !== undefined) {
+      diasLista = [DIAS_NOMBRE_MAP[norm]];
+      diaNombre = norm;
+      labelRecurrencia = `Cada ${norm}`;
+    }
+  }
+
+  if (diasLista && diasLista.length > 0) {
+    const esPeriodico =
+      iaResult.es_recurrente === true ||
+      /\b(?:todos\s+los|cada|los\s+d[ií]as|fines\s+de\s+semana)\b/i.test(textoCompleto) ||
+      /\b(?:s[aá]bados|viernes|domingos|jueves|mi[eé]rcoles|martes|lunes)\s+de\b/i.test(textoCompleto);
+
+    const { fecha: proximaFecha } = calcularProximaFechaDias(
+      diasLista,
+      chileTime,
+      iaResult.hora_inicio,
+    );
+    iaResult.fecha = proximaFecha;
+
+    if (esPeriodico) {
+      iaResult.es_recurrente = true;
+      iaResult.dia_recurrencia = diaNombre;
+      iaResult.patron_recurrencia = labelRecurrencia;
+      iaResult.fechas_recurrencia = calcularListaFechasRecurrencia(proximaFecha, 4);
+      console.log(
+        `[analyze-instagram] Recurrencia detectada (${labelRecurrencia}). Asignada próxima fecha más cercana: ${proximaFecha}`,
+      );
+    } else {
+      iaResult.es_recurrente = false;
+      iaResult.dia_recurrencia = null;
+      iaResult.patron_recurrencia = null;
+      iaResult.fechas_recurrencia = [];
+      console.log(
+        `[analyze-instagram] Día relativo detectado (${diaNombre}). Asignada próxima fecha más cercana: ${proximaFecha}`,
+      );
+    }
+    return iaResult;
+  }
+
+  // Si no es recurrente pero la fecha devuelta está en el pasado
+  if (
+    iaResult.fecha &&
+    typeof iaResult.fecha === "string" &&
+    iaResult.fecha < chileTime.hoyStr
+  ) {
+    const matchDia = textoCompleto.match(
+      /\b(lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo)\b/i,
+    );
+    if (matchDia) {
+      const dKey = matchDia[1]
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+      const dN = DIAS_NOMBRE_MAP[dKey];
+      if (dN !== undefined) {
+        const { fecha: prox } = calcularProximaFechaDias(
+          [dN],
+          chileTime,
+          iaResult.hora_inicio,
+        );
+        console.log(
+          `[analyze-instagram] Fecha en el pasado con día ${matchDia[1]} (${iaResult.fecha}). Ajustada al próximo: ${prox}`,
+        );
+        iaResult.fecha = prox;
+        return iaResult;
+      }
+    }
+
+    const partes = iaResult.fecha.split("-");
+    if (partes.length === 3) {
+      const mesDia = `${partes[1]}-${partes[2]}`;
+      let corregida = `${chileTime.year}-${mesDia}`;
+      if (corregida < chileTime.hoyStr) {
+        corregida = `${chileTime.year + 1}-${mesDia}`;
+      }
+      console.log(
+        `[analyze-instagram] Fecha anual en el pasado detectada (${iaResult.fecha}). Corregida a: ${corregida}`,
+      );
+      iaResult.fecha = corregida;
+    }
+  }
+
+  return iaResult;
 }
 
 // ----------------------------------------------------
@@ -602,14 +1230,29 @@ function normalizarComuna(valor) {
  * el formato por esquema, aquí se incluye también la forma exacta del JSON en
  * texto para que la salida sea parseable.
  */
-function construirPromptAnalisis(extractedText, originalUrl, imageUrl, imagen) {
+function construirPromptAnalisis(
+  extractedText,
+  originalUrl,
+  imageUrl,
+  imagen,
+  chileTime,
+) {
   // Delimitador impredecible: el texto viene de una página pública y podría
   // contener instrucciones dirigidas al modelo (inyección de prompt).
   const nonce = crypto.randomUUID();
   const textoSeguro = String(extractedText).slice(0, MAX_PROMPT_TEXT);
-  const hoy = new Date().toLocaleDateString("sv-SE", {
-    timeZone: "America/Santiago",
-  });
+
+  const cal = generarCalendarioReferencia(chileTime);
+  const { hoyStr, horaActualStr, diaSemana } = cal;
+  const anioActual = chileTime.year;
+
+  const tablaCalendario = cal.proximosDias
+    .map((d) =>
+      d.esHoy
+        ? `  * ${d.nombre}: HOY ${d.fecha} (si el evento es hoy y la hora de inicio es posterior a las ${horaActualStr}) o el próximo ${d.nombre} ${d.fechaSiguiente} (si la hora del evento ya pasó hoy).`
+        : `  * ${d.nombre}: ${d.fecha}`,
+    )
+    .join("\n");
 
   return `
 Eres un asistente experto en identificar y estructurar eventos y panoramas a partir de publicaciones de redes sociales de la Región del Maule, Chile.
@@ -627,12 +1270,37 @@ ${
     : `Recibes una única fuente: el texto del pie de foto de la publicación. No hay afiche disponible.`
 }
 
+CONTEXTO TEMPORAL ACTUAL (Chile - America/Santiago):
+- Fecha y hora actual de referencia: ${diaSemana}, ${hoyStr} a las ${horaActualStr} hrs.
+- Año actual: ${anioActual}.
+- Calendario de referencia de próximas fechas exactas según este momento:
+${tablaCalendario}
+  * Fin de semana más cercano: sábado ${cal.proxSabado} y domingo ${cal.proxDomingo}
+
 REGLAS IMPORTANTES:
 1. IDENTIFICACIÓN: un "panorama" es cualquier actividad a la que el público puede asistir en una fecha o periodo concreto. Cuentan como panorama: fiestas, tocatas y conciertos, ferias y mercados, obras de teatro, exposiciones, campeonatos y partidos, talleres y cursos, carreras y cicletadas, misas y procesiones, aniversarios de pueblos, ramadas, degustaciones, lanzamientos, matinés, karaokes, torneos y trivias en bares, y actividades municipales.
    Señales de que SÍ lo es: una fecha o día de la semana, una hora, un lugar o dirección, un precio o "entrada liberada", palabras como "te esperamos", "reserva", "inscríbete", "cupos", "line up", "invitados".
    Marca "es_panorama": false SOLO si claramente no hay ninguna actividad a la que asistir: memes, frases motivacionales, fotos personales, catálogos de productos, currículums, avisos de horario de un local, o noticias sin convocatoria. Ante la duda, si hay algo a lo que la gente pueda ir, márcalo como panorama y baja la confianza en vez de rechazarlo.
-2. FECHA: Formatea la fecha como YYYY-MM-DD (es obligatorio para los inputs de tipo date). Hoy es ${hoy} en la zona horaria America/Santiago. Si la publicación dice "este sábado 30" u omite el año, deduce la fecha futura más cercana a partir de hoy. Si no puedes deducirla, deja el campo vacío.
-2b. COMUNA: devuelve solo el nombre de la comuna chilena, sin la región ni la provincia ("Talca", no "Talca, Región del Maule"). Si el texto no la nombra pero menciona un lugar reconocible (una plaza, un estadio, un local, un barrio), deduce la comuna a la que pertenece. Si aun así no puedes saberla, déjala vacía en vez de inventarla.
+2. FECHA Y EVENTOS RECURRENTES: Formatea la fecha como YYYY-MM-DD (es obligatorio para los inputs de tipo date). NUNCA devuelvas una fecha en el pasado (anterior a ${hoyStr}).
+   - REGLA PARA EVENTOS RECURRENTES Y DÍAS RELATIVOS:
+     Si la publicación indica que el evento se repite periódicamente o menciona días relativos como:
+     * “Todos los sábados”, “Sábados de...”, “Cada sábado”, “Este sábado”:
+       -> Asigna la fecha del sábado más cercano a la fecha y hora actual. Si hoy es sábado y la hora de inicio aún no pasa, es hoy (${hoyStr}); si la hora ya pasó hoy, es el próximo sábado. Marca "es_recurrente": true (si es repetitivo) y "dia_recurrencia": "sabado".
+     * “Todos los viernes”, “Viernes de...”, “Cada viernes”, “Este viernes”:
+       -> Asigna la fecha del viernes más cercano a la fecha y hora actual. Marca "es_recurrente": true (si es repetitivo) y "dia_recurrencia": "viernes".
+     * “Cada domingo”, “Todos los domingos”, “Domingos de...”, “Este domingo”:
+       -> Asigna la fecha del domingo más cercano a la fecha y hora actual. Marca "es_recurrente": true (si es repetitivo) y "dia_recurrencia": "domingo".
+     * “Todos los fines de semana”, “Cada fin de semana”, “Fines de semana”:
+       -> Asigna el sábado del fin de semana más cercano (${cal.proxSabado}). Marca "es_recurrente": true y "dia_recurrencia": "fin_de_semana".
+     * Cualquier otro día (“Todos los jueves”, “Todos los miércoles”, etc.):
+       -> Asigna la próxima fecha correspondiente más cercana al momento actual.
+     * Si el evento es recurrente, incluye en "fechas_recurrencia" un arreglo con las próximas 4 fechas consecutivas de ese evento a partir de la fecha seleccionada.
+   - FECHAS ESPECÍFICAS SIN AÑO:
+     Si la publicación menciona un día del mes concreto (ej: "18 de septiembre", "sábado 24 de octubre"), deduce la fecha usando el año ${anioActual} (o el siguiente año si el mes ya pasó). "es_recurrente" será false si es una fecha fija única.
+   - Si no puedes deducirla de ninguna forma, deja el campo vacío.
+2b. COMUNA: devuelve solo el nombre de la comuna chilena, sin la región ni la provincia ("Talca", no "Talca, Región del Maule"). Si el texto no la nombra pero menciona un lugar reconocible (una plaza, un estadio, un local, un barrio, una localidad como La Huerta -> Hualañé, Iloca -> Licantén), deduce la comuna a la que pertenece. Si aun así no puedes saberla, déjala vacía en vez de inventarla.
+2c. CATEGORÍA: clasifica el evento eligiendo la mejor opción entre estas categorías oficiales: "Música", "Teatro", "Deportes", "Gastronomía", "Arte", "Familia", "Educación", "Fiestas". (Ej: Yoga, ciclismo, running van en "Deportes"; talleres o clases formativas van en "Educación" o "Arte").
+2d. ETIQUETA DESTACADA: en "etiqueta_directa" sugiere una palabra clave corta y precisa que resuma el formato del panorama en 1 o 2 palabras (ej: "Concierto", "Feria", "Taller", "Festival", "Teatro", "Ciclismo", "Degustación", "Tributo", "Stand Up", "Fiesta", "Expo").
 3. HORAS: Formatea las horas como HH:MM en 24 horas. Si no aparecen, déjalas vacías; no las inventes.
 4. PRECIO: rellena DOS campos.
    - "precio": el texto tal como aparece ("$5.000", "Entrada liberada", "Adhesión $3.000").
@@ -659,7 +1327,7 @@ ${textoSeguro}
 ${nonce}>>>
 
 FORMATO DE RESPUESTA: responde ÚNICAMENTE un objeto JSON válido, sin \`\`\`json ni ningún texto antes o después, con exactamente estos campos:
-{"es_panorama": boolean, "titulo": string, "descripcion": string, "fecha": "YYYY-MM-DD" o "", "hora_inicio": "HH:MM" o "", "hora_fin": "HH:MM" o "", "ubicacion": string, "comuna": string, "region": string, "categoria": string, "precio": string, "precio_numero": integer, "organizador": string, "telefono": string, "instagram": string, "imagen_url": string, "url_original": string, "confianza": integer, "informacion_faltante": string[], "motivo_rechazo": string}
+{"es_panorama": boolean, "titulo": string, "descripcion": string, "etiqueta_directa": string, "fecha": "YYYY-MM-DD" o "", "hora_inicio": "HH:MM" o "", "hora_fin": "HH:MM" o "", "es_recurrente": boolean, "dia_recurrencia": string, "fechas_recurrencia": string[], "patron_recurrencia": string, "ubicacion": string, "comuna": string, "region": string, "categoria": string, "precio": string, "precio_numero": integer, "organizador": string, "telefono": string, "instagram": string, "imagen_url": string, "url_original": string, "confianza": integer, "informacion_faltante": string[], "motivo_rechazo": string}
 `;
 }
 
@@ -685,13 +1353,26 @@ function extraerJson(texto) {
  * el prompt — de ahí `extraerJson`; y devuelve 429 "temporarily overloaded" con
  * cierta frecuencia, de ahí el patrón de reintento con retroceso.
  */
-async function analyzeWithGLM(extractedText, originalUrl, imageUrl, imagen) {
+async function analyzeWithGLM(
+  extractedText,
+  originalUrl,
+  imageUrl,
+  imagen,
+  restanteMs,
+  chileTime,
+) {
   const apiKey = Deno.env.get("GLM_API_KEY");
   if (!apiKey) {
     throw new Error("GLM_API_KEY no está configurada en Supabase.");
   }
 
-  const prompt = construirPromptAnalisis(extractedText, originalUrl, imageUrl, imagen);
+  const prompt = construirPromptAnalisis(
+    extractedText,
+    originalUrl,
+    imageUrl,
+    imagen,
+    chileTime,
+  );
 
   const content = [{ type: "text", text: prompt }];
   if (imagen?.base64 && imagen?.mime) {
@@ -712,14 +1393,30 @@ async function analyzeWithGLM(extractedText, originalUrl, imageUrl, imagen) {
   };
 
   const ESTADOS_REINTENTABLES_GLM = new Set([429, 500, 502, 503, 504]);
-  const MAX_INTENTOS_GLM = 3;
+  const MAX_INTENTOS_GLM = 4;
+  const BASE_BACKOFF_MS = 2000;
+  const CAP_BACKOFF_MS = 15000;
+
+  // Cuánto tiempo queda del presupuesto global; sin la función, se cae al
+  // timeout de un solo intento (comportamiento anterior).
+  const presupuesto = () =>
+    typeof restanteMs === "function" ? restanteMs() : IA_TIMEOUT_MS;
 
   let response;
   let ultimoError;
 
   for (let intento = 1; intento <= MAX_INTENTOS_GLM; intento++) {
+    // No arrancar un intento que no cabe en el tiempo que queda.
+    const disponible = presupuesto();
+    if (disponible < 3000) break;
+
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), IA_TIMEOUT_MS);
+    const timeout = setTimeout(
+      () => controller.abort(),
+      Math.min(IA_TIMEOUT_MS, disponible),
+    );
+
+    let retryAfterMs = 0;
 
     try {
       response = await fetch("https://api.z.ai/api/paas/v4/chat/completions", {
@@ -753,15 +1450,39 @@ async function analyzeWithGLM(extractedText, originalUrl, imageUrl, imagen) {
         `[analyze-instagram] GLM HTTP ${response.status} (intento ${intento}):`,
         detalle.slice(0, 800),
       );
+      // 429 = "temporarily overloaded": se marca en el mensaje para que el
+      // handler devuelva el código propio "ia_sobrecargada" (el cliente lo
+      // reintenta solo). Se evita añadir una propiedad extra al Error.
+      const prefijo = response.status === 429 ? "IA_SOBRECARGADA " : "";
       ultimoError = new Error(
-        `GLM ${response.status}: ${detalle.slice(0, 300) || "sin cuerpo"}`,
+        `${prefijo}GLM ${response.status}: ${detalle.slice(0, 300) || "sin cuerpo"}`,
       );
+
+      // Retry-After (segundos u HTTP-date) manda como piso del backoff.
+      const ra = response.headers.get("retry-after");
+      if (ra) {
+        const seg = Number(ra);
+        retryAfterMs = Number.isFinite(seg)
+          ? seg * 1000
+          : Math.max(0, Date.parse(ra) - Date.now());
+      }
+
+      // 400/401/403…: reintentar daría el mismo resultado.
       if (!ESTADOS_REINTENTABLES_GLM.has(response.status)) break;
     }
 
-    if (intento < MAX_INTENTOS_GLM) {
-      await new Promise((r) => setTimeout(r, 1500 * intento));
-    }
+    if (intento >= MAX_INTENTOS_GLM) break;
+
+    // Retroceso exponencial con "equal jitter", respetando Retry-After y sin
+    // pasarse del presupuesto global (evita golpear a GLM en cadencia fija).
+    const exp = Math.min(CAP_BACKOFF_MS, BASE_BACKOFF_MS * 2 ** (intento - 1));
+    const jitter = exp / 2 + Math.random() * (exp / 2);
+    const espera = Math.min(
+      Math.max(jitter, retryAfterMs),
+      Math.max(0, presupuesto() - 3000),
+    );
+    if (espera <= 0) break;
+    await new Promise((r) => setTimeout(r, espera));
   }
 
   if (!response?.ok) {
@@ -786,6 +1507,9 @@ async function analyzeWithGLM(extractedText, originalUrl, imageUrl, imagen) {
 // HANDLER
 // ----------------------------------------------------
 Deno.serve(async (req) => {
+  // Marca de inicio para el presupuesto global (ver HARD_BUDGET_MS).
+  const T0 = Date.now();
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: CORS_HEADERS });
   }
@@ -829,6 +1553,13 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => null);
     const destino = parseInstagramUrl(body?.url);
+
+    const clientTimeRaw = body?.clientTime;
+    const baseDate =
+      clientTimeRaw && !isNaN(Date.parse(clientTimeRaw))
+        ? new Date(clientTimeRaw)
+        : new Date();
+    const chileTime = obtenerFechaHoraChile(baseDate);
 
     // 400 solo cuando el enlace realmente está mal: eso sí es culpa del cliente.
     if (destino.error) {
@@ -897,15 +1628,23 @@ Deno.serve(async (req) => {
         urlCanonica,
         extractedImage,
         imagenDescargada,
+        () => HARD_BUDGET_MS - (Date.now() - T0),
+        chileTime,
       );
     } catch (aiError) {
       console.error("[analyze-instagram] GLM falló:", aiError);
+      // 429 "sobrecargado" es pasajero: se marca con un código propio para que
+      // el cliente lo reintente solo, distinto de un fallo real de la IA.
+      const sobrecargada = String(aiError?.message || "").startsWith(
+        "IA_SOBRECARGADA",
+      );
       return jsonResponse(
         {
           success: false,
-          codigo: "ia_no_disponible",
-          error:
-            "No se pudo analizar el contenido con la IA. Inténtalo de nuevo en unos segundos.",
+          codigo: sobrecargada ? "ia_sobrecargada" : "ia_no_disponible",
+          error: sobrecargada
+            ? "El servicio de IA está saturado en este momento. Inténtalo de nuevo en unos segundos."
+            : "No se pudo analizar el contenido con la IA. Inténtalo de nuevo en unos segundos.",
           // Detalle técnico para el admin (visible en consola): la causa real
           // del fallo de GLM. La función es solo-admin, no expone datos de otros.
           detalle: String(aiError?.message || aiError).slice(0, 500),
@@ -928,44 +1667,63 @@ Deno.serve(async (req) => {
       iaResult.titulo = iaResult.titulo.trim().slice(0, 150);
     }
 
+    // Procesamiento dinámico y corrección de fechas y recurrencia según fecha y hora actual de Chile
+    iaResult = procesarFechaYRecurrencia(iaResult, extractedText, chileTime);
+
     // 4. VALIDACIÓN GEOGRÁFICA (REGIÓN DEL MAULE)
     if (iaResult.es_panorama) {
       const comunaNormalizada = normalizarComuna(iaResult.comuna);
-      // Igualdad exacta, no `includes`: con `includes`, "Talcahuano" (Biobío)
-      // pasaba como "talca" y "Parral, Paraguay" como "parral".
-      const comunaCanonica = COMUNAS_MAULE.get(comunaNormalizada);
+      const ubicacionNormalizada = normalizarComuna(iaResult.ubicacion);
+      const tituloNormalizado = normalizarComuna(iaResult.titulo);
+
+      // 1. Buscar en comunas oficiales
+      let comunaCanonica = COMUNAS_MAULE.get(comunaNormalizada);
+
+      // 2. Si no es comuna oficial, buscar en localidades conocidas del Maule (ej. "Santa Lucía" / "MX Santa Lucía" -> Molina)
+      if (!comunaCanonica) {
+        comunaCanonica = LOCALIDADES_MAULE.get(comunaNormalizada);
+      }
+
+      // 3. Revisar si la ubicación o el título mencionan alguna localidad o comuna del Maule
+      if (!comunaCanonica) {
+        const textoBusqueda = `${ubicacionNormalizada} ${tituloNormalizado} ${comunaNormalizada}`;
+        for (const [loc, com] of LOCALIDADES_MAULE.entries()) {
+          if (textoBusqueda.includes(loc)) {
+            comunaCanonica = com;
+            break;
+          }
+        }
+        if (!comunaCanonica) {
+          for (const [comNorm, comReal] of COMUNAS_MAULE.entries()) {
+            if (textoBusqueda.includes(comNorm)) {
+              comunaCanonica = comReal;
+              break;
+            }
+          }
+        }
+      }
 
       if (comunaCanonica) {
-        // Se devuelve la forma canónica para que el formulario la reconozca.
+        // Se devuelve la forma canónica para que el formulario la reconozca y seleccione
         iaResult.comuna = comunaCanonica;
         iaResult.region = "Maule";
-      } else if (comunaNormalizada) {
-        // La comuna se identificó y NO es del Maule: rechazo real.
-        iaResult.es_panorama = false;
-        iaResult.motivo_rechazo = "Este panorama no pertenece a la Región del Maule.";
-
-        // Se capa a 10 y nunca por debajo de 0: la columna ia_confianza tiene
-        // CHECK (0..100) y un valor negativo alucinado rompería el insert.
-        const confianza = Number(iaResult.confianza);
-        iaResult.confianza = Number.isFinite(confianza)
-          ? Math.max(0, Math.min(confianza, 10))
-          : 0;
       } else {
-        // No se pudo determinar la comuna. Antes esto se trataba como rechazo,
-        // y descartaba panoramas perfectamente válidos solo porque el texto no
-        // nombraba la comuna. Como el administrador revisa antes de publicar,
-        // es mejor entregarlo marcado que perderlo: solo se baja la confianza.
+        // No se pudo confirmar la comuna oficial (puede ser un parque, cerro o local del Maule sin comuna explícita).
+        // NO se rechaza el panorama: se deja para que el administrador elija la comuna del Maule en el desplegable.
+        const textoOriginal = iaResult.comuna;
         iaResult.comuna = "";
         iaResult.informacion_faltante = [
           ...(Array.isArray(iaResult.informacion_faltante)
             ? iaResult.informacion_faltante
             : []),
-          "Comuna (no se menciona en la publicación)",
+          textoOriginal
+            ? `Comuna no confirmada (texto detectado: "${textoOriginal}")`
+            : "Comuna (no se menciona en la publicación)",
         ];
 
         const confianza = Number(iaResult.confianza);
         iaResult.confianza = Number.isFinite(confianza)
-          ? Math.max(0, Math.min(confianza, 50))
+          ? Math.max(0, Math.min(confianza, 75))
           : 0;
       }
     }

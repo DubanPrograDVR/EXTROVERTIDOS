@@ -133,11 +133,31 @@ function getNegocioDestacadoId(transaction) {
  */
 async function activateDestacadaEvent(supabaseAdmin, eventId) {
   if (!eventId) return;
+
+  const { data: event, error: fetchError } = await supabaseAdmin
+    .from("events")
+    .select("estado")
+    .eq("id", eventId)
+    .maybeSingle();
+
+  if (fetchError || !event) {
+    console.error(`[confirm-payment] Error buscando evento ${eventId}:`, fetchError);
+    return;
+  }
+
+  const updates = {
+    tipo_publicacion: "destacada",
+    origen_publicacion: "destacada"
+  };
+
+  if (event.estado === "borrador" || event.estado === "rechazado") {
+    updates.estado = "pendiente";
+  }
+
   const { error } = await supabaseAdmin
     .from("events")
-    .update({ estado: "pendiente" })
-    .eq("id", eventId)
-    .eq("estado", "borrador");
+    .update(updates)
+    .eq("id", eventId);
 
   if (error) {
     console.error(
@@ -174,12 +194,31 @@ async function discardDestacadaEvent(supabaseAdmin, eventId) {
  */
 async function activateNegocioDestacado(supabaseAdmin, businessId) {
   if (!businessId) return;
+
+  const { data: business, error: fetchError } = await supabaseAdmin
+    .from("businesses")
+    .select("estado")
+    .eq("id", businessId)
+    .maybeSingle();
+
+  if (fetchError || !business) {
+    console.error(`[confirm-payment] Error buscando negocio ${businessId}:`, fetchError);
+    return;
+  }
+
+  const updates = {
+    tipo_publicacion: "destacada",
+    origen_publicacion: "destacada"
+  };
+
+  if (business.estado === "borrador" || business.estado === "rechazado") {
+    updates.estado = "pendiente";
+  }
+
   const { error } = await supabaseAdmin
     .from("businesses")
-    .update({ estado: "pendiente" })
-    .eq("id", businessId)
-    .eq("estado", "borrador")
-    .eq("tipo_publicacion", "destacada");
+    .update(updates)
+    .eq("id", businessId);
 
   if (error) {
     console.error(
@@ -199,8 +238,7 @@ async function discardNegocioDestacado(supabaseAdmin, businessId) {
     .from("businesses")
     .delete()
     .eq("id", businessId)
-    .eq("estado", "borrador")
-    .eq("tipo_publicacion", "destacada");
+    .eq("estado", "borrador");
 
   if (error) {
     console.error(

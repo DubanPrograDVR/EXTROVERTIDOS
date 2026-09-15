@@ -538,3 +538,111 @@
 .perfil-business-card__goto svg {
   font-size: 0.75rem;
 }
+
+
+/* ===== DESTACADO PREMIUM ===== */
+.perfil-publication-card--destacada,
+.perfil-business-card--destacada {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid transparent;
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(255, 170, 60, 0.12), transparent 60%),
+    linear-gradient(165deg, #1b1509 0%, #15110a 45%, #100f0d 100%);
+  box-shadow:
+    0 16px 44px rgba(255, 145, 0, 0.16),
+    0 3px 12px rgba(0, 0, 0, 0.55);
+}
+
+.perfil-publication-card--destacada:hover,
+.perfil-business-card--destacada:hover {
+  transform: translateY(-6px);
+  border-color: transparent;
+  box-shadow:
+    0 24px 60px rgba(255, 160, 20, 0.28),
+    0 4px 16px rgba(0, 0, 0, 0.6);
+}
+
+/* Anillo dorado en degradado: el borde premium que justifica el pago. */
+.perfil-publication-card--destacada::after,
+.perfil-business-card--destacada::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 15px;
+  padding: 1.5px;
+  background: linear-gradient(
+    135deg,
+    #ffe9a8 0%,
+    #ff9d2e 28%,
+    #b8721a 52%,
+    #ffcf6b 78%,
+    #fff2c8 100%
+  );
+  /* Deja ver solo el filo: pinta el borde y recorta el centro. */
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Filo superior con brillo dorado. */
+.perfil-publication-card--destacada::before,
+.perfil-business-card--destacada::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    #b8721a,
+    #ffd700 42%,
+    #fff6d0 50%,
+    #ffd700 58%,
+    #b8721a
+  );
+  z-index: 4;
+}
+
+/* Chip de categoría en tono dorado dentro de la tarjeta destacada. */
+.perfil-publication-card--destacada .perfil-publication-card__category,
+.perfil-business-card--destacada .perfil-business-card__category {
+  background: rgba(255, 178, 66, 0.16);
+  color: #ffc16b;
+}
+
+/* Distintivo premium con corona. */
+.perfil-publication-card__destacada-badge,
+.perfil-business-card__destacada-badge {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.32rem 0.72rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ffe79a 0%, #ffb347 48%, #ff9200 100%);
+  color: #3d2600;
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  z-index: 10;
+  border: 1px solid rgba(255, 240, 190, 0.75);
+  box-shadow:
+    0 4px 14px rgba(255, 149, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.perfil-publication-card__destacada-badge svg,
+.perfil-business-card__destacada-badge svg {
+  font-size: 0.7rem;
+  color: #7a4a00;
+}
+

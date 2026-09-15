@@ -1,0 +1,291 @@
+
+.perfil-destacar-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+  animation: fadeIn 0.2s ease;
+}
+
+.perfil-destacar-modal {
+  background: linear-gradient(165deg, #17120a 0%, #131110 55%, #0f0f0f 100%);
+  border: 1px solid rgba(255, 180, 70, 0.25);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.6),
+    0 0 40px rgba(255, 140, 0, 0.12);
+  animation: slideUp 0.3s ease;
+}
+
+/* Filo dorado superior premium. */
+.perfil-destacar-modal::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #b8721a, #ffd700 50%, #b8721a);
+  z-index: 11;
+}
+
+.perfil-destacar-modal__close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  color: #888;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  transition: color 0.2s;
+  z-index: 10;
+}
+
+.perfil-destacar-modal__close:hover {
+  color: #fff;
+}
+
+.perfil-destacar-modal__header {
+  margin: 0;
+  padding: 1.25rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+  border-bottom: 1px solid #222;
+  color: #fff;
+}
+
+.perfil-destacar-modal__content {
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.perfil-destacar-modal__icon {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffe79a 0%, #ffb347 48%, #ff8f1f 100%);
+  color: #3d2600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.9rem;
+  margin: 0 auto 1.25rem;
+  box-shadow:
+    0 10px 26px rgba(255, 150, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.perfil-destacar-modal__title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  color: #fff;
+}
+
+.perfil-destacar-modal__desc {
+  margin: 0 0 1.25rem 0;
+  color: #aaa;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.perfil-destacar-modal__benefits {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  text-align: left;
+}
+
+.perfil-destacar-modal__benefits li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: #e6e0d5;
+  font-size: 0.9rem;
+}
+
+.perfil-destacar-modal__benefits svg {
+  color: #ffb347;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.perfil-destacar-modal__price-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  background: rgba(255, 178, 66, 0.08);
+  border: 1px solid rgba(255, 178, 66, 0.28);
+}
+
+.perfil-destacar-modal__price-label {
+  color: #888;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.perfil-destacar-modal__price-value {
+  color: #ffcf6b;
+  font-size: 2rem;
+  font-weight: 800;
+  text-shadow: 0 2px 10px rgba(255, 150, 0, 0.3);
+}
+
+.perfil-destacar-modal__actions {
+  display: flex;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: #0a0a0a;
+  border-top: 1px solid #222;
+}
+
+.perfil-destacar-modal__btn-cancel {
+  flex: 1;
+  padding: 0.75rem;
+  background: #222;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.perfil-destacar-modal__btn-cancel:hover:not(:disabled) {
+  background: #333;
+}
+
+.perfil-destacar-modal__btn-confirm {
+  flex: 1;
+  padding: 0.8rem;
+  background: linear-gradient(135deg, #ffcf6b 0%, #ff9d2e 45%, #ff7b00 100%);
+  color: #3d2600;
+  border: 1px solid rgba(255, 220, 150, 0.6);
+  border-radius: 10px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 6px 18px rgba(255, 140, 0, 0.4);
+}
+
+.perfil-destacar-modal__btn-confirm:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #ffd98a 0%, #ffab45 45%, #ff8b16 100%);
+  box-shadow: 0 10px 26px rgba(255, 150, 0, 0.55);
+}
+
+.perfil-destacar-modal__btn-confirm:disabled,
+.perfil-destacar-modal__btn-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== BOTÓN "DESTACA TU PANORAMA/NEGOCIO" (llamado a la acción) =====
+   No tenía estilo propio: se veía igual que Ver/Editar. Ahora es un CTA dorado
+   que pide atención con un pulso y un barrido de brillo. */
+.perfil-publication-card__btn.btn-destacar,
+.perfil-business-card__btn.btn-destacar {
+  position: relative;
+  overflow: hidden;
+  flex: 1 1 100%;
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, #ffcf6b 0%, #ff9d2e 45%, #ff7b00 100%);
+  border: 1px solid rgba(255, 220, 150, 0.6);
+  color: #3d2600;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  box-shadow:
+    0 6px 18px rgba(255, 140, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  animation: destacar-pulse 2.6s ease-in-out infinite;
+}
+
+.perfil-publication-card__btn.btn-destacar:hover:not(:disabled),
+.perfil-business-card__btn.btn-destacar:hover:not(:disabled) {
+  color: #3d2600;
+  border-color: rgba(255, 236, 190, 0.9);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(255, 150, 0, 0.5);
+}
+
+.perfil-publication-card__btn.btn-destacar svg,
+.perfil-business-card__btn.btn-destacar svg {
+  color: #5a3600;
+}
+
+/* Barrido de brillo para atraer la mirada. */
+.perfil-publication-card__btn.btn-destacar::before,
+.perfil-business-card__btn.btn-destacar::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(255, 255, 255, 0.55),
+    transparent
+  );
+  transform: skewX(-20deg);
+  animation: destacar-shine 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes destacar-pulse {
+  0%, 100% {
+    box-shadow:
+      0 6px 18px rgba(255, 140, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+  50% {
+    box-shadow:
+      0 8px 26px rgba(255, 170, 40, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+}
+
+@keyframes destacar-shine {
+  0% { left: -60%; }
+  55%, 100% { left: 130%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .perfil-publication-card__btn.btn-destacar,
+  .perfil-business-card__btn.btn-destacar {
+    animation: none;
+  }
+  .perfil-publication-card__btn.btn-destacar::before,
+  .perfil-business-card__btn.btn-destacar::before {
+    display: none;
+  }
+}
+

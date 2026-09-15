@@ -136,7 +136,11 @@ function PendingCard({
         </button>
         {onToggleDestacada && (
           <button
-            className="admin-pending-card__btn admin-pending-card__btn--highlight"
+            className={`admin-pending-card__btn admin-pending-card__btn--highlight${
+              event.tipo_publicacion === "destacada"
+                ? " admin-pending-card__btn--highlight-active"
+                : ""
+            }`}
             onClick={onToggleDestacada}
             disabled={isLoading}
             title={

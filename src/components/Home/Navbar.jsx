@@ -12,6 +12,7 @@ import {
   faExchangeAlt,
   faPlus,
   faCrown,
+  faRobot,
 } from "@fortawesome/free-solid-svg-icons";
 import AuthModal from "../Auth/AuthModal";
 import LoginReminderModal from "../Auth/LoginReminderModal";
@@ -35,6 +36,7 @@ export default function Navbar() {
   const {
     user,
     isAuthenticated,
+    isAdmin,
     isModerator,
     signOut,
     loginReminder,
@@ -100,6 +102,12 @@ export default function Navbar() {
   const goToAdmin = () => {
     closeAllMenus();
     navigate(ADMIN_PATH);
+  };
+
+  const handleImportarIA = () => {
+    closeAllMenus();
+    sessionStorage.setItem("admin_activeTab", "import-ia");
+    navigate("/admin?tab=import-ia", { state: { activeTab: "import-ia" } });
   };
 
   // Activar Plan ya no es un link de nivel superior: vive dentro del menú
@@ -254,6 +262,14 @@ export default function Navbar() {
                     <span>Panel Admin</span>
                   </button>
                 )}
+                {isAdmin && (
+                  <button
+                    onClick={handleImportarIA}
+                    className="navbar-mobile-auth-btn navbar-mobile-auth-btn--ia">
+                    <FontAwesomeIcon icon={faRobot} />
+                    <span>Importar con IA</span>
+                  </button>
+                )}
                 {showActivarPlan && (
                   <button
                     onClick={goToActivarPlan}
@@ -286,8 +302,19 @@ export default function Navbar() {
           </div>
         </nav>
 
-        {/* Botón principal: única acción de navegación de la navbar. */}
+        {/* Botones principales: Crear publicación y para Admin, Importar con IA */}
         <div className="navbar-cta">
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={handleImportarIA}
+              className="navbar-cta-btn navbar-cta-btn--ia"
+              aria-label="Importar panorama con IA"
+              title="Importar panorama con IA">
+              <FontAwesomeIcon icon={faRobot} className="navbar-cta-icon" />
+              <span className="navbar-cta-label">Importar con IA</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={handleCrearPublicacion}
@@ -369,6 +396,17 @@ export default function Navbar() {
                           className="navbar-dropdown-icon"
                         />
                         <span>Panel Admin</span>
+                      </button>
+                    )}
+                    {isAdmin && (
+                      <button
+                        onClick={handleImportarIA}
+                        className="navbar-dropdown-item navbar-dropdown-item--ia">
+                        <FontAwesomeIcon
+                          icon={faRobot}
+                          className="navbar-dropdown-icon"
+                        />
+                        <span>Importar con IA</span>
                       </button>
                     )}
                     {/* Activar Plan: ya no es link de navbar, vive aquí */}

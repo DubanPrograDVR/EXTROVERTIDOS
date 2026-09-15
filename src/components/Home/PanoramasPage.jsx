@@ -517,7 +517,26 @@ export default function PanoramasPage() {
       (e) => (e.tipo_publicacion || "normal") === "normal",
     );
 
-    return [...sortByDate(destacadas), ...sortByDate(normales)];
+    // Intercala 1 destacada + 2 normales para que no se vea un bloque de
+    // solo publicaciones destacadas. Al agotarse una lista, se agrega el
+    // resto de la otra al final.
+    const destacadasOrdenadas = sortByDate(destacadas);
+    const normalesOrdenadas = sortByDate(normales);
+    const intercaladas = [];
+    let di = 0;
+    let ni = 0;
+    while (di < destacadasOrdenadas.length || ni < normalesOrdenadas.length) {
+      if (di < destacadasOrdenadas.length) {
+        intercaladas.push(destacadasOrdenadas[di]);
+        di += 1;
+      }
+      for (let k = 0; k < 2 && ni < normalesOrdenadas.length; k += 1) {
+        intercaladas.push(normalesOrdenadas[ni]);
+        ni += 1;
+      }
+    }
+
+    return intercaladas;
   }, [
     events,
     searchQuery,
@@ -835,17 +854,29 @@ export default function PanoramasPage() {
   // Respeta los filtros activos. En modo tren se repiten automáticamente
   // cuando hay pocos elementos.
   const destacadaEvents = useMemo(() => {
-    let destacadas = filteredEvents.filter((e) => e.tipo_publicacion === "destacada").slice(0, 20);
-    if (destacadas.length < 5) {
-      destacadas.push({
-        id: "banner-destaca-panorama",
-        isBanner: true,
-        titulo: "¡Destaca tu Panorama!",
-        imagen_url: "/img/banner_destaca_panorama.png",
-        tipo_publicacion: "destacada",
-      });
+    const destacadas = filteredEvents
+      .filter((e) => e.tipo_publicacion === "destacada")
+      .slice(0, 20);
+    const bannerDestacaPanorama = {
+      id: "banner-destaca-panorama",
+      isBanner: true,
+      titulo: "¡Destaca tu Panorama!",
+      imagen_url: "/img/banner_destaca_panorama.png",
+      tipo_publicacion: "destacada",
+    };
+
+    if (destacadas.length === 0) {
+      return [bannerDestacaPanorama];
     }
-    return destacadas;
+
+    const destacadasParaTren = [...destacadas];
+    while (destacadasParaTren.length < 4) {
+      destacadasParaTren.push(
+        destacadas[destacadasParaTren.length % destacadas.length],
+      );
+    }
+
+    return [...destacadasParaTren, bannerDestacaPanorama];
   }, [filteredEvents]);
 
   // Resaltar card cuando venimos con ?highlight=<id>

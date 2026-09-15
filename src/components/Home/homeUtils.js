@@ -227,10 +227,37 @@ export const ordenarEventos = (
     (evento) => !destacadasHabilitadas || evento.tipo_publicacion !== "destacada",
   );
 
-  return [
-    ...mezclarConSemilla(destacadas, semillaOrden ^ 0x51f15e),
-    ...mezclarConSemilla(normales, semillaOrden ^ 0xa7c3d9),
-  ];
+  const destacadasMezcladas = mezclarConSemilla(destacadas, semillaOrden ^ 0x51f15e);
+  const normalesMezcladas = mezclarConSemilla(normales, semillaOrden ^ 0xa7c3d9);
+
+  // Intercala las publicaciones para que no se vea un bloque de solo
+  // destacadas: por cada destacada se muestran dos normales
+  // (1 destacada + 2 normales, y así sucesivamente).
+  return intercalarDestacadas(destacadasMezcladas, normalesMezcladas, 2);
+};
+
+/**
+ * Intercala publicaciones destacadas con normales usando el patrón
+ * "1 destacada + N normales". Cuando una de las listas se agota, agrega el
+ * resto de la otra al final para no perder ninguna publicación.
+ */
+const intercalarDestacadas = (destacadas, normales, normalesPorDestacada = 2) => {
+  const resultado = [];
+  let i = 0;
+  let j = 0;
+
+  while (i < destacadas.length || j < normales.length) {
+    if (i < destacadas.length) {
+      resultado.push(destacadas[i]);
+      i += 1;
+    }
+    for (let k = 0; k < normalesPorDestacada && j < normales.length; k += 1) {
+      resultado.push(normales[j]);
+      j += 1;
+    }
+  }
+
+  return resultado;
 };
 
 export const construirCalendarioEventos = (eventos) => {

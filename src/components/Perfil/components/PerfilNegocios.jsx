@@ -36,7 +36,10 @@ import {
 } from "../../../lib/database/businesses";
 import { useToast } from "../../../context/ToastContext";
 import { useRealtimeRefetch } from "../../../hooks/useRealtimeRefetch";
+import { usePlansVisibility } from "../../../hooks/usePlansVisibility";
+import { initiateNegocioDestacadaPayment } from "../../../lib/payment";
 import BusinessModal from "../../Superguia/BusinessModal";
+import DestacarModal from "./DestacarModal";
 import "./styles/section.css";
 import "./styles/publicaciones.css";
 
@@ -44,9 +47,12 @@ export default function PerfilNegocios() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { showToast } = useToast();
+  const { negociosDestacadasEnabled } = usePlansVisibility();
   const [businesses, setBusinesses] = useState([]);
+  const [isPaying, setIsPaying] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [destacarModal, setDestacarModal] = useState({ open: false, item: null });
   const [viewModal, setViewModal] = useState({ open: false, business: null });
   const [editModal, setEditModal] = useState({ open: false, business: null });
   const [deleting, setDeleting] = useState(null);
@@ -142,6 +148,17 @@ export default function PerfilNegocios() {
       }
     } finally {
       setResubmitting(null);
+    }
+  };
+
+  const handleConfirmDestacar = async (neg) => {
+    setIsPaying((prev) => ({ ...prev, [neg.id]: true }));
+    try {
+      await initiateNegocioDestacadaPayment({ businessId: neg.id, businessName: neg.nombre });
+    } catch (error) {
+      console.error("Error al iniciar pago destacado:", error);
+      if (showToast) showToast("Error al procesar el pago", "error");
+      setIsPaying((prev) => ({ ...prev, [neg.id]: false }));
     }
   };
 
@@ -343,8 +360,11 @@ export default function PerfilNegocios() {
               !expired;
 
             return (
-              <article key={business.id} className="perfil-business-card">
+              <article key={business.id} className={`perfil-business-card ${business.tipo_publicacion === "destacada" ? "perfil-business-card--destacada" : ""}`}>
                 <div className="perfil-business-card__image">
+                    {business.tipo_publicacion === "destacada" && (
+                      <span className="perfil-business-card__destacada-badge">Destacado</span>
+                    )}
                   {imageUrl ? (
                     <img
                       src={imageUrl}
@@ -499,6 +519,18 @@ export default function PerfilNegocios() {
                   {/* Acciones estándar: ocultas cuando el negocio está expirado */}
                   {!expired && (
                     <div className="perfil-business-card__actions">
+                      {(business.origen_publicacion === "gratuita" || business.tipo_publicacion === "normal") && negociosDestacadasEnabled && (
+                        <button
+                          className="perfil-business-card__btn btn-destacar"
+                          onClick={() => setDestacarModal({ open: true, item: business })}
+                          disabled={isPaying[business.id]}>
+                          <FontAwesomeIcon
+                            icon={isPaying[business.id] ? faSpinner : faBoltLightning}
+                            spin={isPaying[business.id]}
+                          />
+                          {isPaying[business.id] ? "Procesando..." : "Destaca tu negocio"}
+                        </button>
+                      )}
                       <button
                         className="perfil-business-card__btn"
                         onClick={() => setViewModal({ open: true, business })}>
@@ -571,6 +603,16 @@ export default function PerfilNegocios() {
         business={viewModal.business}
         isOpen={viewModal.open}
         onClose={() => setViewModal({ open: false, business: null })}
+      />
+
+      {/* Modal de destacar */}
+      <DestacarModal
+        isOpen={destacarModal.open}
+        onClose={() => setDestacarModal({ open: false, item: null })}
+        onConfirm={handleConfirmDestacar}
+        type="negocio"
+        item={destacarModal.item}
+        isProcessing={destacarModal.item ? isPaying[destacarModal.item.id] : false}
       />
 
       {/* Modal de edición de negocio */}

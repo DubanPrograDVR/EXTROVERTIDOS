@@ -108,7 +108,11 @@ export default function AdminPublicationsList({
       event.comuna?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus =
-      statusFilter === "all" || event.estado === statusFilter;
+      statusFilter === "all"
+        ? true
+        : statusFilter === "destacadas"
+          ? event.tipo_publicacion === "destacada"
+          : event.estado === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
@@ -255,6 +259,7 @@ export default function AdminPublicationsList({
             <option value="pendiente">Pendientes</option>
             <option value="en_revision">En revisión</option>
             <option value="rechazado">Rechazados</option>
+            <option value="destacadas">Destacadas</option>
           </select>
         </div>
       </div>
@@ -422,7 +427,11 @@ export default function AdminPublicationsList({
                         </button>
                         {onToggleDestacada && (
                           <button
-                            className="admin-pub-btn admin-pub-btn--highlight"
+                            className={`admin-pub-btn admin-pub-btn--highlight${
+                              event.tipo_publicacion === "destacada"
+                                ? " admin-pub-btn--highlight-active"
+                                : ""
+                            }`}
                             onClick={() => onToggleDestacada(event)}
                             disabled={actionLoading === event.id}
                             title={

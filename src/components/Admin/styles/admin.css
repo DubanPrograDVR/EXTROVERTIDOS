@@ -2095,6 +2095,33 @@
   cursor: not-allowed;
 }
 
+/* Botón "Destacar" (corona): el color refleja el estado actual.
+   Gris cuando NO está destacada, dorado cuando SÍ lo está, para que
+   se note el cambio al destacar o quitar el destacado. */
+.admin-pub-btn--highlight,
+.admin-pending-card__btn--highlight,
+.admin-table__action--highlight {
+  color: #94a3b8;
+}
+
+.admin-pub-btn--highlight:hover:not(:disabled),
+.admin-pending-card__btn--highlight:hover:not(:disabled),
+.admin-table__action--highlight:hover:not(:disabled) {
+  color: #cbd5e1;
+}
+
+.admin-pub-btn--highlight.admin-pub-btn--highlight-active,
+.admin-pending-card__btn--highlight.admin-pending-card__btn--highlight-active,
+.admin-table__action--highlight.admin-table__action--highlight-active {
+  color: #f5b301;
+}
+
+.admin-pub-btn--highlight.admin-pub-btn--highlight-active:hover:not(:disabled),
+.admin-pending-card__btn--highlight.admin-pending-card__btn--highlight-active:hover:not(:disabled),
+.admin-table__action--highlight.admin-table__action--highlight-active:hover:not(:disabled) {
+  color: #ffc82e;
+}
+
 /* Empty state */
 .admin-publications__empty {
   padding: 60px 20px;

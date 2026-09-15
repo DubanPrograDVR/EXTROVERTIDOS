@@ -402,7 +402,9 @@ export default function Carousel({
                     }}
                   />
                   <div className="carousel__hover-overlay">
-                    <span className="carousel__ver-mas">Ver más</span>
+                    <span className="carousel__ver-mas">
+                      {item.isBanner ? "¡Destaca aquí!" : "Ver más"}
+                    </span>
                   </div>
                 </div>
               </div>

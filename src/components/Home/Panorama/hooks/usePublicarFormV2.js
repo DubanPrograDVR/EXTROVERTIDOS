@@ -118,8 +118,25 @@ const usePublicarFormV2 = () => {
       base.titulo = iaData.titulo || "";
       base.descripcion = iaData.descripcion || "";
       base.fecha_evento = iaData.fecha || "";
+      base.fecha_fin = iaData.fecha || "";
       base.hora_inicio = iaData.hora_inicio || "";
       base.hora_fin = iaData.hora_fin || "";
+
+      // Recurrencia desde IA
+      if (iaData.es_recurrente) {
+        base.es_recurrente = true;
+        base.dia_recurrencia = iaData.dia_recurrencia || "";
+        const fechas =
+          Array.isArray(iaData.fechas_recurrencia) &&
+          iaData.fechas_recurrencia.length > 0
+            ? iaData.fechas_recurrencia
+            : iaData.fecha
+              ? [iaData.fecha]
+              : [];
+        base.fechas_recurrencia = fechas;
+        base.cantidad_repeticiones = fechas.length || 4;
+      }
+
       base.organizador = iaData.organizador || "";
       // La IA llama "ubicacion" a lo que el formulario llama "direccion".
       // Asignarlo a `ubicacion` creaba una clave fantasma que nadie leía.
@@ -161,6 +178,12 @@ const usePublicarFormV2 = () => {
         base.tipo_entrada = "gratuito";
       } else if (iaData.precio?.trim()) {
         base.tipo_entrada = "info_descripcion";
+      }
+
+      // Etiqueta destacada
+      base.etiqueta_directa = iaData.etiqueta_directa || iaData.categoria || "";
+      if (iaData.hashtags) {
+        base.hashtags = iaData.hashtags;
       }
 
       // Metadatos de procedencia que se persisten en la tabla events.

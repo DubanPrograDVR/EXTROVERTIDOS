@@ -83,6 +83,9 @@ export default function FilterPanel({
   eventsCountBySubcategory = {},
   searchPlaceholder = "Buscar eventos, lugares, actividades...",
   categoryIcon = null,
+  resultsTitle = null,
+  resultsUnit = "evento",
+  pagination = null,
 }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const panelRef = useRef(null);
@@ -506,21 +509,45 @@ export default function FilterPanel({
           </div>
         )}
 
-      {/* Barra inferior con resultados y limpiar */}
+      {/* Barra inferior con resultados, título centrado y limpiar */}
       <div className="filter-panel__footer">
         <span className="filter-panel__results">
           {totalResults}{" "}
-          {totalResults === 1 ? "evento encontrado" : "eventos encontrados"}
+          {totalResults === 1
+            ? `${resultsUnit} encontrado`
+            : `${resultsUnit}s encontrados`}
         </span>
-        {hasActiveFilters && (
-          <button
-            type="button"
-            className="filter-panel__clear-all"
-            onClick={onClearFilters}>
-            <FontAwesomeIcon icon={faTimes} />
-            Ver todos
-          </button>
+
+        {resultsTitle && (
+          <div className="filter-panel__title-container">
+            <h3 className="filter-panel__title">
+              <span className="filter-panel__title-name">
+                {typeof resultsTitle === "object"
+                  ? resultsTitle.nombre
+                  : resultsTitle}
+              </span>
+              {typeof resultsTitle === "object" &&
+                resultsTitle.conteo !== undefined && (
+                  <span className="filter-panel__title-badge">
+                    ({resultsTitle.conteo})
+                  </span>
+                )}
+            </h3>
+          </div>
         )}
+
+        <div className="filter-panel__footer-actions">
+          {pagination}
+          {hasActiveFilters && (
+            <button
+              type="button"
+              className="filter-panel__clear-all"
+              onClick={onClearFilters}>
+              <FontAwesomeIcon icon={faTimes} />
+              Ver todos
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

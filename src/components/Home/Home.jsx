@@ -9,7 +9,6 @@ import { usePlansVisibility } from "../../hooks/usePlansVisibility";
 import useHomeContent from "../../hooks/useHomeContent";
 import { LOCATIONS } from "../Superguia/data";
 import Footer from "./Footer";
-import HomeAccesos from "./HomeAccesos";
 import HomeHero from "./HomeHero";
 import HomePanoramas from "./HomePanoramas";
 import HomeSuperguia from "./HomeSuperguia";
@@ -190,29 +189,52 @@ export default function Home() {
 
   return (
     <main className="home-consolidado">
-      {seccionActiva !== "superbuscador" ? (
-        <img 
-          src="/img/banner_panoramas.png" 
-          alt="Banner Panoramas" 
+      <div className="home-consolidado__banner">
+        <img
+          src={
+            seccionActiva !== "superbuscador"
+              ? "/img/banner-panoramas-home-v2.png"
+              : "/img/banner-super-buscador-home-v2.png"
+          }
+          alt={
+            seccionActiva !== "superbuscador"
+              ? "Banner Panoramas"
+              : "Banner Super Buscador"
+          }
           className="home-consolidado__banner-hero"
         />
-      ) : (
-        <img 
-          src="/img/Banner_Super_Buscador.png" 
-          alt="Banner Super Buscador" 
-          className="home-consolidado__banner-hero"
-        />
-      )}
+
+        <div
+          className="home-consolidado__banner-toggle"
+          role="tablist"
+          aria-label="Cambiar entre Panoramas y Superbuscador">
+          <button
+            type="button"
+            role="tab"
+            className={`home-consolidado__banner-pill ${
+              seccionActiva !== "superbuscador" ? "is-active" : ""
+            }`}
+            aria-selected={seccionActiva !== "superbuscador"}
+            aria-controls="panoramas"
+            onClick={seleccionarPanoramas}>
+            Panoramas
+          </button>
+          <button
+            type="button"
+            role="tab"
+            className={`home-consolidado__banner-pill ${
+              seccionActiva === "superbuscador" ? "is-active" : ""
+            }`}
+            aria-selected={seccionActiva === "superbuscador"}
+            aria-controls="superguia"
+            onClick={seleccionarSuperbuscador}>
+            Superbuscador
+          </button>
+        </div>
+      </div>
 
       {seccionActiva !== "superbuscador" && (
         <HomePanoramas
-          selector={
-            <HomeAccesos
-              seccionActiva={seccionActiva}
-              onPanoramas={seleccionarPanoramas}
-              onSuperbuscador={seleccionarSuperbuscador}
-            />
-          }
           eventos={eventosParaVista}
           categorias={categoriasPanoramas}
           parametros={parametros}
@@ -230,13 +252,6 @@ export default function Home() {
 
       {seccionActiva !== "panoramas" && (
         <HomeSuperguia
-          selector={
-            <HomeAccesos
-              seccionActiva={seccionActiva}
-              onPanoramas={seleccionarPanoramas}
-              onSuperbuscador={seleccionarSuperbuscador}
-            />
-          }
           negocios={negociosParaVista}
           categorias={categoriasNegocios}
           parametros={parametros}

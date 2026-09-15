@@ -73,30 +73,40 @@ export default function HomePanoramas({
 
   const carruselLleno = useMemo(() => {
     if (!carouselItems) return [];
-    
-    // Filtrar destacados (o todos si los planes destacados están desactivados) y limitar a 20
-    let destacados = carouselItems
-      .filter((item) => destacadasEnabled ? item.tipo_publicacion === "destacada" : true)
+
+    const destacados = carouselItems
+      .filter((item) =>
+        destacadasEnabled ? item.tipo_publicacion === "destacada" : true,
+      )
       .slice(0, 20);
 
-    // Si hay menos de 5 y los planes están habilitados, agregar un banner dummy
-    if (destacados.length < 5 && destacadasEnabled) {
-      destacados.push({
-        id: "banner-destaca-panorama",
-        isBanner: true,
-        titulo: "¡Destaca tu Panorama!",
-        nombre: "¡Destaca tu Panorama!",
-        imagen_url: "/img/banner_destaca_panorama.png",
-        tipo_publicacion: "destacada",
-      });
+    const crearBanner = (index) => ({
+      id: `banner-destaca-panorama-${index}`,
+      isBanner: true,
+      titulo: "¡Destaca tu Panorama!",
+      nombre: "¡Destaca tu Panorama!",
+      imagen_url: "/img/banner_destaca_panorama.png",
+      tipo_publicacion: "destacada",
+    });
+
+    if (destacados.length === 0) {
+      return [crearBanner(0)];
     }
 
-    // Llenar para el efecto tren si aún hay menos de 5
-    let items = [...destacados];
-    while (items.length > 0 && items.length < 5) {
-      items = [...items, ...destacados];
+    // Insertar el banner de destaca tu panorama cada 5 panoramas
+    const numGrupos = Math.max(2, Math.ceil(destacados.length / 5));
+    const resultado = [];
+    let itemIdx = 0;
+
+    for (let g = 0; g < numGrupos; g++) {
+      for (let i = 0; i < 5; i++) {
+        resultado.push(destacados[itemIdx % destacados.length]);
+        itemIdx++;
+      }
+      resultado.push(crearBanner(g));
     }
-    return items;
+
+    return resultado;
   }, [carouselItems, destacadasEnabled]);
 
 
@@ -115,6 +125,13 @@ export default function HomePanoramas({
     () => encontrarCiudad(filtros.ciudad),
     [filtros.ciudad],
   );
+  const categoriaSeleccionada = useMemo(
+    () =>
+      categorias.find(
+        (categoria) => String(categoria.id) === String(filtros.categoria),
+      ) || null,
+    [categorias, filtros.categoria],
+  );
 
   const eventosFiltrados = useMemo(
     () =>
@@ -125,6 +142,42 @@ export default function HomePanoramas({
       ),
     [destacadasEnabled, eventos, filtros, semillaOrden],
   );
+  const totalCategoriaSeleccionada = useMemo(() => {
+    return filtrarEventos(eventos, filtros, LOCATIONS, {
+      excluir: ["categoria"],
+    }).filter(
+      (evento) =>
+        evento.tipo_publicacion !== "destacada" &&
+        String(evento.category_id) === String(filtros.categoria),
+    ).length;
+  }, [eventos, filtros]);
+
+  const totalEventosNormales = useMemo(() => {
+    if (filtros.categoria) {
+      return totalCategoriaSeleccionada;
+    }
+    return eventosFiltrados.filter(
+      (evento) => evento.tipo_publicacion !== "destacada",
+    ).length;
+  }, [eventosFiltrados, filtros.categoria, totalCategoriaSeleccionada]);
+
+  const resultsTitle = useMemo(() => {
+    if (filtros.categoria) {
+      return {
+        nombre: categoriaSeleccionada?.nombre || "Panoramas",
+        conteo: totalCategoriaSeleccionada,
+      };
+    }
+    return {
+      nombre: "Panoramas",
+      conteo: totalEventosNormales,
+    };
+  }, [
+    categoriaSeleccionada?.nombre,
+    filtros.categoria,
+    totalCategoriaSeleccionada,
+    totalEventosNormales,
+  ]);
 
   const conteos = useMemo(() => {
     const baseCiudades = filtrarEventos(eventos, filtros, LOCATIONS, {
@@ -141,6 +194,7 @@ export default function HomePanoramas({
     Object.entries(LOCATIONS).forEach(([clave, ciudad]) => {
       eventosCountByCity[clave] = baseCiudades.filter(
         (evento) =>
+          evento.tipo_publicacion !== "destacada" &&
           normalizarUbicacion(evento.provincia) ===
           normalizarUbicacion(ciudad.nombre),
       ).length;
@@ -151,6 +205,7 @@ export default function HomePanoramas({
       ciudadSeleccionada.comunas.forEach((comuna) => {
         eventosCountByComuna[comuna] = baseComunas.filter(
           (evento) =>
+            evento.tipo_publicacion !== "destacada" &&
             normalizarUbicacion(evento.comuna) === normalizarUbicacion(comuna),
         ).length;
       });
@@ -159,7 +214,9 @@ export default function HomePanoramas({
     const eventosCountByCategory = {};
     categorias.forEach((categoria) => {
       eventosCountByCategory[categoria.id] = baseCategorias.filter(
-        (evento) => String(evento.category_id) === String(categoria.id),
+        (evento) =>
+          evento.tipo_publicacion !== "destacada" &&
+          String(evento.category_id) === String(categoria.id),
       ).length;
     });
 
@@ -275,7 +332,7 @@ export default function HomePanoramas({
       {selector}
 
       <div className="home-consolidado__section-heading">
-        <div>
+        <div className="home-consolidado__section-heading-text">
           <p className="home-consolidado__eyebrow">Cartelera local</p>
           <h2 id="home-panoramas-title">Panoramas</h2>
           <p>Filtra por ciudad, comuna, fecha o categoría y encuentra tu próximo plan.</p>
@@ -319,8 +376,18 @@ export default function HomePanoramas({
           onPriceChange={cambiarPrecio}
           onSearchChange={cambiarBusqueda}
           onClearFilters={limpiarFiltros}
-          totalResults={eventosFiltrados.length}
-          showPriceFilter={true}
+          totalResults={totalEventosNormales}
+          resultsTitle={resultsTitle}
+          pagination={
+            totalPaginas > 1 ? (
+              <Pagination
+                currentPage={paginaActual}
+                totalPages={totalPaginas}
+                onPageChange={cambiarPagina}
+              />
+            ) : null
+          }
+          showPriceFilter={false}
           showSubcategories={false}
           showComunaFilter={true}
           eventsCountByCity={conteos.eventosCountByCity}
@@ -349,18 +416,6 @@ export default function HomePanoramas({
           />
         ) : (
           <>
-            <div className="home-consolidado__results-heading">
-              <h3>
-                {eventosFiltrados.length} {eventosFiltrados.length === 1 ? "panorama" : "panoramas"}
-              </h3>
-              {totalPaginas > 1 && (
-                <Pagination
-                  currentPage={paginaActual}
-                  totalPages={totalPaginas}
-                  onPageChange={cambiarPagina}
-                />
-              )}
-            </div>
             <PublicationGrid
               publications={eventosPaginados}
               onPublicationClick={onEventoClick}

@@ -221,6 +221,78 @@ const normalizarTexto = (valor) =>
     .replace(/\s+/g, " ")
     .trim();
 
+// Localidades, sectores y atractivos conocidos del Maule y su Comuna oficial
+export const LOCALIDADES_MAULE = {
+  "santa lucia": "Molina",
+  "mx santa lucia": "Molina",
+  "santalucia": "Molina",
+  "radal": "Molina",
+  "siete tazas": "Molina",
+  "radal siete tazas": "Molina",
+  "parque ingles": "Molina",
+  "itahue": "Molina",
+  "casablanca": "Molina",
+  "buena fe": "Molina",
+  "pichingal": "Molina",
+  "los niches": "Curicó",
+  "sarmiento": "Curicó",
+  "tutuquen": "Curicó",
+  "potrero grande": "Curicó",
+  "la huerta": "Hualañé",
+  "la huerta de mataquito": "Hualañé",
+  "iloca": "Licantén",
+  "duao": "Licantén",
+  "lipimavida": "Licantén",
+  "los quenes": "Romeral",
+  "los queñes": "Romeral",
+  "llico": "Vichuquén",
+  "boyeruca": "Vichuquén",
+  "lago vichuquen": "Vichuquén",
+  "peteroa": "Sagrada Familia",
+  "villa prat": "Sagrada Familia",
+  "comalle": "Teno",
+  "la montana": "Teno",
+  "majadilla": "Rauco",
+  "las rastras": "Talca",
+  "huilquilemu": "Talca",
+  "vilches": "San Clemente",
+  "altos de vilches": "San Clemente",
+  "armerillo": "San Clemente",
+  "paso nevado": "San Clemente",
+  "laguna del maule": "San Clemente",
+  "putu": "Constitución",
+  "dunas de putu": "Constitución",
+  "pellines": "Constitución",
+  "cumpeo": "Río Claro",
+  "gualleco": "Curepto",
+  "colin": "Maule",
+  "chacarillas": "Maule",
+  "botalcura": "Pencahue",
+  "achibueno": "Linares",
+  "cajon del achibueno": "Linares",
+  "ancoa": "Linares",
+  "panimavida": "Colbún",
+  "quinamavida": "Colbún",
+  "termas de panimavida": "Colbún",
+  "termas de quinamavida": "Colbún",
+  "lago colbun": "Colbún",
+  "rari": "Colbún",
+  "catillo": "Parral",
+  "termas de catillo": "Parral",
+  "copihue": "Retiro",
+  "melozal": "San Javier",
+  "huerta de maule": "San Javier",
+  "nirivilo": "San Javier",
+  "putagan": "Villa Alegre",
+  "santa ana de queri": "Yerbas Buenas",
+  "sauzal": "Cauquenes",
+  "pilen": "Cauquenes",
+  "pahuil": "Chanco",
+  "curanipe": "Pelluhue",
+  "tregualemu": "Pelluhue",
+  "mariscadero": "Pelluhue",
+};
+
 /**
  * Resuelve la provincia a partir de una comuna escrita en texto libre.
  *
@@ -235,16 +307,25 @@ export const resolverUbicacionPorComuna = (comunaLibre) => {
   const objetivo = normalizarTexto(comunaLibre);
   if (!objetivo) return null;
 
-  // Coincidencia exacta primero; solo si falla se acepta la comuna como parte
-  // de un texto mayor ("Plaza de Villa Alegre"), y de más larga a más corta
-  // para que "Villa Alegre" gane sobre "Maule".
   const entradas = Object.entries(COMUNAS_POR_PROVINCIA);
 
+  // 1. Coincidencia exacta de Comuna
   for (const [provincia, comunas] of entradas) {
     const exacta = comunas.find((c) => normalizarTexto(c) === objetivo);
     if (exacta) return { provincia, comuna: exacta };
   }
 
+  // 2. Coincidencia con Localidades/Sectores conocidos del Maule
+  for (const [loc, comOficial] of Object.entries(LOCALIDADES_MAULE)) {
+    if (objetivo.includes(normalizarTexto(loc))) {
+      for (const [provincia, comunas] of entradas) {
+        const encontrada = comunas.find((c) => c === comOficial);
+        if (encontrada) return { provincia, comuna: encontrada };
+      }
+    }
+  }
+
+  // 3. Coincidencia parcial dentro de un texto mayor ("Plaza de Villa Alegre")
   const candidatas = entradas
     .flatMap(([provincia, comunas]) =>
       comunas.map((comuna) => ({ provincia, comuna })),
@@ -253,7 +334,6 @@ export const resolverUbicacionPorComuna = (comunaLibre) => {
 
   const parcial = candidatas.find(({ comuna }) => {
     const n = normalizarTexto(comuna);
-    // \b evita que "Maule" haga match dentro de "Talcahuano" o "Region del Maule"
     return new RegExp(`(^|[^a-z])${n}([^a-z]|$)`).test(objetivo);
   });
 

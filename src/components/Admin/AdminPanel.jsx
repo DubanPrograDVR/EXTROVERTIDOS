@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChartLine,
@@ -56,11 +56,21 @@ import "./styles/admin.css";
 export default function AdminPanel() {
   const { user, isAdmin, isModerator, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const tabFromQuery = searchParams.get("tab") || location.state?.activeTab;
 
   // Estado local para UI
   const [activeTab, setActiveTab] = useState(
-    () => sessionStorage.getItem("admin_activeTab") || "dashboard",
+    () => tabFromQuery || sessionStorage.getItem("admin_activeTab") || "dashboard",
   );
+
+  useEffect(() => {
+    if (tabFromQuery && tabFromQuery !== activeTab) {
+      setActiveTab(tabFromQuery);
+      sessionStorage.setItem("admin_activeTab", tabFromQuery);
+    }
+  }, [tabFromQuery]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [rejectModal, setRejectModal] = useState({
     open: false,

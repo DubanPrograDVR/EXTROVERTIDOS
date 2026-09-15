@@ -193,6 +193,12 @@
   color: #7ee2a0;
 }
 
+.admin-import-ia__alert--recurrence {
+  background: rgba(0, 168, 255, 0.1);
+  border-left: 3px solid #00a8ff;
+  color: #70cfff;
+}
+
 .admin-import-ia__alert-title {
   display: block;
   font-weight: 700;

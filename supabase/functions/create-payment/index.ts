@@ -307,19 +307,7 @@ async function handleDestacadaPayment({
     );
   }
 
-  if (event.tipo_publicacion !== "destacada") {
-    return jsonResponse(
-      { error: "Esta publicación no es de tipo destacada" },
-      400,
-    );
-  }
 
-  if (event.estado !== "borrador") {
-    return jsonResponse(
-      { error: "Esta publicación destacada ya fue procesada" },
-      409,
-    );
-  }
 
   const buyOrder = generateBuyOrder(user.id);
   const sessionId = generateSessionId(user.id);
@@ -547,19 +535,7 @@ async function handleNegocioDestacadoPayment({
     );
   }
 
-  if (business.tipo_publicacion !== "destacada") {
-    return jsonResponse(
-      { error: "Este negocio no es de tipo destacado" },
-      400,
-    );
-  }
 
-  if (business.estado !== "borrador") {
-    return jsonResponse(
-      { error: "Este negocio destacado ya fue procesado" },
-      409,
-    );
-  }
 
   const buyOrder = generateBuyOrder(user.id);
   const sessionId = generateSessionId(user.id);

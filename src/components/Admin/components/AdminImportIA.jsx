@@ -22,7 +22,10 @@ import {
   createEvent,
   uploadEventImage,
 } from "../../../lib/database";
-import { resolverUbicacionPorComuna } from "../../Home/Panorama/constants";
+import {
+  resolverUbicacionPorComuna,
+  COMUNAS_POR_PROVINCIA,
+} from "../../Home/Panorama/constants";
 import {
   normalizeSocialLinks,
   normalizeOptionalChileanPhone,
@@ -48,13 +51,10 @@ import "./AdminImportIA.css";
  * La IA nunca publica sola: siempre pasa por la revisión del admin.
  */
 
-// El servidor ahora reintenta hasta 3 veces ante un 503/429 de Gemini
-// (sobrecarga pasajera, no un fallo real del contenido): en el peor caso son
-// tres intentos de hasta 40s más las pausas de retroceso, ~125s. El límite
-// anterior de 45s cortaba la conexión antes de que el servidor pudiera
-// terminar esos reintentos, y el admin veía "tardó demasiado" incluso cuando
-// el siguiente intento iba a funcionar. 150s deja al límite propio de
-// Supabase (150s en el plan gratuito) ser el que corte, no este cliente.
+// El servidor se autolimita a ~135s (bajo el muro de 150s de Supabase) y
+// siempre responde JSON con código, reintentando internamente los 429/503 del
+// proveedor de IA. Este límite de 150s solo actúa como red de seguridad por si
+// la red del cliente se cuelga; en la práctica corta antes el servidor.
 /** Tiempo máximo de espera del análisis antes de abortar (ms). */
 const ANALYSIS_TIMEOUT_MS = 150000;
 
@@ -70,12 +70,17 @@ const ANALYSIS_STEPS = [
 const EDITABLE_FIELDS = [
   { key: "titulo", label: "Título", full: true },
   { key: "descripcion", label: "Descripción", full: true, textarea: true },
+  {
+    key: "etiqueta_directa",
+    label: "Etiqueta destacada",
+    placeholder: "Ej: Concierto, Feria, Taller, Festival, Teatro...",
+    full: true,
+  },
   { key: "fecha", label: "Fecha", type: "date" },
   { key: "hora_inicio", label: "Hora de inicio", type: "time" },
   { key: "hora_fin", label: "Hora de término", type: "time" },
   { key: "ubicacion", label: "Lugar", full: true },
   { key: "comuna", label: "Comuna" },
-  { key: "precio", label: "Precio" },
   { key: "organizador", label: "Organizador" },
   { key: "instagram", label: "Instagram" },
   { key: "telefono", label: "Teléfono", full: true },
@@ -88,11 +93,12 @@ const EDITABLE_FIELDS = [
  * reintentar con el mismo dato daría exactamente el mismo resultado.
  */
 // Deliberadamente NO incluye "cuota_agotada" ni "ia_cuota_agotada": ambas son
-// cupos diarios (el nuestro y el de Gemini respectivamente), y reintentar
-// segundos después no los restablece. Ofrecer "Reintentar" ahí sería engañoso.
+// cupos diarios (el nuestro y el del proveedor de IA), y reintentar segundos
+// después no los restablece. Ofrecer "Reintentar" ahí sería engañoso.
 const CODIGOS_REINTENTABLES = new Set([
   "instagram_no_disponible",
   "ia_no_disponible",
+  "ia_sobrecargada",
 ]);
 
 /** Traduce un puntaje 0-100 a nivel semántico. */
@@ -101,6 +107,21 @@ const getConfidenceLevel = (score) => {
   if (value >= 80) return { key: "high", label: "Alta confianza", value };
   if (value >= 60) return { key: "medium", label: "Requiere revisión", value };
   return { key: "low", label: "Baja confianza", value };
+};
+
+/**
+ * Calcula lista de repeticiones semanales a partir de una fecha YYYY-MM-DD.
+ */
+const calcularFechasRecurrencia = (fechaInicialStr, repeticiones = 4) => {
+  if (!fechaInicialStr || !/^\d{4}-\d{2}-\d{2}$/.test(fechaInicialStr)) return [];
+  const [y, m, d] = fechaInicialStr.split("-").map(Number);
+  const baseUtc = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+  const fechas = [];
+  for (let i = 0; i < repeticiones; i++) {
+    const nextDate = new Date(baseUtc.getTime() + i * 7 * 86400000);
+    fechas.push(nextDate.toISOString().slice(0, 10));
+  }
+  return fechas;
 };
 
 /**
@@ -152,6 +173,17 @@ const normalizarTexto = (valor) =>
     .replace(/[\u0300-\u036f]/g, "")
     .trim();
 
+const ALIASES_CATEGORIAS = [
+  { match: ["yoga", "deport", "futbol", "basket", "carrer", "marat", "ciclet", "fitness", "entrenam"], target: "deportes" },
+  { match: ["taller", "curso", "clase", "formativ", "educa", "charla", "seminario"], target: "educacion" },
+  { match: ["musica", "conciert", "tocata", "recital", "banda", "dj", "cantant", "show musical"], target: "musica" },
+  { match: ["teatro", "obra", "danza", "comedia", "stand up", "standup", "titeres"], target: "teatro" },
+  { match: ["gastro", "comida", "vino", "cerveza", "degusta", "restauran", "cocina", "feria gastronomica"], target: "gastronomia" },
+  { match: ["arte", "exposic", "pintura", "escultur", "museo", "fotograf", "artesania"], target: "arte" },
+  { match: ["familia", "infantil", "nino", "familiar", "marionetas"], target: "familia" },
+  { match: ["fiesta", "carrete", "ramada", "fonda", "aniversario", "carnaval", "disco"], target: "fiestas" },
+];
+
 /**
  * Empareja la categoría sugerida por la IA (texto libre) con una categoría real.
  * Se necesita el id numérico para el insert; el nombre suelto no basta.
@@ -167,7 +199,17 @@ const matchCategoriaId = (sugerida, categorias) => {
     const n = normalizarTexto(c.nombre);
     return n.includes(objetivo) || objetivo.includes(n);
   });
-  return parcial ? String(parcial.id) : "";
+  if (parcial) return String(parcial.id);
+
+  // Mapeo por sinónimos / palabras clave
+  for (const alias of ALIASES_CATEGORIAS) {
+    if (alias.match.some((keyword) => objetivo.includes(keyword))) {
+      const encontrada = categorias.find((c) => normalizarTexto(c.nombre) === alias.target);
+      if (encontrada) return String(encontrada.id);
+    }
+  }
+
+  return "";
 };
 
 /**
@@ -221,6 +263,7 @@ export default function AdminImportIA({ onGoToPublications } = {}) {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
+  const [retryNotice, setRetryNotice] = useState(null);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
   const [draft, setDraft] = useState(null);
@@ -273,6 +316,7 @@ export default function AdminImportIA({ onGoToPublications } = {}) {
     setError(null);
     setResult(null);
     setDraft(null);
+    setRetryNotice(null);
 
     // El buscador pasa la URL directamente: si dependiera del estado `url`,
     // este callback leería el valor anterior en el mismo ciclo de render.
@@ -295,10 +339,10 @@ export default function AdminImportIA({ onGoToPublications } = {}) {
       const token = sessionData?.session?.access_token;
       if (!token) throw new Error("No hay sesión activa. Vuelve a iniciar sesión.");
 
-      // 1 intento normal + 1 auto-reintento silencioso: cuando Instagram
-      // bloquea por límite de peticiones (fallo pasajero, no del enlace), un
-      // segundo intento a los pocos segundos suele pasar sin molestar al admin.
-      const MAX_INTENTOS = 2;
+      // 1 intento normal + hasta 2 auto-reintentos silenciosos: tanto un
+      // bloqueo pasajero de Instagram como una IA saturada (429) son fallos que
+      // suelen resolverse solos en segundos, sin molestar al admin.
+      const MAX_INTENTOS = 3;
       let data;
 
       for (let intento = 1; intento <= MAX_INTENTOS; intento++) {
@@ -310,7 +354,10 @@ export default function AdminImportIA({ onGoToPublications } = {}) {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({ url: normalizada.url }),
+            body: JSON.stringify({
+              url: normalizada.url,
+              clientTime: new Date().toISOString(),
+            }),
             signal: controller.signal,
           },
         );
@@ -334,22 +381,48 @@ export default function AdminImportIA({ onGoToPublications } = {}) {
           data?.error || data?.message || "No se pudo analizar la publicación.",
         );
         // El servidor distingue entre "el enlace está mal" (400, no sirve
-        // reintentar) y "Instagram o la IA fallaron" (502/429, sí sirve).
+        // reintentar) y fallos pasajeros (Instagram o IA saturada, sí sirve).
         fallo.codigo = data?.codigo || "";
         fallo.reintentable = CODIGOS_REINTENTABLES.has(fallo.codigo);
 
-        // Bloqueo pasajero de Instagram: se reintenta una única vez de forma
-        // transparente antes de mostrar el error.
-        if (fallo.codigo === "instagram_no_disponible" && intento < MAX_INTENTOS) {
-          await new Promise((r) => setTimeout(r, 1500));
+        // Cualquier fallo pasajero se reintenta de forma transparente. Antes
+        // solo se auto-reintentaba Instagram y una IA saturada (código
+        // ia_sobrecargada / ia_no_disponible) salía como error a la primera,
+        // aunque un reintento habría funcionado.
+        if (fallo.reintentable && intento < MAX_INTENTOS) {
+          // La IA saturada necesita más aire que un bloqueo de Instagram, y el
+          // jitter evita que varios reintentos caigan en cadencia fija.
+          const base = fallo.codigo === "ia_sobrecargada" ? 3000 : 1500;
+          const espera = base * 2 ** (intento - 1) + Math.random() * 700;
+          setRetryNotice(
+            fallo.codigo === "ia_sobrecargada"
+              ? "La IA está saturada; reintentando automáticamente…"
+              : "Instagram tardó en responder; reintentando automáticamente…",
+          );
+          await new Promise((r) => setTimeout(r, espera));
           continue;
         }
         throw fallo;
       }
 
       if (!isMountedRef.current) return;
+      setRetryNotice(null);
       setResult(data.data);
-      setDraft({ ...data.data });
+      const ubicacionResuelta = resolverUbicacionPorComuna(
+        data.data?.comuna || data.data?.ubicacion || "",
+      );
+      const comunaNormalizada = ubicacionResuelta
+        ? ubicacionResuelta.comuna
+        : data.data?.comuna || "";
+      const etiquetaSugerida =
+        data.data?.etiqueta_directa ||
+        data.data?.categoria ||
+        "";
+      setDraft({
+        ...data.data,
+        comuna: comunaNormalizada,
+        etiqueta_directa: data.data?.etiqueta_directa || etiquetaSugerida,
+      });
       setPublished(false);
       setPublishError(null);
       setCategoryId(matchCategoriaId(data.data?.categoria, categories));
@@ -358,7 +431,7 @@ export default function AdminImportIA({ onGoToPublications } = {}) {
       if (err.name === "AbortError") {
         setError({
           mensaje:
-            "El análisis tardó demasiado. Instagram puede estar lento en este momento.",
+            "El análisis tardó demasiado. Instagram o la IA pueden estar saturados ahora; inténtalo de nuevo.",
           reintentable: true,
         });
       } else {
@@ -367,12 +440,22 @@ export default function AdminImportIA({ onGoToPublications } = {}) {
     } finally {
       clearTimeout(timeoutId);
       abortRef.current = null;
-      if (isMountedRef.current) setLoading(false);
+      if (isMountedRef.current) {
+        setRetryNotice(null);
+        setLoading(false);
+      }
     }
   }, [url, categories]);
 
   const handleFieldChange = useCallback((key, value) => {
-    setDraft((prev) => (prev ? { ...prev, [key]: value } : prev));
+    setDraft((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, [key]: value };
+      if (key === "fecha" && prev.es_recurrente && value) {
+        updated.fechas_recurrencia = calcularFechasRecurrencia(value, 4);
+      }
+      return updated;
+    });
   }, []);
 
   const handleReset = useCallback(() => {
@@ -380,6 +463,7 @@ export default function AdminImportIA({ onGoToPublications } = {}) {
     setError(null);
     setResult(null);
     setDraft(null);
+    setRetryNotice(null);
     setCategoryId("");
     setPublishError(null);
     setPublished(false);
@@ -466,6 +550,16 @@ export default function AdminImportIA({ onGoToPublications } = {}) {
       return;
     }
 
+    const hoyStr = new Date().toLocaleDateString("sv-SE", {
+      timeZone: "America/Santiago",
+    });
+    if (draft.fecha < hoyStr) {
+      setPublishError(
+        `La fecha (${draft.fecha}) está en el pasado. Los eventos deben tener una fecha actual o futura para ser visibles en el sitio. Corrígela arriba antes de publicar.`,
+      );
+      return;
+    }
+
     const ubicacion = resolverUbicacionPorComuna(draft.comuna);
     if (!ubicacion) {
       setPublishError(
@@ -525,9 +619,26 @@ export default function AdminImportIA({ onGoToPublications } = {}) {
         provincia: ubicacion.provincia,
         comuna: ubicacion.comuna,
         direccion: draft.ubicacion?.trim() || null,
-        // Deriva el tipo de entrada del precio en vez de fijarlo siempre en
-        // "sin_entrada", que descartaba el precio que la IA sí había leído.
-        ...derivarEntrada(draft),
+        etiqueta_directa: draft.etiqueta_directa?.trim() || null,
+        tipo_entrada: "sin_entrada",
+        precio: null,
+        // Recurrencia
+        es_recurrente: Boolean(draft.es_recurrente),
+        dia_recurrencia: draft.es_recurrente
+          ? draft.dia_recurrencia || null
+          : null,
+        cantidad_repeticiones: draft.es_recurrente
+          ? Array.isArray(draft.fechas_recurrencia) &&
+            draft.fechas_recurrencia.length > 0
+            ? draft.fechas_recurrencia.length
+            : 4
+          : 1,
+        fechas_recurrencia: draft.es_recurrente
+          ? Array.isArray(draft.fechas_recurrencia) &&
+            draft.fechas_recurrencia.length > 0
+            ? draft.fechas_recurrencia
+            : [draft.fecha]
+          : [],
         // Mismos normalizadores que el flujo del wizard: sin ellos el teléfono
         // y el Instagram se guardaban tal como los escupió el modelo.
         redes_sociales: normalizeSocialLinks({
@@ -549,17 +660,21 @@ export default function AdminImportIA({ onGoToPublications } = {}) {
 
       // Sin esta opción no se crea ninguna notificación al publicar directo,
       // porque el estado ya es "publicado" y no hay nada pendiente que avisar.
-      await createEvent(eventData, { notifyPublishedApproval: true });
+      const createdEvent = await createEvent(eventData, {
+        notifyPublishedApproval: true,
+      });
 
-      if (!isMountedRef.current) return;
-      setPublished(true);
+      // Reutiliza useHighlightCard del Home: localiza la card incluso si queda
+      // en otra página, restablece los filtros necesarios y muestra el rebote
+      // visual de "estoy aquí".
+      navigate(`/?p_highlight=${encodeURIComponent(createdEvent.id)}`);
     } catch (err) {
       if (!isMountedRef.current) return;
       setPublishError(err.message || "No se pudo publicar el panorama.");
     } finally {
       if (isMountedRef.current) setPublishing(false);
     }
-  }, [draft, categoryId, publishing]);
+  }, [draft, categoryId, publishing, navigate]);
 
   const handleKeyDown = useCallback(
     (e) => {
@@ -712,6 +827,21 @@ export default function AdminImportIA({ onGoToPublications } = {}) {
             })}
           </ul>
         )}
+
+        {loading && retryNotice && (
+          <p
+            className="admin-import-ia__hint"
+            aria-live="polite"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              marginTop: 12,
+            }}>
+            <FontAwesomeIcon icon={faSpinner} spin />
+            {retryNotice}
+          </p>
+        )}
       </div>
 
       {/* ===== Resultado ===== */}
@@ -849,6 +979,73 @@ export default function AdminImportIA({ onGoToPublications } = {}) {
                 </div>
               )}
 
+              {draft.es_recurrente && (
+                <div className="admin-import-ia__alert admin-import-ia__alert--recurrence">
+                  <FontAwesomeIcon
+                    icon={faRepeat}
+                    className="admin-import-ia__alert-icon"
+                  />
+                  <div>
+                    <strong className="admin-import-ia__alert-title">
+                      Panorama recurrente detectado
+                      {draft.patron_recurrencia
+                        ? ` (${draft.patron_recurrencia})`
+                        : ""}
+                    </strong>
+                    <span>
+                      Se asignó automáticamente la próxima fecha más cercana:{" "}
+                      <strong>{draft.fecha}</strong> según la fecha y hora actual en Chile.
+                      {Array.isArray(draft.fechas_recurrencia) &&
+                        draft.fechas_recurrencia.length > 1 && (
+                          <span
+                            style={{
+                              display: "block",
+                              marginTop: 4,
+                              opacity: 0.9,
+                            }}>
+                            Próximas repeticiones:{" "}
+                            {draft.fechas_recurrencia.slice(0, 4).join(" · ")}
+                          </span>
+                        )}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {draft.fecha && draft.fecha < new Date().toLocaleDateString("sv-SE", { timeZone: "America/Santiago" }) && (
+                <div className="admin-import-ia__alert admin-import-ia__alert--warning">
+                  <FontAwesomeIcon
+                    icon={faExclamationTriangle}
+                    className="admin-import-ia__alert-icon"
+                  />
+                  <div>
+                    <strong className="admin-import-ia__alert-title">
+                      La fecha extraída está en el pasado ({draft.fecha})
+                    </strong>
+                    <span>
+                      Los panoramas pasados no se muestran en el sitio. Corrige el campo “Fecha” abajo con la fecha correcta del evento para poder publicar.
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {!draft.comuna && (
+                <div className="admin-import-ia__alert admin-import-ia__alert--warning">
+                  <FontAwesomeIcon
+                    icon={faExclamationTriangle}
+                    className="admin-import-ia__alert-icon"
+                  />
+                  <div>
+                    <strong className="admin-import-ia__alert-title">
+                      Comuna no detectada
+                    </strong>
+                    <span>
+                      La IA no pudo identificar la comuna en la publicación. Selecciona la comuna de la Región del Maule en el formulario para poder publicar.
+                    </span>
+                  </div>
+                </div>
+              )}
+
               <div className="admin-import-ia__alert admin-import-ia__alert--info">
                 <FontAwesomeIcon
                   icon={faInfoCircle}
@@ -909,13 +1106,48 @@ export default function AdminImportIA({ onGoToPublications } = {}) {
                         className="admin-import-ia__field-label"
                         htmlFor={inputId}>
                         {field.label}
-                        {isEmpty && (
+                        {isEmpty ? (
                           <span className="admin-import-ia__field-missing">
-                            sin detectar
+                            {field.key === "comuna" ? "requerida para publicar" : "sin detectar"}
                           </span>
-                        )}
+                        ) : field.key === "fecha" && value < new Date().toLocaleDateString("sv-SE", { timeZone: "America/Santiago" }) ? (
+                          <span className="admin-import-ia__field-missing" style={{ color: "#ef4444" }}>
+                            fecha en el pasado
+                          </span>
+                        ) : null}
                       </label>
-                      {field.textarea ? (
+                      {field.key === "comuna" ? (
+                        <>
+                          <select
+                            id={inputId}
+                            className={`admin-import-ia__field-input${
+                              isEmpty ? " admin-import-ia__field-input--empty" : ""
+                            }`}
+                            value={value || ""}
+                            onChange={(e) =>
+                              handleFieldChange("comuna", e.target.value)
+                            }
+                            disabled={publishing || published}>
+                            <option value="">Selecciona una comuna del Maule</option>
+                            {Object.entries(COMUNAS_POR_PROVINCIA).map(
+                              ([provincia, comunas]) => (
+                                <optgroup key={provincia} label={`Provincia de ${provincia}`}>
+                                  {comunas.map((comuna) => (
+                                    <option key={comuna} value={comuna}>
+                                      {comuna}
+                                    </option>
+                                  ))}
+                                </optgroup>
+                              ),
+                            )}
+                          </select>
+                          {result?.comuna && result.comuna !== value && (
+                            <span className="admin-import-ia__hint">
+                              Texto detectado en publicación: {result.comuna}
+                            </span>
+                          )}
+                        </>
+                      ) : field.textarea ? (
                         <textarea
                           id={inputId}
                           className={`admin-import-ia__field-textarea${
@@ -931,6 +1163,7 @@ export default function AdminImportIA({ onGoToPublications } = {}) {
                         <input
                           id={inputId}
                           type={field.type || "text"}
+                          placeholder={field.placeholder || ""}
                           className={`admin-import-ia__field-input${
                             isEmpty ? " admin-import-ia__field-input--empty" : ""
                           }`}

@@ -266,7 +266,7 @@ export const useAdminData = (user, isAdmin, isModerator) => {
             body: {
               to: event.profiles.email,
               type: "publicacion_aprobada",
-              data: { nombre: event.profiles.nombre, titulo: event.titulo },
+              data: { nombre: event.profiles.nombre, titulo: event.titulo, esDestacada: event.tipo_publicacion === "destacada" },
             },
           })
           .catch((err) =>

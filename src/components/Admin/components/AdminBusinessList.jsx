@@ -437,7 +437,11 @@ export default function AdminBusinessList({
 
                           {onToggleDestacada && (
                             <button
-                              className="admin-table__action admin-table__action--highlight"
+                              className={`admin-table__action admin-table__action--highlight${
+                                business.tipo_publicacion === "destacada"
+                                  ? " admin-table__action--highlight-active"
+                                  : ""
+                              }`}
                               onClick={() => onToggleDestacada(business)}
                               disabled={actionLoading === business.id}
                               title={
@@ -656,7 +660,11 @@ export default function AdminBusinessList({
                         )}
                         {onToggleDestacada && (
                           <button
-                            className="admin-pub-btn admin-pub-btn--highlight"
+                            className={`admin-pub-btn admin-pub-btn--highlight${
+                              business.tipo_publicacion === "destacada"
+                                ? " admin-pub-btn--highlight-active"
+                                : ""
+                            }`}
                             onClick={() => onToggleDestacada(business)}
                             disabled={actionLoading === business.id}
                             title={

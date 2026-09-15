@@ -14,6 +14,8 @@ import {
   faExclamationTriangle,
   faRedoAlt,
   faLocationArrow,
+  faBoltLightning,
+  faCrown,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   getCategories,
@@ -25,8 +27,11 @@ import {
 import { resubmitEvent } from "../../../lib/database/events";
 import { useToast } from "../../../context/ToastContext";
 import { useAuth } from "../../../context/AuthContext";
+import { usePlansVisibility } from "../../../hooks/usePlansVisibility";
+import { initiateDestacadaPayment } from "../../../lib/payment";
 import PublicationModal from "../../Superguia/PublicationModal";
 import { UserEditModal } from "./editar";
+import DestacarModal from "./DestacarModal";
 import "./styles/section.css";
 import "./styles/publicaciones.css";
 
@@ -38,12 +43,15 @@ export default function PerfilPublicaciones({
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { user, isAdmin, isModerator } = useAuth();
+  const { destacadasEnabled } = usePlansVisibility();
+  const [isPaying, setIsPaying] = useState({});
 
   // Estados para los modales
   const [viewModal, setViewModal] = useState({
     open: false,
     publication: null,
   });
+  const [destacarModal, setDestacarModal] = useState({ open: false, item: null });
   const [editModal, setEditModal] = useState({
     open: false,
     publication: null,
@@ -110,6 +118,17 @@ export default function PerfilPublicaciones({
   // Cerrar modal de editar
   const handleCloseEdit = () => {
     setEditModal({ open: false, publication: null });
+  };
+
+  const handleConfirmDestacar = async (pub) => {
+    setIsPaying((prev) => ({ ...prev, [pub.id]: true }));
+    try {
+      await initiateDestacadaPayment({ eventId: pub.id, eventTitle: pub.titulo });
+    } catch (error) {
+      console.error("Error al iniciar pago destacado:", error);
+      if (showToast) showToast("Error al procesar el pago", "error");
+      setIsPaying((prev) => ({ ...prev, [pub.id]: false }));
+    }
   };
 
   // Abrir modal de confirmación de eliminación
@@ -256,8 +275,14 @@ export default function PerfilPublicaciones({
               pub.estado === "en_revision" || pub.estado === "pendiente";
 
             return (
-              <article key={pub.id} className="perfil-publication-card">
+              <article key={pub.id} className={`perfil-publication-card ${pub.tipo_publicacion === "destacada" ? "perfil-publication-card--destacada" : ""}`}>
                 <div className="perfil-publication-card__image">
+                    {pub.tipo_publicacion === "destacada" && (
+                      <span className="perfil-publication-card__destacada-badge">
+                        <FontAwesomeIcon icon={faCrown} />
+                        Destacado
+                      </span>
+                    )}
                   <img
                     src={imageUrl}
                     alt={pub.titulo}
@@ -348,6 +373,18 @@ export default function PerfilPublicaciones({
                     </div>
                   )}
                   <div className="perfil-publication-card__actions">
+                    {(pub.origen_publicacion === "gratuita" || pub.tipo_publicacion === "normal") && destacadasEnabled && (
+                      <button
+                        className="perfil-publication-card__btn btn-destacar"
+                        onClick={() => setDestacarModal({ open: true, item: pub })}
+                        disabled={isPaying[pub.id]}>
+                        <FontAwesomeIcon
+                          icon={isPaying[pub.id] ? faSpinner : faBoltLightning}
+                          spin={isPaying[pub.id]}
+                        />
+                        {isPaying[pub.id] ? "Procesando..." : "Destaca tu panorama"}
+                      </button>
+                    )}
                     <button
                       className="perfil-publication-card__btn"
                       onClick={() => handleView(pub)}
@@ -435,6 +472,16 @@ export default function PerfilPublicaciones({
         onSave={handleSaveEdit}
         loading={saving}
         userId={user?.id}
+      />
+
+      {/* Modal de destacar */}
+      <DestacarModal
+        isOpen={destacarModal.open}
+        onClose={() => setDestacarModal({ open: false, item: null })}
+        onConfirm={handleConfirmDestacar}
+        type="panorama"
+        item={destacarModal.item}
+        isProcessing={destacarModal.item ? isPaying[destacarModal.item.id] : false}
       />
 
       {/* Modal de confirmación de eliminación */}

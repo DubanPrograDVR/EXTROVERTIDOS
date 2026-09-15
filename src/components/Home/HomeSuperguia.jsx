@@ -82,28 +82,37 @@ export default function HomeSuperguia({
     if (!carouselItems) return [];
     
     // Filtrar destacados (o todos si los destacados están desactivados) y limitar a 20
-    let destacados = carouselItems
+    const destacados = carouselItems
       .filter((item) => negociosDestacadasEnabled ? item.tipo_publicacion === "destacada" : true)
       .slice(0, 20);
 
-    // Si hay menos de 5 y los planes están habilitados, agregar un banner dummy
-    if (destacados.length < 5 && negociosDestacadasEnabled) {
-      destacados.push({
-        id: "banner-destaca-negocio",
-        isBanner: true,
-        titulo: "¡Destaca tu Negocio!",
-        nombre: "¡Destaca tu Negocio!",
-        imagen_url: "/img/banner_destaca_negocio.png",
-        tipo_publicacion: "destacada",
-      });
+    const crearBanner = (index) => ({
+      id: `banner-destaca-negocio-${index}`,
+      isBanner: true,
+      titulo: "¡Destaca tu Negocio!",
+      nombre: "¡Destaca tu Negocio!",
+      imagen_url: "/img/banner_destaca_negocio.png",
+      tipo_publicacion: "destacada",
+    });
+
+    if (destacados.length === 0) {
+      return [crearBanner(0)];
     }
 
-    // Llenar para el efecto tren si aún hay menos de 5
-    let items = [...destacados];
-    while (items.length > 0 && items.length < 5) {
-      items = [...items, ...destacados];
+    // Insertar el banner de destaca tu negocio cada 5 negocios
+    const numGrupos = Math.max(2, Math.ceil(destacados.length / 5));
+    const resultado = [];
+    let itemIdx = 0;
+
+    for (let g = 0; g < numGrupos; g++) {
+      for (let i = 0; i < 5; i++) {
+        resultado.push(destacados[itemIdx % destacados.length]);
+        itemIdx++;
+      }
+      resultado.push(crearBanner(g));
     }
-    return items;
+
+    return resultado;
   }, [carouselItems, negociosDestacadasEnabled]);
 
   const subcategorias = useMemo(() => crearSubcategorias(categorias), [categorias]);
@@ -121,6 +130,20 @@ export default function HomeSuperguia({
     () => encontrarCiudad(filtros.ciudad),
     [filtros.ciudad],
   );
+  const categoriaSeleccionada = useMemo(
+    () =>
+      categorias.find(
+        (categoria) => String(categoria.id) === String(filtros.categoria),
+      ) || null,
+    [categorias, filtros.categoria],
+  );
+  const subcategoriaSeleccionada = useMemo(
+    () =>
+      subcategorias.find(
+        (subcat) => String(subcat.id) === String(filtros.subcategoria),
+      ) || null,
+    [subcategorias, filtros.subcategoria],
+  );
 
   const negociosFiltrados = useMemo(
     () =>
@@ -134,6 +157,31 @@ export default function HomeSuperguia({
       ),
     [categorias, filtros, negocios, semillaOrden, subcategorias],
   );
+
+  const resultsTitle = useMemo(() => {
+    if (filtros.subcategoria) {
+      return {
+        nombre: subcategoriaSeleccionada?.nombre || "Negocios",
+        conteo: negociosFiltrados.length,
+      };
+    }
+    if (filtros.categoria) {
+      return {
+        nombre: categoriaSeleccionada?.nombre || "Negocios",
+        conteo: negociosFiltrados.length,
+      };
+    }
+    return {
+      nombre: "Negocios",
+      conteo: negociosFiltrados.length,
+    };
+  }, [
+    categoriaSeleccionada?.nombre,
+    filtros.categoria,
+    filtros.subcategoria,
+    negociosFiltrados.length,
+    subcategoriaSeleccionada?.nombre,
+  ]);
 
   const conteos = useMemo(() => {
     const baseCiudades = filtrarNegocios(
@@ -310,14 +358,14 @@ export default function HomeSuperguia({
       {selector}
 
       <div className="home-consolidado__section-heading">
-        <div>
+        <div className="home-consolidado__section-heading-text">
           <p className="home-consolidado__eyebrow">Servicios y negocios locales</p>
           <h2 id="home-superguia-title">Superbuscador</h2>
           <p>Busca negocios por rubro, ciudad y comuna, con resultados en un solo lugar.</p>
         </div>
         <button
           type="button"
-          className="home-consolidado__section-action home-consolidado__section-action--dark"
+          className="home-consolidado__section-action"
           onClick={onPublicar}>
           <FontAwesomeIcon icon={faPlus} aria-hidden="true" />
           Publicar negocio
@@ -352,6 +400,17 @@ export default function HomeSuperguia({
           onSearchChange={cambiarBusqueda}
           onClearFilters={limpiarFiltros}
           totalResults={negociosFiltrados.length}
+          resultsTitle={resultsTitle}
+          resultsUnit="negocio"
+          pagination={
+            totalPaginas > 1 ? (
+              <Pagination
+                currentPage={paginaActual}
+                totalPages={totalPaginas}
+                onPageChange={cambiarPagina}
+              />
+            ) : null
+          }
           showDateFilter={false}
           showPriceFilter={false}
           showSubcategories={true}
@@ -395,18 +454,6 @@ export default function HomeSuperguia({
           </div>
         ) : (
           <>
-            <div className="home-consolidado__results-heading">
-              <h3>
-                {negociosFiltrados.length} {negociosFiltrados.length === 1 ? "negocio" : "negocios"}
-              </h3>
-              {totalPaginas > 1 && (
-                <Pagination
-                  currentPage={paginaActual}
-                  totalPages={totalPaginas}
-                  onPageChange={cambiarPagina}
-                />
-              )}
-            </div>
             <BusinessGrid
               businesses={negociosPaginados}
               onBusinessClick={onNegocioClick}

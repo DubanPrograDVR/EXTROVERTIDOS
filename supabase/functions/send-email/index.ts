@@ -28,14 +28,16 @@ function formatPlanLabel(plan) {
     panorama_unica: "Publicación Única",
     panorama_pack4: "Pack 4 Publicaciones",
     panorama_ilimitado: "Plan Ilimitado",
-    superguia: "Superguía",
+    superguia: "Superbuscador",
     publicacion_destacada: "Publicación Destacada",
   };
   return labels[plan] || plan;
 }
 
 function formatDateCL(isoString) {
+  // El servidor puede correr en UTC; se fuerza la zona horaria de Chile.
   return new Date(isoString || Date.now()).toLocaleDateString("es-CL", {
+    timeZone: "America/Santiago",
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -47,6 +49,12 @@ function formatDateCL(isoString) {
 // ===== TEMPLATES DE EMAIL =====
 const templates = {
   pago_exitoso: (nombre, data) => {
+    // Acento dorado en la boleta cuando el pago fue por destacar algo.
+    const esDestacada = (data.items || []).some(
+      (item) =>
+        item.plan === "publicacion_destacada" ||
+        item.plan === "negocio_destacado",
+    );
     const itemsHtml = (data.items || [])
       .map(
         (item) => `
@@ -64,7 +72,7 @@ const templates = {
           <div style="background:#111111;padding:16px;text-align:center;border-bottom:1px solid #1e1e1e;">
             <img src="https://extrovertidos.cl/img/Logo_con_r_v3.png" alt="Extrovertidos" style="height:50px;" />
           </div>
-          <div style="background:linear-gradient(135deg,#22c55e,#16a34a);padding:30px;text-align:center;">
+          <div style="background:linear-gradient(135deg,${esDestacada ? "#ffb300,#ff7b00" : "#22c55e,#16a34a"});padding:30px;text-align:center;">
             <h1 style="color:#fff;margin:0;font-size:26px;">¡Pago exitoso! ✅</h1>
             <p style="color:#dcfce7;margin:8px 0 0;font-size:14px;">Tu plan ha sido activado correctamente</p>
           </div>
@@ -209,7 +217,7 @@ const templates = {
           <p>Nos alegra tenerte en la comunidad. Ahora puedes:</p>
           <ul style="line-height:2;">
             <li>🎯 Descubrir <strong>panoramas, eventos y actividades</strong> en tu ciudad</li>
-            <li>📋 Explorar la <strong>Superguía de negocios y servicios</strong></li>
+            <li>📋 Explorar el <strong>Superbuscador de negocios y servicios</strong></li>
             <li>📣 <strong>Publicar tus propios panoramas</strong> y negocios</li>
           </ul>
           <div style="text-align:center;margin:30px 0;">
@@ -223,27 +231,38 @@ const templates = {
     `,
   }),
 
-  publicacion_aprobada: (nombre, titulo) => ({
-    subject: "✅ Tu publicación fue aprobada",
-    html: `
-      <div style="font-family:'Figtree',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;border-radius:16px;overflow:hidden;">
+  publicacion_aprobada: (nombre, titulo, esDestacada) => {
+    const accent = esDestacada ? "#ff9d2e" : "#22c55e";
+    const heroGrad = esDestacada
+      ? "linear-gradient(135deg,#ffcf6b,#ff9d2e 55%,#ff7b00)"
+      : "linear-gradient(135deg,#22c55e,#16a34a)";
+    const heroColor = esDestacada ? "#3d2600" : "#fff";
+    return {
+      subject: esDestacada
+        ? "🌟 ¡Tu panorama destacado fue aprobado!"
+        : "✅ Tu publicación fue aprobada",
+      html: `
+      <div style="font-family:'Figtree',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;border-radius:16px;overflow:hidden;${esDestacada ? "border:1px solid rgba(255,180,70,0.35);" : ""}">
         <div style="background:#111111;padding:16px;text-align:center;border-bottom:1px solid #1e1e1e;">
           <img src="https://extrovertidos.cl/img/Logo_con_r_v3.png" alt="Extrovertidos" style="height:50px;" />
         </div>
-        <div style="background:linear-gradient(135deg,#22c55e,#16a34a);padding:30px;text-align:center;">
-          <h1 style="color:#fff;margin:0;font-size:24px;">¡Publicación Aprobada! ✅</h1>
+        <div style="background:${heroGrad};padding:30px;text-align:center;">
+          <h1 style="color:${heroColor};margin:0;font-size:24px;">${esDestacada ? "🌟 ¡Panorama Destacado Aprobado!" : "¡Publicación Aprobada! ✅"}</h1>
+          ${esDestacada ? `<p style="color:#5a3600;margin:8px 0 0;font-size:14px;font-weight:700;">Gracias por destacar tu panorama</p>` : ""}
         </div>
         <div style="padding:30px;color:#e0e0e0;">
-          <p style="font-size:18px;margin-top:0;">Hola <strong style="color:#22c55e;">${nombre || "Extrovertido"}</strong>,</p>
-          <p>Tu publicación <strong>"${titulo}"</strong> ha sido aprobada y ya es visible para todos.</p>
+          <p style="font-size:18px;margin-top:0;">Hola <strong style="color:${accent};">${nombre || "Extrovertido"}</strong>,</p>
+          <p>${esDestacada ? `Tu panorama <strong>"${titulo}"</strong> ya está publicado y <strong>destacado</strong>: aparecerá en los primeros lugares de la sección de panoramas.` : `Tu publicación <strong>"${titulo}"</strong> ha sido aprobada y ya es visible para todos.`}</p>
+          ${esDestacada ? `<div style="background:rgba(255,178,66,0.08);border:1px solid rgba(255,178,66,0.3);border-radius:12px;padding:16px;margin:20px 0;color:#ffd9a0;font-size:14px;">✨ Tu panorama luce un <strong style="color:#ffcf6b;">distintivo dorado premium</strong> y prioridad de aparición frente al público.</div>` : ""}
           <div style="text-align:center;margin:30px 0;">
-            <a href="https://extrovertidos.cl/panoramas" style="background:#22c55e;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;">Ver Panoramas</a>
+            <a href="https://extrovertidos.cl/panoramas" style="background:${esDestacada ? heroGrad : "#22c55e"};color:${heroColor};padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;">Ver Panoramas</a>
           </div>
           <p style="color:#888;font-size:13px;text-align:center;">— El equipo de Extrovertidos</p>
         </div>
       </div>
     `,
-  }),
+    };
+  },
 
   publicacion_rechazada: (nombre, titulo, motivo) => ({
     subject: "❌ Tu publicación fue rechazada",
@@ -266,27 +285,38 @@ const templates = {
     `,
   }),
 
-  negocio_aprobado: (nombre, titulo) => ({
-    subject: "✅ Tu negocio fue aprobado en la Superguía",
-    html: `
-      <div style="font-family:'Figtree',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;border-radius:16px;overflow:hidden;">
+  negocio_aprobado: (nombre, titulo, esDestacada) => {
+    const accent = esDestacada ? "#ff9d2e" : "#22c55e";
+    const heroGrad = esDestacada
+      ? "linear-gradient(135deg,#ffcf6b,#ff9d2e 55%,#ff7b00)"
+      : "linear-gradient(135deg,#22c55e,#16a34a)";
+    const heroColor = esDestacada ? "#3d2600" : "#fff";
+    return {
+      subject: esDestacada
+        ? "🌟 ¡Tu negocio destacado fue aprobado!"
+        : "✅ Tu negocio fue aprobado en el Superbuscador",
+      html: `
+      <div style="font-family:'Figtree',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;border-radius:16px;overflow:hidden;${esDestacada ? "border:1px solid rgba(255,180,70,0.35);" : ""}">
         <div style="background:#111111;padding:16px;text-align:center;border-bottom:1px solid #1e1e1e;">
           <img src="https://extrovertidos.cl/img/Logo_con_r_v3.png" alt="Extrovertidos" style="height:50px;" />
         </div>
-        <div style="background:linear-gradient(135deg,#22c55e,#16a34a);padding:30px;text-align:center;">
-          <h1 style="color:#fff;margin:0;font-size:24px;">¡Negocio Aprobado! ✅</h1>
+        <div style="background:${heroGrad};padding:30px;text-align:center;">
+          <h1 style="color:${heroColor};margin:0;font-size:24px;">${esDestacada ? "🌟 ¡Negocio Destacado Aprobado!" : "¡Negocio Aprobado! ✅"}</h1>
+          ${esDestacada ? `<p style="color:#5a3600;margin:8px 0 0;font-size:14px;font-weight:700;">Gracias por destacar tu negocio</p>` : ""}
         </div>
         <div style="padding:30px;color:#e0e0e0;">
-          <p style="font-size:18px;margin-top:0;">Hola <strong style="color:#22c55e;">${nombre || "Extrovertido"}</strong>,</p>
-          <p>Tu negocio <strong>"${titulo}"</strong> ha sido aprobado y ya es visible en la Superguía.</p>
+          <p style="font-size:18px;margin-top:0;">Hola <strong style="color:${accent};">${nombre || "Extrovertido"}</strong>,</p>
+          <p>${esDestacada ? `Tu negocio <strong>"${titulo}"</strong> ya está publicado y <strong>destacado</strong> en el Superbuscador, con mayor visibilidad.` : `Tu negocio <strong>"${titulo}"</strong> ha sido aprobado y ya es visible en el Superbuscador.`}</p>
+          ${esDestacada ? `<div style="background:rgba(255,178,66,0.08);border:1px solid rgba(255,178,66,0.3);border-radius:12px;padding:16px;margin:20px 0;color:#ffd9a0;font-size:14px;">✨ Tu negocio luce un <strong style="color:#ffcf6b;">distintivo dorado premium</strong> y aparece entre los destacados.</div>` : ""}
           <div style="text-align:center;margin:30px 0;">
-            <a href="https://extrovertidos.cl/superguia" style="background:#22c55e;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;">Ver Superguía</a>
+            <a href="https://extrovertidos.cl/superguia" style="background:${esDestacada ? heroGrad : "#22c55e"};color:${heroColor};padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;">Ver Superbuscador</a>
           </div>
           <p style="color:#888;font-size:13px;text-align:center;">— El equipo de Extrovertidos</p>
         </div>
       </div>
     `,
-  }),
+    };
+  },
 
   negocio_rechazado: (nombre, titulo, motivo) => ({
     subject: "❌ Tu negocio fue rechazado",
@@ -347,7 +377,7 @@ Deno.serve(async (req) => {
         template = templates.welcome(data?.nombre);
         break;
       case "publicacion_aprobada":
-        template = templates.publicacion_aprobada(data?.nombre, data?.titulo);
+        template = templates.publicacion_aprobada(data?.nombre, data?.titulo, data?.esDestacada);
         break;
       case "publicacion_rechazada":
         template = templates.publicacion_rechazada(
@@ -357,7 +387,7 @@ Deno.serve(async (req) => {
         );
         break;
       case "negocio_aprobado":
-        template = templates.negocio_aprobado(data?.nombre, data?.titulo);
+        template = templates.negocio_aprobado(data?.nombre, data?.titulo, data?.esDestacada);
         break;
       case "negocio_rechazado":
         template = templates.negocio_rechazado(
