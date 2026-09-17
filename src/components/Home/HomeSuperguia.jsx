@@ -373,11 +373,22 @@ export default function HomeSuperguia({
       </div>
 
       {carruselLleno.length > 0 && (
-        <Carousel
-          publications={carruselLleno}
-          onPublicationClick={onNegocioClick}
-          badgeUrl="/img/SG_Extro_v2.png"
-        />
+        <div className="home-consolidado__destacados">
+          <div className="home-consolidado__destacados-header">
+            <img
+              src="/img/SG_Extro_v2.png"
+              alt=""
+              aria-hidden="true"
+              className="home-consolidado__destacados-badge"
+            />
+            <h3>Negocios Destacados</h3>
+          </div>
+          <Carousel
+            publications={carruselLleno}
+            onPublicationClick={onNegocioClick}
+            badgeUrl="/img/SG_Extro_v2.png"
+          />
+        </div>
       )}
 
       <div ref={referenciaFiltros} className="home-consolidado__filters">

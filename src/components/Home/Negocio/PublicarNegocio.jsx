@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSpinner,
@@ -49,6 +49,7 @@ const WIZARD_STEPS = [
 const PublicarNegocio = () => {
   const { isAdmin, isModerator, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isDraftPreviewOpen, setIsDraftPreviewOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [stepError, setStepError] = useState("");
@@ -101,6 +102,21 @@ const PublicarNegocio = () => {
   const needsSuperguiaPlan = !businessPublishCheck.canPublish && !canChooseDestacada;
   const isDestacadaSelected =
     canChooseDestacada && formData.tipo_publicacion === "destacada";
+
+  // Pre-seleccionar "destacada" si se llega desde /crear-publicacion con el
+  // toggle "Destacar negocio" activo (?destacado=1)
+  const destacadoUrlParam = searchParams.get("destacado");
+  useEffect(() => {
+    if (loadingPlan || destacadoUrlParam !== "1" || !canChooseDestacada) {
+      return;
+    }
+    handlePublicationTypeChange(true);
+  }, [
+    loadingPlan,
+    destacadoUrlParam,
+    canChooseDestacada,
+    handlePublicationTypeChange,
+  ]);
 
   // Detectar si el formulario tiene datos (no está en blanco)
   const isDirty = useMemo(() => {

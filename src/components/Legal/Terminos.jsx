@@ -16,7 +16,7 @@ export default function Terminos() {
         <header className="terminos-header">
           <div className="terminos-header__icon">
             <img
-              src="/img/Logo_extrovertidos.png"
+              src="/img/Logo_con_r_v3.png"
               alt="Extrovertidos"
               className="terminos-header__logo"
             />
@@ -52,10 +52,11 @@ export default function Terminos() {
               Bienvenido a www.extrovertidos.cl. Al acceder y utilizar este
               sitio web, usted acepta de manera íntegra y sin reservas estos
               Términos y Condiciones. De conformidad con la Ley N° 19.799 sobre
-              Documentos Electrónicos, el uso de la plataforma y la marcación de
-              casillas de aceptación electrónica constituyen un contrato
-              vinculante, otorgando plena validez legal al consentimiento
-              manifestado por medios digitales entre el usuario y Damaval SpA.
+              Documentos Electrónicos, el uso de la plataforma, el inicio de
+              sesión y la marcación de casillas o botones de aceptación
+              electrónica constituyen un contrato vinculante, otorgando plena
+              validez legal al consentimiento manifestado por medios digitales
+              entre el usuario y Damaval SpA.
             </p>
           </article>
 
@@ -68,61 +69,111 @@ export default function Terminos() {
             <p>
               La Plataforma opera exclusivamente como un canal de difusión
               publicitaria e informativa, sujeta a los marcos regulatorios de la
-              Ley N° 19.496 sobre Protección de los Derechos de los
-              Consumidores.
+              Ley N° 19.496 sobre Protección de los Derechos de los Consumidores.
             </p>
-            <h3 className="terminos-clause__subtitle">
-              Enlaces y Contenido Externo
-            </h3>
-            <p>
-              El usuario puede incluir en su publicación enlaces a sitios web,
-              redes sociales, botones de pago, chats de WhatsApp, números
-              telefónicos y geolocalización (Google Maps). Damaval SpA no
-              controla, supervisa ni responde por el contenido, la seguridad, la
-              privacidad ni las transacciones comerciales que se realicen en
-              dichos medios externos.
-            </p>
-            <h3 className="terminos-clause__subtitle">
-              Responsabilidad por Contenidos
-            </h3>
-            <p>
-              El usuario que publica es el único responsable de la veracidad,
-              integridad y legalidad de la información e imágenes incluidas.
-              Damaval SpA no asume responsabilidad por la exactitud de las
-              publicaciones de terceros.
-            </p>
-            <h3 className="terminos-clause__subtitle">Indemnidad</h3>
-            <p>
-              El usuario asumirá la totalidad de los costos de defensa legal y
-              honorarios de abogados en caso de que Damaval SpA se vea
-              involucrada en un litigio por causa de su publicación o
-              incumplimiento.
-            </p>
+            <ul className="terminos-list">
+              <li>
+                <strong>Enlaces y Contenido Externo:</strong> El usuario puede
+                incluir en su publicación enlaces a sitios web, redes sociales,
+                botones de pago, chats de WhatsApp, números telefónicos y
+                geolocalización (Google Maps). Damaval SpA no controla,
+                supervisa ni responde por el contenido, la seguridad, la
+                privacidad ni las transacciones comerciales que se realicen en
+                dichos medios externos.
+              </li>
+              <li>
+                <strong>Responsabilidad por Contenidos:</strong> El usuario que
+                publica es el único responsable de la veracidad, integridad y
+                legalidad de la información e imágenes incluidas. Damaval SpA no
+                asume responsabilidad por la exactitud de las publicaciones de
+                terceros.
+              </li>
+              <li>
+                <strong>Indemnidad:</strong> El usuario asumirá la totalidad de
+                los costos de defensa legal y honorarios de abogados en caso de
+                que Damaval SpA se vea involucrada en un litigio por causa de su
+                publicación, infracción de derechos de terceros o incumplimiento
+                de estos términos.
+              </li>
+            </ul>
           </article>
 
           {/* 3 */}
           <article className="terminos-clause">
             <h2 className="terminos-clause__title">
               <span className="terminos-clause__number">3</span>
-              Registro y Acceso Exclusivo (Google Sign-In)
+              Registro, Tratamiento de Datos Personales y Seguridad
             </h2>
-            <h3 className="terminos-clause__subtitle">Método de Ingreso</h3>
+            <h3 className="terminos-clause__subtitle">
+              3.1. Método de Ingreso y Datos Tratados
+            </h3>
             <p>
-              El registro y acceso se realiza exclusivamente a través de Google
-              Sign-In. El usuario autoriza el acceso a su nombre, correo y foto
-              de perfil conforme a la Ley N° 19.628.
+              El registro y acceso se realiza exclusivamente a través del
+              sistema Google Sign-In (Google LLC). De conformidad con la Ley N°
+              21.719 sobre Protección de Datos Personales, Damaval SpA actúa en
+              calidad de Responsable del Tratamiento de Datos. Al iniciar
+              sesión, la plataforma recopila y almacena únicamente:
             </p>
-            <h3 className="terminos-clause__subtitle">Eliminación de Cuenta</h3>
+            <ul className="terminos-list">
+              <li>
+                <strong>a) Correo electrónico:</strong> Utilizado
+                exclusivamente para la autenticación de identidad, control de
+                sesiones y comunicaciones operativas del servicio.
+              </li>
+              <li>
+                <strong>b) Nombre completo:</strong> Utilizado para la
+                individualización del usuario en su panel y en las notificaciones
+                del servicio.
+              </li>
+              <li>
+                <strong>c) Foto de perfil (avatar público):</strong> Utilizada
+                para la personalización de la interfaz dentro del panel de
+                usuario.
+              </li>
+            </ul>
             <p>
-              Para dar de baja una cuenta, el usuario deberá solicitarlo
-              formalmente al correo{" "}
+              La base de licitud para este tratamiento es la ejecución del
+              contrato de prestación de servicios entre las partes.
+            </p>
+            <h3 className="terminos-clause__subtitle">
+              3.2. Infraestructura y Proveedores Encargados
+            </h3>
+            <p>
+              El usuario reconoce y acepta que el procesamiento y almacenamiento
+              seguro de sus datos se ejecuta mediante infraestructura cloud
+              provista por Supabase Inc. (alojada en servidores internacionales
+              bajo altos estándares de cifrado y acuerdos de procesamiento de
+              datos) y servidores de hosting administrados por Damaval SpA
+              (cPanel). Damaval SpA no comercializa ni cede estos datos a
+              terceros ajenos a la operación técnica del servicio.
+            </p>
+            <h3 className="terminos-clause__subtitle">
+              3.3. Derechos de los Titulares (Derechos ARCO)
+            </h3>
+            <p>
+              El usuario podrá ejercer en cualquier momento sus derechos de
+              Acceso, Rectificación, Supresión (Cancelación), Oposición,
+              Portabilidad y Bloqueo. Para solicitar la eliminación definitiva
+              de su cuenta o la modificación de sus registros, deberá enviar un
+              requerimiento formal a{" "}
               <a
                 href="mailto:atencion@extrovertidos.cl"
                 className="terminos-link">
                 atencion@extrovertidos.cl
               </a>
-              . Damaval SpA procesará la eliminación en un plazo máximo de 10
-              días hábiles.
+              . Damaval SpA procesará la baja definitiva de los registros en un
+              plazo máximo de 10 días hábiles.
+            </p>
+            <h3 className="terminos-clause__subtitle">
+              3.4. Uso del Correo Electrónico
+            </h3>
+            <p>
+              El correo electrónico registrado será utilizado exclusivamente con
+              fines operativos y de comunicación directa con el usuario
+              (confirmación de publicaciones, estados de moderación, alertas de
+              seguridad, soporte y facturación). No se enviarán comunicaciones
+              comerciales masivas no solicitadas sin el previo consentimiento
+              expreso del usuario.
             </p>
           </article>
 
@@ -130,34 +181,60 @@ export default function Terminos() {
           <article className="terminos-clause">
             <h2 className="terminos-clause__title">
               <span className="terminos-clause__number">4</span>
-              Estructura de Secciones y Vigencia
+              Estructura de Secciones, Modalidades y Vigencia
             </h2>
-            <h3 className="terminos-clause__subtitle">Sección Panoramas</h3>
             <p>
-              Eventos con fecha específica. La publicación será eliminada
-              automáticamente a las 00:00 horas del día siguiente al día de la
-              fecha de realización del evento registrada en el formulario.
-            </p>
-            <p>
-              La sección Panoramas cuenta con un botón reacción llamado
-              &quot;Imperdible&quot;, solo con fines de informar interés. Esta
-              reacción no compromete participación ni compromiso frente al
-              evento publicado.
+              La plataforma organiza su contenido en dos secciones principales,
+              disponiendo en ambas de modalidades de publicación Gratuita y
+              Destacada Pagada:
             </p>
             <h3 className="terminos-clause__subtitle">
-              Sección Super buscador Extrovertidos
+              4.1. Sección Panoramas (Eventos con Fecha Específica)
             </h3>
             <p>
-              Directorio comercial con vigencia de 30 días desde su
-              puesta en línea. Al cumplirse el plazo, el anuncio caduca
-              automáticamente.
+              Orientada a la difusión de eventos, tocatas, ferias y actividades
+              con una fecha puntual de realización.
             </p>
+            <ul className="terminos-list">
+              <li>
+                <strong>Modalidad General (Gratuita):</strong> Publicación
+                estándar sin costo para el usuario.
+              </li>
+              <li>
+                <strong>Modalidad Destacada (Pagada):</strong> Ubicación
+                preferencial con mayor visibilidad, sujeta a la tarifa vigente.
+              </li>
+              <li>
+                <strong>Regla de Vigencia:</strong> En ambas modalidades, el
+                anuncio caduca y se retira automáticamente a las 00:00 horas del
+                día siguiente a la fecha informada de realización del evento.
+              </li>
+            </ul>
+            <h3 className="terminos-clause__subtitle">
+              4.2. Sección Superbuscador (Directorio Comercial y Servicios)
+            </h3>
             <p>
-              La sección Super buscador Extrovertidos cuenta con un botón llamado
-              &quot;Recomendado&quot; solo con fines de informar interés. Esta
-              reacción no compromete participación, ni compromiso frente a la
-              publicación señalada.
+              Orientada a la difusión de comercios, servicios, emprendimientos y
+              actividades continuas.
             </p>
+            <ul className="terminos-list">
+              <li>
+                <strong>Modalidad General (Gratuita):</strong> Publicación
+                estándar en el directorio sin costo para el usuario.
+              </li>
+              <li>
+                <strong>Modalidad Destacada (Pagada):</strong> Ubicación
+                preferencial y destacada en el directorio, sujeta a la tarifa
+                vigente.
+              </li>
+              <li>
+                <strong>Regla de Vigencia:</strong> En ambas modalidades, la
+                publicación se mantendrá en línea por un período de vigencia de
+                treinta (30) días corridos desde el momento de su aprobación y
+                puesta en línea, caducando automáticamente al cumplirse el
+                plazo.
+              </li>
+            </ul>
           </article>
 
           {/* 5 */}
@@ -167,40 +244,29 @@ export default function Terminos() {
               Gestión y Control de Publicaciones (Panel de Usuario)
             </h2>
             <p>
-              Desde su perfil, el usuario podrá realizar las siguientes acciones
-              sobre una publicación activa:
+              Desde su perfil privado, el usuario creador podrá gestionar sus
+              avisos activos mediante las siguientes opciones:
             </p>
             <ul className="terminos-list">
               <li>
-                <strong>Editar:</strong> Realizar los cambios necesarios. No se
-                permite modificar la fecha del evento en la sección Panoramas.
-                Toda edición requiere una nueva revisión y aprobación de
-                Extrovertidos.cl antes de volver a estar visible.
+                <strong>Editar:</strong> Modificar textos, imágenes o enlaces
+                de contacto. En la sección Panoramas no se permite alterar la
+                fecha principal del evento. Toda edición ingresa nuevamente a
+                revisión de moderación antes de volver a estar visible.
               </li>
               <li>
-                <strong>Pausar/Reanudar:</strong> El usuario podrá ocultar
-                temporalmente su publicación de la vista pública y volver a
-                ponerla en línea cuando lo estime conveniente dentro del periodo
-                de vigencia original.
+                <strong>Pausar/Reanudar:</strong> Ocultar temporalmente el
+                anuncio de la vista pública y reactivarlo dentro del período de
+                vigencia remanente.
               </li>
               <li>
-                <strong>Eliminar:</strong> El usuario podrá eliminar su
-                publicación definitivamente. Esta acción no otorga derecho a
-                reembolso ni reposición de cupo ocupado, conforme al Art. 3 bis
-                letra b) de la Ley N° 19.496.
+                <strong>Eliminar:</strong> Dar de baja el anuncio de forma
+                definitiva. En las modalidades destacadas pagadas, la
+                eliminación voluntaria por parte del usuario no otorga derecho
+                a reembolso ni reposición de cupo, conforme al Art. 3 bis letra
+                b) de la Ley N° 19.496.
               </li>
             </ul>
-            <h3 className="terminos-clause__subtitle">
-              5.1. Función &quot;Imperdible&quot;
-            </h3>
-            <p>
-              La plataforma permite que usuarios registrados reaccionen a las
-              publicaciones mediante el botón &quot;Imperdible&quot;. Esta
-              función tiene carácter meramente informativo y social. Damaval SpA
-              no se hace responsable por la cantidad, veracidad o interpretación
-              de estas reacciones, ni garantiza que representen la calidad real
-              del servicio o evento anunciado.
-            </p>
           </article>
 
           {/* 6 */}
@@ -210,13 +276,17 @@ export default function Terminos() {
               Política de Contenido y Prohibiciones Específicas
             </h2>
             <h3 className="terminos-clause__subtitle">
-              6.1. Responsabilidad de Materiales
+              6.1. Responsabilidad de Materiales y Datos de Terceros
             </h3>
             <p>
-              El usuario garantiza tener todos los derechos y licencias
-              necesarios para utilizar las imágenes y textos incluidos. Damaval
-              SpA no se hace responsable por infracciones a la Ley N° 17.336
-              cometidas por los usuarios.
+              El usuario garantiza contar con todos los derechos, licencias y
+              autorizaciones necesarias sobre las imágenes, textos y marcas
+              incluidas en su publicación. Asimismo, garantiza expresamente
+              contar con el consentimiento previo de los titulares si incluye
+              datos personales, números de contacto comercial (como WhatsApp) o
+              imágenes de terceros. Damaval SpA queda exenta de toda
+              responsabilidad por infracciones a la Ley N° 17.336 o reclamos de
+              privacidad derivados de contenidos subidos por usuarios.
             </p>
             <h3 className="terminos-clause__subtitle">
               6.2. Categorías de Contenido Prohibido
@@ -227,55 +297,56 @@ export default function Terminos() {
             </p>
             <ul className="terminos-list terminos-list--prohibited">
               <li>
-                <strong>Lenguaje Prohibido y Ofensivo:</strong> Uso de
-                groserías, términos soeces, insultos, lenguaje vulgar o
-                cualquier expresión que resulte ofensiva, degradante o violenta
-                en los títulos o descripciones de la publicación.
+                <strong>Lenguaje Ofensivo:</strong> Uso de groserías, términos
+                soeces, insultos o cualquier expresión degradante o violenta en
+                títulos o descripciones.
               </li>
               <li>
-                <strong>Actividades Ilícitas:</strong> Drogas, sustancias
-                ilícitas, venta de armas o cualquier elemento que infrinja la
-                Ley 20.000 o similares.
+                <strong>Actividades Ilícitas:</strong> Sustancias ilícitas,
+                drogas, armas o cualquier elemento que infrinja la Ley N° 20.000
+                u ordenamiento penal chileno.
               </li>
               <li>
-                <strong>Contenido Sexual:</strong> Servicios eróticos,
-                pornografía o explotación sexual de cualquier tipo.
+                <strong>Contenido Sexual:</strong> Servicios eróticos para
+                adultos, pornografía o explotación sexual de cualquier tipo.
               </li>
               <li>
-                <strong>Violencia y Odio:</strong> Discursos que inciten al
-                odio, discriminación, acoso, amenazas o agresiones físicas o
-                verbales.
+                <strong>Violencia y Odio:</strong> Mensajes que inciten al odio,
+                discriminación arbitraria, acoso o amenazas físicas o verbales.
               </li>
               <li>
-                <strong>Orden Público:</strong> Contenidos que promuevan
+                <strong>Alteración del Orden Público:</strong> Convocatorias a
                 desórdenes civiles, actos vandálicos, sabotaje, tomas de terreno
-                o cualquier actividad que atente contra la paz social y
-                seguridad pública en Chile.
+                o acciones que atenten contra la seguridad y orden público.
               </li>
               <li>
-                <strong>Salud y Seguridad:</strong> Desafíos peligrosos,
-                apología del suicidio, venta de medicamentos o consejos de salud
-                sin base científica.
+                <strong>Salud y Seguridad:</strong> Desafíos de riesgo físico,
+                apología del suicidio, comercialización no autorizada de
+                medicamentos o asesorías médicas sin acreditación técnica.
               </li>
               <li>
-                <strong>Fraudes y Ética:</strong> Estafas piramidales, phishing,
-                &quot;funas&quot;, difamación de terceros y el uso de
-                &quot;clickbait&quot; o publicidad engañosa.
+                <strong>Fraudes y Difamación:</strong> Estafas, esquemas
+                piramidales, phishing, &quot;funas&quot;, difamación de terceros
+                o publicidad engañosa.
               </li>
             </ul>
             <h3 className="terminos-clause__subtitle">
-              6.3. Reserva de Derecho
+              6.3. Procedimiento de Retiro (<em>Notice and Takedown</em>)
             </h3>
             <p>
-              Damaval SpA se reserva el derecho de calificar, rechazar o
-              eliminar cualquier contenido que atente contra la ética, la
-              seguridad de la comunidad o la integridad de la marca.
+              Damaval SpA se reserva el derecho de retirar o suspender de
+              inmediato cualquier publicación frente a notificaciones fundadas
+              de infracción legal, vulneración de derechos de autor o reclamos de
+              privacidad de terceros recibidos en su canal de atención.
             </p>
-            <h3 className="terminos-clause__subtitle">6.4. Licencia de Uso</h3>
+            <h3 className="terminos-clause__subtitle">
+              6.4. Licencia de Difusión
+            </h3>
             <p>
-              El usuario concede a Damaval SpA una licencia gratuita y universal
-              para utilizar su contenido en el sitio y en todas las redes
-              sociales oficiales de Extrovertidos (presentes y futuras).
+              El usuario concede a Damaval SpA una licencia no exclusiva,
+              gratuita y universal para reproducir y difundir el contenido y
+              gráfica de su publicación en el portal y en los canales oficiales
+              de redes sociales de Extrovertidos.cl con fines promocionales.
             </p>
           </article>
 
@@ -283,41 +354,36 @@ export default function Terminos() {
           <article className="terminos-clause">
             <h2 className="terminos-clause__title">
               <span className="terminos-clause__number">7</span>
-              Proceso de Compra, Modalidades y Exclusión de Retracto
+              Condiciones de Contratación (Modalidades Destacadas) y Exclusión de
+              Retracto
             </h2>
-            <h3 className="terminos-clause__subtitle">7.1. Flujo de Compra</h3>
+            <h3 className="terminos-clause__subtitle">
+              7.1. Flujo de Activación
+            </h3>
             <p>
-              El proceso de adquisición de servicios se compone de: (1)
-              Selección de Plan, (2) Pago a través de pasarela externa segura,
-              (3) Activación automática del Plan y habilitación del panel de
-              publicación.
+              La contratación de anuncios destacados (sea en Panoramas o
+              Superbuscador) contempla: (1) Carga del contenido, (2) Pago a
+              través de la pasarela externa habilitada, y (3) Envío automático a
+              la cola de moderación prioritaria.
             </p>
-            <h3 className="terminos-clause__subtitle">7.2. Tipos de Planes</h3>
-            <ul className="terminos-list">
-              <li>
-                <strong>Publicación Única:</strong> Permite una sola carga de
-                contenido por un periodo de 30 días.
-              </li>
-              <li>
-                <strong>Pack de Publicaciones:</strong> Cupos múltiples (ej.
-                Pack de 4). Los cupos no utilizados dentro del periodo de 30
-                días caducan sin derecho a reembolso.
-              </li>
-              <li>
-                <strong>Publicación Sin Límite:</strong> Cargas ilimitadas
-                durante el periodo de 30 días de vigencia del plan.
-              </li>
-              <li>
-                <strong>Plan Super buscador Extrovertidos:</strong> Vigencia de 30
-                días. Permite edición ilimitada de la publicación aprobada.
-              </li>
-            </ul>
-            <h3 className="terminos-clause__subtitle">7.3. No Retracto</h3>
+            <h3 className="terminos-clause__subtitle">7.2. Tarifa y Cupos</h3>
             <p>
-              Según el Art. 3 bis, letra b) de la Ley N° 19.496, NO aplica el
-              derecho a retracto por ser un servicio digital de ejecución
-              inmediata cuya prestación comienza con la habilitación del panel.
-              La venta es final al momento del pago.
+              El costo corresponde a un pago único por anuncio publicado de
+              forma destacada durante el período de vigencia respectivo. Los
+              cupos no utilizados o publicaciones eliminadas voluntariamente por
+              el usuario de forma anticipada no son acumulables ni
+              reembolsables.
+            </p>
+            <h3 className="terminos-clause__subtitle">
+              7.3. Exclusión del Derecho a Retracto
+            </h3>
+            <p>
+              De conformidad con el Artículo 3 bis, letra b) de la Ley N°
+              19.496 sobre Protección de los Derechos de los Consumidores, NO
+              aplica el derecho a retracto. Por tratarse de un servicio digital
+              de habilitación técnica y procesamiento inmediato en los
+              servidores de la plataforma tras confirmarse la transacción
+              monetaria, la contratación tiene carácter definitivo.
             </p>
           </article>
 
@@ -325,47 +391,56 @@ export default function Terminos() {
           <article className="terminos-clause">
             <h2 className="terminos-clause__title">
               <span className="terminos-clause__number">8</span>
-              Política de Rechazo, Moderación y Límite de Intentos
+              Moderación, Límite de Intentos y Reembolsos
             </h2>
             <h3 className="terminos-clause__subtitle">
-              8.1. Incumplimiento Grave
+              8.1. Aplicación de Estándares
             </h3>
             <p>
-              Si una publicación infringe las prohibiciones de la Cláusula 6, el
-              usuario perderá el monto pagado. Se retendrá como Cláusula Penal
-              para cubrir gastos de moderación y daños reputacionales.
+              Tanto las publicaciones gratuitas como las destacadas pagadas
+              deben ajustarse estrictamente a las directrices de la Cláusula 6.
             </p>
             <h3 className="terminos-clause__subtitle">
-              8.2. Derecho Universal a Subsanar y Límite de Intentos
+              8.2. Derecho a Subsanar y Límite de Tres (3) Intentos
             </h3>
             <p>
-              Ante cualquier rechazo, y sin excepción alguna, el usuario tendrá
-              un máximo de tres (3) intentos de edición para lograr la
-              aprobación inicial de su contenido. Este derecho permite al
-              usuario corregir desde errores técnicos hasta infracciones de
-              contenido. Si tras el tercer intento de corrección el contenido
-              sigue siendo rechazado por la administración, se entenderá el cupo
-              como efectivamente ocupado y el servicio como prestado,
-              finalizando el proceso de revisión sin derecho a nuevos intentos
-              ni reembolsos.
+              Si un anuncio es observado o rechazado en la moderación, el
+              usuario dispondrá de un máximo de tres (3) intentos de edición
+              para corregir observaciones técnicas o de contenido:
             </p>
+            <ul className="terminos-list">
+              <li>
+                <strong>En publicaciones gratuitas:</strong> Si tras el tercer
+                intento persisten las faltas, el anuncio se descarta
+                definitivamente.
+              </li>
+              <li>
+                <strong>En publicaciones destacadas pagadas:</strong> Si tras
+                agotar los tres intentos el usuario no subsana las infracciones a
+                la Cláusula 6, se entenderá el servicio de revisión como
+                prestado y el cupo consumido, sin derecho a reembolso.
+              </li>
+            </ul>
             <h3 className="terminos-clause__subtitle">
-              8.3. Ediciones Post-Aprobación (Plan Super buscador)
+              8.3. Incumplimiento Grave
             </h3>
             <p>
-              Una vez obtenida la aprobación inicial, los usuarios del Plan
-              Super buscador podrán editar su contenido ilimitadamente durante el
-              período de vigencia de 30 días. Cada edición volverá a revisión
-              obligatoria bajo los mismos estándares de la Cláusula 6.
+              La carga intencionada de contenidos que promuevan ilícitos
+              penales, estafas, pornografía o discursos de odio facultará a
+              Damaval SpA a cancelar de inmediato la cuenta y la publicación,
+              reteniendo el pago a título de cláusula penal por costos de
+              moderación y mitigación de perjuicio reputacional.
             </p>
             <h3 className="terminos-clause__subtitle">
               8.4. Reembolso Excepcional
             </h3>
             <p>
-              Solo si Damaval SpA decide no publicar por razones discrecionales
-              de marca (sin infracción persistente tras los 3 intentos), se
-              evaluará un reembolso descontando un 20% por concepto de Gastos de
-              Gestión Administrativa.
+              Únicamente si Damaval SpA rechaza unilateralmente una publicación
+              destacada pagada por motivos discrecionales de línea editorial
+              interna (sin que exista infracción a la Cláusula 6 atribuible al
+              usuario tras los tres intentos), se procesará la devolución del
+              importe pagado, deduciendo hasta un 20% por costos
+              administrativos y comisiones operativas de la pasarela de pago.
             </p>
           </article>
 
@@ -376,10 +451,11 @@ export default function Terminos() {
               Plataforma de Pagos Externa
             </h2>
             <p>
-              Los pagos se realizan vía proveedores externos seguros. Damaval
-              SpA no recolecta ni almacena información bancaria ni claves. La
-              responsabilidad transaccional recae exclusivamente en el proveedor
-              de pagos.
+              Los pagos se procesan a través de proveedores externos
+              especializados. Damaval SpA no almacena, administra ni tiene
+              acceso a datos de tarjetas de crédito o débito ni claves
+              bancarias. La seguridad de la transacción monetaria recae en la
+              entidad proveedora de la pasarela.
             </p>
           </article>
 
@@ -387,19 +463,20 @@ export default function Terminos() {
           <article className="terminos-clause">
             <h2 className="terminos-clause__title">
               <span className="terminos-clause__number">10</span>
-              Proceso de Revisión y Notificaciones
+              Proceso de Revisión y Tiempos de Respuesta
             </h2>
             <p>
-              Toda publicación nueva o editada ingresa a revisión obligatoria.
+              Toda publicación o modificación ingresa a control editorial:
             </p>
             <ul className="terminos-list">
               <li>
-                <strong>Plazo de Respuesta:</strong> Plazo máximo de 24 horas
-                hábiles (lunes a viernes de 09:00 a 18:00 hrs).
+                <strong>Plazo de Revisión:</strong> Hasta 24 horas hábiles
+                (lunes a viernes de 09:00 a 18:00 horas, exceptuando feriados).
               </li>
               <li>
-                <strong>Notificaciones:</strong> El usuario será informado
-                mediante notificación interna y vía correo electrónico.
+                <strong>Notificaciones:</strong> Las resoluciones de aprobación
+                o rechazo serán notificadas mediante la plataforma y vía correo
+                electrónico registrado.
               </li>
             </ul>
           </article>
@@ -408,36 +485,42 @@ export default function Terminos() {
           <article className="terminos-clause">
             <h2 className="terminos-clause__title">
               <span className="terminos-clause__number">11</span>
-              Seguridad, Jurisdicción y Propiedad Industrial
+              Seguridad en Encuentros, Legislación Aplicable y Jurisdicción
             </h2>
-            <h3 className="terminos-clause__subtitle">Seguridad</h3>
-            <p>
-              Damaval SpA no verifica antecedentes. La seguridad en encuentros
-              presenciales es responsabilidad de los usuarios. Se declina toda
-              responsabilidad por daños físicos o patrimoniales derivados de
-              interacciones fuera del sitio.
-            </p>
-            <h3 className="terminos-clause__subtitle">Jurisdicción</h3>
-            <p>
-              Este contrato se rige por las leyes de Chile. Cualquier disputa se
-              someterá a los Tribunales de Justicia de Curicó.
-            </p>
-            <h3 className="terminos-clause__subtitle">Propiedad Industrial</h3>
-            <p>
-              La marca &quot;Extrovertidos&quot; está protegida ante INAPI bajo
-              la Ley N° 19.039.
-            </p>
+            <ul className="terminos-list">
+              <li>
+                <strong>Seguridad Presencial:</strong> Damaval SpA no audita
+                antecedentes de convocantes ni asiste a las actividades. La
+                concurrencia física o transacciones comerciales derivadas de
+                eventos o servicios difundidos son de exclusiva responsabilidad
+                de los usuarios.
+              </li>
+              <li>
+                <strong>Legislación y Jurisdicción:</strong> El presente
+                contrato se rige íntegramente por las leyes de la República de
+                Chile. Para cualquier controversia legal, las partes fijan su
+                domicilio en la comuna de Molina y se someten a la jurisdicción
+                de los Tribunales Ordinarios de Justicia de Curicó.
+              </li>
+              <li>
+                <strong>Propiedad Industrial:</strong> La denominación y
+                logotipo &quot;Extrovertidos&quot; se encuentran protegidos
+                conforme a la Ley N° 19.039 ante el Instituto Nacional de
+                Propiedad Industrial (INAPI).
+              </li>
+            </ul>
           </article>
 
           {/* 12 */}
           <article className="terminos-clause">
             <h2 className="terminos-clause__title">
               <span className="terminos-clause__number">12</span>
-              Actualización de Términos
+              Modificaciones de los Términos
             </h2>
             <p>
-              Damaval SpA se reserva el derecho de modificar estos Términos
-              según necesidades operativas o legales.
+              Damaval SpA se reserva la facultad de actualizar estos Términos y
+              Condiciones en atención a mejoras funcionales o requerimientos
+              regulatorios, informando dichos cambios a través de la plataforma.
             </p>
           </article>
         </div>

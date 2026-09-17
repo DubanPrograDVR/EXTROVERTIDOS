@@ -231,6 +231,34 @@
   background: #101010;
 }
 
+.home-consolidado__destacados {
+  margin-bottom: 0.5rem;
+}
+
+.home-consolidado__destacados-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.home-consolidado__destacados-badge {
+  width: 34px;
+  height: auto;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6));
+}
+
+.home-consolidado__destacados-header h3 {
+  margin: 0;
+  padding-bottom: 6px;
+  border-bottom: 3px solid #ff6600;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
 .home-consolidado__section-heading {
   position: relative;
   display: flex;

@@ -2,26 +2,19 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faBullhorn,
   faCrown,
-  faStore,
-  faCheck,
   faArrowRight,
+  faWandMagicSparkles,
+  faCheck,
 } from "@fortawesome/free-solid-svg-icons";
-import {
-  PUBLICATION_TYPES,
-  FREE_PLAN_FIELDS,
-  FREE_PLAN_SOCIAL_NETWORKS,
-} from "../Panorama/constants";
-import {
-  getActivePublishSubscription,
-  getPlanPrices,
-} from "../../../lib/database";
+import { PUBLICATION_TYPES } from "../Panorama/constants";
+import { getPlanPrices } from "../../../lib/database";
 import { useAuth } from "../../../context/AuthContext";
 import usePlansVisibility from "../../../hooks/usePlansVisibility";
 import "./styles/crear-publicacion.css";
 
-const LOGO = "/img/Logo_con_r_v3.png";
+const LOGO_PANORAMA = "/img/P_Extro_v2.png";
+const LOGO_SUPER_BUSCADOR = "/img/SG_Extro_v2.png";
 
 const formatCLP = (amount) =>
   new Intl.NumberFormat("es-CL", {
@@ -29,73 +22,6 @@ const formatCLP = (amount) =>
     currency: "CLP",
     minimumFractionDigits: 0,
   }).format(amount);
-
-/** "a, b y c" */
-const formatList = (items) => {
-  if (items.length === 0) return "";
-  if (items.length === 1) return items[0];
-  return `${items.slice(0, -1).join(", ")} y ${items[items.length - 1]}`;
-};
-
-// ─────────────────────────────────────────────────
-// CAMPOS POR PLAN (derivados, no duplicados)
-// ─────────────────────────────────────────────────
-// Aquí SOLO viven las etiquetas legibles de cada campo. El reparto entre plan
-// gratuito y destacado NO se escribe a mano: se deriva de FREE_PLAN_FIELDS
-// (Panorama/constants), que es la única fuente de verdad. Si un campo cambia de
-// plan allá, esta pantalla lo refleja sola.
-const FIELD_LABELS = {
-  titulo: "Título",
-  descripcion: "Descripción",
-  category_id: "Categoría",
-  fecha_evento: "Fecha del evento",
-  fecha_fin: "Eventos de varios días",
-  es_recurrente: "Eventos que se repiten",
-  hora_inicio: "Horarios de inicio y término",
-  provincia: "Provincia",
-  comuna: "Comuna",
-  direccion: "Dirección exacta",
-  ubicacion_url: "Ubicación en el mapa",
-  tipo_entrada: "Tipo de entrada y precio",
-  url_venta: "Link de venta de entradas",
-  redes_sociales: "Redes sociales",
-  telefono_contacto: "Teléfono de contacto",
-  sitio_web: "Sitio web",
-  titulo_marketing: "Mensajes de marketing",
-  hashtags: "Hashtags",
-  etiqueta_directa: "Etiqueta destacada",
-  imagenes: "Imágenes",
-};
-
-const SOCIAL_LABELS = {
-  facebook: "Facebook",
-  tiktok: "TikTok",
-  instagram: "Instagram",
-  whatsapp: "WhatsApp",
-  youtube: "YouTube",
-  twitter: "X",
-  linkedin: "LinkedIn",
-};
-
-/** Campos incluidos en el plan gratuito, con sus etiquetas legibles. */
-const FREE_FIELD_LABELS = FREE_PLAN_FIELDS.filter(
-  (field) => FIELD_LABELS[field],
-).map((field) => {
-  if (field === "redes_sociales") {
-    const redes = FREE_PLAN_SOCIAL_NETWORKS.map(
-      (red) => SOCIAL_LABELS[red] || red,
-    );
-    return `${FIELD_LABELS[field]} (${formatList(redes)})`;
-  }
-  return FIELD_LABELS[field];
-});
-
-/** Campos que solo abre el formulario completo (destacada). */
-const EXTRA_FIELD_LABELS = Object.keys(FIELD_LABELS)
-  .filter((field) => !FREE_PLAN_FIELDS.includes(field))
-  .map((field) => FIELD_LABELS[field]);
-
-const EXTRA_FIELDS_TEXT = formatList(EXTRA_FIELD_LABELS);
 
 /**
  * Pantalla única de selección de tipo de publicación (/crear-publicacion).
@@ -106,20 +32,24 @@ const EXTRA_FIELDS_TEXT = formatList(EXTRA_FIELD_LABELS);
  *
  * Las publicaciones gratuitas no dependen de los toggles comerciales de
  * suscripciones. Los toggles de destacados sí controlan las opciones pagadas.
+ * El toggle "Destacar negocio" vive dentro de la tarjeta de negocio y
+ * pre-selecciona el tipo destacado en el formulario (/publicar-negocio).
  */
 const CrearPublicacion = () => {
-  const { user, isAdmin, isModerator } = useAuth();
+  const { isAdmin, isModerator } = useAuth();
   const isAdminOrMod = isAdmin || isModerator;
 
   const {
     superguiaVisible,
     destacadasEnabled,
+    negociosDestacadasEnabled,
     loading: loadingVisibility,
   } = usePlansVisibility();
 
   const [precioDestacada, setPrecioDestacada] = useState(null);
+  const [negocioDestacadoPrice, setNegocioDestacadoPrice] = useState(0);
   const [loadingPrice, setLoadingPrice] = useState(true);
-  const [cupoSuscripcion, setCupoSuscripcion] = useState(null);
+  const [negocioDestacado, setNegocioDestacado] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -128,6 +58,7 @@ const CrearPublicacion = () => {
       .then((prices) => {
         if (!cancelled) {
           setPrecioDestacada(Number(prices?.publicacion_destacada) || 0);
+          setNegocioDestacadoPrice(Number(prices?.negocio_destacado) || 0);
         }
       })
       .catch((error) => {
@@ -142,41 +73,8 @@ const CrearPublicacion = () => {
     };
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    if (!user?.id) {
-      return undefined;
-    }
-
-    getActivePublishSubscription(user.id)
-      .then((subscription) => {
-        if (!cancelled) {
-          setCupoSuscripcion({
-            userId: user.id,
-            disponible: Boolean(subscription),
-          });
-        }
-      })
-      .catch((error) => {
-        console.warn(
-          "[CrearPublicacion] Error cargando cupo de suscripción:",
-          error,
-        );
-        if (!cancelled) {
-          setCupoSuscripcion({ userId: user.id, disponible: false });
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.id]);
-
-  const tieneCupoSuscripcion = Boolean(
-    user?.id &&
-      cupoSuscripcion?.userId === user.id &&
-      cupoSuscripcion.disponible,
+  const puedeDestacarNegocio = Boolean(
+    negociosDestacadasEnabled && (isAdminOrMod || negocioDestacadoPrice > 0),
   );
 
   const precioDestacadaLabel = useMemo(() => {
@@ -194,17 +92,17 @@ const CrearPublicacion = () => {
       id: "panorama-gratuito",
       to: `/publicar-panorama?plan=${PUBLICATION_TYPES.NORMAL}`,
       variant: "gratuito",
-      icon: faBullhorn,
+      logo: LOGO_PANORAMA,
       eyebrow: "Panorama",
       title: "Panorama gratuito",
       price: "Gratis",
+      priceSuffix: null,
+      features: [
+        "Publicidad de tu actividad",
+        "Ubicación en cartelera general",
+      ],
       description:
         "Publica tu evento sin costo. Aparecerá en la sección de Panoramas después de la revisión del equipo.",
-      featuresTitle: "Formulario básico. Incluye:",
-      features: FREE_FIELD_LABELS,
-      note: EXTRA_FIELDS_TEXT
-        ? `No incluye: ${EXTRA_FIELDS_TEXT.toLowerCase()}.`
-        : null,
       cta: "Publicar gratis",
     });
 
@@ -213,55 +111,64 @@ const CrearPublicacion = () => {
         id: "panorama-destacado",
         to: `/publicar-panorama?plan=${PUBLICATION_TYPES.DESTACADA}`,
         variant: "destacada",
-        icon: faCrown,
+        logo: LOGO_PANORAMA,
         eyebrow: "Panorama",
         title: "Panorama destacado",
         price: precioDestacadaLabel,
+        priceSuffix:
+          !isAdminOrMod && precioDestacada ? "/ por publicación" : null,
         badge: "Recomendado",
         description: isAdminOrMod
           ? "Diseño premium con borde dorado y distintivo especial. Se publicará directamente en Panoramas Destacados sin costo adicional."
           : "Diseño premium con borde dorado y distintivo especial. Tras el pago, la revisará el equipo y aparecerá en Panoramas Destacados.",
-        featuresTitle: "Formulario completo. Además:",
         features: [
-          "Borde dorado y badge Extro",
-          "Aparece en Panoramas Destacados",
-          isAdminOrMod ? "Sin costo adicional" : "Pago único vía Webpay",
+          "Visibilidad destacada",
+          "Carrusel principal",
+          "Ubicación preferencial",
+          "Mayor Publicidad de tu actividad",
         ],
-        note: EXTRA_FIELDS_TEXT
-          ? `Suma a lo del plan gratuito: ${EXTRA_FIELDS_TEXT.toLowerCase()} y todas las redes sociales.`
-          : null,
-        cta: "Publicar destacado",
+        cta: "Destacar panorama",
       });
     }
 
     items.push({
       id: "negocio",
-      to: "/publicar-negocio",
+      to:
+        negocioDestacado && puedeDestacarNegocio
+          ? "/publicar-negocio?destacado=1"
+          : "/publicar-negocio",
       variant: "negocio",
-      icon: faStore,
+      logo: LOGO_SUPER_BUSCADOR,
+      noteLogo: LOGO_SUPER_BUSCADOR,
       eyebrow: "Super buscador",
-      title: "Publicar un negocio",
+      title: "Publicar mi negocio",
       price: superguiaVisible ? "Plan Super buscador" : "Disponible",
-      description:
-        "Crea la ficha de tu negocio en la Super buscador para que te encuentren durante todo el año, no solo el día del evento.",
-      featuresTitle: "La ficha incluye:",
+      priceSuffix: null,
       features: [
-        "Horarios de atención y ubicación",
-        "Contacto, redes sociales y galería de imágenes",
-        "Categorías y búsqueda por comuna",
+        "Mayor publicidad de tu servicio o negocio",
+        "Llega a más personas",
+        "Conecta con más potenciales clientes",
       ],
-      note: superguiaVisible
-        ? "Se activa con tu plan Super buscador y el equipo la revisa antes de publicarla."
-        : "El equipo revisará tu publicación antes de mostrarla en la Super buscador.",
-      cta: "Publicar mi negocio",
+      description:
+        "Publica tu negocio en el super buscador de extrovertidos, más conexión, más visibilidad y más clientes.",
+      cta: "Publicar negocio",
     });
 
-    return items;
+    const order = {
+      destacada: 0,
+      gratuito: 1,
+      negocio: 2,
+    };
+
+    return items.sort((a, b) => order[a.variant] - order[b.variant]);
   }, [
     superguiaVisible,
     destacadasEnabled,
     isAdminOrMod,
     precioDestacadaLabel,
+    precioDestacada,
+    negocioDestacado,
+    puedeDestacarNegocio,
   ]);
 
   if (loadingVisibility || loadingPrice) {
@@ -280,16 +187,21 @@ const CrearPublicacion = () => {
   return (
     <div className="crear-publicacion">
       <header className="crear-publicacion__header">
-        <img
-          src={LOGO}
-          alt="Extrovertidos"
-          className="crear-publicacion__logo"
-        />
-        <h1 className="crear-publicacion__title">¿Qué quieres publicar?</h1>
-        <p className="crear-publicacion__subtitle">
-          Elige una opción y te llevamos directo al formulario. Sin pasos
-          intermedios.
-        </p>
+        <div className="crear-publicacion__header-inner">
+          <span className="crear-publicacion__badge">
+            Planes de publicación
+          </span>
+          <h1 className="crear-publicacion__title">
+            Lleva tus panoramas al{" "}
+            <span className="crear-publicacion__title-accent">
+              siguiente nivel
+            </span>
+          </h1>
+          <p className="crear-publicacion__subtitle">
+            Elige el plan que mejor se adapte a ti y destaca entre miles de
+            personas.
+          </p>
+        </div>
       </header>
 
       <main className="crear-publicacion__content">
@@ -303,80 +215,120 @@ const CrearPublicacion = () => {
                   className={`crear-publicacion__card crear-publicacion__card--${opcion.variant}`}>
                   {opcion.badge && (
                     <span className="crear-publicacion__card-badge">
+                      <FontAwesomeIcon icon={faCrown} aria-hidden="true" />
                       {opcion.badge}
                     </span>
                   )}
 
-                  <span className="crear-publicacion__card-icon">
-                    <FontAwesomeIcon icon={opcion.icon} />
+                  <span
+                    className="crear-publicacion__card-watermark"
+                    aria-hidden="true">
+                    <img src={opcion.logo} alt="" />
                   </span>
 
-                  <span className="crear-publicacion__card-eyebrow">
-                    {opcion.eyebrow}
+                  <span className="crear-publicacion__card-head">
+                    <span className="crear-publicacion__card-head-main">
+                      <span className="crear-publicacion__card-icon">
+                        <img src={opcion.logo} alt="" aria-hidden="true" />
+                      </span>
+                      <span className="crear-publicacion__card-head-text">
+                        <span className="crear-publicacion__card-eyebrow">
+                          {opcion.eyebrow}
+                        </span>
+                        <h2 className="crear-publicacion__card-title">
+                          {opcion.title}
+                        </h2>
+                        <p className="crear-publicacion__card-price">
+                          {opcion.price}
+                          {opcion.priceSuffix && (
+                            <span className="crear-publicacion__card-price-suffix">
+                              {opcion.priceSuffix}
+                            </span>
+                          )}
+                        </p>
+                      </span>
+                    </span>
+
+                    {opcion.id === "negocio" && puedeDestacarNegocio && (
+                      <span
+                        className="crear-publicacion__highlight"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          setNegocioDestacado((prev) => !prev);
+                        }}>
+                        <span className="crear-publicacion__highlight-label">
+                          Destacar negocio
+                        </span>
+                        <span className="crear-publicacion__toggle-wrap">
+                          <FontAwesomeIcon
+                            icon={faWandMagicSparkles}
+                            className="crear-publicacion__highlight-spark"
+                            aria-hidden="true"
+                          />
+                          <button
+                            type="button"
+                            aria-pressed={negocioDestacado}
+                            aria-label="Destacar negocio"
+                            className={`crear-publicacion__toggle ${
+                              negocioDestacado
+                                ? "crear-publicacion__toggle--active"
+                                : ""
+                            }`}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              setNegocioDestacado((prev) => !prev);
+                            }}>
+                            <span className="crear-publicacion__toggle-knob" />
+                          </button>
+                        </span>
+                        <span className="crear-publicacion__highlight-help">
+                          Tu negocio se verá con un borde especial y una
+                          etiqueta premium.
+                          {!isAdminOrMod &&
+                            negocioDestacado &&
+                            negocioDestacadoPrice > 0 && (
+                              <>
+                                {" "}
+                                {formatCLP(negocioDestacadoPrice)} · Pago único
+                                vía Webpay.
+                              </>
+                            )}
+                        </span>
+                      </span>
+                    )}
                   </span>
 
-                  <h2 className="crear-publicacion__card-title">
-                    {opcion.title}
-                  </h2>
+                  <div className="crear-publicacion__card-description">
+                    {opcion.features && opcion.features.length > 0 && (
+                      <ul className="crear-publicacion__card-features">
+                        {opcion.features.map((feature, idx) => (
+                          <li key={idx}>
+                            <FontAwesomeIcon icon={faCheck} aria-hidden="true" />
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
 
-                  <p className="crear-publicacion__card-price">
-                    {opcion.price}
-                  </p>
+                    {opcion.description && (
+                      <p className="crear-publicacion__card-description-text">
+                        {opcion.description}
+                      </p>
+                    )}
+                  </div>
 
-                  <p className="crear-publicacion__card-description">
-                    {opcion.description}
-                  </p>
-
-                  <p className="crear-publicacion__card-features-title">
-                    {opcion.featuresTitle}
-                  </p>
-
-                  <ul className="crear-publicacion__card-features">
-                    {opcion.features.map((feature) => (
-                      <li key={feature}>
-                        <FontAwesomeIcon icon={faCheck} aria-hidden="true" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-
-                  {opcion.note && (
-                    <p className="crear-publicacion__card-note">
-                      {opcion.note}
-                    </p>
-                  )}
-
-                  <span className="crear-publicacion__card-cta">
-                    {opcion.cta}
-                    <FontAwesomeIcon icon={faArrowRight} aria-hidden="true" />
-                  </span>
+                  <div className="crear-publicacion__card-side">
+                    <span className="crear-publicacion__card-cta">
+                      {opcion.cta}
+                      <FontAwesomeIcon icon={faArrowRight} aria-hidden="true" />
+                    </span>
+                  </div>
                 </Link>
               ))}
             </div>
 
-            {/* Acceso secundario a las suscripciones: es el único upsell hacia
-                /activar-plan que queda en el flujo de creación, pero no debe
-                competir con las tres tarjetas principales. */}
-            <p className="crear-publicacion__upsell">
-              ¿Publicas seguido?{" "}
-              <Link
-                to="/activar-plan"
-                className="crear-publicacion__upsell-link">
-                Mira los planes de suscripción
-                <FontAwesomeIcon icon={faArrowRight} aria-hidden="true" />
-              </Link>
-            </p>
-            {tieneCupoSuscripcion && (
-              <p className="crear-publicacion__upsell crear-publicacion__upsell--plan">
-                ¿Ya tienes un plan con cupo?{" "}
-                <Link
-                  to="/publicar-panorama?modo=suscripcion"
-                  className="crear-publicacion__upsell-link">
-                  Usar mi plan
-                  <FontAwesomeIcon icon={faArrowRight} aria-hidden="true" />
-                </Link>
-              </p>
-            )}
           </>
         ) : (
           <div className="crear-publicacion__empty">
